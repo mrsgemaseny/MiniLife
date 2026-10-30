@@ -1,6 +1,6 @@
 extends Node
 
-# Grid & World
+# Grid & Isometric Geometry
 const CHUNK_SIZE: int = 16
 const TILE_SIZE: Vector2i = Vector2i(64, 32)
 const HALF_TILE: Vector2i = Vector2i(32, 16)
@@ -23,31 +23,35 @@ const LOD_MID_TILES: float = 100.0
 const LOD_MID_INTERVAL: float = 5.0
 const LOD_FAR_INTERVAL: float = 30.0
 
-# Player Defaults
+# Player & Survival Defaults
 const DEFAULT_CLASS: String = "wanderer"
 const DEFAULT_SAVE_SLOT: String = "world_01"
 const BASE_MAX_HEALTH: float = 100.0
 const BASE_MAX_HUNGER: float = 100.0
 const BASE_MAX_STAMINA: float = 100.0
+const BASE_MAX_BLOOD: float = 100.0
 const BASE_MOVE_SPEED: float = 180.0
-const HUNGER_DECAY_PER_HOUR: float = 2.5
-const STAMINA_REGEN_PER_SEC: float = 12.0
-const STAMINA_COST_ATTACK: float = 8.0
-const STAMINA_COST_HARVEST: float = 6.0
-const BASE_VISION_RADIUS: int = 8
+const HUNGER_DECAY_PER_HOUR: float = 2.2
+const REST_DECAY_PER_HOUR: float = 1.8
+const STAMINA_REGEN_PER_SEC: float = 14.0
+const STAMINA_COST_ATTACK: float = 7.0
+const STAMINA_COST_HARVEST: float = 5.0
+const BASE_VISION_RADIUS: int = 9
 const INTERACT_RANGE: float = 96.0
-const CRAFT_STATION_RANGE: float = 120.0
+const CRAFT_STATION_RANGE: float = 128.0
 const MAX_INVENTORY_WEIGHT: float = 100.0
-const MAX_INVENTORY_SLOTS: int = 24
+const MAX_INVENTORY_SLOTS: int = 30
 
-# Combat
-const BASE_ATTACK_COOLDOWN: float = 0.8
-const MELEE_RANGE: float = 72.0
+# Combat & Projectiles
+const BASE_ATTACK_COOLDOWN: float = 0.75
+const MELEE_RANGE: float = 76.0
+const RANGED_MAX_RANGE: float = 420.0
+const PROJECTILE_SPEED: float = 480.0
 const MELEE_CONE_DOT: float = 0.25
 const KNOCKBACK_SPEED: float = 220.0
 const KNOCKBACK_DECAY: float = 900.0
 const ARMOR_K_CONSTANT: float = 50.0
-const SKILL_DAMAGE_BONUS_PER_LEVEL: float = 0.01
+const SKILL_DAMAGE_BONUS_PER_LEVEL: float = 0.012
 const WEAPON_WEAR_PER_HIT: int = 1
 const TOOL_WEAR_PER_HIT: int = 1
 
@@ -56,10 +60,11 @@ const MIN_STARTING_TRAITS: int = 3
 const MAX_STARTING_TRAITS: int = 6
 const MAX_SKILL_LEVEL: int = 100
 const BASE_XP_PER_LEVEL: float = 100.0
-const XP_GROWTH_RATE: float = 1.15
-const XP_PER_MELEE_HIT: float = 8.0
+const XP_GROWTH_RATE: float = 1.14
+const XP_PER_MELEE_HIT: float = 9.0
+const XP_PER_RANGED_HIT: float = 10.0
 
-# Factions
+# Factions & Economy
 const REP_MIN: int = -100
 const REP_MAX: int = 100
 const STANCE_HOSTILE: int = -50
@@ -68,12 +73,12 @@ const STANCE_FRIENDLY: int = 20
 const STANCE_ALLIED: int = 50
 const JOIN_FACTION_REP_REQUIRED: int = 40
 const KILL_REP_PENALTY: int = -35
-const ASSAULT_REP_PENALTY: int = -5
+const ASSAULT_REP_PENALTY: int = -8
 const RUMOR_DELAY_HOURS: int = 3
 
-# Events
-const EVENT_ROLL_INTERVAL_HOURS: int = 6
-const EVENT_TRIGGER_CHANCE: float = 0.45
+# Events & Storyteller
+const EVENT_ROLL_INTERVAL_HOURS: int = 5
+const EVENT_TRIGGER_CHANCE: float = 0.48
 
 # Paths
 const DATA_ROOT: String = "res://data/"
@@ -83,6 +88,7 @@ const ACHIEVEMENTS_PATH: String = "user://saves/achievements.json"
 # Enums
 enum FogState { UNEXPLORED = 0, VISITED = 1, VISIBLE = 2 }
 enum GameState { BOOT, PLAYING, PAUSED, DEAD }
+enum QualityTier { POOR = 0, NORMAL = 1, GOOD = 2, MASTERWORK = 3 }
 
 
 static func world_to_iso(tile_pos: Vector2i) -> Vector2:
@@ -108,6 +114,11 @@ static func tile_to_chunk(tile_pos: Vector2i) -> Vector2i:
 
 static func chunk_origin(chunk_pos: Vector2i) -> Vector2i:
 	return chunk_pos * CHUNK_SIZE
+
+
+static func local_in_chunk(tile_pos: Vector2i) -> Vector2i:
+	var cpos: Vector2i = tile_to_chunk(tile_pos)
+	return tile_pos - chunk_origin(cpos)
 
 
 static func tile_distance(a: Vector2i, b: Vector2i) -> int:

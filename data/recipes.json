@@ -8,7 +8,7 @@
 		],
 		"output": { "item_id": "stone_axe", "count": 1 },
 		"skill_required": {},
-		"xp_reward": { "construction": 8 }
+		"xp_reward": { "construction": 10 }
 	},
 	{
 		"id": "craft_stone_pickaxe",
@@ -19,7 +19,17 @@
 		],
 		"output": { "item_id": "stone_pickaxe", "count": 1 },
 		"skill_required": {},
-		"xp_reward": { "construction": 10 }
+		"xp_reward": { "construction": 12 }
+	},
+	{
+		"id": "craft_bandage",
+		"station": "",
+		"inputs": [
+			{ "item_id": "cloth", "count": 2 }
+		],
+		"output": { "item_id": "bandage", "count": 2 },
+		"skill_required": {},
+		"xp_reward": { "medicine": 8 }
 	},
 	{
 		"id": "craft_plank",
@@ -29,7 +39,7 @@
 		],
 		"output": { "item_id": "plank", "count": 2 },
 		"skill_required": {},
-		"xp_reward": { "construction": 5 }
+		"xp_reward": { "construction": 6 }
 	},
 	{
 		"id": "craft_cloth",
@@ -39,7 +49,18 @@
 		],
 		"output": { "item_id": "cloth", "count": 1 },
 		"skill_required": {},
-		"xp_reward": { "construction": 6 }
+		"xp_reward": { "construction": 7 }
+	},
+	{
+		"id": "craft_arrows",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "wood", "count": 1 },
+			{ "item_id": "stone", "count": 1 }
+		],
+		"output": { "item_id": "arrow", "count": 8 },
+		"skill_required": {},
+		"xp_reward": { "ranged": 6, "construction": 6 }
 	},
 	{
 		"id": "craft_medicine",
@@ -49,8 +70,8 @@
 			{ "item_id": "cloth", "count": 1 }
 		],
 		"output": { "item_id": "medicine", "count": 1 },
-		"skill_required": { "alchemy": 10 },
-		"xp_reward": { "alchemy": 18 }
+		"skill_required": { "alchemy": 8 },
+		"xp_reward": { "alchemy": 20, "medicine": 10 }
 	},
 	{
 		"id": "craft_poison",
@@ -59,8 +80,8 @@
 			{ "item_id": "herb", "count": 4 }
 		],
 		"output": { "item_id": "poison", "count": 1 },
-		"skill_required": { "alchemy": 15 },
-		"xp_reward": { "alchemy": 22 }
+		"skill_required": { "alchemy": 12 },
+		"xp_reward": { "alchemy": 24 }
 	},
 	{
 		"id": "craft_hunting_bow",
@@ -70,8 +91,8 @@
 			{ "item_id": "cloth", "count": 1 }
 		],
 		"output": { "item_id": "hunting_bow", "count": 1 },
-		"skill_required": { "woodcutting": 10 },
-		"xp_reward": { "construction": 16 }
+		"skill_required": { "woodcutting": 8 },
+		"xp_reward": { "construction": 18 }
 	},
 	{
 		"id": "craft_leather_armor",
@@ -81,7 +102,17 @@
 		],
 		"output": { "item_id": "leather_armor", "count": 1 },
 		"skill_required": {},
-		"xp_reward": { "construction": 14 }
+		"xp_reward": { "construction": 16 }
+	},
+	{
+		"id": "smelt_bronze_ingot",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "copper_ore", "count": 2 }
+		],
+		"output": { "item_id": "bronze_ingot", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "smithing": 14 }
 	},
 	{
 		"id": "smelt_iron_ingot",
@@ -91,7 +122,29 @@
 		],
 		"output": { "item_id": "iron_ingot", "count": 1 },
 		"skill_required": { "smithing": 5 },
-		"xp_reward": { "smithing": 15 }
+		"xp_reward": { "smithing": 18 }
+	},
+	{
+		"id": "forge_bronze_spear",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "bronze_ingot", "count": 2 },
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "bronze_spear", "count": 1 },
+		"skill_required": { "smithing": 8 },
+		"xp_reward": { "smithing": 26 }
+	},
+	{
+		"id": "forge_iron_axe",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 3 },
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "iron_axe", "count": 1 },
+		"skill_required": { "smithing": 15 },
+		"xp_reward": { "smithing": 32 }
 	},
 	{
 		"id": "forge_iron_sword",
@@ -102,7 +155,29 @@
 		],
 		"output": { "item_id": "iron_sword", "count": 1 },
 		"skill_required": { "smithing": 20 },
-		"xp_reward": { "smithing": 35 }
+		"xp_reward": { "smithing": 38 }
+	},
+	{
+		"id": "forge_heavy_crossbow",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 3 },
+			{ "item_id": "plank", "count": 2 }
+		],
+		"output": { "item_id": "heavy_crossbow", "count": 1 },
+		"skill_required": { "smithing": 22 },
+		"xp_reward": { "smithing": 42 }
+	},
+	{
+		"id": "forge_chainmail_coif",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 2 },
+			{ "item_id": "cloth", "count": 1 }
+		],
+		"output": { "item_id": "chainmail_coif", "count": 1 },
+		"skill_required": { "smithing": 18 },
+		"xp_reward": { "smithing": 30 }
 	},
 	{
 		"id": "forge_iron_chainmail",
@@ -113,7 +188,18 @@
 		],
 		"output": { "item_id": "iron_chainmail", "count": 1 },
 		"skill_required": { "smithing": 25 },
-		"xp_reward": { "smithing": 45 }
+		"xp_reward": { "smithing": 50 }
+	},
+	{
+		"id": "forge_chainmail_leggings",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 3 },
+			{ "item_id": "cloth", "count": 1 }
+		],
+		"output": { "item_id": "chainmail_leggings", "count": 1 },
+		"skill_required": { "smithing": 20 },
+		"xp_reward": { "smithing": 36 }
 	},
 	{
 		"id": "cook_meat",
@@ -123,6 +209,17 @@
 		],
 		"output": { "item_id": "cooked_food", "count": 1 },
 		"skill_required": {},
-		"xp_reward": { "cooking": 10 }
+		"xp_reward": { "cooking": 12 }
+	},
+	{
+		"id": "cook_hunters_stew",
+		"station": "campfire",
+		"inputs": [
+			{ "item_id": "food_raw", "count": 2 },
+			{ "item_id": "herb", "count": 2 }
+		],
+		"output": { "item_id": "hunters_stew", "count": 1 },
+		"skill_required": { "cooking": 10 },
+		"xp_reward": { "cooking": 25 }
 	}
 ]

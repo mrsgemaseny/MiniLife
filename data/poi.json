@@ -1,50 +1,60 @@
 [
 	{
 		"id": "abandoned_camp",
+		"name": "Abandoned Raider Camp",
 		"type": "abandoned_camp",
-		"enemy_pool": ["bandit_scout"],
+		"color": "#d97706",
+		"enemy_pool": ["bandit_scout", "bandit_raider"],
 		"loot_table": {
-			"gold": 40,
-			"items": { "bread": 2, "plank": 3 }
+			"gold": 45,
+			"items": { "bread": 2, "plank": 3, "bandage": 1 }
 		},
 		"respawns": false
 	},
 	{
 		"id": "ruins",
+		"name": "Ancient Stone Ruins",
 		"type": "ruins",
+		"color": "#9333ea",
 		"enemy_pool": ["bandit_scout", "swamp_crawler"],
 		"loot_table": {
-			"gold": 85,
+			"gold": 95,
 			"items": { "iron_ingot": 2, "medicine": 1 }
 		},
 		"respawns": false
 	},
 	{
 		"id": "cave",
+		"name": "Deep Ore Cavern",
 		"type": "cave",
+		"color": "#0284c7",
 		"enemy_pool": ["wolf", "forest_boar"],
 		"loot_table": {
-			"gold": 50,
+			"gold": 55,
 			"items": { "iron_ore": 5, "stone": 6 }
 		},
 		"respawns": false
 	},
 	{
 		"id": "merchant_outpost",
+		"name": "Caravan Outpost",
 		"type": "merchant_outpost",
+		"color": "#eab308",
 		"enemy_pool": [],
 		"loot_table": {
-			"gold": 25,
+			"gold": 30,
 			"items": { "bread": 2 }
 		},
 		"respawns": false
 	},
 	{
 		"id": "dungeon",
+		"name": "Warlord Stronghold",
 		"type": "dungeon",
-		"enemy_pool": ["alpha_wolf_boss"],
+		"color": "#dc2626",
+		"enemy_pool": ["alpha_wolf_boss", "warlord_khan_boss"],
 		"loot_table": {
-			"gold": 200,
+			"gold": 250,
 			"items": { "iron_sword": 1, "iron_chainmail": 1 }
 		},
 		"respawns": false

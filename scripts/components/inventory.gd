@@ -4,18 +4,16 @@ extends Resource
 signal contents_changed()
 signal gold_changed(gold: int)
 
-@export var max_weight: float = 100.0
-@export var max_slots: int = 24
+@export var max_weight: float = Config.MAX_INVENTORY_WEIGHT
+@export var max_slots: int = Config.MAX_INVENTORY_SLOTS
 @export var gold: int = 0
 var slots: Array[Dictionary] = []
 
-static var _items_table: Dictionary = {}
-
 
 static func _get_item_def(item_id: String) -> Dictionary:
-	if _items_table.is_empty() and Engine.get_main_loop() != null:
-		_items_table = GameManager.load_json_indexed("items.json")
-	return _items_table.get(item_id, {})
+	if DataRegistry != null:
+		return DataRegistry.get_item(item_id)
+	return {}
 
 
 func add_item(item_id: String, count: int = 1, durability: int = -1) -> int:
@@ -98,6 +96,23 @@ func remove_at_index(slot_index: int, count: int = 1) -> Dictionary:
 	return out
 
 
+func split_slot(slot_index: int, split_count: int) -> bool:
+	if slot_index < 0 or slot_index >= slots.size() or slots.size() >= max_slots:
+		return false
+	var slot: Dictionary = slots[slot_index]
+	var cur: int = int(slot.get("count", 1))
+	if split_count <= 0 or split_count >= cur:
+		return false
+	slot["count"] = cur - split_count
+	slots.append({
+		"item_id": str(slot.get("item_id", "")),
+		"count": split_count,
+		"durability": int(slot.get("durability", -1))
+	})
+	contents_changed.emit()
+	return true
+
+
 func move_slot(from_index: int, to_index: int) -> void:
 	if from_index < 0 or from_index >= slots.size():
 		return
@@ -134,6 +149,15 @@ func get_total_weight() -> float:
 		var w: float = float(def.get("weight", 1.0))
 		total += w * float(int(slot.get("count", 0)))
 	return total
+
+
+func get_encumbrance_speed_multiplier() -> float:
+	var ratio: float = get_total_weight() / maxf(max_weight, 1.0)
+	if ratio >= 1.0:
+		return 0.45
+	elif ratio >= 0.8:
+		return 0.78
+	return 1.0
 
 
 func can_fit_item(item_id: String, count: int = 1) -> bool:

@@ -1,0 +1,133 @@
+[
+	{
+		"id": "oak_tree",
+		"name": "Frontier Tree",
+		"biome": "plains",
+		"hits": 4,
+		"required_tool": "",
+		"preferred_tool": "axe",
+		"skill": "woodcutting",
+		"xp": 14.0,
+		"regrows": false,
+		"regrow_days": 0,
+		"color": "#3d6e2e",
+		"trunk_color": "#5c4028",
+		"radius": 18.0,
+		"drops": [
+			{ "item_id": "wood", "min": 2, "max": 4 }
+		]
+	},
+	{
+		"id": "forest_pine",
+		"name": "Tall Pine",
+		"biome": "forest",
+		"hits": 5,
+		"required_tool": "",
+		"preferred_tool": "axe",
+		"skill": "woodcutting",
+		"xp": 18.0,
+		"regrows": true,
+		"regrow_days": 3,
+		"color": "#265429",
+		"trunk_color": "#4f3621",
+		"radius": 20.0,
+		"drops": [
+			{ "item_id": "wood", "min": 3, "max": 6 },
+			{ "item_id": "resin", "min": 0, "max": 2 }
+		]
+	},
+	{
+		"id": "stone_boulder",
+		"name": "Granite Boulder",
+		"biome": "plains",
+		"hits": 5,
+		"required_tool": "",
+		"preferred_tool": "pickaxe",
+		"skill": "mining",
+		"xp": 16.0,
+		"regrows": false,
+		"regrow_days": 0,
+		"color": "#7a8086",
+		"trunk_color": "#555a5e",
+		"radius": 16.0,
+		"drops": [
+			{ "item_id": "stone", "min": 2, "max": 5 },
+			{ "item_id": "flint", "min": 0, "max": 2 }
+		]
+	},
+	{
+		"id": "iron_vein",
+		"name": "Iron Ore Vein",
+		"biome": "mountains",
+		"hits": 7,
+		"required_tool": "pickaxe",
+		"preferred_tool": "pickaxe",
+		"skill": "mining",
+		"xp": 28.0,
+		"regrows": false,
+		"regrow_days": 0,
+		"color": "#8c583a",
+		"trunk_color": "#524139",
+		"radius": 17.0,
+		"drops": [
+			{ "item_id": "iron_ore", "min": 2, "max": 4 },
+			{ "item_id": "stone", "min": 1, "max": 2 }
+		]
+	},
+	{
+		"id": "copper_vein",
+		"name": "Copper Deposit",
+		"biome": "desert",
+		"hits": 6,
+		"required_tool": "pickaxe",
+		"preferred_tool": "pickaxe",
+		"skill": "mining",
+		"xp": 22.0,
+		"regrows": false,
+		"regrow_days": 0,
+		"color": "#b86f3c",
+		"trunk_color": "#5e4636",
+		"radius": 16.0,
+		"drops": [
+			{ "item_id": "copper_ore", "min": 2, "max": 4 },
+			{ "item_id": "stone", "min": 1, "max": 2 }
+		]
+	},
+	{
+		"id": "wild_berry_bush",
+		"name": "Berry Shrub",
+		"biome": "plains",
+		"hits": 2,
+		"required_tool": "",
+		"preferred_tool": "",
+		"skill": "foraging",
+		"xp": 10.0,
+		"regrows": true,
+		"regrow_days": 2,
+		"color": "#4b8b3b",
+		"trunk_color": "#c9384a",
+		"radius": 12.0,
+		"drops": [
+			{ "item_id": "berries", "min": 2, "max": 4 },
+			{ "item_id": "herb", "min": 0, "max": 1 }
+		]
+	},
+	{
+		"id": "swamp_herb_patch",
+		"name": "Bog Herb Cluster",
+		"biome": "swamp",
+		"hits": 2,
+		"required_tool": "",
+		"preferred_tool": "",
+		"skill": "foraging",
+		"xp": 14.0,
+		"regrows": true,
+		"regrow_days": 3,
+		"color": "#3c7a57",
+		"trunk_color": "#73a942",
+		"radius": 12.0,
+		"drops": [
+			{ "item_id": "herb", "min": 2, "max": 5 }
+		]
+	}
+]

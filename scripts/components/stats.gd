@@ -10,6 +10,10 @@ signal depleted(stat: String)
 @export var max_hunger: float = 100.0
 @export var stamina: float = 100.0
 @export var max_stamina: float = 100.0
+@export var blood: float = 100.0
+@export var max_blood: float = 100.0
+@export var consciousness: float = 100.0
+@export var pain: float = 0.0
 @export var move_speed: float = 180.0
 @export var defense: float = 0.0
 @export var active_class: String = "wanderer"
@@ -36,6 +40,12 @@ func modify(stat: String, delta: float) -> float:
 			if stamina <= 0.0:
 				depleted.emit("stamina")
 			return stamina
+		"blood":
+			blood = clampf(blood + delta, 0.0, max_blood)
+			stat_changed.emit("blood", blood, max_blood)
+			if blood <= 0.0:
+				depleted.emit("blood")
+			return blood
 	return 0.0
 
 
@@ -54,6 +64,10 @@ func set_max(stat: String, new_max: float) -> void:
 			max_stamina = clamped_max
 			stamina = minf(stamina, max_stamina)
 			stat_changed.emit("stamina", stamina, max_stamina)
+		"blood":
+			max_blood = clamped_max
+			blood = minf(blood, max_blood)
+			stat_changed.emit("blood", blood, max_blood)
 
 
 func get_value(stat: String) -> float:
@@ -64,6 +78,8 @@ func get_value(stat: String) -> float:
 			return hunger
 		"stamina":
 			return stamina
+		"blood":
+			return blood
 	return 0.0
 
 
@@ -75,11 +91,13 @@ func get_max(stat: String) -> float:
 			return max_hunger
 		"stamina":
 			return max_stamina
+		"blood":
+			return max_blood
 	return 100.0
 
 
 func is_alive() -> bool:
-	return health > 0.0 and hunger > 0.0
+	return health > 0.0 and hunger > 0.0 and blood > 0.0
 
 
 func to_dict() -> Dictionary:
@@ -90,6 +108,10 @@ func to_dict() -> Dictionary:
 		"max_hunger": max_hunger,
 		"stamina": stamina,
 		"max_stamina": max_stamina,
+		"blood": blood,
+		"max_blood": max_blood,
+		"consciousness": consciousness,
+		"pain": pain,
 		"move_speed": move_speed,
 		"defense": defense,
 		"active_class": active_class,
@@ -104,6 +126,10 @@ func from_dict(data: Dictionary) -> void:
 	hunger = clampf(float(data.get("hunger", max_hunger)), 0.0, max_hunger)
 	max_stamina = float(data.get("max_stamina", 100.0))
 	stamina = clampf(float(data.get("stamina", max_stamina)), 0.0, max_stamina)
+	max_blood = float(data.get("max_blood", 100.0))
+	blood = clampf(float(data.get("blood", max_blood)), 0.0, max_blood)
+	consciousness = float(data.get("consciousness", 100.0))
+	pain = float(data.get("pain", 0.0))
 	move_speed = float(data.get("move_speed", 180.0))
 	defense = float(data.get("defense", 0.0))
 	active_class = str(data.get("active_class", "wanderer"))

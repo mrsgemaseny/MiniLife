@@ -5,13 +5,12 @@ signal trait_added(trait_id: String)
 signal trait_removed(trait_id: String)
 
 @export var active_traits: Array[String] = []
-static var _traits_table: Dictionary = {}
 
 
 static func _get_trait_def(trait_id: String) -> Dictionary:
-	if _traits_table.is_empty() and Engine.get_main_loop() != null:
-		_traits_table = GameManager.load_json_indexed("traits.json")
-	return _traits_table.get(trait_id, {})
+	if DataRegistry != null:
+		return DataRegistry.get_trait(trait_id)
+	return {}
 
 
 func add_trait(trait_id: String) -> bool:

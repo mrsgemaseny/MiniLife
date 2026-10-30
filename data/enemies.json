@@ -6,9 +6,11 @@
 		"hp": 55,
 		"damage": 11,
 		"speed": 175,
+		"color": "#7a8288",
+		"is_boss": false,
 		"loot_table": {
-			"gold": 5,
-			"items": { "food_raw": 2 }
+			"gold": 6,
+			"items": { "food_raw": 2, "leather_hide": 1 }
 		},
 		"respawns": false
 	},
@@ -19,9 +21,26 @@
 		"hp": 75,
 		"damage": 14,
 		"speed": 160,
+		"color": "#c94a38",
+		"is_boss": false,
 		"loot_table": {
-			"gold": 22,
+			"gold": 25,
 			"items": { "bread": 1, "iron_ore": 1 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "bandit_raider",
+		"name": "Outlaw Axeman",
+		"biome": "forest",
+		"hp": 95,
+		"damage": 18,
+		"speed": 155,
+		"color": "#a83228",
+		"is_boss": false,
+		"loot_table": {
+			"gold": 38,
+			"items": { "iron_ingot": 1, "bandage": 1 }
 		},
 		"respawns": false
 	},
@@ -32,9 +51,11 @@
 		"hp": 90,
 		"damage": 15,
 		"speed": 155,
+		"color": "#6b4423",
+		"is_boss": false,
 		"loot_table": {
 			"gold": 8,
-			"items": { "food_raw": 3 }
+			"items": { "food_raw": 3, "leather_hide": 2 }
 		},
 		"respawns": false
 	},
@@ -45,9 +66,26 @@
 		"hp": 110,
 		"damage": 17,
 		"speed": 145,
+		"color": "#4a7c59",
+		"is_boss": false,
 		"loot_table": {
-			"gold": 18,
+			"gold": 20,
 			"items": { "herb": 3, "poison": 1 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "desert_stalker",
+		"name": "Dune Stalker",
+		"biome": "desert",
+		"hp": 105,
+		"damage": 19,
+		"speed": 170,
+		"color": "#d4a359",
+		"is_boss": false,
+		"loot_table": {
+			"gold": 30,
+			"items": { "copper_ore": 2, "leather_hide": 1 }
 		},
 		"respawns": false
 	},
@@ -58,9 +96,26 @@
 		"hp": 260,
 		"damage": 26,
 		"speed": 185,
+		"color": "#dc2f02",
+		"is_boss": true,
 		"loot_table": {
-			"gold": 120,
-			"items": { "iron_ingot": 4, "food_raw": 5 }
+			"gold": 140,
+			"items": { "iron_ingot": 4, "food_raw": 5, "iron_sword": 1 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "warlord_khan_boss",
+		"name": "Iron Warlord",
+		"biome": "mountains",
+		"hp": 420,
+		"damage": 34,
+		"speed": 165,
+		"color": "#9d0208",
+		"is_boss": true,
+		"loot_table": {
+			"gold": 350,
+			"items": { "iron_chainmail": 1, "iron_axe": 1, "iron_ingot": 6 }
 		},
 		"respawns": false
 	}

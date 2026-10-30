@@ -12,6 +12,8 @@ var _autosave_elapsed: float = 0.0
 var _player_world_pos: Vector2 = Vector2.ZERO
 var _open_blocking_panels: Dictionary = {}
 var _paused_by_ui: bool = false
+var _selected_class: String = Config.DEFAULT_CLASS
+var _selected_traits: Array[String] = ["iron_will", "quick_learner", "night_owl"]
 
 # Debug flags
 var debug_god_mode: bool = false
@@ -24,6 +26,7 @@ func _ready() -> void:
 	_register_default_inputs()
 	SignalBus.player_died.connect(_on_player_died)
 	SignalBus.ui_panel_toggled.connect(_on_ui_panel_toggled)
+	SignalBus.character_creation_completed.connect(_on_character_creation_completed)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
 
@@ -37,7 +40,7 @@ func _process(delta: float) -> void:
 
 
 func _advance_clock(delta: float) -> void:
-	var scale: float = 10.0 if debug_fast_time else 1.0
+	var scale: float = 12.0 if debug_fast_time else 1.0
 	var prev_hour_int: int = int(floor(_hour))
 	var hours_delta: float = (delta * scale) / Config.SECONDS_PER_GAME_HOUR
 	_hour += hours_delta
@@ -89,6 +92,12 @@ func get_hour() -> float:
 	return _hour
 
 
+func set_day_and_hour(day_val: int, hour_val: float) -> void:
+	_day = maxi(day_val, 1)
+	_hour = clampf(hour_val, 0.0, 23.99)
+	SignalBus.hour_passed.emit(int(floor(_hour)))
+
+
 func get_world_seed() -> int:
 	return _world_seed
 
@@ -97,8 +106,28 @@ func get_active_slot() -> String:
 	return _active_slot
 
 
+func get_selected_class() -> String:
+	return _selected_class
+
+
+func get_selected_traits() -> Array[String]:
+	return _selected_traits.duplicate()
+
+
 func is_night() -> bool:
 	return _hour < Config.DAY_START_HOUR or _hour >= Config.NIGHT_START_HOUR
+
+
+func get_ambient_light_color() -> Color:
+	if _hour >= 7.0 and _hour <= 18.0:
+		return Color(1.0, 1.0, 1.0, 1.0)
+	elif _hour > 18.0 and _hour < 21.0:
+		var t: float = (_hour - 18.0) / 3.0
+		return Color(1.0, 0.92, 0.82, 1.0).lerp(Color(0.32, 0.36, 0.52, 1.0), t)
+	elif _hour >= 5.0 and _hour < 7.0:
+		var t2: float = (_hour - 5.0) / 2.0
+		return Color(0.32, 0.36, 0.52, 1.0).lerp(Color(1.0, 0.95, 0.88, 1.0), t2)
+	return Color(0.32, 0.36, 0.52, 1.0)
 
 
 func is_paused() -> bool:
@@ -149,6 +178,9 @@ func compute_sim_lod_interval(entity_world_pos: Vector2) -> float:
 
 
 func load_json_table(relative_path: String) -> Array:
+	var table_key: String = relative_path.get_basename()
+	if DataRegistry != null and DataRegistry.TABLE_FILES.has(table_key):
+		return DataRegistry.get_rows(table_key)
 	var full_path: String = Config.DATA_ROOT + relative_path
 	if not FileAccess.file_exists(full_path):
 		return []
@@ -164,12 +196,23 @@ func load_json_table(relative_path: String) -> Array:
 
 
 func load_json_indexed(relative_path: String, key_field: String = "id") -> Dictionary:
+	var table_key: String = relative_path.get_basename()
+	if key_field == "id" and DataRegistry != null and DataRegistry.TABLE_FILES.has(table_key):
+		return DataRegistry.get_table(table_key)
 	var rows: Array = load_json_table(relative_path)
 	var result: Dictionary = {}
 	for row in rows:
 		if row is Dictionary and row.has(key_field):
 			result[str(row[key_field])] = row
 	return result
+
+
+func _on_character_creation_completed(class_id: String, chosen_traits: Array, world_seed: int) -> void:
+	_selected_class = class_id if class_id != "" else Config.DEFAULT_CLASS
+	_selected_traits.clear()
+	for t in chosen_traits:
+		_selected_traits.append(str(t))
+	start_new_game(world_seed, Config.DEFAULT_SAVE_SLOT)
 
 
 func _on_player_died() -> void:
@@ -226,6 +269,8 @@ func _register_default_inputs() -> void:
 		"ui_build": KEY_B,
 		"ui_quests": KEY_J,
 		"ui_character": KEY_K,
+		"ui_factions": KEY_N,
+		"ui_chronicle": KEY_H,
 		"ui_achievements": KEY_L,
 		"ui_close": KEY_ESCAPE,
 		"quick_save": KEY_F5,

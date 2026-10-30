@@ -13,7 +13,6 @@ const UNARMED_STATS: Dictionary = {
 }
 
 var _equipped: Dictionary = {}
-static var _items_table: Dictionary = {}
 
 
 func _init() -> void:
@@ -22,9 +21,9 @@ func _init() -> void:
 
 
 static func _get_item_def(item_id: String) -> Dictionary:
-	if _items_table.is_empty() and Engine.get_main_loop() != null:
-		_items_table = GameManager.load_json_indexed("items.json")
-	return _items_table.get(item_id, {})
+	if DataRegistry != null:
+		return DataRegistry.get_item(item_id)
+	return {}
 
 
 func can_equip(item_id: String) -> bool:

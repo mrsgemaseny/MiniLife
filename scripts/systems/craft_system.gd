@@ -1,18 +1,16 @@
 class_name CraftSystem
 extends Node
 
-var _recipes: Dictionary = {}
-
 
 func _ready() -> void:
-	_recipes = GameManager.load_json_indexed("recipes.json")
 	SignalBus.craft_requested.connect(_on_craft_requested)
 
 
 func get_recipes_for_station(station_id: String) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
-	for rid in _recipes:
-		var recipe: Dictionary = _recipes[rid]
+	var recipes: Dictionary = DataRegistry.get_table("recipes")
+	for rid in recipes:
+		var recipe: Dictionary = recipes[rid]
 		var req_station: String = str(recipe.get("station", ""))
 		if station_id == "" and req_station == "":
 			result.append(recipe)
@@ -22,11 +20,11 @@ func get_recipes_for_station(station_id: String) -> Array[Dictionary]:
 
 
 func can_craft(recipe_id: String, crafter: Node, active_station: String = "") -> Dictionary:
-	if not _recipes.has(recipe_id):
+	var recipe: Dictionary = DataRegistry.get_recipe(recipe_id)
+	if recipe.is_empty():
 		return {"ok": false, "reason": "Unknown recipe"}
 	if crafter == null:
 		return {"ok": false, "reason": "No crafter"}
-	var recipe: Dictionary = _recipes[recipe_id]
 	var required_station: String = str(recipe.get("station", ""))
 	if required_station != "" and required_station != active_station:
 		if not _is_near_station(crafter, required_station):
@@ -40,8 +38,7 @@ func can_craft(recipe_id: String, crafter: Node, active_station: String = "") ->
 	var inv: InventoryComponent = crafter.get("inventory") as InventoryComponent
 	if inv == null:
 		return {"ok": false, "reason": "No inventory"}
-	var inputs: Array = recipe.get("inputs", [])
-	for inp in inputs:
+	for inp in recipe.get("inputs", []):
 		if inp is Dictionary:
 			var item_id: String = str(inp.get("item_id", ""))
 			var count: int = int(inp.get("count", 1))
@@ -60,28 +57,38 @@ func can_craft(recipe_id: String, crafter: Node, active_station: String = "") ->
 func craft(recipe_id: String, crafter: Node, active_station: String = "") -> bool:
 	var check: Dictionary = can_craft(recipe_id, crafter, active_station)
 	if not bool(check.get("ok", false)):
-		SignalBus.craft_failed.emit(recipe_id, str(check.get("reason", "Cannot craft")))
+		var reason: String = str(check.get("reason", "Cannot craft"))
+		SignalBus.craft_failed.emit(recipe_id, reason)
+		SignalBus.notification_posted.emit(reason)
 		return false
 
-	var recipe: Dictionary = _recipes[recipe_id]
+	var recipe: Dictionary = DataRegistry.get_recipe(recipe_id)
 	var inv: InventoryComponent = crafter.get("inventory") as InventoryComponent
-	var inputs: Array = recipe.get("inputs", [])
-	for inp in inputs:
+	var skills: SkillsComponent = crafter.get("skills") as SkillsComponent
+
+	for inp in recipe.get("inputs", []):
 		if inp is Dictionary:
 			inv.remove_item(str(inp.get("item_id", "")), int(inp.get("count", 1)))
 
 	var output: Dictionary = recipe.get("output", {})
 	var out_id: String = str(output.get("item_id", ""))
 	var out_count: int = int(output.get("count", 1))
+	var req_station: String = str(recipe.get("station", ""))
+	if skills != null:
+		if req_station == "forge":
+			out_count += SmeltingSystem.compute_smelt_bonus_yield(skills.get_level("smithing"))
+		elif req_station == "campfire":
+			out_count += CookingSystem.compute_meal_bonus_count(skills.get_level("cooking"))
+
 	inv.add_item(out_id, out_count)
 
-	var skills: SkillsComponent = crafter.get("skills") as SkillsComponent
 	var xp_rewards: Dictionary = recipe.get("xp_reward", {})
 	if skills != null:
 		for skill_name in xp_rewards:
 			skills.gain_xp(str(skill_name), float(xp_rewards[skill_name]))
 
 	SignalBus.item_crafted.emit(out_id)
+	SignalBus.notification_posted.emit("Crafted %s x%d" % [out_id, out_count])
 	return true
 
 

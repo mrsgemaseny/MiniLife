@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/world.tscn" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/entities/player.tscn" id="2_player"]
@@ -17,6 +17,15 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/quest_log.tscn" id="15_quest_ui"]
 [ext_resource type="PackedScene" path="res://scenes/ui/character_sheet.tscn" id="16_char_ui"]
 [ext_resource type="PackedScene" path="res://scenes/ui/achievements.tscn" id="17_ach_ui"]
+[ext_resource type="Script" path="res://scripts/systems/economy/trade_system.gd" id="18_trade_sys"]
+[ext_resource type="Script" path="res://scripts/systems/narrative/dialogue_system.gd" id="19_dlg_sys"]
+[ext_resource type="Script" path="res://scripts/systems/persistence/achievement_system.gd" id="20_ach_sys"]
+[ext_resource type="Script" path="res://scripts/core/event_journal.gd" id="21_journal"]
+[ext_resource type="Script" path="res://scripts/core/debug_console.gd" id="22_debug"]
+[ext_resource type="Script" path="res://scripts/ui/trade_menu_ui.gd" id="23_trade_ui"]
+[ext_resource type="Script" path="res://scripts/ui/faction_relations_ui.gd" id="24_fac_ui"]
+[ext_resource type="Script" path="res://scripts/ui/world_chronicle_ui.gd" id="25_chron_ui"]
+[ext_resource type="Script" path="res://scripts/ui/pause_menu_ui.gd" id="26_pause_ui"]
 
 [sub_resource type="GDScript" id="GDScript_main"]
 script/source = "extends Node2D
@@ -39,6 +48,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		SignalBus.ui_panel_requested.emit(\"quests\")
 	elif event.is_action_pressed(\"ui_character\"):
 		SignalBus.ui_panel_requested.emit(\"character\")
+	elif event.is_action_pressed(\"ui_factions\"):
+		SignalBus.ui_panel_requested.emit(\"factions\")
+	elif event.is_action_pressed(\"ui_chronicle\"):
+		SignalBus.ui_panel_requested.emit(\"chronicle\")
 	elif event.is_action_pressed(\"ui_achievements\"):
 		SignalBus.ui_panel_requested.emit(\"achievements\")
 	elif event.is_action_pressed(\"ui_close\"):
@@ -90,6 +103,21 @@ script = ExtResource("8_quest")
 [node name="SaveSystem" type="Node" parent="Systems"]
 script = ExtResource("9_save")
 
+[node name="TradeSystem" type="Node" parent="Systems"]
+script = ExtResource("18_trade_sys")
+
+[node name="DialogueSystem" type="Node" parent="Systems"]
+script = ExtResource("19_dlg_sys")
+
+[node name="AchievementSystem" type="Node" parent="Systems"]
+script = ExtResource("20_ach_sys")
+
+[node name="EventJournal" type="Node" parent="Systems"]
+script = ExtResource("21_journal")
+
+[node name="DebugConsole" type="Node" parent="Systems"]
+script = ExtResource("22_debug")
+
 [node name="UILayer" type="CanvasLayer" parent="."]
 process_mode = 3
 
@@ -108,3 +136,43 @@ process_mode = 3
 [node name="CharacterSheet" parent="UILayer" instance=ExtResource("16_char_ui")]
 
 [node name="Achievements" parent="UILayer" instance=ExtResource("17_ach_ui")]
+
+[node name="TradeMenu" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("23_trade_ui")
+
+[node name="FactionRelations" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("24_fac_ui")
+
+[node name="WorldChronicle" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("25_chron_ui")
+
+[node name="PauseMenu" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("26_pause_ui")

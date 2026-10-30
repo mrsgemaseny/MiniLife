@@ -8,7 +8,6 @@ const PANEL_ID: String = "character"
 @onready var traits_label: Label = $PanelContainer/VBoxContainer/TraitsLabel
 @onready var skills_box: VBoxContainer = $PanelContainer/VBoxContainer/SkillsBox
 
-
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
@@ -18,17 +17,19 @@ func _ready() -> void:
 		if visible:
 			refresh()
 	)
-	SignalBus.trait_gained.connect(func(_t: String) -> void:
+	SignalBus.skill_xp_gained.connect(func(_s: String, _x: float) -> void:
 		if visible:
 			refresh()
 	)
-
+	SignalBus.player_limb_changed.connect(func(_l: String, _c: float, _m: float, _b: bool, _f: bool) -> void:
+		if visible:
+			refresh()
+	)
 
 func open_panel() -> void:
 	visible = true
 	refresh()
 	SignalBus.ui_panel_toggled.emit(PANEL_ID, true, true)
-
 
 func close_panel() -> void:
 	if not visible:
@@ -36,41 +37,49 @@ func close_panel() -> void:
 	visible = false
 	SignalBus.ui_panel_toggled.emit(PANEL_ID, false, true)
 
-
-func refresh() -> void:
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if player == null:
-		return
-	var stats: StatsComponent = player.get("stats") as StatsComponent
-	var skills: SkillsComponent = player.get("skills") as SkillsComponent
-	var traits: TraitsComponent = player.get("traits") as TraitsComponent
-
-	if class_label != null and stats != null:
-		class_label.text = "Class: " + stats.active_class.capitalize()
-	if stats_label != null and stats != null:
-		var def_val: float = float(player.call("get_defense")) if player.has_method("get_defense") else stats.defense
-		stats_label.text = "HP: %.0f/%.0f | Hunger: %.0f/%.0f | Stamina: %.0f/%.0f | Defense: %.1f" % [
-			stats.health, stats.max_health, stats.hunger, stats.max_hunger, stats.stamina, stats.max_stamina, def_val
-		]
-	if traits_label != null and traits != null:
-		traits_label.text = "Traits: " + (", ".join(traits.active_traits) if not traits.active_traits.is_empty() else "None")
-
-	if skills_box != null and skills != null:
-		for child in skills_box.get_children():
-			skills_box.remove_child(child)
-			child.queue_free()
-		for skill_name in SkillsComponent.ALL_SKILLS:
-			var lvl: int = skills.get_level(skill_name)
-			var cur_xp: float = float(skills.xp.get(skill_name, 0.0))
-			var next_xp: float = skills.xp_to_next(lvl)
-			var lbl: Label = Label.new()
-			lbl.text = "%s: %d (%.0f / %.0f XP)" % [skill_name.capitalize(), lvl, cur_xp, next_xp]
-			skills_box.add_child(lbl)
-
-
 func _on_panel_requested(panel_id: String) -> void:
 	if panel_id == PANEL_ID:
 		if visible:
 			close_panel()
 		else:
 			open_panel()
+
+func refresh() -> void:
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if player == null:
+		return
+	var stats_comp: StatsComponent = player.get("stats") as StatsComponent
+	var health_comp: HealthComponent = player.get("health_comp") as HealthComponent
+	var traits_comp: TraitsComponent = player.get("traits") as TraitsComponent
+	var skills_comp: SkillsComponent = player.get("skills") as SkillsComponent
+
+	if class_label != null and stats_comp != null:
+		class_label.text = "Class: %s | Defense: %.1f" % [stats_comp.active_class.capitalize(), stats_comp.defense]
+
+	if stats_label != null and health_comp != null:
+		var limb_parts: PackedStringArray = PackedStringArray()
+		for lname in HealthComponent.LIMBS:
+			var l: Dictionary = health_comp.limbs.get(lname, {})
+			var s: String = "%s %d/%d" % [lname.capitalize(), int(l.get("current", 40)), int(l.get("max", 40))]
+			if bool(l.get("bleeding", false)):
+				s += "[BLEED]"
+			if bool(l.get("fractured", false)):
+				s += "[FRAC]"
+			limb_parts.append(s)
+		stats_label.text = "Limbs: " + " | ".join(limb_parts)
+
+	if traits_label != null and traits_comp != null:
+		var t_arr: Array[String] = traits_comp.active_traits
+		traits_label.text = "Traits: " + (", ".join(t_arr) if not t_arr.is_empty() else "None")
+
+	if skills_box != null and skills_comp != null:
+		for child in skills_box.get_children():
+			skills_box.remove_child(child)
+			child.queue_free()
+		for skill_name in SkillsComponent.ALL_SKILLS:
+			var lvl: int = skills_comp.get_level(skill_name)
+			var cur_xp: float = float(skills_comp.xp.get(skill_name, 0.0))
+			var req_xp: float = skills_comp.xp_to_next(lvl)
+			var lbl: Label = Label.new()
+			lbl.text = "%s: Lv %d (%.0f / %.0f XP)" % [skill_name.capitalize(), lvl, cur_xp, req_xp]
+			skills_box.add_child(lbl)

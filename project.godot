@@ -23,6 +23,8 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 
 Config="*res://autoloads/config.gd"
 SignalBus="*res://autoloads/signal_bus.gd"
+DataRegistry="*res://autoloads/data_registry.gd"
+AudioDirector="*res://autoloads/audio_director.gd"
 GameManager="*res://autoloads/game_manager.gd"
 
 [debug]

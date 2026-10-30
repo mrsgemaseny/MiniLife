@@ -1,141 +1,126 @@
 class_name EventSystem
 extends Node
 
-var _events: Dictionary = {}
-var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
-var _hours_since_roll: int = 0
-var _structure_tiles: Dictionary = {}
-var _player_biome: String = "plains"
-var _exploration_percent: float = 0.0
-var _last_triggered_day: Dictionary = {}
+const EnemyScene: PackedScene = preload("res://scenes/entities/enemy_base.tscn")
+const NPCScene: PackedScene = preload("res://scenes/entities/npc_base.tscn")
 
+var _events_defs: Dictionary = {}
+var _cooldowns: Dictionary = {} # event_id -> int (days remaining)
+var _current_day: int = 1
+var _endgame: EndgameDirector = EndgameDirector.new()
 
 func _ready() -> void:
-	_events = GameManager.load_json_indexed("events.json")
-	_rng.randomize()
-	SignalBus.game_started.connect(_on_game_started)
+	_events_defs = DataRegistry.get_table("events")
+	SignalBus.day_passed.connect(_on_day_passed)
 	SignalBus.hour_passed.connect(_on_hour_passed)
-	SignalBus.structure_built.connect(_on_structure_built)
-	SignalBus.structure_restored.connect(_on_structure_built)
-	SignalBus.structure_destroyed.connect(_on_structure_destroyed)
-	SignalBus.player_biome_changed.connect(_on_player_biome_changed)
-	SignalBus.exploration_progress_changed.connect(_on_exploration_progress_changed)
-	SignalBus.save_data_requested.connect(_on_save_data_requested)
-	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
+	SignalBus.game_event_triggered.connect(_on_external_event_triggered)
+	SignalBus.boss_defeated.connect(_on_boss_defeated)
 
+func _on_day_passed(day: int) -> void:
+	_current_day = day
+	var expired: Array[String] = []
+	for k in _cooldowns.keys():
+		var rem: int = int(_cooldowns[k]) - 1
+		if rem <= 0:
+			expired.append(str(k))
+		else:
+			_cooldowns[k] = rem
+	for e in expired:
+		_cooldowns.erase(e)
 
-func get_eligible_events() -> Array[Dictionary]:
-	var out: Array[Dictionary] = []
-	for eid in _events:
-		var def: Dictionary = _events[eid]
-		if is_event_eligible(def):
-			out.append(def)
-	return out
-
-
-func is_event_eligible(def: Dictionary) -> bool:
-	var eid: String = str(def.get("id", ""))
-	if eid == "":
-		return false
-	var cur_day: int = GameManager.get_day()
-	var cooldown_days: int = int(def.get("cooldown_days", 2))
-	if _last_triggered_day.has(eid):
-		if bool(def.get("once", false)):
-			return false
-		if cur_day - int(_last_triggered_day[eid]) < cooldown_days:
-			return false
-
-	var cond: Dictionary = def.get("conditions", {})
-	if cur_day < int(cond.get("min_day", 1)):
-		return false
-	if bool(cond.get("requires_structures", false)) and _structure_tiles.is_empty():
-		return false
-	var req_biome: Variant = cond.get("biome", "")
-	if req_biome is String and str(req_biome) != "" and str(req_biome) != _player_biome:
-		return false
-	elif req_biome is Array and not (req_biome as Array).is_empty() and not (req_biome as Array).has(_player_biome):
-		return false
-	var min_exp: float = float(cond.get("min_exploration_percent", 0.0))
-	if _exploration_percent < min_exp:
-		return false
-	return true
-
-
-func trigger_event(event_id: String) -> bool:
-	if not _events.has(event_id):
-		return false
-	var def: Dictionary = _events[event_id]
-	_last_triggered_day[event_id] = GameManager.get_day()
-	SignalBus.game_event_triggered.emit(event_id)
-	var effect: Variant = def.get("effect", {})
-	if effect is Dictionary and not (effect as Dictionary).is_empty():
-		SignalBus.event_effect_requested.emit(effect)
-	elif effect is Array:
-		for eff in effect:
-			if eff is Dictionary:
-				SignalBus.event_effect_requested.emit(eff)
-	var msg: String = str(def.get("message", "Event: " + event_id))
-	SignalBus.notification_posted.emit(msg)
-	return true
-
-
-func _on_game_started(world_seed: int, _slot: String, is_new: bool) -> void:
-	_rng.seed = world_seed ^ 0x5A17E
-	if is_new:
-		_hours_since_roll = 0
-		_structure_tiles.clear()
-		_last_triggered_day.clear()
-
-
-func _on_hour_passed(_hour: int) -> void:
-	_hours_since_roll += 1
-	if _hours_since_roll < Config.EVENT_ROLL_INTERVAL_HOURS:
+func _on_hour_passed(hour: int) -> void:
+	if hour % Config.EVENT_ROLL_INTERVAL_HOURS != 0:
 		return
-	_hours_since_roll = 0
-	if _rng.randf() > Config.EVENT_TRIGGER_CHANCE:
+	if randf() > Config.EVENT_TRIGGER_CHANCE:
 		return
-	var candidates: Array[Dictionary] = get_eligible_events()
-	if candidates.is_empty():
-		return
+	var time_tag: String = "night" if GameManager.is_night() else "day"
+	evaluate_pool({"time": time_tag, "day": _current_day})
+
+func evaluate_pool(context: Dictionary) -> void:
+	var candidates: Array[Dictionary] = []
 	var total_weight: float = 0.0
-	for c in candidates:
-		total_weight += maxf(float(c.get("weight", 1.0)), 0.01)
-	var pick: float = _rng.randf() * total_weight
+	for event_id in _events_defs.keys():
+		if _cooldowns.has(event_id):
+			continue
+		var def: Dictionary = _events_defs[event_id]
+		if check_conditions(def, context):
+			candidates.append(def)
+			total_weight += float(def.get("weight", 1.0))
+
+	if candidates.is_empty() or total_weight <= 0.0:
+		return
+
+	var roll: float = randf() * total_weight
 	var accum: float = 0.0
-	for c in candidates:
-		accum += maxf(float(c.get("weight", 1.0)), 0.01)
-		if pick <= accum:
-			trigger_event(str(c.get("id", "")))
-			return
+	for def in candidates:
+		accum += float(def.get("weight", 1.0))
+		if roll <= accum:
+			trigger_event(str(def.get("id", "")))
+			break
 
+func check_conditions(event_def: Dictionary, context: Dictionary) -> bool:
+	var conds: Dictionary = event_def.get("conditions", {})
+	var min_day: int = int(conds.get("min_day", 1))
+	if int(context.get("day", _current_day)) < min_day:
+		return false
+	var req_time: String = str(conds.get("time_of_day", ""))
+	if not req_time.is_empty() and req_time != str(context.get("time", "")):
+		return false
+	return true
 
-func _on_structure_built(_structure_id: String, tile_pos: Vector2i) -> void:
-	_structure_tiles[Config.vec2i_to_key(tile_pos)] = true
+func trigger_event(event_id: String) -> void:
+	if not _events_defs.has(event_id):
+		return
+	var def: Dictionary = _events_defs[event_id]
+	var cd: int = int(def.get("cooldown_days", 1))
+	if cd > 0:
+		_cooldowns[event_id] = cd
 
+	var title: String = str(def.get("title", def.get("name", event_id)))
+	var desc: String = str(def.get("description", def.get("message", "")))
+	SignalBus.game_event_triggered.emit(event_id)
+	SignalBus.notification_posted.emit("[Event] %s: %s" % [title, desc])
+	_execute_event_effects(def)
 
-func _on_structure_destroyed(_structure_id: String, tile_pos: Vector2i) -> void:
-	_structure_tiles.erase(Config.vec2i_to_key(tile_pos))
+func _on_external_event_triggered(event_id: String) -> void:
+	if _events_defs.has(event_id) and not _cooldowns.has(event_id):
+		var def: Dictionary = _events_defs[event_id]
+		_cooldowns[event_id] = maxi(1, int(def.get("cooldown_days", 1)))
+		_execute_event_effects(def)
 
+func _execute_event_effects(def: Dictionary) -> void:
+	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
+	var world: Node2D = get_tree().get_first_node_in_group("world_system") as Node2D
+	if player == null or world == null:
+		return
 
-func _on_player_biome_changed(biome_id: String) -> void:
-	_player_biome = biome_id
+	var effects: Dictionary = def.get("effects", {})
+	var spawn_enemies: Array = effects.get("spawn_enemies", [])
+	for entry_v in spawn_enemies:
+		if entry_v is Dictionary:
+			var entry: Dictionary = entry_v
+			var enemy_id: String = str(entry.get("enemy_id", "bandit_raider"))
+			var count: int = int(entry.get("count", 1))
+			for i in range(count):
+				var enemy: EnemyBase = EnemyScene.instantiate() as EnemyBase
+				enemy.enemy_id = enemy_id
+				var angle: float = (TAU / float(maxi(1, count))) * float(i)
+				enemy.global_position = player.global_position + Vector2(cos(angle), sin(angle)) * 260.0
+				world.add_child(enemy)
 
+	if bool(effects.get("spawn_trader", false)):
+		var trader: NPCBase = NPCScene.instantiate() as NPCBase
+		trader.npc_id = "merchant_common"
+		trader.global_position = player.global_position + Vector2(120.0, -70.0)
+		world.add_child(trader)
 
-func _on_exploration_progress_changed(percent: float) -> void:
-	_exploration_percent = percent
-
-
-func _on_save_data_requested(bundle: Dictionary) -> void:
-	var w: Dictionary = bundle.get("world", {})
-	w["events"] = {
-		"hours_since_roll": _hours_since_roll,
-		"last_triggered_day": _last_triggered_day.duplicate()
-	}
-	bundle["world"] = w
-
-
-func _on_save_data_loaded(bundle: Dictionary) -> void:
-	var w: Dictionary = bundle.get("world", {})
-	var ev: Dictionary = w.get("events", {})
-	_hours_since_roll = int(ev.get("hours_since_roll", 0))
-	_last_triggered_day = ev.get("last_triggered_day", {}).duplicate()
+func _on_boss_defeated(boss_id: String, _world_pos: Vector2) -> void:
+	var res: Dictionary = _endgame.register_boss_kill(boss_id)
+	if bool(res.get("unlocked_stronghold", false)):
+		var stronghold_tile: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2 + 24, Config.WORLD_SIZE_TILES / 2 - 24)
+		SignalBus.endgame_stronghold_revealed.emit(stronghold_tile)
+		SignalBus.notification_posted.emit("Alpha Wolf slain! The Warlord Stronghold has been revealed.")
+	if bool(res.get("victory", false)):
+		SignalBus.endgame_victory_achieved.emit()
+		SignalBus.achievement_unlock_requested.emit("boss_slayer")
+		SignalBus.notification_posted.emit("VICTORY! Warlord Khan has fallen. The frontier is free!")

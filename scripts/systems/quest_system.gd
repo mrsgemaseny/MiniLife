@@ -1,276 +1,165 @@
 class_name QuestSystem
 extends Node
 
-class Quest extends RefCounted:
-	var id: String = ""
-	var type: String = "fetch"
-	var giver_id: String = ""
-	var giver_faction: String = ""
-	var objective: Dictionary = {}
-	var reward: Dictionary = {}
-	var time_limit: float = -1.0
-	var fail_consequence: Dictionary = {}
-	var is_chain: bool = false
-	var next_quest_id: String = ""
-	var progress: Dictionary = {"current": 0, "required": 1}
-	var elapsed_hours: float = 0.0
-	var status: String = "active"
-
-	func is_ready_to_complete() -> bool:
-		return int(progress.get("current", 0)) >= int(progress.get("required", 1))
-
-	func to_dict() -> Dictionary:
-		return {
-			"id": id,
-			"type": type,
-			"giver_id": giver_id,
-			"giver_faction": giver_faction,
-			"objective": objective.duplicate(),
-			"reward": reward.duplicate(),
-			"time_limit": time_limit,
-			"fail_consequence": fail_consequence.duplicate(),
-			"is_chain": is_chain,
-			"next_quest_id": next_quest_id,
-			"progress": progress.duplicate(),
-			"elapsed_hours": elapsed_hours,
-			"status": status
-		}
-
-	static func from_dict(d: Dictionary) -> Quest:
-		var q: Quest = Quest.new()
-		q.id = str(d.get("id", ""))
-		q.type = str(d.get("type", "fetch"))
-		q.giver_id = str(d.get("giver_id", ""))
-		q.giver_faction = str(d.get("giver_faction", ""))
-		q.objective = d.get("objective", {}).duplicate()
-		q.reward = d.get("reward", {}).duplicate()
-		q.time_limit = float(d.get("time_limit", -1.0))
-		q.fail_consequence = d.get("fail_consequence", {}).duplicate()
-		q.is_chain = bool(d.get("is_chain", false))
-		q.next_quest_id = str(d.get("next_quest_id", ""))
-		var req: int = int(q.objective.get("count", 1))
-		q.progress = d.get("progress", {"current": 0, "required": req}).duplicate()
-		q.elapsed_hours = float(d.get("elapsed_hours", 0.0))
-		q.status = str(d.get("status", "active"))
-		return q
-
-var _quest_defs: Dictionary = {}
-var _active: Dictionary = {}
-var _completed: Dictionary = {}
-var _failed: Dictionary = {}
-
+var _quests_defs: Dictionary = {}
+var _active_quests: Dictionary = {} # quest_id -> Dictionary state
+var _completed_quests: Dictionary = {}
+var _failed_quests: Dictionary = {}
 
 func _ready() -> void:
-	_quest_defs = GameManager.load_json_indexed("quests.json")
-	SignalBus.game_started.connect(_on_game_started)
-	SignalBus.quest_start_requested.connect(_on_quest_start_requested)
-	SignalBus.quest_turn_in_requested.connect(_on_quest_turn_in_requested)
+	_quests_defs = DataRegistry.get_table("quests")
+	_connect_signals()
+	call_deferred("_start_initial_quest")
+
+func _start_initial_quest() -> void:
+	if _active_quests.is_empty() and _completed_quests.is_empty():
+		var first_id: String = "tutorial_survival" if _quests_defs.has("tutorial_survival") else ""
+		if first_id.is_empty() and not _quests_defs.is_empty():
+			first_id = str(_quests_defs.keys()[0])
+		if not first_id.is_empty():
+			start_quest(first_id, "system")
+
+func _connect_signals() -> void:
+	SignalBus.quest_start_requested.connect(start_quest)
+	SignalBus.quest_turn_in_requested.connect(complete_quest)
 	SignalBus.hour_passed.connect(_on_hour_passed)
-	SignalBus.entity_died.connect(_on_entity_died)
-	SignalBus.poi_discovered.connect(_on_poi_discovered)
+	SignalBus.npc_killed.connect(_on_npc_killed)
+	SignalBus.item_crafted.connect(_on_item_crafted)
 	SignalBus.structure_built.connect(_on_structure_built)
-	SignalBus.inventory_changed.connect(_on_inventory_changed)
+	SignalBus.resource_harvested.connect(_on_resource_harvested)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
 
+func start_quest(quest_id: String, _giver_id: String = "") -> bool:
+	if _active_quests.has(quest_id) or _completed_quests.has(quest_id):
+		return false
+	if not _quests_defs.has(quest_id):
+		return false
+	var def: Dictionary = _quests_defs[quest_id]
+	var req_count: int = int(def.get("required_count", 1))
+	var objs: Array = def.get("objectives", [])
+	if not objs.is_empty() and objs[0] is Dictionary:
+		req_count = int((objs[0] as Dictionary).get("target", req_count))
 
-func start_quest(quest_id: String, giver_id: String) -> bool:
-	if _active.has(quest_id) or _completed.has(quest_id):
-		return false
-	if not _quest_defs.has(quest_id):
-		return false
-	var def: Dictionary = _quest_defs[quest_id]
-	var q: Quest = Quest.from_dict(def)
-	if giver_id != "":
-		q.giver_id = giver_id
-	q.status = "active"
-	q.elapsed_hours = 0.0
-	_active[quest_id] = q
+	var state: Dictionary = {
+		"id": quest_id,
+		"title": str(def.get("title", def.get("name", quest_id))),
+		"type": str(def.get("type", "survive")),
+		"target_id": str(def.get("target_id", "")),
+		"time_limit": float(def.get("time_limit_hours", -1.0)),
+		"elapsed_hours": 0.0,
+		"progress": {"current": 0, "required": maxi(1, req_count)}
+	}
+	_active_quests[quest_id] = state
 	SignalBus.quest_started.emit(quest_id)
-	_emit_log_snapshot()
+	_emit_snapshot()
 	return true
 
-
-func update_objective(quest_id: String, key: String, value: Variant) -> void:
-	if not _active.has(quest_id):
+func advance_quest(quest_id: String, delta_count: int = 1) -> void:
+	if not _active_quests.has(quest_id):
 		return
-	var q: Quest = _active[quest_id]
-	q.progress[key] = value
-	if q.is_ready_to_complete():
-		q.status = "ready"
-	SignalBus.quest_objective_updated.emit(quest_id, q.progress.duplicate())
-	_emit_log_snapshot()
-
-
-func complete_quest(quest_id: String) -> void:
-	if not _active.has(quest_id):
-		return
-	var q: Quest = _active[quest_id]
-	if q.type == "fetch":
-		var item_id: String = str(q.objective.get("item_id", ""))
-		var count: int = int(q.objective.get("count", 1))
-		var player: Node = get_tree().get_first_node_in_group("player")
-		if player != null and item_id != "":
-			SignalBus.item_consume_requested.emit(player, item_id, count)
-
-	_active.erase(quest_id)
-	q.status = "completed"
-	_completed[quest_id] = q.to_dict()
-
-	SignalBus.quest_reward_granted.emit(q.reward.duplicate())
-	var rep_delta: int = int(q.reward.get("rep_delta", 0))
-	if rep_delta != 0 and q.giver_faction != "":
-		SignalBus.faction_rep_change_requested.emit(q.giver_faction, rep_delta, "Completed quest " + quest_id)
-	var join_fac: String = str(q.reward.get("join_faction", ""))
-	if join_fac != "":
-		SignalBus.faction_join_requested.emit(join_fac)
-
-	SignalBus.quest_completed.emit(quest_id)
-	if q.is_chain and q.next_quest_id != "":
-		start_quest(q.next_quest_id, q.giver_id)
-	_emit_log_snapshot()
-
-
-func fail_quest(quest_id: String, reason: String) -> void:
-	if not _active.has(quest_id):
-		return
-	var q: Quest = _active[quest_id]
-	_active.erase(quest_id)
-	q.status = "failed"
-	_failed[quest_id] = q.to_dict()
-
-	var rep_delta: int = int(q.fail_consequence.get("rep_delta", 0))
-	if rep_delta != 0 and q.giver_faction != "":
-		SignalBus.faction_rep_change_requested.emit(q.giver_faction, rep_delta, "Failed quest: " + reason)
-	if bool(q.fail_consequence.get("giver_dies", false)) and q.giver_id != "":
-		SignalBus.npc_kill_requested.emit(q.giver_id, "Quest failed: " + quest_id)
-
-	SignalBus.quest_failed.emit(quest_id, reason)
-	_emit_log_snapshot()
-
-
-func get_active_quests() -> Array[Quest]:
-	var out: Array[Quest] = []
-	for qid in _active:
-		out.append(_active[qid])
-	return out
-
-
-func is_quest_active(quest_id: String) -> bool:
-	return _active.has(quest_id)
-
-
-func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
-	if is_new:
-		_active.clear()
-		_completed.clear()
-		_failed.clear()
-	_emit_log_snapshot()
-
-
-func _on_quest_start_requested(quest_id: String, giver_id: String) -> void:
-	start_quest(quest_id, giver_id)
-
-
-func _on_quest_turn_in_requested(quest_id: String) -> void:
-	if not _active.has(quest_id):
-		return
-	var q: Quest = _active[quest_id]
-	if q.is_ready_to_complete():
+	var state: Dictionary = _active_quests[quest_id]
+	var prog: Dictionary = state.get("progress", {"current": 0, "required": 1})
+	var cur: int = clampi(int(prog.get("current", 0)) + delta_count, 0, int(prog.get("required", 1)))
+	prog["current"] = cur
+	state["progress"] = prog
+	_active_quests[quest_id] = state
+	SignalBus.quest_objective_updated.emit(quest_id, prog)
+	_emit_snapshot()
+	if cur >= int(prog.get("required", 1)):
 		complete_quest(quest_id)
 
-
-func _on_hour_passed(_hour: int) -> void:
-	var expired: Array[String] = []
-	for qid in _active:
-		var q: Quest = _active[qid]
-		if q.time_limit > 0.0:
-			q.elapsed_hours += 1.0
-			if q.elapsed_hours >= q.time_limit:
-				expired.append(str(qid))
-	for qid in expired:
-		fail_quest(qid, "Time limit expired")
-
-
-func _on_inventory_changed(entity: Node, _snapshot: Dictionary) -> void:
-	if entity == null or not entity.is_in_group("player"):
+func complete_quest(quest_id: String) -> void:
+	if not _active_quests.has(quest_id):
 		return
-	var inv: InventoryComponent = entity.get("inventory") as InventoryComponent
-	if inv == null:
+	var state: Dictionary = _active_quests[quest_id]
+	_active_quests.erase(quest_id)
+	_completed_quests[quest_id] = state
+	SignalBus.quest_completed.emit(quest_id)
+
+	var def: Dictionary = _quests_defs.get(quest_id, {})
+	var rewards: Dictionary = def.get("rewards", {})
+	SignalBus.quest_reward_granted.emit(rewards)
+
+	var rep_rewards: Dictionary = rewards.get("reputation", {})
+	for fid in rep_rewards.keys():
+		SignalBus.faction_rep_change_requested.emit(str(fid), int(rep_rewards[fid]), "quest_" + quest_id)
+
+	var gold_reward: int = int(rewards.get("gold", 0))
+	if gold_reward > 0:
+		var player: Node = get_tree().get_first_node_in_group("player")
+		if player != null and player.get("inventory") is InventoryComponent:
+			(player.get("inventory") as InventoryComponent).add_gold(gold_reward)
+
+	var next_quest: String = str(def.get("next_quest_id", ""))
+	if not next_quest.is_empty():
+		start_quest(next_quest, "chain")
+	_emit_snapshot()
+	SignalBus.notification_posted.emit("Quest Completed: %s" % str(state.get("title", quest_id)))
+
+func fail_quest(quest_id: String, reason: String = "timeout") -> void:
+	if not _active_quests.has(quest_id):
 		return
-	for qid in _active:
-		var q: Quest = _active[qid]
-		if q.type == "fetch":
-			var item_id: String = str(q.objective.get("item_id", ""))
-			var cur: int = inv.count_of(item_id)
-			update_objective(str(qid), "current", cur)
+	var state: Dictionary = _active_quests[quest_id]
+	_active_quests.erase(quest_id)
+	_failed_quests[quest_id] = state
+	SignalBus.quest_failed.emit(quest_id, reason)
+	_emit_snapshot()
 
-
-func _on_entity_died(entity: Node, killer_id: String) -> void:
-	if killer_id != "player" or entity == null:
-		return
-	var def_id: String = str(entity.get("enemy_id")) if "enemy_id" in entity else ""
-	var fac: String = str(entity.call("get_faction")) if entity.has_method("get_faction") else ""
-	for qid in _active:
-		var q: Quest = _active[qid]
-		if q.type == "kill":
-			var target: String = str(q.objective.get("target_id", ""))
-			if target == def_id or target == fac:
-				var cur: int = int(q.progress.get("current", 0)) + 1
-				update_objective(str(qid), "current", cur)
-
-
-func _on_poi_discovered(poi_id: String, _pos: Vector2i) -> void:
-	for qid in _active:
-		var q: Quest = _active[qid]
-		if q.type == "explore":
-			var target_poi: String = str(q.objective.get("poi_id", ""))
-			if target_poi == "" or target_poi == poi_id:
-				update_objective(str(qid), "current", int(q.progress.get("current", 0)) + 1)
-
-
-func _on_structure_built(structure_id: String, _tile_pos: Vector2i) -> void:
-	for qid in _active:
-		var q: Quest = _active[qid]
-		if q.type == "build":
-			if str(q.objective.get("structure_id", "")) == structure_id:
-				update_objective(str(qid), "current", int(q.progress.get("current", 0)) + 1)
-
-
-func _emit_log_snapshot() -> void:
-	var active_dict: Dictionary = {}
-	for qid in _active:
-		active_dict[qid] = (_active[qid] as Quest).to_dict()
+func _emit_snapshot() -> void:
 	SignalBus.quest_log_changed.emit({
-		"active": active_dict,
-		"completed": _completed.duplicate(),
-		"failed": _failed.duplicate()
+		"active": _active_quests.duplicate(true),
+		"completed": _completed_quests.duplicate(true),
+		"failed": _failed_quests.duplicate(true)
 	})
 
+func _on_hour_passed(_hour: int) -> void:
+	var to_fail: Array[String] = []
+	for qid in _active_quests.keys():
+		var state: Dictionary = _active_quests[qid]
+		var tlimit: float = float(state.get("time_limit", -1.0))
+		if tlimit > 0.0:
+			var elapsed: float = float(state.get("elapsed_hours", 0.0)) + 1.0
+			state["elapsed_hours"] = elapsed
+			_active_quests[qid] = state
+			if elapsed >= tlimit:
+				to_fail.append(str(qid))
+	for qid in to_fail:
+		fail_quest(qid, "expired")
+	if not to_fail.is_empty():
+		_emit_snapshot()
+
+func _on_npc_killed(_npc_id: String, _faction: String, killer: String) -> void:
+	if killer != "player":
+		return
+	for qid in _active_quests.keys():
+		advance_quest(str(qid), 1)
+
+func _on_item_crafted(_item_id: String) -> void:
+	for qid in _active_quests.keys():
+		advance_quest(str(qid), 1)
+
+func _on_structure_built(_structure_id: String, _tile_pos: Vector2i) -> void:
+	for qid in _active_quests.keys():
+		advance_quest(str(qid), 1)
+
+func _on_resource_harvested(_resource_id: String, amount: int, _tile_pos: Vector2i) -> void:
+	for qid in _active_quests.keys():
+		advance_quest(str(qid), maxi(1, amount))
 
 func _on_save_data_requested(bundle: Dictionary) -> void:
-	var p: Dictionary = bundle.get("player", {})
-	var active_out: Dictionary = {}
-	for qid in _active:
-		active_out[qid] = (_active[qid] as Quest).to_dict()
-	p["quests"] = {
-		"active": active_out,
-		"completed": _completed.duplicate(),
-		"failed": _failed.duplicate()
+	var w: Dictionary = bundle.get("world", {})
+	w["quests"] = {
+		"active": _active_quests.duplicate(true),
+		"completed": _completed_quests.duplicate(true),
+		"failed": _failed_quests.duplicate(true)
 	}
-	bundle["player"] = p
-
+	bundle["world"] = w
 
 func _on_save_data_loaded(bundle: Dictionary) -> void:
-	_active.clear()
-	_completed.clear()
-	_failed.clear()
-	var p: Dictionary = bundle.get("player", {})
-	var qdata: Dictionary = p.get("quests", {})
-	var act: Dictionary = qdata.get("active", {})
-	for qid in act:
-		if act[qid] is Dictionary:
-			_active[str(qid)] = Quest.from_dict(act[qid])
-	_completed = qdata.get("completed", {}).duplicate()
-	_failed = qdata.get("failed", {}).duplicate()
-	_emit_log_snapshot()
+	var w: Dictionary = bundle.get("world", {})
+	var q: Dictionary = w.get("quests", {})
+	_active_quests = q.get("active", {}).duplicate(true)
+	_completed_quests = q.get("completed", {}).duplicate(true)
+	_failed_quests = q.get("failed", {}).duplicate(true)
+	_emit_snapshot()

@@ -2,14 +2,21 @@
 	{
 		"id": "plains",
 		"name": "Plains",
+		"color": "#4f8a42",
+		"alt_color": "#589649",
 		"tile_ids": ["grass", "dirt", "flower"],
+		"resource_nodes": {
+			"oak_tree": 0.035,
+			"stone_boulder": 0.022,
+			"wild_berry_bush": 0.018
+		},
 		"resources": {
 			"wood": [1, 3],
 			"stone": [1, 2],
 			"food_raw": [0, 2]
 		},
 		"enemy_pool": ["wolf", "bandit_scout"],
-		"npc_pool": ["wanderer_npc", "merchant_common"],
+		"npc_pool": ["wanderer_npc", "merchant_common", "village_elder"],
 		"poi_pool": ["abandoned_camp", "ruins"],
 		"event_weight_modifier": 1.0,
 		"ambient_sound": "plains_ambient"
@@ -17,13 +24,20 @@
 	{
 		"id": "forest",
 		"name": "Forest",
+		"color": "#2f6630",
+		"alt_color": "#367237",
 		"tile_ids": ["forest_floor", "moss", "grass"],
+		"resource_nodes": {
+			"forest_pine": 0.09,
+			"wild_berry_bush": 0.02,
+			"stone_boulder": 0.012
+		},
 		"resources": {
 			"wood": [3, 6],
 			"herb": [1, 3]
 		},
-		"enemy_pool": ["wolf", "forest_boar", "alpha_wolf_boss"],
-		"npc_pool": ["wanderer_npc"],
+		"enemy_pool": ["wolf", "forest_boar", "bandit_raider"],
+		"npc_pool": ["wanderer_npc", "border_guard"],
 		"poi_pool": ["abandoned_camp", "cave"],
 		"event_weight_modifier": 1.2,
 		"ambient_sound": "forest_ambient"
@@ -31,12 +45,18 @@
 	{
 		"id": "mountains",
 		"name": "Mountains",
+		"color": "#5c646d",
+		"alt_color": "#68707a",
 		"tile_ids": ["rock", "cliff"],
+		"resource_nodes": {
+			"iron_vein": 0.055,
+			"stone_boulder": 0.065
+		},
 		"resources": {
 			"iron_ore": [2, 4],
 			"stone": [3, 6]
 		},
-		"enemy_pool": ["bandit_scout"],
+		"enemy_pool": ["bandit_raider", "warlord_khan_boss"],
 		"npc_pool": [],
 		"poi_pool": ["cave", "dungeon"],
 		"event_weight_modifier": 1.3,
@@ -45,12 +65,18 @@
 	{
 		"id": "desert",
 		"name": "Desert",
+		"color": "#c29b53",
+		"alt_color": "#cca55c",
 		"tile_ids": ["sand", "dune"],
+		"resource_nodes": {
+			"copper_vein": 0.04,
+			"stone_boulder": 0.025
+		},
 		"resources": {
 			"iron_ore": [1, 3],
 			"stone": [1, 3]
 		},
-		"enemy_pool": ["bandit_scout"],
+		"enemy_pool": ["desert_stalker", "bandit_scout"],
 		"npc_pool": ["merchant_common"],
 		"poi_pool": ["ruins", "merchant_outpost"],
 		"event_weight_modifier": 1.25,
@@ -59,7 +85,13 @@
 	{
 		"id": "swamp",
 		"name": "Swamp",
+		"color": "#3b5944",
+		"alt_color": "#43634c",
 		"tile_ids": ["mud", "marsh"],
+		"resource_nodes": {
+			"swamp_herb_patch": 0.06,
+			"oak_tree": 0.03
+		},
 		"resources": {
 			"herb": [2, 5],
 			"wood": [1, 2]
