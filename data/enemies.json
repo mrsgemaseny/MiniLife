@@ -1,0 +1,67 @@
+[
+	{
+		"id": "wolf",
+		"name": "Gray Wolf",
+		"biome": "plains",
+		"hp": 55,
+		"damage": 11,
+		"speed": 175,
+		"loot_table": {
+			"gold": 5,
+			"items": { "food_raw": 2 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "bandit_scout",
+		"name": "Bandit Scout",
+		"biome": "plains",
+		"hp": 75,
+		"damage": 14,
+		"speed": 160,
+		"loot_table": {
+			"gold": 22,
+			"items": { "bread": 1, "iron_ore": 1 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "forest_boar",
+		"name": "Tusked Boar",
+		"biome": "forest",
+		"hp": 90,
+		"damage": 15,
+		"speed": 155,
+		"loot_table": {
+			"gold": 8,
+			"items": { "food_raw": 3 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "swamp_crawler",
+		"name": "Mutated Crawler",
+		"biome": "swamp",
+		"hp": 110,
+		"damage": 17,
+		"speed": 145,
+		"loot_table": {
+			"gold": 18,
+			"items": { "herb": 3, "poison": 1 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "alpha_wolf_boss",
+		"name": "Dire Alpha",
+		"biome": "forest",
+		"hp": 260,
+		"damage": 26,
+		"speed": 185,
+		"loot_table": {
+			"gold": 120,
+			"items": { "iron_ingot": 4, "food_raw": 5 }
+		},
+		"respawns": false
+	}
+]

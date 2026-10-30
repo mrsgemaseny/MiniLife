@@ -1,0 +1,46 @@
+[
+	{
+		"id": "merchant_common",
+		"name": "Caravan Trader",
+		"faction": "merchants",
+		"role": "trader",
+		"dialogue_tree_id": "merchant_default",
+		"inventory_pool": [
+			{ "item_id": "bread", "min": 2, "max": 5 },
+			{ "item_id": "iron_ingot", "min": 1, "max": 4 },
+			{ "item_id": "medicine", "min": 1, "max": 3 },
+			{ "item_id": "cloth", "min": 2, "max": 6 }
+		]
+	},
+	{
+		"id": "village_elder",
+		"name": "Settlement Elder",
+		"faction": "village_folk",
+		"role": "quest_giver",
+		"dialogue_tree_id": "elder_default",
+		"inventory_pool": [
+			{ "item_id": "bread", "min": 1, "max": 2 }
+		]
+	},
+	{
+		"id": "wanderer_npc",
+		"name": "Drifter",
+		"faction": "wanderers",
+		"role": "wanderer",
+		"dialogue_tree_id": "wanderer_default",
+		"inventory_pool": [
+			{ "item_id": "cooked_food", "min": 1, "max": 2 },
+			{ "item_id": "herb", "min": 1, "max": 3 }
+		]
+	},
+	{
+		"id": "border_guard",
+		"name": "Warden Patrolman",
+		"faction": "guards",
+		"role": "guard",
+		"dialogue_tree_id": "guard_default",
+		"inventory_pool": [
+			{ "item_id": "bread", "min": 1, "max": 2 }
+		]
+	}
+]

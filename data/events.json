@@ -1,0 +1,93 @@
+[
+	{
+		"id": "bandit_raid",
+		"conditions": {
+			"min_day": 5,
+			"requires_structures": true,
+			"biome": ""
+		},
+		"weight": 1.2,
+		"cooldown_days": 4,
+		"message": "Outlaw raiders are approaching your settlement!",
+		"effect": {
+			"type": "damage",
+			"amount": 15.0
+		}
+	},
+	{
+		"id": "trader_visit",
+		"conditions": {
+			"min_day": 2,
+			"requires_structures": false,
+			"biome": ""
+		},
+		"weight": 2.0,
+		"cooldown_days": 2,
+		"message": "A travelling merchant caravan passes nearby.",
+		"effect": {
+			"type": "give_item",
+			"item_id": "bread",
+			"count": 1
+		}
+	},
+	{
+		"id": "animal_attack",
+		"conditions": {
+			"min_day": 1,
+			"requires_structures": false,
+			"biome": ["forest", "swamp"]
+		},
+		"weight": 1.5,
+		"cooldown_days": 2,
+		"message": "A wild beast lunges from the thicket!",
+		"effect": {
+			"type": "damage",
+			"amount": 10.0
+		}
+	},
+	{
+		"id": "discovery",
+		"conditions": {
+			"min_day": 1,
+			"requires_structures": false,
+			"biome": "",
+			"min_exploration_percent": 20.0
+		},
+		"weight": 1.0,
+		"once": true,
+		"message": "Your extensive mapping reveals hidden survival insights.",
+		"effect": {
+			"type": "add_trait",
+			"trait_id": "eagle_eye"
+		}
+	},
+	{
+		"id": "disease",
+		"conditions": {
+			"min_day": 10,
+			"requires_structures": false,
+			"biome": ""
+		},
+		"weight": 0.8,
+		"cooldown_days": 5,
+		"message": "You have contracted a fever from contaminated water.",
+		"effect": {
+			"type": "apply_status",
+			"effect": "poisoned",
+			"duration": 10.0,
+			"intensity": 1.0
+		}
+	},
+	{
+		"id": "mini_boss_spawn",
+		"conditions": {
+			"min_day": 7,
+			"requires_structures": false,
+			"biome": ""
+		},
+		"weight": 0.6,
+		"once": true,
+		"message": "A monstrous predator has claimed territory nearby.",
+		"effect": {}
+	}
+]

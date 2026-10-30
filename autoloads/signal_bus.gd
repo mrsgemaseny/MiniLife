@@ -1,0 +1,125 @@
+extends Node
+
+# World
+signal chunk_loaded(chunk_pos: Vector2i)
+signal chunk_unloaded(chunk_pos: Vector2i)
+signal chunk_delta_changed(chunk_pos: Vector2i, delta: Dictionary)
+signal chunk_delta_requested(chunk_pos: Vector2i)
+signal chunk_delta_loaded(chunk_pos: Vector2i, delta: Dictionary)
+signal fog_updated(tile_pos: Vector2i, state: int)
+signal fog_snapshot_loaded(explored_tiles: Array)
+signal poi_discovered(poi_id: String, pos: Vector2i)
+signal resource_harvested(resource_id: String, amount: int, tile_pos: Vector2i)
+signal resource_node_depleted(tile_pos: Vector2i, resource_id: String)
+signal player_tile_changed(tile_pos: Vector2i)
+signal player_biome_changed(biome_id: String)
+signal player_vision_changed(radius: int)
+signal exploration_progress_changed(percent: float)
+
+# Building
+signal build_mode_changed(structure_id: String)
+signal build_requested(structure_id: String, tile_pos: Vector2i, builder: Node)
+signal structure_placement_validated(structure_id: String, tile_pos: Vector2i, builder: Node)
+signal structure_placement_rejected(structure_id: String, tile_pos: Vector2i, reason: String)
+signal structure_restored(structure_id: String, tile_pos: Vector2i)
+signal structure_built(structure_id: String, tile_pos: Vector2i)
+signal structure_removal_requested(tile_pos: Vector2i, refund_to: Node)
+signal structure_destroyed(structure_id: String, tile_pos: Vector2i)
+signal structure_interacted(structure_id: String, tile_pos: Vector2i, actor: Node)
+signal trap_triggered(trap_id: String, tile_pos: Vector2i, target: Node)
+
+# Craft
+signal craft_station_opened(station_id: String)
+signal craft_requested(recipe_id: String, crafter: Node, station_id: String)
+signal craft_failed(recipe_id: String, reason: String)
+signal item_crafted(item_id: String)
+
+# Character
+signal player_spawned(player: Node)
+signal player_teleport_requested(world_pos: Vector2)
+signal player_damaged(amount: float, source: String)
+signal player_died()
+signal player_stat_changed(stat: String, value: float, max_value: float)
+signal player_gold_changed(gold: int)
+signal skill_xp_gained(skill: String, amount: float)
+signal skill_leveled_up(skill: String, new_level: int)
+signal trait_gained(trait_id: String)
+signal equipment_changed(slot: String, item_id: String)
+signal equip_requested(entity: Node, slot_index: int)
+signal unequip_requested(entity: Node, slot_name: String)
+
+# Inventory
+signal inventory_changed(entity: Node, snapshot: Dictionary)
+signal inventory_move_requested(entity: Node, from_index: int, to_index: int)
+signal item_use_requested(entity: Node, slot_index: int)
+signal item_consume_requested(entity: Node, item_id: String, amount: int)
+signal item_added(item_id: String, amount: int)
+signal item_removed(item_id: String, amount: int)
+
+# Combat
+signal damage_requested(target: Node, amount: float, damage_type: String, source: Node)
+signal status_apply_requested(target: Node, effect: String, duration: float, intensity: float)
+signal status_effect_applied(target: Node, effect: String, duration: float)
+signal status_effect_expired(target: Node, effect: String)
+signal entity_died(entity: Node, killer_id: String)
+
+# NPC / Factions
+signal npc_spawned(npc_id: String, faction: String, pos: Vector2)
+signal npc_killed(npc_id: String, faction: String, killer: String)
+signal npc_kill_requested(npc_uid: String, reason: String)
+signal npc_interacted(npc_id: String)
+signal faction_rep_change_requested(faction: String, delta: int, reason: String)
+signal faction_rep_changed(faction: String, delta: int, reason: String)
+signal faction_rep_snapshot(rep_map: Dictionary)
+signal faction_stance_changed(faction: String, stance: String)
+signal faction_join_requested(faction: String)
+signal faction_joined(faction: String)
+
+# Dialogue
+signal dialogue_started(npc_id: String, dialogue_id: String)
+signal dialogue_node_shown(speaker: String, text: String, choices: Array)
+signal dialogue_choice_selected(choice_index: int)
+signal dialogue_end_requested()
+signal dialogue_ended()
+
+# Events
+signal game_event_triggered(event_id: String)
+signal event_effect_requested(effect: Dictionary)
+
+# Quests
+signal quest_start_requested(quest_id: String, giver_id: String)
+signal quest_turn_in_requested(quest_id: String)
+signal quest_started(quest_id: String)
+signal quest_objective_updated(quest_id: String, progress: Dictionary)
+signal quest_completed(quest_id: String)
+signal quest_failed(quest_id: String, reason: String)
+signal quest_reward_granted(reward: Dictionary)
+signal quest_log_changed(snapshot: Dictionary)
+
+# Achievements
+signal achievement_unlock_requested(achievement_id: String)
+signal achievement_unlocked(achievement_id: String)
+signal achievements_data_requested()
+signal achievements_data_loaded(data: Dictionary)
+
+# Time & Game Lifecycle
+signal game_started(world_seed: int, slot: String, is_new: bool)
+signal game_paused(paused: bool)
+signal hour_passed(hour: int)
+signal day_passed(day_number: int)
+
+# Save
+signal autosave_triggered()
+signal save_requested(slot: String)
+signal load_requested(slot: String)
+signal save_data_requested(bundle: Dictionary)
+signal save_data_loaded(bundle: Dictionary)
+signal world_delete_requested(slot: String)
+signal game_saved()
+signal game_loaded()
+
+# UI
+signal ui_panel_requested(panel_id: String)
+signal ui_panel_toggled(panel_id: String, is_open: bool, blocks_game: bool)
+signal ui_close_all_requested()
+signal notification_posted(message: String)

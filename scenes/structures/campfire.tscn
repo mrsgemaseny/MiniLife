@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="GDScript" id="GDScript_campfire"]
+script/source = "extends StaticBody2D
+
+func _ready() -> void:
+	add_to_group(\"interactable\")
+	add_to_group(\"craft_station\")
+
+func get_station_id() -> String:
+	return \"campfire\"
+
+func interact(_actor: Node) -> void:
+	SignalBus.craft_station_opened.emit(\"campfire\")
+"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_fire"]
+radius = 16.0
+
+[node name="Campfire" type="StaticBody2D" groups=["interactable", "craft_station"]]
+y_sort_enabled = true
+script = SubResource("GDScript_campfire")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_fire")

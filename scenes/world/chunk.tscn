@@ -1,0 +1,10 @@
+[gd_scene format=3]
+
+[node name="Chunk" type="Node2D"]
+y_sort_enabled = true
+
+[node name="ResourceNodes" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="StructuresContainer" type="Node2D" parent="."]
+y_sort_enabled = true

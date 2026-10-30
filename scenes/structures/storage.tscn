@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="GDScript" id="GDScript_storage"]
+script/source = "extends StaticBody2D
+
+func _ready() -> void:
+	add_to_group(\"interactable\")
+
+func interact(_actor: Node) -> void:
+	SignalBus.ui_panel_requested.emit(\"inventory\")
+"
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_storage"]
+size = Vector2(40, 22)
+
+[node name="Storage" type="StaticBody2D" groups=["interactable"]]
+y_sort_enabled = true
+script = SubResource("GDScript_storage")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_storage")

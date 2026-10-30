@@ -1,0 +1,111 @@
+[
+	{
+		"id": "merchant_default",
+		"nodes": [
+			{
+				"id": "root",
+				"speaker": "Caravan Trader",
+				"text": "Safe roads, traveler. Looking to supply your camp or take on a contract?",
+				"choices": [
+					{
+						"text": "Do you need iron ingots delivered?",
+						"condition": {},
+						"next_node": "contract_offer",
+						"action": {}
+					},
+					{
+						"text": "I brought the 5 iron ingots.",
+						"condition": { "item_id": "iron_ingot", "count": 5 },
+						"next_node": "",
+						"action": { "type": "turn_in_quest", "quest_id": "fetch_iron_01" }
+					},
+					{
+						"text": "Nothing right now.",
+						"condition": {},
+						"next_node": "",
+						"action": "end"
+					}
+				]
+			},
+			{
+				"id": "contract_offer",
+				"speaker": "Caravan Trader",
+				"text": "Our smiths are short on metal. Bring 5 iron ingots within 72 hours for 100 gold.",
+				"choices": [
+					{
+						"text": "Accept the contract.",
+						"condition": {},
+						"next_node": "",
+						"action": { "type": "start_quest", "quest_id": "fetch_iron_01" }
+					},
+					{
+						"text": "Decline.",
+						"condition": {},
+						"next_node": "",
+						"action": "end"
+					}
+				]
+			}
+		]
+	},
+	{
+		"id": "elder_default",
+		"nodes": [
+			{
+				"id": "root",
+				"speaker": "Settlement Elder",
+				"text": "Wolves prowl the plains near our fences. Cull three of them and we will reward you.",
+				"choices": [
+					{
+						"text": "I will hunt the wolves.",
+						"condition": {},
+						"next_node": "",
+						"action": { "type": "start_quest", "quest_id": "cull_wolves_01" }
+					},
+					{
+						"text": "Farewell.",
+						"condition": {},
+						"next_node": "",
+						"action": "end"
+					}
+				]
+			}
+		]
+	},
+	{
+		"id": "wanderer_default",
+		"nodes": [
+			{
+				"id": "root",
+				"speaker": "Drifter",
+				"text": "Keep away from the mountain borders and watch your hunger before nightfall.",
+				"choices": [
+					{
+						"text": "Thanks for the warning.",
+						"condition": {},
+						"next_node": "",
+						"action": "end"
+					}
+				]
+			}
+		]
+	},
+	{
+		"id": "guard_default",
+		"nodes": [
+			{
+				"id": "root",
+				"speaker": "Warden Patrolman",
+				"text": "Keep the peace in these lands and the Wardens will stand by you.",
+				"choices": [
+					{
+						"text": "Understood.",
+						"condition": {},
+						"next_node": "",
+						"action": "end"
+					}
+				]
+			}
+		]
+	}
+]

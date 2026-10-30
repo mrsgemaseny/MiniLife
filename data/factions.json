@@ -1,0 +1,37 @@
+[
+	{
+		"id": "merchants",
+		"name": "Free Trade Caravan",
+		"starting_rep": 20,
+		"allied_factions": ["guards", "village_folk"],
+		"enemy_factions": ["bandits"]
+	},
+	{
+		"id": "bandits",
+		"name": "Outlaw Raiders",
+		"starting_rep": -80,
+		"allied_factions": [],
+		"enemy_factions": ["merchants", "village_folk", "guards"]
+	},
+	{
+		"id": "village_folk",
+		"name": "Frontier Settlers",
+		"starting_rep": 10,
+		"allied_factions": ["merchants", "guards"],
+		"enemy_factions": ["bandits"]
+	},
+	{
+		"id": "wanderers",
+		"name": "Nomad Drifters",
+		"starting_rep": 0,
+		"allied_factions": [],
+		"enemy_factions": []
+	},
+	{
+		"id": "guards",
+		"name": "Border Wardens",
+		"starting_rep": 30,
+		"allied_factions": ["merchants", "village_folk"],
+		"enemy_factions": ["bandits"]
+	}
+]

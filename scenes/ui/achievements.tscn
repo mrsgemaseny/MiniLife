@@ -1,0 +1,84 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="GDScript" id="GDScript_achievements"]
+script/source = "extends Control
+
+const PANEL_ID: String = \"achievements\"
+
+@onready var list_box: VBoxContainer = $PanelContainer/VBoxContainer/ListBox
+var _defs: Dictionary = {}
+var _unlocked: Dictionary = {}
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	visible = false
+	_defs = GameManager.load_json_indexed(\"achievements.json\")
+	SignalBus.ui_panel_requested.connect(_on_panel_requested)
+	SignalBus.ui_close_all_requested.connect(close_panel)
+	SignalBus.achievements_data_loaded.connect(_on_data_loaded)
+
+func open_panel() -> void:
+	visible = true
+	SignalBus.achievements_data_requested.emit()
+	SignalBus.ui_panel_toggled.emit(PANEL_ID, true, true)
+
+func close_panel() -> void:
+	if not visible:
+		return
+	visible = false
+	SignalBus.ui_panel_toggled.emit(PANEL_ID, false, true)
+
+func _on_panel_requested(panel_id: String) -> void:
+	if panel_id == PANEL_ID:
+		if visible:
+			close_panel()
+		else:
+			open_panel()
+
+func _on_data_loaded(data: Dictionary) -> void:
+	_unlocked = data.get(\"unlocked\", {})
+	if list_box == null:
+		return
+	for child in list_box.get_children():
+		list_box.remove_child(child)
+		child.queue_free()
+	for aid in _defs:
+		var def: Dictionary = _defs[aid]
+		var is_done: bool = _unlocked.has(aid)
+		var lbl: Label = Label.new()
+		lbl.text = \"[%s] %s - %s\" % [\"UNLOCKED\" if is_done else \"LOCKED\", str(def.get(\"name\", aid)), str(def.get(\"description\", \"\"))]
+		list_box.add_child(lbl)
+"
+
+[node name="Achievements" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_achievements")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = -180.0
+offset_right = 240.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "ACHIEVEMENTS (PERSISTENT)"
+
+[node name="ListBox" type="VBoxContainer" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2

@@ -1,0 +1,30 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/entities/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/components/stats.gd" id="2_stats"]
+[ext_resource type="Script" path="res://scripts/components/skills.gd" id="3_skills"]
+[ext_resource type="Script" path="res://scripts/components/inventory.gd" id="4_inventory"]
+[ext_resource type="Script" path="res://scripts/components/equipment.gd" id="5_equipment"]
+[ext_resource type="Script" path="res://scripts/components/traits.gd" id="6_traits"]
+[ext_resource type="Script" path="res://scripts/components/status_effects.gd" id="7_status"]
+
+[sub_resource type="Resource" id="Resource_stats"]
+script = ExtResource("2_stats")
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_player"]
+radius = 12.0
+
+[node name="Player" type="CharacterBody2D" groups=["player", "combatant"]]
+y_sort_enabled = true
+script = ExtResource("1_player")
+stats = SubResource("Resource_stats")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_player")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0

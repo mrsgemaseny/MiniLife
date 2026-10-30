@@ -6,21 +6,22 @@
 - **Repository**: `https://github.com/mrsgemaseny/MiniLife`
 
 ## Recent Accomplishments
+- Generated complete Godot 4.x project scaffold (`project.godot`, 3 autoloads, 7 resource components, 8 isolated systems, 3 entity base classes, 7 UI controllers, 24 `.tscn` scenes with `y_sort_enabled = true`, 14 JSON data tables in `data/*.json`, and asset/save directory placeholders).
 - Reconfigured `.agents/` (`AGENTS.md`, `CONTEXT.md`, `pre-invocation.ps1`, `enforce-workflow.ps1`, `stop-check-commits.ps1`) from legacy `MrDevCourses` template to `MiniLife` (Godot 4.x / GDScript).
 
 ## Roadmap & Active Milestone (M1 — Мир, туман, персонаж)
-- [ ] Godot 4 project initialization (`project.godot`, directory structure per Section 9 of `PROJECT_MiniLife.md`)
-- [ ] Autoloads: `SignalBus` (`autoloads/signal_bus.gd`), `Config` (`autoloads/config.gd`), `GameManager` (`autoloads/game_manager.gd`)
-- [ ] Изометрический TileMap + YSort с первого дня
-- [ ] 2 биома (равнина, лес), seed-based генерация (`data/biomes.json`)
-- [ ] Туман войны: 3 состояния (`UNEXPLORED`, `VISITED`, `VISIBLE`) с кешированием по переходу между тайлами
-- [ ] Система чанков (`16x16`, delta-save от seed)
-- [ ] Персонаж: движение (4 направления), коллизии, stats (`scripts/components/stats.gd`, `health.gd`)
-- [ ] Голод: убывает со временем, `0 = permadeath`
-- [ ] Инвентарь: стаки, вес (`scripts/components/inventory.gd`, `data/items.json`)
-- [ ] Добыча ресурсов + навыки `woodcutting` / `mining` (`scripts/components/skills.gd`)
-- [ ] Автосохранение каждые 5 минут (`SaveSystem`)
-- [ ] Mini-map (`fog_state`)
+- [x] Godot 4 project initialization (`project.godot`, directory structure per Section 9 of `PROJECT_MiniLife.md`)
+- [x] Autoloads: `SignalBus` (`autoloads/signal_bus.gd`), `Config` (`autoloads/config.gd`), `GameManager` (`autoloads/game_manager.gd`)
+- [x] Изометрический TileMap + YSort с первого дня (`scenes/world/world.tscn`, `scenes/world/chunk.tscn`)
+- [x] 2 биома (равнина, лес) + остальные 3 биома, seed-based генерация (`data/biomes.json`, `scripts/systems/world_system.gd`)
+- [x] Туман войны: 3 состояния (`UNEXPLORED`, `VISITED`, `VISIBLE`) с кешированием по переходу между тайлами
+- [x] Система чанков (`16x16`, delta-save от seed) (`scripts/systems/world_system.gd`, `scripts/systems/save_system.gd`)
+- [x] Персонаж: движение (4 направления), коллизии, stats (`scripts/entities/player.gd`, `scripts/components/stats.gd`, `health.gd`)
+- [x] Голод: убывает со временем, `0 = permadeath`
+- [x] Инвентарь: стаки, вес (`scripts/components/inventory.gd`, `data/items.json`)
+- [x] Добыча ресурсов + навыки `woodcutting` / `mining` (`scripts/components/skills.gd`)
+- [x] Автосохранение каждые 5 минут (`SaveSystem`)
+- [ ] Playtest в редакторе Godot 4.3+, подключение спрайтовых атласов тайлов и визуальной мини-карты
 
 ## Architecture Summary
 - **Engine & Language**: Godot 4.x, GDScript (static typing).

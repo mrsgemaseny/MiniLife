@@ -1,0 +1,42 @@
+[
+	{
+		"id": "first_steps",
+		"name": "First Steps",
+		"description": "Explore 10% of the world map",
+		"condition_type": "exploration_percent",
+		"condition_value": 10,
+		"reward": { "gold": 25 }
+	},
+	{
+		"id": "survivor_week",
+		"name": "One Week Alive",
+		"description": "Survive until Day 7 without dying",
+		"condition_type": "days_survived",
+		"condition_value": 7,
+		"reward": { "gold": 50 }
+	},
+	{
+		"id": "master_smith",
+		"name": "Apprentice Smith",
+		"description": "Reach level 25 in Smithing",
+		"condition_type": "skill_level",
+		"condition_value": 25,
+		"reward": { "gold": 100 }
+	},
+	{
+		"id": "first_blood",
+		"name": "Frontier Hunter",
+		"description": "Defeat 5 hostile creatures or raiders",
+		"condition_type": "enemies_killed",
+		"condition_value": 5,
+		"reward": { "gold": 40 }
+	},
+	{
+		"id": "homesteader",
+		"name": "Homesteader",
+		"description": "Build 10 structures in your base",
+		"condition_type": "structures_built",
+		"condition_value": 10,
+		"reward": { "gold": 60 }
+	}
+]

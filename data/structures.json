@@ -1,0 +1,119 @@
+[
+	{
+		"id": "floor",
+		"name": "Wooden Floor",
+		"hp": 120,
+		"materials": [
+			{ "item_id": "plank", "count": 2 }
+		],
+		"passable": true,
+		"interactable": false
+	},
+	{
+		"id": "wall",
+		"name": "Stone Wall",
+		"hp": 300,
+		"materials": [
+			{ "item_id": "stone", "count": 4 }
+		],
+		"passable": false,
+		"interactable": false
+	},
+	{
+		"id": "door",
+		"name": "Wooden Door",
+		"hp": 150,
+		"materials": [
+			{ "item_id": "plank", "count": 3 }
+		],
+		"passable": true,
+		"interactable": true
+	},
+	{
+		"id": "workbench",
+		"name": "Workbench",
+		"hp": 100,
+		"materials": [
+			{ "item_id": "plank", "count": 5 }
+		],
+		"passable": false,
+		"interactable": true
+	},
+	{
+		"id": "forge",
+		"name": "Smelting Forge",
+		"hp": 200,
+		"materials": [
+			{ "item_id": "stone", "count": 8 },
+			{ "item_id": "iron_ingot", "count": 2 }
+		],
+		"passable": false,
+		"interactable": true
+	},
+	{
+		"id": "campfire",
+		"name": "Campfire",
+		"hp": 50,
+		"materials": [
+			{ "item_id": "wood", "count": 3 }
+		],
+		"passable": false,
+		"interactable": true
+	},
+	{
+		"id": "storage",
+		"name": "Storage Chest",
+		"hp": 150,
+		"materials": [
+			{ "item_id": "plank", "count": 6 }
+		],
+		"passable": false,
+		"interactable": true
+	},
+	{
+		"id": "bed",
+		"name": "Simple Bed",
+		"hp": 80,
+		"materials": [
+			{ "item_id": "plank", "count": 4 },
+			{ "item_id": "cloth", "count": 2 }
+		],
+		"passable": false,
+		"interactable": true
+	},
+	{
+		"id": "spike_trap",
+		"name": "Spike Trap",
+		"hp": 60,
+		"materials": [
+			{ "item_id": "iron_ingot", "count": 2 },
+			{ "item_id": "wood", "count": 1 }
+		],
+		"passable": true,
+		"interactable": false,
+		"trap": {
+			"damage": 28.0,
+			"damage_type": "physical",
+			"status_effect": "",
+			"status_duration": 0.0,
+			"single_use": false
+		}
+	},
+	{
+		"id": "pit_trap",
+		"name": "Pit Trap",
+		"hp": 40,
+		"materials": [
+			{ "item_id": "wood", "count": 3 }
+		],
+		"passable": true,
+		"interactable": false,
+		"trap": {
+			"damage": 12.0,
+			"damage_type": "physical",
+			"status_effect": "stunned",
+			"status_duration": 2.5,
+			"single_use": true
+		}
+	}
+]

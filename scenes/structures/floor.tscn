@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[node name="Floor" type="Node2D"]
+z_index = -5
+y_sort_enabled = true
+
+[node name="Sprite2D" type="Sprite2D" parent="."]

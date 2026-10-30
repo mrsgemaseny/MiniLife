@@ -1,0 +1,22 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/entities/enemy_base.gd" id="1_enemy"]
+[ext_resource type="Script" path="res://scripts/components/stats.gd" id="2_stats"]
+[ext_resource type="Script" path="res://scripts/components/status_effects.gd" id="3_status"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
+radius = 12.0
+
+[node name="EnemyBase" type="CharacterBody2D" groups=["enemy", "combatant"]]
+y_sort_enabled = true
+script = ExtResource("1_enemy")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_enemy")
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="."]
+path_desired_distance = 12.0
+target_desired_distance = 16.0

@@ -1,0 +1,138 @@
+[
+	{
+		"id": "iron_will",
+		"name": "Iron Will",
+		"category": "positive",
+		"description": "+25% max health",
+		"modifiers": [
+			{ "stat": "max_health_mult", "value": 1.25 }
+		],
+		"incompatible_with": ["frail"],
+		"obtainable_via": ["start", "event"]
+	},
+	{
+		"id": "quick_learner",
+		"name": "Quick Learner",
+		"category": "positive",
+		"description": "+20% skill XP gain",
+		"modifiers": [
+			{ "stat": "xp_gain_mult", "value": 1.2 }
+		],
+		"incompatible_with": [],
+		"obtainable_via": ["start"]
+	},
+	{
+		"id": "eagle_eye",
+		"name": "Eagle Eye",
+		"category": "positive",
+		"description": "+30% visibility radius",
+		"modifiers": [
+			{ "stat": "vision_radius_mult", "value": 1.3 }
+		],
+		"incompatible_with": [],
+		"obtainable_via": ["start", "event", "quest"]
+	},
+	{
+		"id": "iron_stomach",
+		"name": "Slow Metabolism",
+		"category": "positive",
+		"description": "-20% hunger decay rate",
+		"modifiers": [
+			{ "stat": "hunger_decay_mult", "value": 0.8 }
+		],
+		"incompatible_with": ["glutton"],
+		"obtainable_via": ["start"]
+	},
+	{
+		"id": "frail",
+		"name": "Frail",
+		"category": "negative",
+		"description": "-20% max health",
+		"modifiers": [
+			{ "stat": "max_health_mult", "value": 0.8 }
+		],
+		"incompatible_with": ["iron_will"],
+		"obtainable_via": ["start", "event"]
+	},
+	{
+		"id": "slow",
+		"name": "Sluggish",
+		"category": "negative",
+		"description": "-15% movement speed",
+		"modifiers": [
+			{ "stat": "move_speed_mult", "value": 0.85 }
+		],
+		"incompatible_with": [],
+		"obtainable_via": ["start"]
+	},
+	{
+		"id": "clumsy",
+		"name": "Clumsy",
+		"category": "negative",
+		"description": "-15% melee effectiveness",
+		"modifiers": [
+			{ "stat": "melee_damage_mult", "value": 0.85 }
+		],
+		"incompatible_with": [],
+		"obtainable_via": ["start"]
+	},
+	{
+		"id": "glutton",
+		"name": "Ravenous",
+		"category": "negative",
+		"description": "+25% hunger decay rate",
+		"modifiers": [
+			{ "stat": "hunger_decay_mult", "value": 1.25 }
+		],
+		"incompatible_with": ["iron_stomach"],
+		"obtainable_via": ["start"]
+	},
+	{
+		"id": "berserker",
+		"name": "Berserker",
+		"category": "mixed",
+		"description": "+30% melee damage, -20% defense",
+		"modifiers": [
+			{ "stat": "melee_damage_mult", "value": 1.3 },
+			{ "stat": "defense_mult", "value": 0.8 }
+		],
+		"incompatible_with": [],
+		"obtainable_via": ["start", "event"]
+	},
+	{
+		"id": "night_owl",
+		"name": "Night Owl",
+		"category": "mixed",
+		"description": "+20% speed at night, -15% speed during day",
+		"modifiers": [
+			{ "stat": "night_speed_mult", "value": 1.2 },
+			{ "stat": "day_speed_mult", "value": 0.85 }
+		],
+		"incompatible_with": [],
+		"obtainable_via": ["start"]
+	},
+	{
+		"id": "lone_wolf",
+		"name": "Lone Wolf",
+		"category": "mixed",
+		"description": "+15% XP gain, -30% faction standing modifier",
+		"modifiers": [
+			{ "stat": "xp_gain_mult", "value": 1.15 },
+			{ "stat": "faction_rep_mult", "value": 0.7 }
+		],
+		"incompatible_with": [],
+		"obtainable_via": ["start"]
+	},
+	{
+		"id": "thick_skinned",
+		"name": "Thick Skinned",
+		"category": "mixed",
+		"description": "+25% defense, -10% movement speed",
+		"modifiers": [
+			{ "stat": "defense_mult", "value": 1.25 },
+			{ "stat": "move_speed_mult", "value": 0.9 }
+		],
+		"incompatible_with": [],
+		"obtainable_via": ["start"]
+	}
+]

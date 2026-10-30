@@ -1,0 +1,73 @@
+[
+	{
+		"id": "plains",
+		"name": "Plains",
+		"tile_ids": ["grass", "dirt", "flower"],
+		"resources": {
+			"wood": [1, 3],
+			"stone": [1, 2],
+			"food_raw": [0, 2]
+		},
+		"enemy_pool": ["wolf", "bandit_scout"],
+		"npc_pool": ["wanderer_npc", "merchant_common"],
+		"poi_pool": ["abandoned_camp", "ruins"],
+		"event_weight_modifier": 1.0,
+		"ambient_sound": "plains_ambient"
+	},
+	{
+		"id": "forest",
+		"name": "Forest",
+		"tile_ids": ["forest_floor", "moss", "grass"],
+		"resources": {
+			"wood": [3, 6],
+			"herb": [1, 3]
+		},
+		"enemy_pool": ["wolf", "forest_boar", "alpha_wolf_boss"],
+		"npc_pool": ["wanderer_npc"],
+		"poi_pool": ["abandoned_camp", "cave"],
+		"event_weight_modifier": 1.2,
+		"ambient_sound": "forest_ambient"
+	},
+	{
+		"id": "mountains",
+		"name": "Mountains",
+		"tile_ids": ["rock", "cliff"],
+		"resources": {
+			"iron_ore": [2, 4],
+			"stone": [3, 6]
+		},
+		"enemy_pool": ["bandit_scout"],
+		"npc_pool": [],
+		"poi_pool": ["cave", "dungeon"],
+		"event_weight_modifier": 1.3,
+		"ambient_sound": "mountain_wind"
+	},
+	{
+		"id": "desert",
+		"name": "Desert",
+		"tile_ids": ["sand", "dune"],
+		"resources": {
+			"iron_ore": [1, 3],
+			"stone": [1, 3]
+		},
+		"enemy_pool": ["bandit_scout"],
+		"npc_pool": ["merchant_common"],
+		"poi_pool": ["ruins", "merchant_outpost"],
+		"event_weight_modifier": 1.25,
+		"ambient_sound": "desert_wind"
+	},
+	{
+		"id": "swamp",
+		"name": "Swamp",
+		"tile_ids": ["mud", "marsh"],
+		"resources": {
+			"herb": [2, 5],
+			"wood": [1, 2]
+		},
+		"enemy_pool": ["swamp_crawler"],
+		"npc_pool": ["wanderer_npc"],
+		"poi_pool": ["ruins", "dungeon"],
+		"event_weight_modifier": 1.4,
+		"ambient_sound": "swamp_ambient"
+	}
+]

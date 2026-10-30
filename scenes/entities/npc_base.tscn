@@ -1,0 +1,23 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/entities/npc_base.gd" id="1_npc"]
+[ext_resource type="Script" path="res://scripts/components/stats.gd" id="2_stats"]
+[ext_resource type="Script" path="res://scripts/components/inventory.gd" id="3_inv"]
+[ext_resource type="Script" path="res://scripts/components/status_effects.gd" id="4_status"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_npc"]
+radius = 12.0
+
+[node name="NPCBase" type="CharacterBody2D" groups=["npc", "interactable", "combatant"]]
+y_sort_enabled = true
+script = ExtResource("1_npc")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_npc")
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="."]
+path_desired_distance = 12.0
+target_desired_distance = 16.0

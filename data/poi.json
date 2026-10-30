@@ -1,0 +1,52 @@
+[
+	{
+		"id": "abandoned_camp",
+		"type": "abandoned_camp",
+		"enemy_pool": ["bandit_scout"],
+		"loot_table": {
+			"gold": 40,
+			"items": { "bread": 2, "plank": 3 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "ruins",
+		"type": "ruins",
+		"enemy_pool": ["bandit_scout", "swamp_crawler"],
+		"loot_table": {
+			"gold": 85,
+			"items": { "iron_ingot": 2, "medicine": 1 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "cave",
+		"type": "cave",
+		"enemy_pool": ["wolf", "forest_boar"],
+		"loot_table": {
+			"gold": 50,
+			"items": { "iron_ore": 5, "stone": 6 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "merchant_outpost",
+		"type": "merchant_outpost",
+		"enemy_pool": [],
+		"loot_table": {
+			"gold": 25,
+			"items": { "bread": 2 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "dungeon",
+		"type": "dungeon",
+		"enemy_pool": ["alpha_wolf_boss"],
+		"loot_table": {
+			"gold": 200,
+			"items": { "iron_sword": 1, "iron_chainmail": 1 }
+		},
+		"respawns": false
+	}
+]

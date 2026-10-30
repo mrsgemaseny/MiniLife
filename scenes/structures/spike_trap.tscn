@@ -1,0 +1,25 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="GDScript" id="GDScript_spike_trap"]
+script/source = "extends Area2D
+
+func _ready() -> void:
+	body_entered.connect(_on_body_entered)
+
+func _on_body_entered(body: Node) -> void:
+	if body != null and body.is_in_group(\"combatant\") and not body.is_in_group(\"player\"):
+		var tpos: Vector2i = get_meta(\"tile_pos\", Config.iso_to_world(global_position))
+		SignalBus.trap_triggered.emit(\"spike_trap\", tpos, body)
+"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_spike"]
+radius = 18.0
+
+[node name="SpikeTrap" type="Area2D"]
+y_sort_enabled = true
+script = SubResource("GDScript_spike_trap")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_spike")

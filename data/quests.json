@@ -1,0 +1,62 @@
+[
+	{
+		"id": "fetch_iron_01",
+		"type": "fetch",
+		"giver_id": "merchant_common",
+		"giver_faction": "merchants",
+		"objective": { "item_id": "iron_ingot", "count": 5 },
+		"reward": { "gold": 100, "rep_delta": 15 },
+		"time_limit": 72.0,
+		"fail_consequence": { "rep_delta": -20, "giver_dies": false },
+		"is_chain": true,
+		"next_quest_id": "fetch_iron_02"
+	},
+	{
+		"id": "fetch_iron_02",
+		"type": "fetch",
+		"giver_id": "merchant_common",
+		"giver_faction": "merchants",
+		"objective": { "item_id": "iron_sword", "count": 2 },
+		"reward": { "gold": 220, "rep_delta": 25, "join_faction": "merchants" },
+		"time_limit": 96.0,
+		"fail_consequence": { "rep_delta": -25, "giver_dies": false },
+		"is_chain": false,
+		"next_quest_id": ""
+	},
+	{
+		"id": "cull_wolves_01",
+		"type": "kill",
+		"giver_id": "village_elder",
+		"giver_faction": "village_folk",
+		"objective": { "target_id": "wolf", "count": 3 },
+		"reward": { "gold": 75, "rep_delta": 15 },
+		"time_limit": -1.0,
+		"fail_consequence": { "rep_delta": -10, "giver_dies": false },
+		"is_chain": false,
+		"next_quest_id": ""
+	},
+	{
+		"id": "explore_ruins_01",
+		"type": "explore",
+		"giver_id": "village_elder",
+		"giver_faction": "village_folk",
+		"objective": { "poi_id": "ruins", "count": 1 },
+		"reward": { "gold": 90, "rep_delta": 10, "unique_trait": "eagle_eye" },
+		"time_limit": -1.0,
+		"fail_consequence": {},
+		"is_chain": false,
+		"next_quest_id": ""
+	},
+	{
+		"id": "build_camp_01",
+		"type": "build",
+		"giver_id": "village_elder",
+		"giver_faction": "village_folk",
+		"objective": { "structure_id": "workbench", "count": 1 },
+		"reward": { "gold": 50, "rep_delta": 10 },
+		"time_limit": -1.0,
+		"fail_consequence": {},
+		"is_chain": false,
+		"next_quest_id": ""
+	}
+]

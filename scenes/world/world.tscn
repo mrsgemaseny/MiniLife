@@ -1,0 +1,26 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/systems/world_system.gd" id="1_world"]
+
+[sub_resource type="TileSet" id="TileSet_iso"]
+tile_shape = 1
+tile_layout = 5
+tile_size = Vector2i(64, 32)
+
+[node name="World" type="Node2D" groups=["world_system"]]
+y_sort_enabled = true
+script = ExtResource("1_world")
+
+[node name="GroundTileMap" type="TileMap" parent="."]
+z_index = -10
+y_sort_enabled = true
+tile_set = SubResource("TileSet_iso")
+format = 2
+
+[node name="ChunkContainer" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="FogLayer" type="TileMap" parent="."]
+z_index = 100
+tile_set = SubResource("TileSet_iso")
+format = 2

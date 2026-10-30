@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="GDScript" id="GDScript_forge"]
+script/source = "extends StaticBody2D
+
+func _ready() -> void:
+	add_to_group(\"interactable\")
+	add_to_group(\"craft_station\")
+
+func get_station_id() -> String:
+	return \"forge\"
+
+func interact(_actor: Node) -> void:
+	SignalBus.craft_station_opened.emit(\"forge\")
+"
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_forge"]
+size = Vector2(48, 28)
+
+[node name="Forge" type="StaticBody2D" groups=["interactable", "craft_station"]]
+y_sort_enabled = true
+script = SubResource("GDScript_forge")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_forge")

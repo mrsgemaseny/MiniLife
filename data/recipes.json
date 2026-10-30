@@ -1,0 +1,128 @@
+[
+	{
+		"id": "craft_stone_axe",
+		"station": "",
+		"inputs": [
+			{ "item_id": "wood", "count": 2 },
+			{ "item_id": "stone", "count": 2 }
+		],
+		"output": { "item_id": "stone_axe", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "construction": 8 }
+	},
+	{
+		"id": "craft_stone_pickaxe",
+		"station": "",
+		"inputs": [
+			{ "item_id": "wood", "count": 2 },
+			{ "item_id": "stone", "count": 3 }
+		],
+		"output": { "item_id": "stone_pickaxe", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "construction": 10 }
+	},
+	{
+		"id": "craft_plank",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "wood", "count": 1 }
+		],
+		"output": { "item_id": "plank", "count": 2 },
+		"skill_required": {},
+		"xp_reward": { "construction": 5 }
+	},
+	{
+		"id": "craft_cloth",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "herb", "count": 2 }
+		],
+		"output": { "item_id": "cloth", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "construction": 6 }
+	},
+	{
+		"id": "craft_medicine",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "herb", "count": 3 },
+			{ "item_id": "cloth", "count": 1 }
+		],
+		"output": { "item_id": "medicine", "count": 1 },
+		"skill_required": { "alchemy": 10 },
+		"xp_reward": { "alchemy": 18 }
+	},
+	{
+		"id": "craft_poison",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "herb", "count": 4 }
+		],
+		"output": { "item_id": "poison", "count": 1 },
+		"skill_required": { "alchemy": 15 },
+		"xp_reward": { "alchemy": 22 }
+	},
+	{
+		"id": "craft_hunting_bow",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "wood", "count": 3 },
+			{ "item_id": "cloth", "count": 1 }
+		],
+		"output": { "item_id": "hunting_bow", "count": 1 },
+		"skill_required": { "woodcutting": 10 },
+		"xp_reward": { "construction": 16 }
+	},
+	{
+		"id": "craft_leather_armor",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "cloth", "count": 4 }
+		],
+		"output": { "item_id": "leather_armor", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "construction": 14 }
+	},
+	{
+		"id": "smelt_iron_ingot",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "iron_ore", "count": 2 }
+		],
+		"output": { "item_id": "iron_ingot", "count": 1 },
+		"skill_required": { "smithing": 5 },
+		"xp_reward": { "smithing": 15 }
+	},
+	{
+		"id": "forge_iron_sword",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 3 },
+			{ "item_id": "wood", "count": 1 }
+		],
+		"output": { "item_id": "iron_sword", "count": 1 },
+		"skill_required": { "smithing": 20 },
+		"xp_reward": { "smithing": 35 }
+	},
+	{
+		"id": "forge_iron_chainmail",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 5 },
+			{ "item_id": "cloth", "count": 2 }
+		],
+		"output": { "item_id": "iron_chainmail", "count": 1 },
+		"skill_required": { "smithing": 25 },
+		"xp_reward": { "smithing": 45 }
+	},
+	{
+		"id": "cook_meat",
+		"station": "campfire",
+		"inputs": [
+			{ "item_id": "food_raw", "count": 1 }
+		],
+		"output": { "item_id": "cooked_food", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "cooking": 10 }
+	}
+]

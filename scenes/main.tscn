@@ -1,0 +1,110 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/world.tscn" id="1_world"]
+[ext_resource type="PackedScene" path="res://scenes/entities/player.tscn" id="2_player"]
+[ext_resource type="Script" path="res://scripts/systems/combat_system.gd" id="3_combat"]
+[ext_resource type="Script" path="res://scripts/systems/craft_system.gd" id="4_craft"]
+[ext_resource type="Script" path="res://scripts/systems/building_system.gd" id="5_building"]
+[ext_resource type="Script" path="res://scripts/systems/event_system.gd" id="6_event"]
+[ext_resource type="Script" path="res://scripts/systems/faction_system.gd" id="7_faction"]
+[ext_resource type="Script" path="res://scripts/systems/quest_system.gd" id="8_quest"]
+[ext_resource type="Script" path="res://scripts/systems/save_system.gd" id="9_save"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="10_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/inventory.tscn" id="11_inv_ui"]
+[ext_resource type="PackedScene" path="res://scenes/ui/craft_menu.tscn" id="12_craft_ui"]
+[ext_resource type="PackedScene" path="res://scenes/ui/build_menu.tscn" id="13_build_ui"]
+[ext_resource type="PackedScene" path="res://scenes/ui/dialogue.tscn" id="14_dialogue_ui"]
+[ext_resource type="PackedScene" path="res://scenes/ui/quest_log.tscn" id="15_quest_ui"]
+[ext_resource type="PackedScene" path="res://scenes/ui/character_sheet.tscn" id="16_char_ui"]
+[ext_resource type="PackedScene" path="res://scenes/ui/achievements.tscn" id="17_ach_ui"]
+
+[sub_resource type="GDScript" id="GDScript_main"]
+script/source = "extends Node2D
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	if SaveSystem.slot_exists(Config.DEFAULT_SAVE_SLOT):
+		SignalBus.load_requested.emit(Config.DEFAULT_SAVE_SLOT)
+	else:
+		GameManager.start_new_game(randi(), Config.DEFAULT_SAVE_SLOT)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(\"ui_inventory\"):
+		SignalBus.ui_panel_requested.emit(\"inventory\")
+	elif event.is_action_pressed(\"ui_craft\"):
+		SignalBus.ui_panel_requested.emit(\"craft\")
+	elif event.is_action_pressed(\"ui_build\"):
+		SignalBus.ui_panel_requested.emit(\"build\")
+	elif event.is_action_pressed(\"ui_quests\"):
+		SignalBus.ui_panel_requested.emit(\"quests\")
+	elif event.is_action_pressed(\"ui_character\"):
+		SignalBus.ui_panel_requested.emit(\"character\")
+	elif event.is_action_pressed(\"ui_achievements\"):
+		SignalBus.ui_panel_requested.emit(\"achievements\")
+	elif event.is_action_pressed(\"ui_close\"):
+		SignalBus.ui_close_all_requested.emit()
+	elif event.is_action_pressed(\"quick_save\"):
+		SignalBus.save_requested.emit(GameManager.get_active_slot())
+	elif event.is_action_pressed(\"quick_load\"):
+		SignalBus.load_requested.emit(GameManager.get_active_slot())
+	elif event.is_action_pressed(\"debug_god\"):
+		GameManager.debug_god_mode = not GameManager.debug_god_mode
+	elif event.is_action_pressed(\"debug_fast_time\"):
+		GameManager.debug_fast_time = not GameManager.debug_fast_time
+	elif event.is_action_pressed(\"debug_reveal\"):
+		GameManager.debug_reveal_map = not GameManager.debug_reveal_map
+"
+
+[node name="Main" type="Node2D"]
+y_sort_enabled = true
+script = SubResource("GDScript_main")
+
+[node name="World" parent="." instance=ExtResource("1_world")]
+process_mode = 1
+
+[node name="Player" parent="World" instance=ExtResource("2_player")]
+process_mode = 1
+
+[node name="Systems" type="Node" parent="."]
+process_mode = 1
+
+[node name="CombatSystem" type="Node" parent="Systems"]
+script = ExtResource("3_combat")
+
+[node name="CraftSystem" type="Node" parent="Systems"]
+script = ExtResource("4_craft")
+
+[node name="BuildingSystem" type="Node2D" parent="Systems"]
+y_sort_enabled = true
+script = ExtResource("5_building")
+
+[node name="EventSystem" type="Node" parent="Systems"]
+script = ExtResource("6_event")
+
+[node name="FactionSystem" type="Node" parent="Systems"]
+script = ExtResource("7_faction")
+
+[node name="QuestSystem" type="Node" parent="Systems"]
+script = ExtResource("8_quest")
+
+[node name="SaveSystem" type="Node" parent="Systems"]
+script = ExtResource("9_save")
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+process_mode = 3
+
+[node name="HUD" parent="UILayer" instance=ExtResource("10_hud")]
+
+[node name="Inventory" parent="UILayer" instance=ExtResource("11_inv_ui")]
+
+[node name="CraftMenu" parent="UILayer" instance=ExtResource("12_craft_ui")]
+
+[node name="BuildMenu" parent="UILayer" instance=ExtResource("13_build_ui")]
+
+[node name="Dialogue" parent="UILayer" instance=ExtResource("14_dialogue_ui")]
+
+[node name="QuestLog" parent="UILayer" instance=ExtResource("15_quest_ui")]
+
+[node name="CharacterSheet" parent="UILayer" instance=ExtResource("16_char_ui")]
+
+[node name="Achievements" parent="UILayer" instance=ExtResource("17_ach_ui")]

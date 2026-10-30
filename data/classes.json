@@ -1,0 +1,64 @@
+[
+	{
+		"id": "wanderer",
+		"name": "Wanderer",
+		"description": "Balanced survivor accustomed to the frontier",
+		"starting_skills": {
+			"melee": 10,
+			"ranged": 10,
+			"defense": 10,
+			"woodcutting": 10,
+			"mining": 10,
+			"construction": 10,
+			"cooking": 10
+		},
+		"starting_items": ["stone_axe", "bread", "bread"]
+	},
+	{
+		"id": "warrior",
+		"name": "Warrior",
+		"description": "Strong melee fighter, poor crafter",
+		"starting_skills": {
+			"melee": 30,
+			"defense": 25,
+			"mining": 5,
+			"trading": 5
+		},
+		"starting_items": ["iron_sword", "leather_armor", "bread"]
+	},
+	{
+		"id": "hunter",
+		"name": "Hunter",
+		"description": "Skilled tracker and woodsman",
+		"starting_skills": {
+			"ranged": 30,
+			"woodcutting": 25,
+			"melee": 10,
+			"cooking": 15
+		},
+		"starting_items": ["hunting_bow", "stone_axe", "cooked_food"]
+	},
+	{
+		"id": "craftsman",
+		"name": "Craftsman",
+		"description": "Master builder and smith",
+		"starting_skills": {
+			"smithing": 30,
+			"construction": 25,
+			"mining": 20,
+			"melee": 5
+		},
+		"starting_items": ["stone_pickaxe", "iron_ingot", "plank", "bread"]
+	},
+	{
+		"id": "merchant",
+		"name": "Merchant",
+		"description": "Silver-tongued trader with extra supplies",
+		"starting_skills": {
+			"trading": 35,
+			"persuasion": 25,
+			"melee": 5
+		},
+		"starting_items": ["bread", "bread", "medicine", "cloth"]
+	}
+]
