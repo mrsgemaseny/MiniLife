@@ -1,0 +1,11 @@
+# MiniLife Cursor Rules
+- Project: MiniLife (2D Isometric Sandbox Survival RPG: Kenshi meets RimWorld meets Minecraft)
+- Engine: Godot 4.x
+- Language: GDScript with strict static typing
+- Single Source of Truth: PROJECT_MiniLife.md
+- Systems communication: Exclusively via autoloads/signal_bus.gd
+- Isometric Depth: y_sort_enabled = true from Day 1
+- Chunks: 16x16 delta-save from seed
+- Simulation Bubble: 3-tier LOD (<50 tiles: frame, 50-100: 5s, >100: 30s)
+- Zero Emojis: Strictly forbidden in code, logs, comments, and commits
+- Workflow: Verification -> Journal (journal/YYYY-MM-DD/minilife.md) -> Git push

@@ -1,0 +1,42 @@
+# Godot 4 
+.godot/
+*.translation
+
+# Exported binaries
+bin/
+build/
+dist/
+*.apk
+*.aab
+*.exe
+*.pck
+*.wasm
+*.html
+*.zip
+*.tar.gz
+
+# Mono / C# (if ever used)
+.vs/
+*.csproj
+*.sln
+obj/
+
+# Runtime Saves (keep saves directory structure and templates, ignore runtime worlds)
+saves/*
+!saves/achievements.json
+!saves/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor
+.idea/
+.vscode/
+*.swp
+*.tmp
+
+# Environment & Secrets
+.env
+*.local
