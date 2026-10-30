@@ -23,7 +23,7 @@ static func slot_exists(slot: String) -> bool:
 	return FileAccess.file_exists(meta_path)
 
 
-func save(slot: String) -> bool:
+func save_slot(slot: String) -> bool:
 	var target_slot: String = slot if slot != "" else _active_slot
 	_active_slot = target_slot
 	var bundle: Dictionary = {"meta": {}, "player": {}, "world": {}}
@@ -49,7 +49,7 @@ func save(slot: String) -> bool:
 	return true
 
 
-func load(slot: String) -> bool:
+func load_slot(slot: String) -> bool:
 	if not slot_exists(slot):
 		return false
 	var base_dir: String = _slot_dir(slot)
@@ -132,11 +132,11 @@ func _on_game_started(_seed: int, slot: String, is_new: bool) -> void:
 
 
 func _on_save_requested(slot: String) -> void:
-	save(slot)
+	save_slot(slot)
 
 
 func _on_load_requested(slot: String) -> void:
-	self.load(slot)
+	load_slot(slot)
 
 
 func _on_chunk_delta_changed(chunk_pos: Vector2i, delta: Dictionary) -> void:

@@ -1,7 +1,7 @@
 class_name InventoryComponent
 extends Resource
 
-signal changed()
+signal contents_changed()
 signal gold_changed(gold: int)
 
 @export var max_weight: float = 100.0
@@ -50,7 +50,7 @@ func add_item(item_id: String, count: int = 1, durability: int = -1) -> int:
 
 	var added: int = count - remaining
 	if added > 0:
-		changed.emit()
+		contents_changed.emit()
 	return added
 
 
@@ -74,7 +74,7 @@ func remove_item(item_id: String, count: int = 1) -> int:
 			slot["count"] = cur
 	var removed: int = count - to_remove
 	if removed > 0:
-		changed.emit()
+		contents_changed.emit()
 	return removed
 
 
@@ -94,7 +94,7 @@ func remove_at_index(slot_index: int, count: int = 1) -> Dictionary:
 		slots.remove_at(slot_index)
 	else:
 		slot["count"] = cur
-	changed.emit()
+	contents_changed.emit()
 	return out
 
 
@@ -106,7 +106,7 @@ func move_slot(from_index: int, to_index: int) -> void:
 	var tmp: Dictionary = slots[from_index]
 	slots[from_index] = slots[to_index]
 	slots[to_index] = tmp
-	changed.emit()
+	contents_changed.emit()
 
 
 func get_slot(slot_index: int) -> Dictionary:
@@ -193,7 +193,7 @@ func from_dict(data: Dictionary) -> void:
 				"count": int(s.get("count", 1)),
 				"durability": int(s.get("durability", -1))
 			})
-	changed.emit()
+	contents_changed.emit()
 	gold_changed.emit(gold)
 
 

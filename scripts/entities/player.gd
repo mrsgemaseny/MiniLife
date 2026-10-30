@@ -185,7 +185,7 @@ func _connect_component_signals() -> void:
 	skills.leveled_up.connect(func(skill: String, new_level: int) -> void:
 		SignalBus.skill_leveled_up.emit(skill, new_level)
 	)
-	inventory.changed.connect(func() -> void:
+	inventory.contents_changed.connect(func() -> void:
 		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 	)
 	inventory.gold_changed.connect(func(g: int) -> void:
