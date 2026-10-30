@@ -21,9 +21,7 @@ func _init() -> void:
 
 
 static func _get_item_def(item_id: String) -> Dictionary:
-	if DataRegistry != null:
-		return DataRegistry.get_item(item_id)
-	return {}
+	return DataRegistry.get_item(item_id)
 
 
 func can_equip(item_id: String) -> bool:

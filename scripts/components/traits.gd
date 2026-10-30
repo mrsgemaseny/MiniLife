@@ -8,9 +8,7 @@ signal trait_removed(trait_id: String)
 
 
 static func _get_trait_def(trait_id: String) -> Dictionary:
-	if DataRegistry != null:
-		return DataRegistry.get_trait(trait_id)
-	return {}
+	return DataRegistry.get_trait(trait_id)
 
 
 func add_trait(trait_id: String) -> bool:

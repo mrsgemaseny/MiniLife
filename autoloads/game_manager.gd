@@ -179,7 +179,7 @@ func compute_sim_lod_interval(entity_world_pos: Vector2) -> float:
 
 func load_json_table(relative_path: String) -> Array:
 	var table_key: String = relative_path.get_basename()
-	if DataRegistry != null and DataRegistry.TABLE_FILES.has(table_key):
+	if DataRegistry.TABLE_FILES.has(table_key):
 		return DataRegistry.get_rows(table_key)
 	var full_path: String = Config.DATA_ROOT + relative_path
 	if not FileAccess.file_exists(full_path):
@@ -197,7 +197,7 @@ func load_json_table(relative_path: String) -> Array:
 
 func load_json_indexed(relative_path: String, key_field: String = "id") -> Dictionary:
 	var table_key: String = relative_path.get_basename()
-	if key_field == "id" and DataRegistry != null and DataRegistry.TABLE_FILES.has(table_key):
+	if key_field == "id" and DataRegistry.TABLE_FILES.has(table_key):
 		return DataRegistry.get_table(table_key)
 	var rows: Array = load_json_table(relative_path)
 	var result: Dictionary = {}

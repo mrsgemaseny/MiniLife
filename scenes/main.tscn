@@ -26,6 +26,7 @@
 [ext_resource type="Script" path="res://scripts/ui/faction_relations_ui.gd" id="24_fac_ui"]
 [ext_resource type="Script" path="res://scripts/ui/world_chronicle_ui.gd" id="25_chron_ui"]
 [ext_resource type="Script" path="res://scripts/ui/pause_menu_ui.gd" id="26_pause_ui"]
+[ext_resource type="Script" path="res://autoloads/audio_director.gd" id="27_audio"]
 
 [sub_resource type="GDScript" id="GDScript_main"]
 script/source = "extends Node2D
@@ -117,6 +118,9 @@ script = ExtResource("21_journal")
 
 [node name="DebugConsole" type="Node" parent="Systems"]
 script = ExtResource("22_debug")
+
+[node name="AudioDirector" type="Node" parent="Systems"]
+script = ExtResource("27_audio")
 
 [node name="UILayer" type="CanvasLayer" parent="."]
 process_mode = 3
