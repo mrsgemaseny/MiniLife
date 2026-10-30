@@ -29,6 +29,10 @@ func _ready() -> void:
 	GameManager.set_player_world_pos(global_position)
 	SignalBus.player_spawned.emit(self)
 	SignalBus.player_tile_changed.emit(current_tile)
+	SignalBus.player_stat_changed.emit("health", stats.health, stats.max_health)
+	SignalBus.player_stat_changed.emit("hunger", stats.hunger, stats.max_hunger)
+	SignalBus.player_stat_changed.emit("stamina", stats.stamina, stats.max_stamina)
+	SignalBus.player_stat_changed.emit("blood", stats.blood, stats.max_blood)
 	queue_redraw()
 
 func _grant_starter_kit() -> void:
@@ -366,12 +370,22 @@ func _on_save_data_loaded(bundle: Dictionary) -> void:
 		current_tile = Config.iso_to_world(global_position)
 		GameManager.set_player_world_pos(global_position)
 	stats.from_dict(p.get("stats", {}))
-	health_comp.from_dict(p.get("health", {}))
+	if p.get("health") is Dictionary:
+		health_comp.from_dict(p.get("health", {}))
+	if stats.health <= 0.0:
+		stats.health = stats.max_health
+	if health_comp.current <= 0.0:
+		health_comp.current = health_comp.maximum
+	is_dead = false
 	skills.from_dict(p.get("skills", {}))
 	inventory.from_dict(p.get("inventory", {}))
 	equipment.from_dict(p.get("equipment", {}))
 	traits.from_dict(p.get("traits", {}))
 	needs.from_dict(p.get("needs", {}))
+	SignalBus.player_stat_changed.emit("health", stats.health, stats.max_health)
+	SignalBus.player_stat_changed.emit("hunger", stats.hunger, stats.max_hunger)
+	SignalBus.player_stat_changed.emit("stamina", stats.stamina, stats.max_stamina)
+	SignalBus.player_stat_changed.emit("blood", stats.blood, stats.max_blood)
 	queue_redraw()
 
 func _draw() -> void:

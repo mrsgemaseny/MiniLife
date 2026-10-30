@@ -34,6 +34,7 @@ var _last_player_tile: Vector2i = Vector2i(-99999, -99999)
 var _last_biome: String = ""
 var _last_exploration_pct: int = 0
 var _spawned_entities_by_chunk: Dictionary = {}
+var _starter_camp_spawned: bool = false
 
 
 func _ready() -> void:
@@ -62,19 +63,33 @@ func _draw() -> void:
 			for ly in range(Config.CHUNK_SIZE):
 				var tpos: Vector2i = origin + Vector2i(lx, ly)
 				var fstate: int = _fog.get_state(tpos)
-				if fstate == int(FogState.UNEXPLORED):
-					continue
 				var center: Vector2 = Config.world_to_iso(tpos)
+				var poly: PackedVector2Array = IsoMath.diamond_polygon(center, float(Config.HALF_TILE.x), float(Config.HALF_TILE.y))
+
+				if fstate == int(FogState.UNEXPLORED):
+					draw_colored_polygon(poly, Color(0.06, 0.07, 0.09, 1.0))
+					continue
+
 				var biome_id: String = _terrain.get_biome_at(tpos)
 				var col: Color = ProceduralTileset.BIOME_PALETTE.get(biome_id, Color(0.31, 0.54, 0.26))
-				var checker: int = (tpos.x + tpos.y) & 1
-				if checker == 0:
-					col = col.lightened(0.04)
+				var hash_val: int = absi((tpos.x * 73856093) ^ (tpos.y * 19349663))
+				var variation: float = float(hash_val % 9 - 4) * 0.012
+				col = col.lightened(variation) if variation > 0.0 else col.darkened(-variation)
+
 				if fstate == int(FogState.VISITED):
-					col = col.darkened(0.48)
-				var poly: PackedVector2Array = IsoMath.diamond_polygon(center, float(Config.HALF_TILE.x), float(Config.HALF_TILE.y))
+					col = col.darkened(0.45)
+
 				draw_colored_polygon(poly, col)
-				draw_polyline(poly, col.darkened(0.14), 1.0, true)
+				draw_polyline(poly, col.darkened(0.12), 1.0, true)
+
+				# Procedural surface detail (grass blades, pebbles, flowers)
+				if fstate == int(FogState.VISIBLE):
+					if (hash_val % 5) == 0 and (biome_id == "plains" or biome_id == "forest"):
+						var tuft_col: Color = col.lightened(0.18)
+						draw_line(center + Vector2(-4, 2), center + Vector2(-6, -3), tuft_col, 1.3)
+						draw_line(center + Vector2(-2, 2), center + Vector2(-1, -4), tuft_col, 1.3)
+					elif (hash_val % 11) == 0:
+						draw_circle(center + Vector2(5, -2), 1.8, col.darkened(0.22))
 
 		if _chunk_pois.has(cpos):
 			var poi_info: Dictionary = _chunk_pois[cpos]
@@ -83,7 +98,8 @@ func _draw() -> void:
 				var p_center: Vector2 = Config.world_to_iso(p_tile)
 				var poi_def: Dictionary = DataRegistry.get_poi(str(poi_info.get("poi_id", "")))
 				var poi_col: Color = Color.from_string(str(poi_def.get("color", "#eab308")), Color.GOLD)
-				draw_colored_polygon(IsoMath.diamond_polygon(p_center, 24.0, 12.0), poi_col)
+				draw_colored_polygon(IsoMath.diamond_polygon(p_center, 22.0, 11.0), poi_col)
+				draw_polyline(IsoMath.diamond_polygon(p_center, 22.0, 11.0), poi_col.lightened(0.35), 1.5, true)
 
 
 func get_tile(pos: Vector2i) -> TileState:
@@ -125,8 +141,28 @@ func update_visibility(player_pos: Vector2) -> void:
 		if st == int(FogState.VISIBLE):
 			_check_poi_discovery(tpos)
 	SignalBus.fog_batch_updated.emit(changes)
+	_sync_entity_fog_visibility()
 	_update_exploration_progress()
 	queue_redraw()
+
+
+func _sync_entity_fog_visibility() -> void:
+	for key in _resource_nodes_by_tile:
+		var rnode: ResourceNode = _resource_nodes_by_tile[key] as ResourceNode
+		if is_instance_valid(rnode):
+			var st: int = _fog.get_state(rnode.tile_pos)
+			rnode.visible = (st != int(FogState.UNEXPLORED))
+			rnode.modulate = Color(1, 1, 1, 1) if st == int(FogState.VISIBLE) else Color(0.55, 0.55, 0.62, 1)
+
+	for cpos in _spawned_entities_by_chunk:
+		for ent in _spawned_entities_by_chunk[cpos]:
+			if is_instance_valid(ent) and ent is Node2D:
+				var etile: Vector2i = Config.iso_to_world((ent as Node2D).global_position)
+				var st: int = _fog.get_state(etile)
+				if ent.is_in_group("enemy"):
+					(ent as Node2D).visible = (st == int(FogState.VISIBLE))
+				else:
+					(ent as Node2D).visible = (st != int(FogState.UNEXPLORED))
 
 
 func harvest(pos: Vector2i, _resource_id: String, _amount: int) -> bool:
@@ -205,15 +241,38 @@ func _on_game_started(world_seed: int, _slot: String, is_new: bool) -> void:
 		_chunk_deltas.clear()
 		_fog.clear()
 		_discovered_pois.clear()
+		_starter_camp_spawned = false
 		_last_player_tile = Vector2i(-99999, -99999)
 		var spawn_tile: Vector2i = _find_spawn_tile()
 		var spawn_world: Vector2 = Config.world_to_iso(spawn_tile)
 		SignalBus.player_teleport_requested.emit(spawn_world)
 		_on_player_tile_changed(spawn_tile)
+		_ensure_starter_camp(spawn_tile)
 	else:
 		_last_player_tile = Vector2i(-99999, -99999)
 		var ptile: Vector2i = GameManager.get_player_tile()
 		_on_player_tile_changed(ptile)
+
+
+func _ensure_starter_camp(spawn_tile: Vector2i) -> void:
+	if _starter_camp_spawned:
+		return
+	_starter_camp_spawned = true
+	var camp_structures: Array[Dictionary] = [
+		{"id": "campfire", "offset": Vector2i(2, 0)},
+		{"id": "workbench", "offset": Vector2i(2, -2)},
+		{"id": "bed", "offset": Vector2i(-2, -1)},
+		{"id": "storage", "offset": Vector2i(0, -2)}
+	]
+	for entry in camp_structures:
+		var tpos: Vector2i = spawn_tile + (entry["offset"] as Vector2i)
+		var key: String = Config.vec2i_to_key(tpos)
+		if _resource_nodes_by_tile.has(key):
+			var rn: Node = _resource_nodes_by_tile[key]
+			if is_instance_valid(rn):
+				rn.queue_free()
+			_resource_nodes_by_tile.erase(key)
+		SignalBus.structure_restored.emit(str(entry["id"]), tpos)
 
 
 func _on_player_tile_changed(tile_pos: Vector2i) -> void:
@@ -290,6 +349,7 @@ func _load_chunk(cpos: Vector2i) -> void:
 		SignalBus.structure_restored.emit(str(structures[tile_key]), tpos)
 
 	_spawn_chunk_inhabitants(cpos, center_biome, delta)
+	_sync_entity_fog_visibility()
 	SignalBus.chunk_loaded.emit(cpos)
 	queue_redraw()
 
@@ -299,6 +359,7 @@ func _spawn_resource_node(chunk_node: Node2D, node_def_id: String, tpos: Vector2
 	rnode.node_def_id = node_def_id
 	rnode.tile_pos = tpos
 	rnode.global_position = Config.world_to_iso(tpos)
+	rnode.visible = (_fog.get_state(tpos) != int(FogState.UNEXPLORED))
 	chunk_node.add_child(rnode)
 	_resource_nodes_by_tile[Config.vec2i_to_key(tpos)] = rnode
 
@@ -308,6 +369,7 @@ func _spawn_chunk_inhabitants(cpos: Vector2i, biome_id: String, delta: Dictionar
 	var spawned_list: Array[Node] = []
 	var origin: Vector2i = Config.chunk_origin(cpos)
 	var center_chunk: Vector2i = Vector2i(Config.WORLD_SIZE_CHUNKS / 2, Config.WORLD_SIZE_CHUNKS / 2)
+	var world_center_tile: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
 
 	if cpos == center_chunk:
 		var trader_uid: String = "npc_starter_trader"
@@ -315,7 +377,7 @@ func _spawn_chunk_inhabitants(cpos: Vector2i, biome_id: String, delta: Dictionar
 			var trader: NPCBase = NPC_SCENE.instantiate() as NPCBase
 			trader.npc_id = "merchant_common"
 			trader.spawn_uid = trader_uid
-			trader.global_position = Config.world_to_iso(origin + Vector2i(10, 6))
+			trader.global_position = Config.world_to_iso(origin + Vector2i(11, 6))
 			add_child(trader)
 			spawned_list.append(trader)
 
@@ -324,21 +386,23 @@ func _spawn_chunk_inhabitants(cpos: Vector2i, biome_id: String, delta: Dictionar
 			var elder: NPCBase = NPC_SCENE.instantiate() as NPCBase
 			elder.npc_id = "village_elder"
 			elder.spawn_uid = elder_uid
-			elder.global_position = Config.world_to_iso(origin + Vector2i(6, 10))
+			elder.global_position = Config.world_to_iso(origin + Vector2i(5, 10))
 			add_child(elder)
 			spawned_list.append(elder)
 	else:
 		var rng: RandomNumberGenerator = RngService.make_chunk_rng(_seed, cpos, 777)
 		var biome_def: Dictionary = DataRegistry.get_biome(biome_id)
 		var enemy_pool: Array = biome_def.get("enemy_pool", [])
-		if not enemy_pool.is_empty() and rng.randf() < 0.65:
+		if not enemy_pool.is_empty() and rng.randf() < 0.60:
 			var enemy_uid: String = "enemy_%d_%d_0" % [cpos.x, cpos.y]
-			if not killed.has(enemy_uid):
+			var etile: Vector2i = origin + Vector2i(rng.randi_range(3, 12), rng.randi_range(3, 12))
+			# Keep starter safe zone (within 22 tiles of world center) free of hostile spawns
+			if not killed.has(enemy_uid) and Config.tile_distance(etile, world_center_tile) > 22:
 				var enemy: EnemyBase = ENEMY_SCENE.instantiate() as EnemyBase
 				enemy.enemy_id = str(enemy_pool[rng.randi() % enemy_pool.size()])
 				enemy.spawn_uid = enemy_uid
-				var etile: Vector2i = origin + Vector2i(rng.randi_range(3, 12), rng.randi_range(3, 12))
 				enemy.global_position = Config.world_to_iso(etile)
+				enemy.visible = (_fog.get_state(etile) == int(FogState.VISIBLE))
 				add_child(enemy)
 				spawned_list.append(enemy)
 
@@ -351,6 +415,7 @@ func _spawn_chunk_inhabitants(cpos: Vector2i, biome_id: String, delta: Dictionar
 				npc.spawn_uid = npc_uid
 				var ntile: Vector2i = origin + Vector2i(rng.randi_range(4, 11), rng.randi_range(4, 11))
 				npc.global_position = Config.world_to_iso(ntile)
+				npc.visible = (_fog.get_state(ntile) != int(FogState.UNEXPLORED))
 				add_child(npc)
 				spawned_list.append(npc)
 

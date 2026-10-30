@@ -24,5 +24,5 @@
 - **Engine & Language**: Godot 4.7, GDScript (strict static typing).
 - **View**: 2D Isometric (`y_sort_enabled = true` on all world, chunk, structure, and entity nodes).
 - **Decoupling**: Zero cross-system imports; all inter-system communication strictly through `SignalBus`.
-- **Verification**: Validated via `Godot_v4.7-stable_win64_console.exe --headless --quit-after 60` with zero parse or runtime errors.
+- **Verification**: Validated via `Godot_v4.7-stable_win64_console.exe --headless --quit-after 60` with zero parse or runtime errors; fixed HUD layout, fog-of-war entity culling, and starter safe camp.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

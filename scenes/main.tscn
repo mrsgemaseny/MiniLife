@@ -33,10 +33,7 @@ script/source = "extends Node2D
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	if SaveSystem.slot_exists(Config.DEFAULT_SAVE_SLOT):
-		SignalBus.load_requested.emit(Config.DEFAULT_SAVE_SLOT)
-	else:
-		GameManager.start_new_game(randi(), Config.DEFAULT_SAVE_SLOT)
+	GameManager.start_new_game(randi(), Config.DEFAULT_SAVE_SLOT)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(\"ui_inventory\"):

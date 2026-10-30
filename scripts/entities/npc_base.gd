@@ -143,4 +143,4 @@ func _draw() -> void:
 	draw_rect(Rect2(-7, -20, 14, 13), robe_col, true)
 	draw_circle(Vector2(0, -25), 5.5, Color(0.90, 0.76, 0.62))
 	if ThemeDB.fallback_font != null:
-		draw_string(ThemeDB.fallback_font, Vector2(-42, -34), display_name + " [E]", HORIZONTAL_ALIGNMENT_CENTER, 84, 10, Color(0.92, 0.95, 0.82))
+		draw_string(ThemeDB.fallback_font, Vector2(-80, -34), display_name + " [E]", HORIZONTAL_ALIGNMENT_CENTER, 160, 11, Color(0.95, 0.98, 0.84))
