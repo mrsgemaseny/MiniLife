@@ -32,37 +32,107 @@ func _draw() -> void:
 	var secondary_col: Color = Color.from_string(str(_def.get("trunk_color", "#5c4028")), Color(0.36, 0.25, 0.16))
 	var radius: float = float(_def.get("radius", 16.0))
 	var ofs: Vector2 = _shake_offset
+	var outline_col: Color = Color(0.08, 0.09, 0.11, 0.92)
 
 	# Ground shadow
-	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 2.0), radius * 0.9, radius * 0.45), Color(0.0, 0.0, 0.0, 0.28))
+	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 3.0), radius * 1.15, radius * 0.56), Color(0.0, 0.0, 0.0, 0.34))
 
-	if node_def_id.find("tree") != -1 or node_def_id.find("pine") != -1:
-		draw_rect(Rect2(ofs.x - 4.0, ofs.y - 22.0, 8.0, 22.0), secondary_col)
-		draw_circle(ofs + Vector2(0.0, -30.0), radius, primary_col.darkened(0.12))
-		draw_circle(ofs + Vector2(-5.0, -34.0), radius * 0.78, primary_col)
-		draw_circle(ofs + Vector2(5.0, -36.0), radius * 0.65, primary_col.lightened(0.12))
-	elif node_def_id.find("boulder") != -1 or node_def_id.find("vein") != -1:
+	if node_def_id.find("pine") != -1:
+		# Conifer / Pine Tree (tiered evergreen triangles with dark outline & bark trunk)
+		var trunk_pts: PackedVector2Array = PackedVector2Array([
+			ofs + Vector2(-5.0, 2.0), ofs + Vector2(-3.5, -16.0),
+			ofs + Vector2(3.5, -16.0), ofs + Vector2(5.0, 2.0)
+		])
+		draw_colored_polygon(trunk_pts, secondary_col.darkened(0.1))
+		draw_polyline(trunk_pts, outline_col, 1.3, true)
+
+		var tier1: PackedVector2Array = PackedVector2Array([
+			ofs + Vector2(-19.0, -10.0), ofs + Vector2(0.0, -34.0), ofs + Vector2(19.0, -10.0)
+		])
+		var tier2: PackedVector2Array = PackedVector2Array([
+			ofs + Vector2(-16.0, -21.0), ofs + Vector2(0.0, -45.0), ofs + Vector2(16.0, -21.0)
+		])
+		var tier3: PackedVector2Array = PackedVector2Array([
+			ofs + Vector2(-11.0, -32.0), ofs + Vector2(0.0, -56.0), ofs + Vector2(11.0, -32.0)
+		])
+		draw_colored_polygon(tier1, primary_col.darkened(0.18))
+		draw_polyline(tier1, outline_col, 1.4, true)
+		draw_colored_polygon(tier2, primary_col)
+		draw_polyline(tier2, outline_col, 1.4, true)
+		draw_colored_polygon(tier3, primary_col.lightened(0.14))
+		draw_polyline(tier3, outline_col, 1.4, true)
+
+	elif node_def_id.find("tree") != -1:
+		# Lush Oak Tree (flared roots, textured trunk, multi-cluster leafy canopy)
+		var trunk_pts: PackedVector2Array = PackedVector2Array([
+			ofs + Vector2(-7.0, 3.0), ofs + Vector2(-4.5, -8.0), ofs + Vector2(-4.0, -24.0),
+			ofs + Vector2(4.0, -24.0), ofs + Vector2(4.5, -8.0), ofs + Vector2(7.0, 3.0)
+		])
+		draw_colored_polygon(trunk_pts, secondary_col)
+		draw_line(ofs + Vector2(-1.5, 2.0), ofs + Vector2(-1.0, -22.0), secondary_col.darkened(0.22), 1.4)
+		draw_polyline(trunk_pts, outline_col, 1.4, true)
+
+		# Shadow canopy layer
+		var c_dark: Color = primary_col.darkened(0.24)
+		var c_mid: Color = primary_col
+		var c_light: Color = primary_col.lightened(0.18)
+		draw_circle(ofs + Vector2(-11.0, -27.0), radius * 0.72 + 1.5, outline_col)
+		draw_circle(ofs + Vector2(11.0, -27.0), radius * 0.72 + 1.5, outline_col)
+		draw_circle(ofs + Vector2(0.0, -25.0), radius * 0.85 + 1.5, outline_col)
+		draw_circle(ofs + Vector2(0.0, -37.0), radius * 0.88 + 1.5, outline_col)
+
+		draw_circle(ofs + Vector2(-11.0, -27.0), radius * 0.72, c_dark)
+		draw_circle(ofs + Vector2(11.0, -27.0), radius * 0.72, c_dark)
+		draw_circle(ofs + Vector2(0.0, -25.0), radius * 0.85, c_dark)
+		draw_circle(ofs + Vector2(-7.0, -34.0), radius * 0.76, c_mid)
+		draw_circle(ofs + Vector2(8.0, -33.0), radius * 0.72, c_mid)
+		draw_circle(ofs + Vector2(0.0, -38.0), radius * 0.82, c_mid)
+		draw_circle(ofs + Vector2(-4.0, -41.0), radius * 0.54, c_light)
+		draw_circle(ofs + Vector2(5.0, -38.0), radius * 0.45, c_light)
+
+	elif node_def_id.find("stone") != -1 or node_def_id.find("iron") != -1 or node_def_id.find("copper") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("vein") != -1:
+		# Faceted Craggy Isometric Rock / Ore Vein
+		var r: float = radius * 1.15
 		var rock_pts: PackedVector2Array = PackedVector2Array([
-			ofs + Vector2(-radius, 0.0),
-			ofs + Vector2(-radius * 0.7, -radius * 0.95),
-			ofs + Vector2(radius * 0.2, -radius * 1.1),
-			ofs + Vector2(radius, -radius * 0.35),
-			ofs + Vector2(radius * 0.6, 4.0),
-			ofs + Vector2(-radius * 0.5, 4.0)
+			ofs + Vector2(-r, 1.0),
+			ofs + Vector2(-r * 0.75, -r * 0.85),
+			ofs + Vector2(-r * 0.15, -r * 1.20),
+			ofs + Vector2(r * 0.45, -r * 1.02),
+			ofs + Vector2(r, -r * 0.30),
+			ofs + Vector2(r * 0.65, 4.0),
+			ofs + Vector2(-r * 0.55, 4.0)
 		])
-		draw_colored_polygon(rock_pts, secondary_col)
-		var inner_pts: PackedVector2Array = PackedVector2Array([
-			ofs + Vector2(-radius * 0.5, -4.0),
-			ofs + Vector2(-radius * 0.3, -radius * 0.8),
-			ofs + Vector2(radius * 0.5, -radius * 0.6),
-			ofs + Vector2(radius * 0.4, 0.0)
+		draw_colored_polygon(rock_pts, secondary_col.darkened(0.08))
+		var top_facet: PackedVector2Array = PackedVector2Array([
+			ofs + Vector2(-r * 0.75, -r * 0.85),
+			ofs + Vector2(-r * 0.15, -r * 1.20),
+			ofs + Vector2(r * 0.45, -r * 1.02),
+			ofs + Vector2(r * 0.10, -r * 0.35),
+			ofs + Vector2(-r * 0.45, -r * 0.25)
 		])
-		draw_colored_polygon(inner_pts, primary_col)
+		draw_colored_polygon(top_facet, secondary_col.lightened(0.16))
+		draw_polyline(rock_pts, outline_col, 1.6, true)
+
+		# Ore gleams / crystal veins
+		if node_def_id.find("iron") != -1 or node_def_id.find("copper") != -1:
+			var vein_col: Color = primary_col.lightened(0.28)
+			draw_line(ofs + Vector2(-6.0, -12.0), ofs + Vector2(-1.0, -7.0), vein_col, 2.4)
+			draw_line(ofs + Vector2(2.0, -14.0), ofs + Vector2(7.0, -8.0), vein_col, 2.4)
+			draw_circle(ofs + Vector2(-3.0, -10.0), 2.0, Color(0.95, 0.97, 1.0))
+			draw_circle(ofs + Vector2(5.0, -5.0), 2.2, vein_col)
 	else:
-		draw_circle(ofs + Vector2(0.0, -8.0), radius, primary_col)
-		draw_circle(ofs + Vector2(-4.0, -10.0), 3.0, secondary_col)
-		draw_circle(ofs + Vector2(4.0, -7.0), 3.0, secondary_col)
-		draw_circle(ofs + Vector2(1.0, -12.0), 2.5, secondary_col)
+		# Lush Berry Bush with crimson berries
+		var br: float = radius * 0.95
+		draw_circle(ofs + Vector2(-5.0, -7.0), br * 0.78 + 1.4, outline_col)
+		draw_circle(ofs + Vector2(5.0, -7.0), br * 0.78 + 1.4, outline_col)
+		draw_circle(ofs + Vector2(0.0, -11.0), br * 0.88 + 1.4, outline_col)
+		draw_circle(ofs + Vector2(-5.0, -7.0), br * 0.78, primary_col.darkened(0.15))
+		draw_circle(ofs + Vector2(5.0, -7.0), br * 0.78, primary_col.darkened(0.10))
+		draw_circle(ofs + Vector2(0.0, -11.0), br * 0.88, primary_col.lightened(0.08))
+		var berry_col: Color = Color(0.88, 0.16, 0.20)
+		for bpt in [Vector2(-5.0, -10.0), Vector2(4.0, -9.0), Vector2(0.0, -14.0), Vector2(-2.0, -5.0), Vector2(6.0, -5.0)]:
+			draw_circle(ofs + bpt, 2.3, berry_col)
+			draw_circle(ofs + bpt + Vector2(-0.5, -0.5), 0.8, Color(1.0, 0.85, 0.85))
 
 
 func harvest_hit(harvester: Node) -> bool:

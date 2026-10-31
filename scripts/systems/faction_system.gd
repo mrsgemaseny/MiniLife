@@ -92,14 +92,14 @@ func get_joined_faction() -> String:
 func _on_npc_killed(_npc_id: String, faction_id: String, killer: String) -> void:
 	if killer == "player" and not faction_id.is_empty():
 		change_reputation(faction_id, Config.KILL_REP_PENALTY, "killed_member")
-		if faction_id == "raiders":
-			change_reputation("settlers", 6, "slain_raider")
-			change_reputation("traders_guild", 4, "slain_raider")
+		if faction_id == "bandits" or faction_id == "raiders":
+			change_reputation("village_folk", 6, "slain_raider")
+			change_reputation("merchants", 4, "slain_raider")
 
 func _on_day_passed(day: int) -> void:
-	var trader_rep: int = get_reputation("traders_guild")
+	var trader_rep: int = get_reputation("merchants")
 	if _caravan_director.should_spawn_caravan(day, trader_rep):
-		SignalBus.game_event_triggered.emit("wandering_trader")
+		SignalBus.game_event_triggered.emit("trader_visit")
 
 func _on_save_data_requested(bundle: Dictionary) -> void:
 	var w: Dictionary = bundle.get("world", {})

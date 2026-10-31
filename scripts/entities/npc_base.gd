@@ -50,7 +50,7 @@ func _apply_npc_def() -> void:
 		return
 	display_name = str(_npc_def.get("name", npc_id.capitalize()))
 	faction_id = str(_npc_def.get("faction", _npc_def.get("faction_id", faction_id)))
-	dialogue_id = str(_npc_def.get("dialogue_id", dialogue_id))
+	dialogue_id = str(_npc_def.get("dialogue_tree_id", _npc_def.get("dialogue_id", dialogue_id)))
 	var max_hp: float = float(_npc_def.get("health", _npc_def.get("max_health", 100.0)))
 	stats.set_max("health", max_hp)
 	stats.health = max_hp
@@ -136,11 +136,43 @@ func _on_player_tile_changed(player_tile: Vector2i) -> void:
 	sim_tier = SimulationBubble.compute_lod_tier(player_tile, my_tile)
 
 func _draw() -> void:
-	draw_circle(Vector2(0, 3), 9.0, Color(0.0, 0.0, 0.0, 0.32))
-	var robe_col: Color = Color(0.25, 0.62, 0.42) if faction_id == "settlers" else Color(0.75, 0.58, 0.22)
-	draw_rect(Rect2(-5, -7, 4, 8), Color(0.25, 0.22, 0.18), true)
-	draw_rect(Rect2(1, -7, 4, 8), Color(0.25, 0.22, 0.18), true)
-	draw_rect(Rect2(-7, -20, 14, 13), robe_col, true)
-	draw_circle(Vector2(0, -25), 5.5, Color(0.90, 0.76, 0.62))
+	var outline_col: Color = Color(0.07, 0.08, 0.10, 0.95)
+	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 3.0), 11.0, 5.5), Color(0.0, 0.0, 0.0, 0.35))
+
+	var is_elder: bool = (npc_id.find("elder") != -1 or faction_id == "village_folk")
+	var robe_col: Color = Color(0.24, 0.48, 0.32) if is_elder else Color(0.68, 0.48, 0.20)
+
+	# Merchant pack or Elder cloak
+	if not is_elder:
+		draw_rect(Rect2(-8.5, -22.0, 17.0, 11.0), Color(0.45, 0.29, 0.15), true)
+		draw_rect(Rect2(-8.5, -22.0, 17.0, 11.0), outline_col, false, 1.3)
+
+	# Boots & Legs
+	draw_rect(Rect2(-5.0, -9.0, 4.0, 6.0), Color(0.30, 0.26, 0.20), true)
+	draw_rect(Rect2(1.0, -9.0, 4.0, 6.0), Color(0.30, 0.26, 0.20), true)
+	draw_rect(Rect2(-5.5, -3.5, 4.5, 4.5), Color(0.20, 0.14, 0.09), true)
+	draw_rect(Rect2(1.0, -3.5, 4.5, 4.5), Color(0.20, 0.14, 0.09), true)
+
+	# Tunic / Robe
+	draw_rect(Rect2(-6.5, -22.0, 13.0, 14.0), robe_col, true)
+	draw_rect(Rect2(-6.5, -22.0, 13.0, 14.0), outline_col, false, 1.4)
+	draw_rect(Rect2(-6.5, -13.0, 13.0, 2.2), Color(0.22, 0.15, 0.09), true)
+
+	# Staff for Elder
+	if is_elder:
+		draw_line(Vector2(8.0, 2.0), Vector2(8.0, -28.0), Color(0.46, 0.30, 0.16), 2.4)
+		draw_circle(Vector2(8.0, -29.0), 2.5, Color(0.88, 0.76, 0.28))
+
+	# Head & Hair
+	draw_circle(Vector2(0.0, -27.5), 6.4, outline_col)
+	draw_circle(Vector2(0.0, -27.5), 5.4, Color(0.90, 0.76, 0.62))
+	var hair_col: Color = Color(0.76, 0.76, 0.78) if is_elder else Color(0.32, 0.21, 0.12)
+	draw_arc(Vector2(0.0, -29.0), 5.4, PI * 0.92, TAU * 1.04, 12, hair_col, 3.2)
+
+	# Framed Nameplate Pill above NPC
 	if ThemeDB.fallback_font != null:
-		draw_string(ThemeDB.fallback_font, Vector2(-80, -34), display_name + " [E]", HORIZONTAL_ALIGNMENT_CENTER, 160, 11, Color(0.95, 0.98, 0.84))
+		var label_text: String = display_name + " [E]"
+		var pill_rect: Rect2 = Rect2(-64.0, -49.0, 128.0, 16.0)
+		draw_rect(pill_rect, Color(0.08, 0.09, 0.12, 0.86), true)
+		draw_rect(pill_rect, Color(0.72, 0.58, 0.28, 0.90), false, 1.2)
+		draw_string(ThemeDB.fallback_font, Vector2(-62.0, -37.0), label_text, HORIZONTAL_ALIGNMENT_CENTER, 124.0, 11, Color(0.98, 0.93, 0.76))

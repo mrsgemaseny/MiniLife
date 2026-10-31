@@ -37,18 +37,18 @@ func _ready() -> void:
 
 func _grant_starter_kit() -> void:
 	if inventory.slots.is_empty():
-		inventory.add_item("wood_axe", 1)
+		inventory.add_item("stone_axe", 1)
 		inventory.add_item("stone_pickaxe", 1)
 		inventory.add_item("iron_sword", 1)
 		inventory.add_item("hunting_bow", 1)
 		inventory.add_item("arrow", 20)
-		inventory.add_item("cooked_meat", 5)
+		inventory.add_item("cooked_food", 5)
 		inventory.add_item("bandage", 4)
 		inventory.add_item("wood", 14)
 		inventory.add_item("stone", 12)
-		inventory.add_item("fiber", 8)
+		inventory.add_item("cloth", 8)
 		inventory.add_gold(35)
-		equipment.equip("wood_axe")
+		equipment.equip("stone_axe")
 		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 
 func _physics_process(delta: float) -> void:
@@ -213,10 +213,10 @@ func use_slot_item(slot_index: int) -> void:
 
 	var item_type: String = str(def.get("type", ""))
 	if item_type == "consumable" or item_type == "food" or item_type == "medical":
-		var effects: Dictionary = def.get("effects", {})
-		var heal_amt: float = float(effects.get("health", def.get("restore_health", 0.0)))
-		var hunger_amt: float = float(effects.get("hunger", def.get("restore_hunger", 0.0)))
-		var stamina_amt: float = float(effects.get("stamina", 0.0))
+		var effects: Dictionary = def.get("stats", def.get("effects", {}))
+		var heal_amt: float = float(effects.get("heal", effects.get("health", def.get("restore_health", 0.0))))
+		var hunger_amt: float = float(effects.get("nutrition", effects.get("hunger", def.get("restore_hunger", 0.0))))
+		var stamina_amt: float = float(effects.get("stamina", 15.0 if hunger_amt > 0.0 else 0.0))
 		if heal_amt > 0.0:
 			health_comp.heal(heal_amt)
 			stats.modify("health", heal_amt)
@@ -225,7 +225,7 @@ func use_slot_item(slot_index: int) -> void:
 			status_effects.apply("well_fed", 35.0, 1.0)
 		if stamina_amt > 0.0:
 			stats.modify("stamina", stamina_amt)
-		if item_id.find("bandage") != -1 or bool(effects.get("bandage", false)):
+		if item_id.find("bandage") != -1 or bool(effects.get("stop_bleeding", effects.get("bandage", false))):
 			var bandaged_cnt: int = health_comp.bandage_all_bleeding()
 			if bandaged_cnt > 0:
 				skills.gain_xp("medicine", 12.0)
@@ -389,37 +389,80 @@ func _on_save_data_loaded(bundle: Dictionary) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	# Shadow
-	draw_circle(Vector2(0, 3), 10.0, Color(0.0, 0.0, 0.0, 0.35))
-	# Legs
+	var outline_col: Color = Color(0.07, 0.08, 0.10, 0.95)
+	# Isometric ground shadow
+	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 3.0), 12.0, 6.0), Color(0.0, 0.0, 0.0, 0.38))
+
+	# Traveller Cloak / Cape behind torso
+	var cape_pts: PackedVector2Array = PackedVector2Array([
+		Vector2(-7.0, -22.0), Vector2(7.0, -22.0), Vector2(9.0, -5.0), Vector2(-9.0, -5.0)
+	])
+	draw_colored_polygon(cape_pts, Color(0.24, 0.27, 0.22))
+	draw_polyline(cape_pts, outline_col, 1.3, true)
+
+	# Boots & Trousers
 	var legs_id: String = equipment.get_item_id("legs") if equipment != null else ""
-	var leg_col: Color = Color(0.26, 0.22, 0.18) if legs_id.is_empty() else Color(0.45, 0.34, 0.22)
-	draw_rect(Rect2(-5, -8, 4, 9), leg_col, true)
-	draw_rect(Rect2(1, -8, 4, 9), leg_col, true)
+	var pant_col: Color = Color(0.32, 0.28, 0.22) if legs_id.is_empty() else Color(0.45, 0.34, 0.22)
+	var boot_col: Color = Color(0.24, 0.16, 0.10)
+	draw_rect(Rect2(-5.5, -10.0, 4.5, 7.0), pant_col, true)
+	draw_rect(Rect2(1.0, -10.0, 4.5, 7.0), pant_col, true)
+	draw_rect(Rect2(-6.0, -4.0, 5.0, 5.0), boot_col, true)
+	draw_rect(Rect2(1.0, -4.0, 5.0, 5.0), boot_col, true)
 
-	# Torso / Armor
+	# Tunic / Chainmail / Leather Armor
 	var chest_id: String = equipment.get_item_id("chest") if equipment != null else ""
-	var torso_col: Color = Color(0.22, 0.48, 0.76)
+	var torso_col: Color = Color(0.54, 0.36, 0.20)
 	if chest_id.find("chainmail") != -1 or chest_id.find("iron") != -1:
-		torso_col = Color(0.64, 0.68, 0.72)
+		torso_col = Color(0.62, 0.66, 0.72)
 	elif chest_id.find("leather") != -1:
-		torso_col = Color(0.55, 0.38, 0.22)
-	draw_rect(Rect2(-7, -21, 14, 14), torso_col, true)
-	draw_rect(Rect2(-7, -21, 14, 14), torso_col.darkened(0.35), false, 1.5)
+		torso_col = Color(0.48, 0.31, 0.17)
+	# Sleeves
+	draw_rect(Rect2(-9.5, -21.0, 3.5, 9.0), Color(0.72, 0.66, 0.56), true)
+	draw_rect(Rect2(6.0, -21.0, 3.5, 9.0), Color(0.72, 0.66, 0.56), true)
+	# Main torso
+	draw_rect(Rect2(-6.5, -22.0, 13.0, 13.0), torso_col, true)
+	draw_rect(Rect2(-6.5, -22.0, 13.0, 13.0), outline_col, false, 1.4)
+	# Belt & Brass Buckle
+	draw_rect(Rect2(-6.5, -12.5, 13.0, 2.5), Color(0.20, 0.14, 0.09), true)
+	draw_rect(Rect2(-1.5, -13.0, 3.0, 3.2), Color(0.88, 0.72, 0.24), true)
 
-	# Head & Helmet
-	draw_circle(Vector2(0, -26), 6.0, Color(0.92, 0.78, 0.64))
+	# Head, Hair, Eyes
+	var skin_col: Color = Color(0.91, 0.76, 0.62)
+	draw_circle(Vector2(0.0, -28.0), 6.8, outline_col)
+	draw_circle(Vector2(0.0, -28.0), 5.8, skin_col)
+	draw_circle(Vector2(-2.0, -28.0), 0.9, Color(0.14, 0.12, 0.10))
+	draw_circle(Vector2(2.0, -28.0), 0.9, Color(0.14, 0.12, 0.10))
 	var head_id: String = equipment.get_item_id("head") if equipment != null else ""
 	if not head_id.is_empty():
-		draw_arc(Vector2(0, -27), 6.5, PI, TAU, 12, Color(0.66, 0.70, 0.75), 3.0)
+		draw_arc(Vector2(0.0, -29.0), 6.2, PI, TAU, 12, Color(0.64, 0.68, 0.74), 3.4)
 	else:
-		draw_arc(Vector2(0, -28), 5.5, PI, TAU, 12, Color(0.28, 0.20, 0.14), 3.0)
+		draw_arc(Vector2(0.0, -29.5), 5.8, PI * 0.92, TAU * 1.04, 12, Color(0.36, 0.23, 0.13), 3.6)
 
-	# Weapon in Hand
-	var weapon_line_end: Vector2 = Vector2(0, -14) + facing_direction * 18.0
-	draw_line(Vector2(0, -14), weapon_line_end, Color(0.82, 0.82, 0.86), 2.5)
+	# Weapon in Hand (Axe / Sword / Bow)
+	var hand_pos: Vector2 = Vector2(4.5, -14.0)
+	var weapon_id: String = equipment.get_item_id("weapon") if equipment != null else ""
+	var weapon_dir: Vector2 = facing_direction.normalized()
+	if weapon_dir.length_squared() < 0.01:
+		weapon_dir = Vector2.RIGHT
+	var weapon_tip: Vector2 = hand_pos + weapon_dir * 18.0
+	if weapon_id.find("axe") != -1 or weapon_id.find("pick") != -1:
+		draw_line(hand_pos, weapon_tip, Color(0.48, 0.32, 0.18), 2.4)
+		var perp: Vector2 = Vector2(-weapon_dir.y, weapon_dir.x)
+		var head_pts: PackedVector2Array = PackedVector2Array([
+			weapon_tip - weapon_dir * 4.0,
+			weapon_tip + perp * 6.0,
+			weapon_tip + weapon_dir * 2.0 + perp * 3.0
+		])
+		draw_colored_polygon(head_pts, Color(0.76, 0.80, 0.85))
+	elif weapon_id.find("bow") != -1:
+		var b_angle: float = weapon_dir.angle()
+		draw_arc(hand_pos, 11.0, b_angle - 1.1, b_angle + 1.1, 12, Color(0.55, 0.36, 0.18), 2.2)
+	else:
+		draw_line(hand_pos, weapon_tip, Color(0.84, 0.88, 0.92), 2.8)
+		var guard_perp: Vector2 = Vector2(-weapon_dir.y, weapon_dir.x) * 4.0
+		draw_line(hand_pos + weapon_dir * 3.0 - guard_perp, hand_pos + weapon_dir * 3.0 + guard_perp, Color(0.78, 0.64, 0.24), 2.2)
 
 	# Attack Swing Arc
 	if _swing_timer > 0.0:
-		var base_angle: float = facing_direction.angle()
-		draw_arc(Vector2(0, -14), 26.0, base_angle - 0.8, base_angle + 0.8, 16, Color(1.0, 0.92, 0.65, 0.75), 3.0)
+		var base_angle: float = weapon_dir.angle()
+		draw_arc(Vector2(0.0, -14.0), 28.0, base_angle - 0.85, base_angle + 0.85, 16, Color(1.0, 0.90, 0.55, 0.80), 3.5)

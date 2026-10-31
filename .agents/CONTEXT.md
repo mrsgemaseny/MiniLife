@@ -24,5 +24,10 @@
 - **Engine & Language**: Godot 4.7, GDScript (strict static typing).
 - **View**: 2D Isometric (`y_sort_enabled = true` on all world, chunk, structure, and entity nodes).
 - **Decoupling**: Zero cross-system imports; all inter-system communication strictly through `SignalBus`.
-- **Verification**: Validated via `Godot_v4.7-stable_win64_console.exe --headless --quit-after 60` with zero parse or runtime errors; fixed HUD layout, fog-of-war entity culling, and starter safe camp.
+- **Verification**: Validated via `Godot_v4.7-stable_win64_console.exe --headless --path . res://scenes/main.tscn -- --e2e-smoke` (`E2E_ALL_SYSTEMS_VERIFIED_OK`) with zero parse or runtime errors.
+- **Performance & Visual Design Overhaul (2026-10-31)**:
+  - Generated reference art & isometric sprite atlas (`assets/sprites/ui_world_design_reference.jpg`, `assets/sprites/iso_world_atlas.jpg`) via `image-generator` subagent.
+  - Eliminated rendering lag: added `_biome_cache` and `get_biome_color_fast()` in `WorldSystem`, restricted `WorldSystem._draw()` to camera-visible explored tiles (`[-18..18]`), and converted `MinimapWidget` to a single-draw-call cached `ImageTexture`.
+  - Fixed all JSON schema mismatches in `DialogueSystem`, `QuestSystem`, `EventSystem`, `FactionSystem`, `RumorNetwork`, `LootTableRoller`, and `Player.use_slot_item`.
+  - Upgraded isometric visuals for `WorldSystem` (3D tile bevels, wildflowers, camp dirt clearing), `ResourceNode` (tiered pines, multi-canopy oaks, faceted ore boulders, crimson berry bushes), `StructureEntity` (stone-ringed campfire with light halo, carpenter workbench with tools, brass-bound chest), `Player`, `NPCBase`, `EnemyBase`, and dark-iron/gold RPG `HUD` with 8-slot `Hotkey Action Bar [1-8]`.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

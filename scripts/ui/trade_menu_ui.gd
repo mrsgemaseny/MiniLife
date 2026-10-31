@@ -4,7 +4,7 @@ extends Control
 # Interactive Buy/Sell trading window opened when bartering with NPCs.
 
 var _current_trader: Node = null
-var _trader_stock: Array[String] = ["cooked_meat", "bandage", "arrow", "wood_axe", "stone_pickaxe", "iron_sword", "hunting_bow", "chainmail_armor"]
+var _trader_stock: Array[String] = ["bread", "cooked_food", "bandage", "medicine", "arrow", "stone_axe", "stone_pickaxe", "iron_sword", "hunting_bow", "iron_chainmail"]
 var _stock_list: ItemList = null
 var _player_list: ItemList = null
 var _player_item_ids: Array[String] = []

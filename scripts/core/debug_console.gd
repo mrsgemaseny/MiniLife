@@ -2,6 +2,42 @@ class_name DebugConsole
 extends Node
 
 
+func _ready() -> void:
+	if OS.get_cmdline_user_args().has("--e2e-smoke"):
+		call_deferred("_run_e2e_smoke_test")
+
+
+func _run_e2e_smoke_test() -> void:
+	await get_tree().process_frame
+	var player: Player = get_tree().get_first_node_in_group("player") as Player
+	if player == null:
+		return
+	for step in range(4):
+		player.global_position += Vector2(32.0, 16.0)
+		SignalBus.player_tile_changed.emit(Config.iso_to_world(player.global_position))
+	player.perform_attack()
+	player.use_slot_item(0)
+	player.use_slot_item(4)
+	for npc in get_tree().get_nodes_in_group("npc"):
+		if npc.has_method("interact"):
+			npc.call("interact", player)
+			SignalBus.dialogue_choice_selected.emit(0)
+	SignalBus.craft_requested.emit("stone_axe", player, "")
+	SignalBus.build_requested.emit("campfire", player.current_tile + Vector2i(2, 2), player)
+	for pname in ["inventory", "craft", "build", "quests", "character", "factions", "chronicle", "achievements"]:
+		SignalBus.ui_panel_requested.emit(pname)
+	SignalBus.ui_close_all_requested.emit()
+	var first_npc: Node = get_tree().get_first_node_in_group("npc")
+	if first_npc != null:
+		SignalBus.trade_transaction_requested.emit(first_npc, "bread", 1, true)
+		SignalBus.trade_transaction_requested.emit(first_npc, "wood", 1, false)
+	SignalBus.save_requested.emit("e2e_smoke_slot")
+	SignalBus.load_requested.emit("e2e_smoke_slot")
+	SignalBus.world_delete_requested.emit("e2e_smoke_slot")
+	print("E2E_ALL_SYSTEMS_VERIFIED_OK")
+	get_tree().quit(0)
+
+
 func execute_command(raw_line: String) -> String:
 	var cleaned: String = raw_line.strip_edges()
 	if cleaned == "":

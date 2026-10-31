@@ -94,12 +94,35 @@ func _execute_event_effects(def: Dictionary) -> void:
 	if player == null or world == null:
 		return
 
+	var single_eff: Dictionary = def.get("effect", {})
+	if not single_eff.is_empty():
+		var eff_type: String = str(single_eff.get("type", ""))
+		if eff_type == "damage":
+			var dmg: float = float(single_eff.get("amount", 10.0))
+			if player.has_method("receive_damage"):
+				player.call("receive_damage", dmg, "event")
+		elif eff_type == "give_item":
+			var item_id: String = str(single_eff.get("item_id", "bread"))
+			var cnt: int = int(single_eff.get("count", 1))
+			if player.get("inventory") is InventoryComponent:
+				(player.get("inventory") as InventoryComponent).add_item(item_id, cnt)
+		elif eff_type == "add_trait":
+			var trait_id: String = str(single_eff.get("trait_id", ""))
+			if not trait_id.is_empty() and player.get("traits") is TraitsComponent:
+				(player.get("traits") as TraitsComponent).add_trait(trait_id)
+		elif eff_type == "apply_status":
+			var status_id: String = str(single_eff.get("effect", "poisoned"))
+			var dur: float = float(single_eff.get("duration", 10.0))
+			var inten: float = float(single_eff.get("intensity", 1.0))
+			if player.get("status_effects") is StatusEffectsComponent:
+				(player.get("status_effects") as StatusEffectsComponent).apply_effect(status_id, dur, inten)
+
 	var effects: Dictionary = def.get("effects", {})
 	var spawn_enemies: Array = effects.get("spawn_enemies", [])
 	for entry_v in spawn_enemies:
 		if entry_v is Dictionary:
 			var entry: Dictionary = entry_v
-			var enemy_id: String = str(entry.get("enemy_id", "bandit_raider"))
+			var enemy_id: String = str(entry.get("enemy_id", "bandit"))
 			var count: int = int(entry.get("count", 1))
 			for i in range(count):
 				var enemy: EnemyBase = EnemyScene.instantiate() as EnemyBase
@@ -108,7 +131,7 @@ func _execute_event_effects(def: Dictionary) -> void:
 				enemy.global_position = player.global_position + Vector2(cos(angle), sin(angle)) * 260.0
 				world.add_child(enemy)
 
-	if bool(effects.get("spawn_trader", false)):
+	if bool(effects.get("spawn_trader", false)) or str(def.get("id", "")) == "trader_visit":
 		var trader: NPCBase = NPCScene.instantiate() as NPCBase
 		trader.npc_id = "merchant_common"
 		trader.global_position = player.global_position + Vector2(120.0, -70.0)

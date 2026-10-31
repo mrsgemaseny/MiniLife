@@ -35,9 +35,11 @@ var _last_biome: String = ""
 var _last_exploration_pct: int = 0
 var _spawned_entities_by_chunk: Dictionary = {}
 var _starter_camp_spawned: bool = false
+var _biome_cache: Dictionary = {}
 
 
 func _ready() -> void:
+	RenderingServer.set_default_clear_color(Color(0.05, 0.06, 0.08, 1.0))
 	y_sort_enabled = true
 	if chunk_container != null:
 		chunk_container.y_sort_enabled = true
@@ -56,70 +58,130 @@ func _ready() -> void:
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
 
 
+func get_biome_cached(tpos: Vector2i) -> String:
+	var packed: int = (tpos.x << 16) ^ (tpos.y & 0xFFFF)
+	if _biome_cache.has(packed):
+		return str(_biome_cache[packed])
+	var b: String = _terrain.get_biome_at(tpos)
+	_biome_cache[packed] = b
+	return b
+
+
+func get_biome_color_fast(tpos: Vector2i) -> Color:
+	var b: String = get_biome_cached(tpos)
+	return ProceduralTileset.BIOME_PALETTE.get(b, Color(0.31, 0.54, 0.26))
+
+
 func _draw() -> void:
-	for cpos in _loaded_chunks:
-		var origin: Vector2i = Config.chunk_origin(cpos)
-		for lx in range(Config.CHUNK_SIZE):
-			for ly in range(Config.CHUNK_SIZE):
-				var tpos: Vector2i = origin + Vector2i(lx, ly)
-				var fstate: int = _fog.get_state(tpos)
-				var center: Vector2 = Config.world_to_iso(tpos)
-				var poly: PackedVector2Array = IsoMath.diamond_polygon(center, float(Config.HALF_TILE.x), float(Config.HALF_TILE.y))
+	if _last_player_tile.x < -9000:
+		return
+	var hw: float = float(Config.HALF_TILE.x)
+	var hh: float = float(Config.HALF_TILE.y)
+	var bevel_h: float = 5.0
+	var world_center: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
 
-				if fstate == int(FogState.UNEXPLORED):
-					draw_colored_polygon(poly, Color(0.06, 0.07, 0.09, 1.0))
-					continue
+	# Draw in isometric back-to-front order (tx + ty ascending) within camera viewport
+	for dy in range(-18, 19):
+		for dx in range(-18, 19):
+			var tpos: Vector2i = _last_player_tile + Vector2i(dx, dy)
+			if not _terrain.is_in_world(tpos):
+				continue
+			var fstate: int = _fog.get_state(tpos)
+			if fstate == int(FogState.UNEXPLORED):
+				continue
 
-				var biome_id: String = _terrain.get_biome_at(tpos)
-				var col: Color = ProceduralTileset.BIOME_PALETTE.get(biome_id, Color(0.31, 0.54, 0.26))
-				var hash_val: int = absi((tpos.x * 73856093) ^ (tpos.y * 19349663))
-				var variation: float = float(hash_val % 9 - 4) * 0.012
-				col = col.lightened(variation) if variation > 0.0 else col.darkened(-variation)
+			var center: Vector2 = Config.world_to_iso(tpos)
+			var biome_id: String = get_biome_cached(tpos)
+			var col: Color = ProceduralTileset.BIOME_PALETTE.get(biome_id, Color(0.34, 0.56, 0.25))
+			var hash_val: int = absi((tpos.x * 73856093) ^ (tpos.y * 19349663))
 
-				if fstate == int(FogState.VISITED):
-					col = col.darkened(0.45)
+			# Warm dirt clearing/path around the starter settlement camp
+			var dist_center: int = Config.tile_distance(tpos, world_center)
+			var is_camp_dirt: bool = (dist_center <= 3) or (tpos.y == world_center.y and abs(tpos.x - world_center.x) <= 6)
+			if is_camp_dirt and biome_id != "mountains":
+				col = Color(0.52, 0.39, 0.25)
 
-				draw_colored_polygon(poly, col)
-				draw_polyline(poly, col.darkened(0.12), 1.0, true)
+			var variation: float = float(hash_val % 9 - 4) * 0.014
+			col = col.lightened(variation) if variation > 0.0 else col.darkened(-variation)
 
-				# Procedural surface detail (grass blades, pebbles, flowers)
-				if fstate == int(FogState.VISIBLE):
-					if (hash_val % 5) == 0 and (biome_id == "plains" or biome_id == "forest"):
-						var tuft_col: Color = col.lightened(0.18)
-						draw_line(center + Vector2(-4, 2), center + Vector2(-6, -3), tuft_col, 1.3)
-						draw_line(center + Vector2(-2, 2), center + Vector2(-1, -4), tuft_col, 1.3)
-					elif (hash_val % 11) == 0:
-						draw_circle(center + Vector2(5, -2), 1.8, col.darkened(0.22))
+			if fstate == int(FogState.VISITED):
+				col = col.darkened(0.48)
 
-		if _chunk_pois.has(cpos):
-			var poi_info: Dictionary = _chunk_pois[cpos]
-			var p_tile: Vector2i = poi_info.get("tile_pos", origin)
-			if _fog.get_state(p_tile) != int(FogState.UNEXPLORED):
-				var p_center: Vector2 = Config.world_to_iso(p_tile)
-				var poi_def: Dictionary = DataRegistry.get_poi(str(poi_info.get("poi_id", "")))
-				var poi_col: Color = Color.from_string(str(poi_def.get("color", "#eab308")), Color.GOLD)
-				draw_colored_polygon(IsoMath.diamond_polygon(p_center, 22.0, 11.0), poi_col)
-				draw_polyline(IsoMath.diamond_polygon(p_center, 22.0, 11.0), poi_col.lightened(0.35), 1.5, true)
+			var top_pt: Vector2 = center + Vector2(0.0, -hh)
+			var right_pt: Vector2 = center + Vector2(hw, 0.0)
+			var bot_pt: Vector2 = center + Vector2(0.0, hh)
+			var left_pt: Vector2 = center + Vector2(-hw, 0.0)
+
+			# 3D extruded isometric tile skirts (left & right bevels)
+			var left_skirt: PackedVector2Array = PackedVector2Array([
+				left_pt, bot_pt, bot_pt + Vector2(0.0, bevel_h), left_pt + Vector2(0.0, bevel_h)
+			])
+			var right_skirt: PackedVector2Array = PackedVector2Array([
+				bot_pt, right_pt, right_pt + Vector2(0.0, bevel_h), bot_pt + Vector2(0.0, bevel_h)
+			])
+			draw_colored_polygon(left_skirt, col.darkened(0.32))
+			draw_colored_polygon(right_skirt, col.darkened(0.44))
+
+			var poly: PackedVector2Array = PackedVector2Array([top_pt, right_pt, bot_pt, left_pt])
+			draw_colored_polygon(poly, col)
+			draw_line(top_pt, right_pt, col.lightened(0.10), 1.0)
+			draw_line(top_pt, left_pt, col.lightened(0.06), 1.0)
+			draw_line(left_pt, bot_pt, col.darkened(0.18), 1.0)
+			draw_line(bot_pt, right_pt, col.darkened(0.22), 1.0)
+
+			# Rich surface detail (lush grass blades, wildflowers, pebbles, camp warmth)
+			if fstate == int(FogState.VISIBLE):
+				if is_camp_dirt:
+					if (hash_val % 3) == 0:
+						draw_circle(center + Vector2(float(hash_val % 11 - 5), float((hash_val >> 3) % 7 - 3)), 1.6, col.darkened(0.20))
+				elif biome_id == "plains" or biome_id == "forest":
+					var tuft_col: Color = col.lightened(0.20)
+					if (hash_val % 3) == 0:
+						var ox: float = float((hash_val % 13) - 6)
+						var oy: float = float(((hash_val >> 4) % 7) - 3)
+						draw_line(center + Vector2(ox - 2.0, oy + 2.0), center + Vector2(ox - 4.0, oy - 3.0), tuft_col, 1.4)
+						draw_line(center + Vector2(ox, oy + 2.0), center + Vector2(ox + 1.0, oy - 4.0), tuft_col, 1.4)
+						draw_line(center + Vector2(ox + 2.0, oy + 2.0), center + Vector2(ox + 4.0, oy - 2.0), tuft_col.darkened(0.08), 1.3)
+					if (hash_val % 11) == 0:
+						var flower_col: Color = Color(0.96, 0.84, 0.25) if (hash_val & 1) == 0 else Color(0.95, 0.95, 0.98)
+						draw_circle(center + Vector2(4.0, -2.0), 1.7, flower_col)
+						draw_circle(center + Vector2(-5.0, 1.0), 1.4, flower_col)
+				elif biome_id == "swamp":
+					if (hash_val % 4) == 0:
+						draw_circle(center + Vector2(0.0, 1.0), 4.0, Color(0.16, 0.26, 0.22, 0.55))
+				elif (hash_val % 7) == 0:
+					draw_circle(center + Vector2(5.0, -2.0), 1.8, col.darkened(0.24))
+
+	for cpos in _chunk_pois:
+		var poi_info: Dictionary = _chunk_pois[cpos]
+		var p_tile: Vector2i = poi_info.get("tile_pos", Vector2i.ZERO)
+		if Config.tile_distance(p_tile, _last_player_tile) <= 20 and _fog.get_state(p_tile) != int(FogState.UNEXPLORED):
+			var p_center: Vector2 = Config.world_to_iso(p_tile)
+			var poi_def: Dictionary = DataRegistry.get_poi(str(poi_info.get("poi_id", "")))
+			var poi_col: Color = Color.from_string(str(poi_def.get("color", "#eab308")), Color.GOLD)
+			draw_colored_polygon(IsoMath.diamond_polygon(p_center, 22.0, 11.0), poi_col)
+			draw_polyline(IsoMath.diamond_polygon(p_center, 22.0, 11.0), poi_col.lightened(0.35), 1.5, true)
 
 
 func get_tile(pos: Vector2i) -> TileState:
 	var state: TileState = TileState.new()
 	state.pos = pos
-	state.biome_id = _terrain.get_biome_at(pos)
+	state.biome_id = get_biome_cached(pos)
 	state.passable = not _terrain.is_border_mountain(pos) and state.biome_id != "mountains"
-	var node_id: String = _terrain.get_resource_node_at(pos)
-	var cpos: Vector2i = Config.tile_to_chunk(pos)
-	var delta: Dictionary = _get_or_create_delta(cpos)
 	var key: String = Config.vec2i_to_key(pos)
-	var harvested: Dictionary = delta.get("harvested", {})
-	if not harvested.has(key) and node_id != "":
-		state.resource_id = node_id
-		state.resource_amount = 3
-		state.passable = false
-	var structures: Dictionary = delta.get("structures", {})
-	if structures.has(key):
-		state.structure_id = str(structures[key])
-		state.passable = _is_structure_passable(state.structure_id)
+	if _resource_nodes_by_tile.has(key):
+		var rnode: ResourceNode = _resource_nodes_by_tile[key] as ResourceNode
+		if is_instance_valid(rnode):
+			state.resource_id = rnode.node_def_id
+			state.resource_amount = rnode.hits_remaining
+			state.passable = false
+	var cpos: Vector2i = Config.tile_to_chunk(pos)
+	if _chunk_deltas.has(Config.vec2i_to_key(cpos)):
+		var delta: Dictionary = _chunk_deltas[Config.vec2i_to_key(cpos)]
+		var structures: Dictionary = delta.get("structures", {})
+		if structures.has(key):
+			state.structure_id = str(structures[key])
+			state.passable = _is_structure_passable(state.structure_id)
 	if _chunk_pois.has(cpos):
 		var pinfo: Dictionary = _chunk_pois[cpos]
 		if pinfo.get("tile_pos") == pos:
@@ -140,8 +202,14 @@ func update_visibility(player_pos: Vector2) -> void:
 		SignalBus.fog_updated.emit(tpos, st)
 		if st == int(FogState.VISIBLE):
 			_check_poi_discovery(tpos)
+		var rkey: String = Config.vec2i_to_key(tpos)
+		if _resource_nodes_by_tile.has(rkey):
+			var rnode: ResourceNode = _resource_nodes_by_tile[rkey] as ResourceNode
+			if is_instance_valid(rnode):
+				rnode.visible = (st != int(FogState.UNEXPLORED))
+				rnode.modulate = Color(1, 1, 1, 1) if st == int(FogState.VISIBLE) else Color(0.55, 0.55, 0.62, 1)
 	SignalBus.fog_batch_updated.emit(changes)
-	_sync_entity_fog_visibility()
+	_sync_mobile_entity_fog_visibility()
 	_update_exploration_progress()
 	queue_redraw()
 
@@ -153,7 +221,10 @@ func _sync_entity_fog_visibility() -> void:
 			var st: int = _fog.get_state(rnode.tile_pos)
 			rnode.visible = (st != int(FogState.UNEXPLORED))
 			rnode.modulate = Color(1, 1, 1, 1) if st == int(FogState.VISIBLE) else Color(0.55, 0.55, 0.62, 1)
+	_sync_mobile_entity_fog_visibility()
 
+
+func _sync_mobile_entity_fog_visibility() -> void:
 	for cpos in _spawned_entities_by_chunk:
 		for ent in _spawned_entities_by_chunk[cpos]:
 			if is_instance_valid(ent) and ent is Node2D:
@@ -235,6 +306,7 @@ func _setup_runtime_tilesets() -> void:
 
 func _on_game_started(world_seed: int, _slot: String, is_new: bool) -> void:
 	_unload_all_chunks()
+	_biome_cache.clear()
 	_seed = world_seed
 	_terrain.setup(world_seed)
 	if is_new:
@@ -258,20 +330,22 @@ func _ensure_starter_camp(spawn_tile: Vector2i) -> void:
 	if _starter_camp_spawned:
 		return
 	_starter_camp_spawned = true
+	for dx in range(-3, 4):
+		for dy in range(-3, 4):
+			var clear_key: String = Config.vec2i_to_key(spawn_tile + Vector2i(dx, dy))
+			if _resource_nodes_by_tile.has(clear_key):
+				var rn: Node = _resource_nodes_by_tile[clear_key]
+				if is_instance_valid(rn):
+					rn.queue_free()
+				_resource_nodes_by_tile.erase(clear_key)
 	var camp_structures: Array[Dictionary] = [
-		{"id": "campfire", "offset": Vector2i(2, 0)},
-		{"id": "workbench", "offset": Vector2i(2, -2)},
-		{"id": "bed", "offset": Vector2i(-2, -1)},
-		{"id": "storage", "offset": Vector2i(0, -2)}
+		{"id": "campfire", "offset": Vector2i(1, 1)},
+		{"id": "workbench", "offset": Vector2i(-2, -1)},
+		{"id": "bed", "offset": Vector2i(-2, 2)},
+		{"id": "storage", "offset": Vector2i(2, -2)}
 	]
 	for entry in camp_structures:
 		var tpos: Vector2i = spawn_tile + (entry["offset"] as Vector2i)
-		var key: String = Config.vec2i_to_key(tpos)
-		if _resource_nodes_by_tile.has(key):
-			var rn: Node = _resource_nodes_by_tile[key]
-			if is_instance_valid(rn):
-				rn.queue_free()
-			_resource_nodes_by_tile.erase(key)
 		SignalBus.structure_restored.emit(str(entry["id"]), tpos)
 
 
@@ -281,7 +355,7 @@ func _on_player_tile_changed(tile_pos: Vector2i) -> void:
 	_last_player_tile = tile_pos
 	_stream_chunks_around(tile_pos)
 	update_visibility(Config.world_to_iso(tile_pos))
-	var biome_id: String = _terrain.get_biome_at(tile_pos)
+	var biome_id: String = get_biome_cached(tile_pos)
 	if biome_id != _last_biome:
 		_last_biome = biome_id
 		SignalBus.player_biome_changed.emit(biome_id)
@@ -325,7 +399,7 @@ func _load_chunk(cpos: Vector2i) -> void:
 	_loaded_chunks[cpos] = chunk_node
 
 	var origin: Vector2i = Config.chunk_origin(cpos)
-	var center_biome: String = _terrain.get_biome_at(origin + Vector2i(8, 8))
+	var center_biome: String = get_biome_cached(origin + Vector2i(8, 8))
 	var poi_data: Dictionary = PoiGenerator.get_chunk_poi(_seed, cpos, center_biome)
 	if not poi_data.is_empty():
 		_chunk_pois[cpos] = poi_data
@@ -336,6 +410,7 @@ func _load_chunk(cpos: Vector2i) -> void:
 	for lx in range(Config.CHUNK_SIZE):
 		for ly in range(Config.CHUNK_SIZE):
 			var tpos: Vector2i = origin + Vector2i(lx, ly)
+			get_biome_cached(tpos)
 			var tkey: String = Config.vec2i_to_key(tpos)
 			if harvested.has(tkey):
 				continue
@@ -349,7 +424,6 @@ func _load_chunk(cpos: Vector2i) -> void:
 		SignalBus.structure_restored.emit(str(structures[tile_key]), tpos)
 
 	_spawn_chunk_inhabitants(cpos, center_biome, delta)
-	_sync_entity_fog_visibility()
 	SignalBus.chunk_loaded.emit(cpos)
 	queue_redraw()
 
@@ -359,7 +433,9 @@ func _spawn_resource_node(chunk_node: Node2D, node_def_id: String, tpos: Vector2
 	rnode.node_def_id = node_def_id
 	rnode.tile_pos = tpos
 	rnode.global_position = Config.world_to_iso(tpos)
-	rnode.visible = (_fog.get_state(tpos) != int(FogState.UNEXPLORED))
+	var st: int = _fog.get_state(tpos)
+	rnode.visible = (st != int(FogState.UNEXPLORED))
+	rnode.modulate = Color(1, 1, 1, 1) if st == int(FogState.VISIBLE) else Color(0.55, 0.55, 0.62, 1)
 	chunk_node.add_child(rnode)
 	_resource_nodes_by_tile[Config.vec2i_to_key(tpos)] = rnode
 
@@ -377,7 +453,7 @@ func _spawn_chunk_inhabitants(cpos: Vector2i, biome_id: String, delta: Dictionar
 			var trader: NPCBase = NPC_SCENE.instantiate() as NPCBase
 			trader.npc_id = "merchant_common"
 			trader.spawn_uid = trader_uid
-			trader.global_position = Config.world_to_iso(origin + Vector2i(11, 6))
+			trader.global_position = Config.world_to_iso(world_center_tile + Vector2i(3, -1))
 			add_child(trader)
 			spawned_list.append(trader)
 
@@ -386,7 +462,7 @@ func _spawn_chunk_inhabitants(cpos: Vector2i, biome_id: String, delta: Dictionar
 			var elder: NPCBase = NPC_SCENE.instantiate() as NPCBase
 			elder.npc_id = "village_elder"
 			elder.spawn_uid = elder_uid
-			elder.global_position = Config.world_to_iso(origin + Vector2i(5, 10))
+			elder.global_position = Config.world_to_iso(world_center_tile + Vector2i(-3, 0))
 			add_child(elder)
 			spawned_list.append(elder)
 	else:

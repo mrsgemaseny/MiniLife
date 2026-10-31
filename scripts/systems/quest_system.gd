@@ -13,11 +13,11 @@ func _ready() -> void:
 
 func _start_initial_quest() -> void:
 	if _active_quests.is_empty() and _completed_quests.is_empty():
-		var first_id: String = "tutorial_survival" if _quests_defs.has("tutorial_survival") else ""
+		var first_id: String = "cull_wolves_01" if _quests_defs.has("cull_wolves_01") else ""
 		if first_id.is_empty() and not _quests_defs.is_empty():
 			first_id = str(_quests_defs.keys()[0])
 		if not first_id.is_empty():
-			start_quest(first_id, "system")
+			start_quest(first_id, "village_elder")
 
 func _connect_signals() -> void:
 	SignalBus.quest_start_requested.connect(start_quest)
@@ -27,6 +27,7 @@ func _connect_signals() -> void:
 	SignalBus.item_crafted.connect(_on_item_crafted)
 	SignalBus.structure_built.connect(_on_structure_built)
 	SignalBus.resource_harvested.connect(_on_resource_harvested)
+	SignalBus.poi_discovered.connect(_on_poi_discovered)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
 
@@ -36,17 +37,18 @@ func start_quest(quest_id: String, _giver_id: String = "") -> bool:
 	if not _quests_defs.has(quest_id):
 		return false
 	var def: Dictionary = _quests_defs[quest_id]
-	var req_count: int = int(def.get("required_count", 1))
-	var objs: Array = def.get("objectives", [])
-	if not objs.is_empty() and objs[0] is Dictionary:
-		req_count = int((objs[0] as Dictionary).get("target", req_count))
+	var obj: Dictionary = def.get("objective", {})
+	var req_count: int = int(obj.get("count", def.get("required_count", 1)))
+	var target_id: String = str(obj.get("target_id", obj.get("item_id", obj.get("structure_id", obj.get("poi_id", def.get("target_id", ""))))))
+	var q_title: String = str(def.get("title", def.get("name", quest_id.replace("_", " ").capitalize())))
 
 	var state: Dictionary = {
 		"id": quest_id,
-		"title": str(def.get("title", def.get("name", quest_id))),
+		"title": q_title,
 		"type": str(def.get("type", "survive")),
-		"target_id": str(def.get("target_id", "")),
-		"time_limit": float(def.get("time_limit_hours", -1.0)),
+		"target_id": target_id,
+		"giver_faction": str(def.get("giver_faction", "")),
+		"time_limit": float(def.get("time_limit", def.get("time_limit_hours", -1.0))),
 		"elapsed_hours": 0.0,
 		"progress": {"current": 0, "required": maxi(1, req_count)}
 	}
@@ -78,18 +80,33 @@ func complete_quest(quest_id: String) -> void:
 	SignalBus.quest_completed.emit(quest_id)
 
 	var def: Dictionary = _quests_defs.get(quest_id, {})
-	var rewards: Dictionary = def.get("rewards", {})
+	var rewards: Dictionary = def.get("reward", def.get("rewards", {}))
 	SignalBus.quest_reward_granted.emit(rewards)
+
+	var giver_faction: String = str(def.get("giver_faction", ""))
+	var rep_delta: int = int(rewards.get("rep_delta", 0))
+	if rep_delta != 0 and not giver_faction.is_empty():
+		SignalBus.faction_rep_change_requested.emit(giver_faction, rep_delta, "quest_" + quest_id)
 
 	var rep_rewards: Dictionary = rewards.get("reputation", {})
 	for fid in rep_rewards.keys():
 		SignalBus.faction_rep_change_requested.emit(str(fid), int(rep_rewards[fid]), "quest_" + quest_id)
+
+	var join_fac: String = str(rewards.get("join_faction", ""))
+	if not join_fac.is_empty():
+		SignalBus.faction_join_requested.emit(join_fac)
 
 	var gold_reward: int = int(rewards.get("gold", 0))
 	if gold_reward > 0:
 		var player: Node = get_tree().get_first_node_in_group("player")
 		if player != null and player.get("inventory") is InventoryComponent:
 			(player.get("inventory") as InventoryComponent).add_gold(gold_reward)
+
+	var unique_trait: String = str(rewards.get("unique_trait", ""))
+	if not unique_trait.is_empty():
+		var player2: Node = get_tree().get_first_node_in_group("player")
+		if player2 != null and player2.get("traits") is TraitsComponent:
+			(player2.get("traits") as TraitsComponent).add_trait(unique_trait)
 
 	var next_quest: String = str(def.get("next_quest_id", ""))
 	if not next_quest.is_empty():
@@ -103,6 +120,12 @@ func fail_quest(quest_id: String, reason: String = "timeout") -> void:
 	var state: Dictionary = _active_quests[quest_id]
 	_active_quests.erase(quest_id)
 	_failed_quests[quest_id] = state
+	var def: Dictionary = _quests_defs.get(quest_id, {})
+	var fail_cons: Dictionary = def.get("fail_consequence", {})
+	var rep_pen: int = int(fail_cons.get("rep_delta", 0))
+	var giver_faction: String = str(def.get("giver_faction", ""))
+	if rep_pen != 0 and not giver_faction.is_empty():
+		SignalBus.faction_rep_change_requested.emit(giver_faction, rep_pen, "quest_failed_" + quest_id)
 	SignalBus.quest_failed.emit(quest_id, reason)
 	_emit_snapshot()
 
@@ -129,23 +152,42 @@ func _on_hour_passed(_hour: int) -> void:
 	if not to_fail.is_empty():
 		_emit_snapshot()
 
-func _on_npc_killed(_npc_id: String, _faction: String, killer: String) -> void:
+func _on_npc_killed(npc_id: String, _faction: String, killer: String) -> void:
 	if killer != "player":
 		return
 	for qid in _active_quests.keys():
-		advance_quest(str(qid), 1)
+		var st: Dictionary = _active_quests[qid]
+		var t_id: String = str(st.get("target_id", ""))
+		if str(st.get("type", "")) == "kill" and (t_id.is_empty() or t_id == npc_id):
+			advance_quest(str(qid), 1)
 
-func _on_item_crafted(_item_id: String) -> void:
+func _on_item_crafted(item_id: String) -> void:
 	for qid in _active_quests.keys():
-		advance_quest(str(qid), 1)
+		var st: Dictionary = _active_quests[qid]
+		var t_id: String = str(st.get("target_id", ""))
+		if str(st.get("type", "")) == "fetch" and (t_id.is_empty() or t_id == item_id):
+			advance_quest(str(qid), 1)
 
-func _on_structure_built(_structure_id: String, _tile_pos: Vector2i) -> void:
+func _on_structure_built(structure_id: String, _tile_pos: Vector2i) -> void:
 	for qid in _active_quests.keys():
-		advance_quest(str(qid), 1)
+		var st: Dictionary = _active_quests[qid]
+		var t_id: String = str(st.get("target_id", ""))
+		if str(st.get("type", "")) == "build" and (t_id.is_empty() or t_id == structure_id):
+			advance_quest(str(qid), 1)
 
-func _on_resource_harvested(_resource_id: String, amount: int, _tile_pos: Vector2i) -> void:
+func _on_resource_harvested(resource_id: String, amount: int, _tile_pos: Vector2i) -> void:
 	for qid in _active_quests.keys():
-		advance_quest(str(qid), maxi(1, amount))
+		var st: Dictionary = _active_quests[qid]
+		var t_id: String = str(st.get("target_id", ""))
+		if str(st.get("type", "")) == "fetch" and (t_id.is_empty() or t_id == resource_id):
+			advance_quest(str(qid), maxi(1, amount))
+
+func _on_poi_discovered(poi_id: String, _tile_pos: Vector2i) -> void:
+	for qid in _active_quests.keys():
+		var st: Dictionary = _active_quests[qid]
+		var t_id: String = str(st.get("target_id", ""))
+		if str(st.get("type", "")) == "explore" and (t_id.is_empty() or t_id == poi_id):
+			advance_quest(str(qid), 1)
 
 func _on_save_data_requested(bundle: Dictionary) -> void:
 	var w: Dictionary = bundle.get("world", {})

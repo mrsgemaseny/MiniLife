@@ -157,20 +157,57 @@ func _on_player_tile_changed(player_tile: Vector2i) -> void:
 	sim_tier = SimulationBubble.compute_lod_tier(player_tile, my_tile)
 
 func _draw() -> void:
-	draw_circle(Vector2(0, 3), 9.0, Color(0.0, 0.0, 0.0, 0.35))
-	var is_beast: bool = (faction_id == "wildlife")
+	var outline_col: Color = Color(0.07, 0.08, 0.10, 0.95)
+	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 3.0), 13.0, 6.0), Color(0.0, 0.0, 0.0, 0.38))
+
+	var is_beast: bool = (faction_id == "wildlife" or enemy_id.find("wolf") != -1 or enemy_id.find("boar") != -1)
 	if is_beast:
-		var fur_col: Color = Color(0.48, 0.44, 0.40) if enemy_id.find("wolf") != -1 else Color(0.42, 0.28, 0.18)
-		draw_rect(Rect2(-10, -12, 20, 10), fur_col, true)
-		draw_circle(Vector2(9, -10), 5.5, fur_col.lightened(0.1))
-		draw_circle(Vector2(11, -11), 1.5, Color(0.95, 0.22, 0.18))
+		# Quadruped Wolf / Beast (matching iso_world_atlas reference)
+		var fur_col: Color = Color(0.50, 0.52, 0.55) if enemy_id.find("wolf") != -1 else Color(0.44, 0.29, 0.18)
+		if enemy_id.find("alpha") != -1:
+			fur_col = Color(0.32, 0.34, 0.38)
+		var belly_col: Color = fur_col.lightened(0.24)
+		# 4 Legs
+		for lx in [-9.0, -4.0, 4.0, 8.0]:
+			draw_rect(Rect2(lx, -7.0, 3.0, 8.0), fur_col.darkened(0.18), true)
+		# Bushy tail
+		var tail_pts: PackedVector2Array = PackedVector2Array([
+			Vector2(-10.0, -12.0), Vector2(-18.0, -9.0), Vector2(-16.0, -5.0), Vector2(-9.0, -8.0)
+		])
+		draw_colored_polygon(tail_pts, fur_col.darkened(0.12))
+		# Torso
+		var body_pts: PackedVector2Array = PackedVector2Array([
+			Vector2(-11.0, -15.0), Vector2(8.0, -16.0), Vector2(11.0, -7.0), Vector2(-10.0, -7.0)
+		])
+		draw_colored_polygon(body_pts, fur_col)
+		draw_line(Vector2(-8.0, -8.0), Vector2(8.0, -8.0), belly_col, 2.2)
+		draw_polyline(body_pts, outline_col, 1.4, true)
+		# Wolf Head, Snout & Pointed Ears
+		var head_pts: PackedVector2Array = PackedVector2Array([
+			Vector2(6.0, -20.0), Vector2(13.0, -18.0), Vector2(17.0, -13.0),
+			Vector2(12.0, -10.0), Vector2(6.0, -12.0)
+		])
+		draw_colored_polygon(head_pts, fur_col.lightened(0.06))
+		draw_polyline(head_pts, outline_col, 1.3, true)
+		# Ears
+		draw_colored_polygon(PackedVector2Array([Vector2(6.5, -19.0), Vector2(8.0, -25.0), Vector2(10.5, -19.0)]), fur_col.darkened(0.20))
+		draw_circle(Vector2(12.0, -15.5), 1.4, Color(0.98, 0.24, 0.16))
 	else:
-		draw_rect(Rect2(-5, -7, 4, 8), Color(0.22, 0.18, 0.16), true)
-		draw_rect(Rect2(1, -7, 4, 8), Color(0.22, 0.18, 0.16), true)
-		draw_rect(Rect2(-7, -20, 14, 13), Color(0.72, 0.22, 0.20), true)
-		draw_circle(Vector2(0, -25), 5.5, Color(0.86, 0.72, 0.58))
+		# Outlaw Bandit / Warlord
+		var armor_col: Color = Color(0.66, 0.20, 0.18) if enemy_id.find("boss") == -1 else Color(0.32, 0.14, 0.14)
+		draw_rect(Rect2(-5.5, -9.0, 4.5, 9.0), Color(0.22, 0.18, 0.15), true)
+		draw_rect(Rect2(1.0, -9.0, 4.5, 9.0), Color(0.22, 0.18, 0.15), true)
+		draw_rect(Rect2(-7.0, -22.0, 14.0, 14.0), armor_col, true)
+		draw_rect(Rect2(-7.0, -22.0, 14.0, 14.0), outline_col, false, 1.4)
+		draw_circle(Vector2(0.0, -27.5), 6.4, outline_col)
+		draw_circle(Vector2(0.0, -27.5), 5.4, Color(0.86, 0.72, 0.58))
+		draw_arc(Vector2(0.0, -28.5), 5.8, PI, TAU, 12, Color(0.26, 0.28, 0.32), 3.4)
+		# Bandit weapon & round shield
+		draw_line(Vector2(6.0, -14.0), Vector2(18.0, -22.0), Color(0.80, 0.84, 0.88), 2.5)
+		draw_circle(Vector2(-7.5, -14.0), 5.5, Color(0.46, 0.30, 0.16))
+		draw_arc(Vector2(-7.5, -14.0), 5.5, 0.0, TAU, 12, Color(0.62, 0.66, 0.70), 1.5)
 
 	if stats != null:
 		var ratio: float = clampf(stats.health / maxf(1.0, stats.max_health), 0.0, 1.0)
-		draw_rect(Rect2(-14, -36, 28, 4), Color(0.12, 0.12, 0.12, 0.85), true)
-		draw_rect(Rect2(-14, -36, 28.0 * ratio, 4), Color(0.88, 0.22, 0.20, 0.95), true)
+		draw_rect(Rect2(-16.0, -37.0, 32.0, 5.0), Color(0.08, 0.08, 0.10, 0.90), true)
+		draw_rect(Rect2(-15.0, -36.0, 30.0 * ratio, 3.0), Color(0.88, 0.20, 0.18, 0.96), true)

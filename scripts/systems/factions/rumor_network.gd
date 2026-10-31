@@ -23,14 +23,14 @@ func tick(delta: float, factions_defs: Dictionary) -> Array[Dictionary]:
 			var source: String = str(rumor.get("source_faction", ""))
 			var rep_delta: int = int(rumor.get("rep_delta", 0))
 			var def: Dictionary = factions_defs.get(source, {})
-			var allies: Array = def.get("allies", [])
+			var allies: Array = def.get("allied_factions", def.get("allies", []))
 			for ally in allies:
 				triggered.append({
 					"source": source,
 					"target": str(ally),
 					"delta": int(round(float(rep_delta) * 0.5))
 				})
-			var enemies: Array = def.get("enemies", [])
+			var enemies: Array = def.get("enemy_factions", def.get("enemies", []))
 			for rival in enemies:
 				triggered.append({
 					"source": source,
