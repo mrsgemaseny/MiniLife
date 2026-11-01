@@ -550,45 +550,63 @@ func _draw() -> void:
 	else:
 		draw_arc(head_ofs + Vector2(0.0, -29.5), 5.8, PI * 0.92, TAU * 1.04, 12, Color(0.36, 0.23, 0.13), 3.6)
 
-	# Weapon in Hand with Smooth Wind-Up & Slash Arc Rotation
-	var hand_pos: Vector2 = body_ofs + Vector2(4.5, -14.0)
-	var weapon_id: String = equipment.get_item_id("weapon") if equipment != null else ""
-	var aim_dir: Vector2 = facing_direction.normalized()
-	if aim_dir.length_squared() < 0.01:
-		aim_dir = Vector2.RIGHT
+	# Weapon and Shield in Hands with Fixed Stance Angle, Direction Revert & Slash Arc
+	var is_facing_left: bool = (facing_direction.x < -0.05)
+	var rot_dir: float = -1.0 if is_facing_left else 1.0
 
-	var swing_angle_ofs: float = 0.0
-	if _swing_timer > 0.0:
-		var prog: float = 1.0 - (_swing_timer / maxf(0.01, _swing_duration))
-		var eased: float = 1.0 - pow(1.0 - prog, 3.0)
-		swing_angle_ofs = lerpf(-1.15, 1.05, eased)
-	else:
-		swing_angle_ofs = sin(_walk_phase) * 0.14 * _walk_blend
+	# Fixed hand and shield anchor positions
+	var hand_x: float = -5.5 if is_facing_left else 5.5
+	var hand_pos: Vector2 = body_ofs + Vector2(hand_x, -13.0)
 
-	var weapon_dir: Vector2 = aim_dir.rotated(swing_angle_ofs)
 	var offhand_id: String = equipment.get_item_id("offhand") if equipment != null else ""
 	if not offhand_id.is_empty():
 		var shield_tex: ImageTexture = IconFactory.get_world_sprite(offhand_id)
 		if shield_tex != null:
-			var shield_pos: Vector2 = body_ofs + Vector2(-7.5, -14.0 - stride * 0.25)
-			draw_texture_rect(shield_tex, Rect2(shield_pos.x - 8.5, shield_pos.y - 8.5, 17.0, 17.0), false)
+			var shield_x: float = 7.0 if is_facing_left else -7.0
+			var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -13.0 - stride * 0.25)
+			var shield_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left else Vector2(1.0, 1.0)
+			draw_set_transform(shield_pos, 0.0, shield_scale)
+			draw_texture_rect(shield_tex, Rect2(-8.5, -8.5, 17.0, 17.0), false)
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	var weapon_tex: ImageTexture = IconFactory.get_world_sprite(weapon_id if not weapon_id.is_empty() else "stone_axe")
-	if weapon_tex != null:
-		var pivot_pos: Vector2 = hand_pos + weapon_dir * 6.5
-		var rot_angle: float = weapon_dir.angle() + PI * 0.25
-		draw_set_transform(pivot_pos, rot_angle, Vector2(1.0, 1.0))
-		draw_texture_rect(weapon_tex, Rect2(-12.0, -12.0, 24.0, 24.0), false)
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	else:
-		var weapon_tip: Vector2 = hand_pos + weapon_dir * 19.0
-		draw_line(hand_pos, weapon_tip, Color(0.84, 0.88, 0.92), 2.8)
+	var weapon_id: String = equipment.get_item_id("weapon") if equipment != null else ""
+	if not weapon_id.is_empty():
+		var weapon_tex: ImageTexture = IconFactory.get_world_sprite(weapon_id)
+		# Base idle angle is ~70 degrees upright (between 60 and 80 degrees, tilted slightly forward)
+		var base_angle: float = -deg_to_rad(28.0) * rot_dir
+
+		var swing_angle_ofs: float = 0.0
+		if _swing_timer > 0.0:
+			var prog: float = 1.0 - (_swing_timer / maxf(0.01, _swing_duration))
+			var eased: float = 1.0 - pow(1.0 - prog, 3.0)
+			# Wind-up over shoulder (-45 deg), then slash forward down (+65 deg)
+			swing_angle_ofs = lerpf(-deg_to_rad(45.0), deg_to_rad(65.0), eased) * rot_dir
+		else:
+			# Natural walking weapon sway
+			swing_angle_ofs = sin(_walk_phase) * deg_to_rad(3.5) * _walk_blend * rot_dir
+
+		var final_rot: float = base_angle + swing_angle_ofs
+		var weapon_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left else Vector2(1.0, 1.0)
+
+		if weapon_tex != null:
+			draw_set_transform(hand_pos, final_rot, weapon_scale)
+			# Draw weapon anchored at the handle grip (-6 px horizontal, -18 px vertical from top-right head)
+			draw_texture_rect(weapon_tex, Rect2(-6.0, -18.0, 24.0, 24.0), false)
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		else:
+			var tip_local: Vector2 = Vector2(cos(final_rot), sin(final_rot)) * 19.0
+			var weapon_tip: Vector2 = hand_pos + Vector2(tip_local.x * weapon_scale.x, tip_local.y)
+			draw_line(hand_pos, weapon_tip, Color(0.84, 0.88, 0.92), 2.8)
 
 	# RimWorld-style Smooth Weapon Slash Trail
 	if _swing_timer > 0.0:
 		var prog: float = 1.0 - (_swing_timer / maxf(0.01, _swing_duration))
 		var alpha: float = sin(prog * PI) * 0.85
-		var base_angle: float = aim_dir.angle()
-		var cur_angle: float = base_angle + swing_angle_ofs
-		draw_arc(body_ofs + Vector2(0.0, -14.0), 27.0, cur_angle - 0.95, cur_angle + 0.15, 16, Color(1.0, 0.92, 0.58, alpha), 3.8)
-		draw_arc(body_ofs + Vector2(0.0, -14.0), 23.0, cur_angle - 0.70, cur_angle + 0.10, 12, Color(1.0, 0.98, 0.88, alpha * 0.75), 2.0)
+		var center_arc: Vector2 = body_ofs + Vector2(0.0, -14.0)
+		var trail_start: float = -PI * 0.70 if is_facing_left else -PI * 0.30
+		var trail_sweep: float = -PI * 0.65 if is_facing_left else PI * 0.65
+		var cur_sweep: float = trail_start + trail_sweep * prog
+		var arc_min: float = minf(trail_start, cur_sweep)
+		var arc_max: float = maxf(trail_start, cur_sweep)
+		draw_arc(center_arc, 26.0, arc_min, arc_max, 16, Color(1.0, 0.92, 0.58, alpha), 3.6)
+		draw_arc(center_arc, 22.0, arc_min, arc_max, 12, Color(1.0, 0.98, 0.88, alpha * 0.75), 1.8)
