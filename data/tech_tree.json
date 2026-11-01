@@ -8,7 +8,7 @@
 		"description": "Heft rough stone blocks into defensive stone walls and thermal kilns.",
 		"grid_x": 0,
 		"grid_y": 0,
-		"prerequisites": ["primitive_survival"],
+		"prerequisites": [],
 		"costs": { "stone": 6 },
 		"unlocks": ["wall", "furnace"]
 	},
@@ -34,7 +34,7 @@
 		"description": "Advanced timber shaping into fortified palisades and reinforced structures.",
 		"grid_x": 0,
 		"grid_y": 2,
-		"prerequisites": ["primitive_survival"],
+		"prerequisites": [],
 		"costs": { "wood": 4 },
 		"unlocks": ["wooden_palisade"]
 	},
@@ -47,7 +47,7 @@
 		"description": "Distill curative compounds from wild meadow herbs to treat bleeding.",
 		"grid_x": 0,
 		"grid_y": 3,
-		"prerequisites": ["primitive_survival"],
+		"prerequisites": [],
 		"costs": { "herb": 4 },
 		"unlocks": ["craft_medicine", "craft_poison"]
 	},

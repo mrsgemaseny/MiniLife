@@ -165,6 +165,22 @@ static func _draw_item_art(img: Image, id: String) -> void:
 		_draw_thick_line(img, Vector2i(9, 25), Vector2i(18, 12), Color(0.52, 0.34, 0.18), 2, out)
 		_fill_circle(img, Vector2i(19, 11), 6, Color(0.96, 0.45, 0.12), out)
 		_fill_circle(img, Vector2i(20, 9), 3, Color(1.0, 0.88, 0.28), Color(0, 0, 0, 0))
+	elif id.find("furnace") != -1 or id.find("kiln") != -1:
+		# Stone smelting kiln with glowing fire opening
+		_fill_rect(img, Rect2i(6, 7, 20, 19), Color(0.42, 0.44, 0.48), out)
+		_fill_rect(img, Rect2i(8, 9, 16, 4), Color(0.55, 0.58, 0.62), Color(0, 0, 0, 0))
+		_fill_rect(img, Rect2i(10, 16, 12, 8), Color(0.96, 0.42, 0.10), out)
+		_fill_circle(img, Vector2i(16, 20), 3, Color(1.0, 0.86, 0.24), Color(0, 0, 0, 0))
+	elif id.find("coal") != -1 or id.find("charcoal") != -1:
+		# Craggy anthracite coal nugget
+		_fill_circle(img, Vector2i(16, 17), 9, Color(0.18, 0.18, 0.20), out)
+		_fill_circle(img, Vector2i(13, 14), 5, Color(0.32, 0.33, 0.36), Color(0, 0, 0, 0))
+		_fill_circle(img, Vector2i(18, 18), 3, Color(0.26, 0.27, 0.30), Color(0, 0, 0, 0))
+	elif id.find("chainmail") != -1 or id.find("armor") != -1:
+		# Linked chainmail hauberk with shoulder guards
+		_fill_rect(img, Rect2i(8, 7, 16, 19), Color(0.72, 0.76, 0.84), out)
+		_fill_rect(img, Rect2i(5, 8, 22, 6), Color(0.60, 0.64, 0.70), out)
+		_fill_rect(img, Rect2i(11, 10, 10, 14), Color(0.85, 0.88, 0.94), Color(0, 0, 0, 0))
 	elif id.find("campfire") != -1 or id.find("forge") != -1:
 		_fill_circle(img, Vector2i(16, 20), 7, Color(0.96, 0.42, 0.10), out)
 		_fill_circle(img, Vector2i(16, 15), 5, Color(1.0, 0.86, 0.24), out)
