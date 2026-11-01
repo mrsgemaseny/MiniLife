@@ -44,21 +44,31 @@ func _unhandled_input(event: InputEvent) -> void:
 		if k >= KEY_1 and k <= KEY_8:
 			var slot_idx: int = k - KEY_1
 			_activate_hotbar_slot(slot_idx)
+	elif event is InputEventMouseButton and event.pressed:
+		var mb: InputEventMouseButton = event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			var player: Node = get_tree().get_first_node_in_group("player")
+			if player != null and "active_hotbar_index" in player:
+				var cur: int = int(player.get("active_hotbar_index"))
+				var step: int = -1 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else 1
+				var next_idx: int = posmod(cur + step, 8)
+				_activate_hotbar_slot(next_idx)
 
-func _make_bar_style(bg_col: Color, border_col: Color = Color(0.18, 0.20, 0.24, 0.9)) -> StyleBoxFlat:
+func _make_bar_style(bg_col: Color, border_col: Color = Color(0.22, 0.25, 0.30, 0.65)) -> StyleBoxFlat:
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
 	sb.bg_color = bg_col
 	sb.border_color = border_col
 	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(4)
+	sb.set_corner_radius_all(5)
 	return sb
 
 func _make_card_style() -> StyleBoxFlat:
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
-	sb.bg_color = Color(0.08, 0.09, 0.12, 0.93)
-	sb.border_color = Color(0.68, 0.55, 0.28, 0.95)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(6)
+	sb.bg_color = Color(0.06, 0.08, 0.11, 0.56)
+	sb.border_color = Color(0.76, 0.62, 0.34, 0.68)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(8)
+	sb.set_content_margin_all(8)
 	return sb
 
 func _attach_bar_overlay_label(bar: ProgressBar, init_text: String) -> Label:
@@ -76,157 +86,199 @@ func _attach_bar_overlay_label(bar: ProgressBar, init_text: String) -> Label:
 func _setup_styled_hud() -> void:
 	var margin: MarginContainer = $MarginContainer
 	if margin != null:
-		margin.offset_left = 20.0
-		margin.offset_top = 18.0
-		margin.offset_right = 272.0
-		margin.offset_bottom = 224.0
+		margin.offset_left = 18.0
+		margin.offset_top = 14.0
+		margin.offset_right = 248.0
+		margin.offset_bottom = 198.0
 
 		var bg_panel: Panel = Panel.new()
 		bg_panel.add_theme_stylebox_override("panel", _make_card_style())
 		bg_panel.position = Vector2(10, 10)
-		bg_panel.size = Vector2(272, 222)
+		bg_panel.size = Vector2(246, 192)
 		bg_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(bg_panel)
 		move_child(bg_panel, 0)
 
 	var vbox: VBoxContainer = $MarginContainer/VBoxContainer
 	if vbox != null:
-		vbox.add_theme_constant_override("separation", 5)
+		vbox.add_theme_constant_override("separation", 4)
 		var hdr: Label = Label.new()
-		hdr.text = "SURVIVOR STATUS"
+		hdr.text = "SURVIVOR VITALS"
 		hdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		hdr.add_theme_font_size_override("font_size", 12)
-		hdr.modulate = Color(0.95, 0.84, 0.52)
+		hdr.add_theme_font_size_override("font_size", 11)
+		hdr.modulate = Color(0.95, 0.84, 0.52, 0.92)
 		vbox.add_child(hdr)
 		vbox.move_child(hdr, 0)
 
 	if health_bar != null:
-		health_bar.custom_minimum_size = Vector2(248, 20)
-		health_bar.add_theme_stylebox_override("background", _make_bar_style(Color(0.24, 0.07, 0.08, 0.95)))
-		health_bar.add_theme_stylebox_override("fill", _make_bar_style(Color(0.84, 0.18, 0.20, 0.96), Color(0.96, 0.42, 0.42, 0.8)))
+		health_bar.custom_minimum_size = Vector2(228, 17)
+		health_bar.add_theme_stylebox_override("background", _make_bar_style(Color(0.20, 0.06, 0.07, 0.62)))
+		health_bar.add_theme_stylebox_override("fill", _make_bar_style(Color(0.84, 0.18, 0.22, 0.84), Color(0.96, 0.44, 0.44, 0.75)))
 		_hp_val_label = _attach_bar_overlay_label(health_bar, "HP: 100 / 100")
 	if hunger_bar != null:
-		hunger_bar.custom_minimum_size = Vector2(248, 20)
-		hunger_bar.add_theme_stylebox_override("background", _make_bar_style(Color(0.24, 0.15, 0.05, 0.95)))
-		hunger_bar.add_theme_stylebox_override("fill", _make_bar_style(Color(0.86, 0.55, 0.14, 0.96), Color(0.98, 0.74, 0.32, 0.8)))
+		hunger_bar.custom_minimum_size = Vector2(228, 17)
+		hunger_bar.add_theme_stylebox_override("background", _make_bar_style(Color(0.20, 0.13, 0.04, 0.62)))
+		hunger_bar.add_theme_stylebox_override("fill", _make_bar_style(Color(0.86, 0.55, 0.14, 0.84), Color(0.98, 0.74, 0.32, 0.75)))
 		_hunger_val_label = _attach_bar_overlay_label(hunger_bar, "Food: 100 / 100")
 	if stamina_bar != null:
-		stamina_bar.custom_minimum_size = Vector2(248, 20)
-		stamina_bar.add_theme_stylebox_override("background", _make_bar_style(Color(0.07, 0.22, 0.11, 0.95)))
-		stamina_bar.add_theme_stylebox_override("fill", _make_bar_style(Color(0.22, 0.72, 0.36, 0.96), Color(0.45, 0.92, 0.56, 0.8)))
+		stamina_bar.custom_minimum_size = Vector2(228, 17)
+		stamina_bar.add_theme_stylebox_override("background", _make_bar_style(Color(0.06, 0.18, 0.09, 0.62)))
+		stamina_bar.add_theme_stylebox_override("fill", _make_bar_style(Color(0.22, 0.72, 0.36, 0.84), Color(0.45, 0.92, 0.56, 0.75)))
 		_stam_val_label = _attach_bar_overlay_label(stamina_bar, "Stamina: 100 / 100")
 
 	if gold_label != null:
-		gold_label.add_theme_font_size_override("font_size", 12)
+		gold_label.add_theme_font_size_override("font_size", 11)
 		gold_label.modulate = Color(0.96, 0.84, 0.42)
 	if time_label != null:
-		time_label.add_theme_font_size_override("font_size", 12)
+		time_label.add_theme_font_size_override("font_size", 11)
 		time_label.modulate = Color(0.88, 0.92, 0.98)
 	if status_label != null:
-		status_label.add_theme_font_size_override("font_size", 12)
+		status_label.add_theme_font_size_override("font_size", 11)
 		status_label.text = "Status: Healthy"
 
 	if vbox != null:
 		_blood_label = Label.new()
 		_blood_label.text = "Blood: 100%"
-		_blood_label.add_theme_font_size_override("font_size", 12)
+		_blood_label.add_theme_font_size_override("font_size", 11)
 		_blood_label.modulate = Color(0.94, 0.62, 0.64)
 		vbox.add_child(_blood_label)
 
 	# Top-Right Minimap + Resources Card underneath
 	_minimap = MinimapWidget.new()
 	_minimap.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_minimap.position = Vector2(-204, 10)
+	_minimap.position = Vector2(-196, 10)
 	add_child(_minimap)
 
 	var res_panel: PanelContainer = PanelContainer.new()
 	res_panel.add_theme_stylebox_override("panel", _make_card_style())
 	res_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	res_panel.position = Vector2(-204, 226)
-	res_panel.custom_minimum_size = Vector2(192, 72)
+	res_panel.position = Vector2(-196, 214)
+	res_panel.custom_minimum_size = Vector2(186, 66)
 	add_child(res_panel)
 
 	var res_vbox: VBoxContainer = VBoxContainer.new()
-	res_vbox.add_theme_constant_override("separation", 3)
+	res_vbox.add_theme_constant_override("separation", 2)
 	res_panel.add_child(res_vbox)
 
 	var res_hdr: Label = Label.new()
-	res_hdr.text = "RESOURCES & REALM"
+	res_hdr.text = "REALM & STOCKS"
 	res_hdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	res_hdr.add_theme_font_size_override("font_size", 11)
-	res_hdr.modulate = Color(0.95, 0.84, 0.52)
+	res_hdr.add_theme_font_size_override("font_size", 10)
+	res_hdr.modulate = Color(0.95, 0.84, 0.52, 0.92)
 	res_vbox.add_child(res_hdr)
 
 	_resources_label = Label.new()
-	_resources_label.text = "  Logs: 14    |   Stone: 12"
-	_resources_label.add_theme_font_size_override("font_size", 12)
+	_resources_label.text = "Logs: 14  |  Stone: 12"
+	_resources_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_resources_label.add_theme_font_size_override("font_size", 11)
 	res_vbox.add_child(_resources_label)
 
 	_biome_label = Label.new()
-	_biome_label.text = "  Biome: Plains (140, 140)"
-	_biome_label.add_theme_font_size_override("font_size", 11)
-	_biome_label.modulate = Color(0.76, 0.86, 0.74)
+	_biome_label.text = "Plains (140, 140)"
+	_biome_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_biome_label.add_theme_font_size_override("font_size", 10)
+	_biome_label.modulate = Color(0.76, 0.88, 0.76)
 	res_vbox.add_child(_biome_label)
 
-	# Bottom-Center 8-Slot Hotkey Action Bar (matching ui_world_design_reference)
+	# Bottom-Center 8-Slot Hotkey Action Bar with 32x32 Item Icons
 	var hotbar_panel: PanelContainer = PanelContainer.new()
 	hotbar_panel.add_theme_stylebox_override("panel", _make_card_style())
 	hotbar_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	hotbar_panel.position = Vector2(-268, -98)
-	hotbar_panel.custom_minimum_size = Vector2(536, 66)
+	hotbar_panel.position = Vector2(-264, -104)
+	hotbar_panel.custom_minimum_size = Vector2(528, 68)
 	add_child(hotbar_panel)
-
-	var hb_vbox: VBoxContainer = VBoxContainer.new()
-	hb_vbox.add_theme_constant_override("separation", 2)
-	hotbar_panel.add_child(hb_vbox)
-
-	var hb_title: Label = Label.new()
-	hb_title.text = "HOTKEY ACTION BAR [1 - 8]"
-	hb_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hb_title.add_theme_font_size_override("font_size", 10)
-	hb_title.modulate = Color(0.95, 0.84, 0.52)
-	hb_vbox.add_child(hb_title)
 
 	var hb_hbox: HBoxContainer = HBoxContainer.new()
 	hb_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	hb_hbox.add_theme_constant_override("separation", 6)
-	hb_vbox.add_child(hb_hbox)
+	hotbar_panel.add_child(hb_hbox)
 
 	_hotbar_buttons.clear()
 	for i in range(8):
 		var btn: Button = Button.new()
-		btn.custom_minimum_size = Vector2(58, 42)
+		btn.custom_minimum_size = Vector2(58, 54)
+		btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		btn.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+		btn.expand_icon = true
 		var slot_sb: StyleBoxFlat = StyleBoxFlat.new()
-		slot_sb.bg_color = Color(0.13, 0.15, 0.19, 0.95)
-		slot_sb.border_color = Color(0.45, 0.39, 0.25, 0.90)
+		slot_sb.bg_color = Color(0.09, 0.11, 0.15, 0.62)
+		slot_sb.border_color = Color(0.48, 0.42, 0.28, 0.72)
 		slot_sb.set_border_width_all(1)
-		slot_sb.set_corner_radius_all(4)
+		slot_sb.set_corner_radius_all(6)
+		slot_sb.content_margin_top = 3
+		slot_sb.content_margin_bottom = 2
 		btn.add_theme_stylebox_override("normal", slot_sb)
 		btn.add_theme_font_size_override("font_size", 10)
-		btn.text = "[%d]\n--" % (i + 1)
+		btn.text = "[%d]" % (i + 1)
 		var idx: int = i
 		btn.pressed.connect(func() -> void: _activate_hotbar_slot(idx))
 		hb_hbox.add_child(btn)
 		_hotbar_buttons.append(btn)
 
-	# Sleek bottom keybind bar anchored at bottom edge
+	# Sleek translucent interactive Quick-Action Dock at bottom edge
 	var bottom_bar: PanelContainer = PanelContainer.new()
 	var bot_sb: StyleBoxFlat = StyleBoxFlat.new()
-	bot_sb.bg_color = Color(0.06, 0.07, 0.09, 0.92)
-	bot_sb.border_color = Color(0.55, 0.45, 0.24, 0.85)
+	bot_sb.bg_color = Color(0.05, 0.06, 0.09, 0.58)
+	bot_sb.border_color = Color(0.65, 0.52, 0.28, 0.62)
 	bot_sb.border_width_top = 1
+	bot_sb.content_margin_top = 2
+	bot_sb.content_margin_bottom = 2
 	bottom_bar.add_theme_stylebox_override("panel", bot_sb)
 	bottom_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_bar.offset_top = -24.0
+	bottom_bar.offset_top = -30.0
 	bottom_bar.offset_bottom = 0.0
 	add_child(bottom_bar)
 
-	var help_lbl: Label = Label.new()
-	help_lbl.text = "  [WASD] Move   [LMB] Attack / Harvest   [E] Talk / Station   |   [I] Bag   [C] Craft   [B] Build   [J] Quests   [K] Hero   [N] Factions   [H] Lore   [L] Trophies   [F5] Save"
-	help_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	help_lbl.add_theme_font_size_override("font_size", 11)
-	help_lbl.modulate = Color(0.88, 0.86, 0.78, 0.95)
-	bottom_bar.add_child(help_lbl)
+	var dock_hbox: HBoxContainer = HBoxContainer.new()
+	dock_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	dock_hbox.add_theme_constant_override("separation", 8)
+	bottom_bar.add_child(dock_hbox)
+
+	var controls_hint: Label = Label.new()
+	controls_hint.text = "[WASD] Move  [LMB] Act  [Scroll/1-8] Tool  [E] Use  |"
+	controls_hint.add_theme_font_size_override("font_size", 11)
+	controls_hint.modulate = Color(0.82, 0.84, 0.88, 0.88)
+	dock_hbox.add_child(controls_hint)
+
+	var menu_defs: Array[Dictionary] = [
+		{"label": "Bag [I]", "panel": "inventory", "icon": "cloth"},
+		{"label": "Craft [C]", "panel": "craft", "icon": "stone_axe"},
+		{"label": "Build [B]", "panel": "build", "icon": "wood"},
+		{"label": "Quests [J]", "panel": "quest", "icon": "herb"},
+		{"label": "Hero [K]", "panel": "character", "icon": "iron_sword"},
+		{"label": "Lore [H]", "panel": "journal", "icon": "cooked_food"},
+		{"label": "Trophies [L]", "panel": "achievements", "icon": "iron_ingot"},
+		{"label": "Save [F5]", "panel": "__save__", "icon": "campfire"}
+	]
+	for mdef in menu_defs:
+		var mbtn: Button = Button.new()
+		mbtn.text = str(mdef.get("label", ""))
+		mbtn.icon = ItemIconFactory.get_icon(str(mdef.get("icon", "")))
+		mbtn.expand_icon = true
+		mbtn.custom_minimum_size = Vector2(82, 22)
+		mbtn.add_theme_font_size_override("font_size", 10)
+		var msb: StyleBoxFlat = StyleBoxFlat.new()
+		msb.bg_color = Color(0.11, 0.14, 0.19, 0.66)
+		msb.border_color = Color(0.62, 0.50, 0.28, 0.70)
+		msb.set_border_width_all(1)
+		msb.set_corner_radius_all(4)
+		msb.content_margin_left = 5
+		msb.content_margin_right = 5
+		var msb_hover: StyleBoxFlat = msb.duplicate() as StyleBoxFlat
+		msb_hover.bg_color = Color(0.22, 0.19, 0.12, 0.88)
+		msb_hover.border_color = Color(0.95, 0.80, 0.36, 0.95)
+		mbtn.add_theme_stylebox_override("normal", msb)
+		mbtn.add_theme_stylebox_override("hover", msb_hover)
+		mbtn.add_theme_stylebox_override("pressed", msb_hover)
+		var target_panel: String = str(mdef.get("panel", ""))
+		mbtn.pressed.connect(func() -> void:
+			if target_panel == "__save__":
+				SignalBus.save_requested.emit("")
+				SignalBus.notification_posted.emit("World state saved.")
+			else:
+				SignalBus.ui_panel_requested.emit(target_panel)
+		)
+		dock_hbox.add_child(mbtn)
 
 func _connect_signals() -> void:
 	SignalBus.player_stat_changed.connect(update_stat)
@@ -254,16 +306,18 @@ func _refresh_hotbar_from_player() -> void:
 	if _resources_label != null:
 		var wood_cnt: int = inv.count_of("wood")
 		var stone_cnt: int = inv.count_of("stone")
-		_resources_label.text = "  Logs: %d    |   Stone: %d" % [wood_cnt, stone_cnt]
+		_resources_label.text = "Logs: %d  |  Stone: %d" % [wood_cnt, stone_cnt]
 
 	for i in range(_hotbar_buttons.size()):
 		var btn: Button = _hotbar_buttons[i]
 		var is_active: bool = (i == active_idx)
 		var slot_sb: StyleBoxFlat = StyleBoxFlat.new()
-		slot_sb.bg_color = Color(0.24, 0.20, 0.11, 0.98) if is_active else Color(0.13, 0.15, 0.19, 0.95)
-		slot_sb.border_color = Color(0.98, 0.84, 0.30, 1.0) if is_active else Color(0.45, 0.39, 0.25, 0.90)
+		slot_sb.bg_color = Color(0.28, 0.22, 0.09, 0.80) if is_active else Color(0.09, 0.11, 0.15, 0.58)
+		slot_sb.border_color = Color(0.98, 0.84, 0.30, 0.96) if is_active else Color(0.48, 0.42, 0.28, 0.68)
 		slot_sb.set_border_width_all(2 if is_active else 1)
-		slot_sb.set_corner_radius_all(4)
+		slot_sb.set_corner_radius_all(6)
+		slot_sb.content_margin_top = 3
+		slot_sb.content_margin_bottom = 2
 		btn.add_theme_stylebox_override("normal", slot_sb)
 		btn.add_theme_stylebox_override("hover", slot_sb)
 		btn.add_theme_stylebox_override("pressed", slot_sb)
@@ -271,15 +325,19 @@ func _refresh_hotbar_from_player() -> void:
 
 		var slot: Dictionary = inv.get_slot(i)
 		if slot.is_empty():
-			btn.text = "[%d]\n--" % (i + 1)
-			btn.modulate = Color(0.98, 0.92, 0.68) if is_active else Color(0.65, 0.68, 0.72)
+			btn.icon = null
+			btn.text = "[%d]" % (i + 1)
+			btn.tooltip_text = "Empty Slot [%d]" % (i + 1)
+			btn.modulate = Color(0.98, 0.92, 0.68, 0.90) if is_active else Color(0.62, 0.65, 0.70, 0.75)
 		else:
 			var item_id: String = str(slot.get("item_id", ""))
 			var count: int = int(slot.get("count", 1))
 			var def: Dictionary = DataRegistry.get_item(item_id)
-			var short_name: String = str(def.get("name", item_id)).split(" ")[-1].substr(0, 7)
-			btn.text = "[%d] %s\nx%d" % [i + 1, short_name, count]
-			btn.modulate = Color(1.0, 0.96, 0.78) if is_active else Color(0.92, 0.90, 0.82)
+			var full_name: String = str(def.get("name", item_id))
+			btn.icon = ItemIconFactory.get_icon(item_id)
+			btn.text = "[%d] x%d" % [i + 1, count] if count > 1 else "[%d]" % (i + 1)
+			btn.tooltip_text = "%s (x%d) — Press [%d] or Click" % [full_name, count, i + 1]
+			btn.modulate = Color(1.0, 0.98, 0.86, 1.0) if is_active else Color(0.94, 0.92, 0.88, 0.92)
 
 func _activate_hotbar_slot(slot_idx: int) -> void:
 	var player: Node = get_tree().get_first_node_in_group("player")
@@ -332,7 +390,7 @@ func _on_player_biome_changed(biome_id: String) -> void:
 
 func _refresh_biome_label() -> void:
 	if _biome_label != null:
-		_biome_label.text = "  Biome: %s (%d, %d)" % [_current_biome.capitalize(), _current_tile.x, _current_tile.y]
+		_biome_label.text = "%s (%d, %d)" % [_current_biome.capitalize(), _current_tile.x, _current_tile.y]
 
 func _on_notification_posted(message: String) -> void:
 	if notification_label == null:
