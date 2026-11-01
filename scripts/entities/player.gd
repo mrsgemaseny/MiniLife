@@ -856,28 +856,35 @@ func _draw() -> void:
 			var max_dist: float = lerpf(260.0, 420.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0))
 			var current_range: float = lerpf(min_dist, max_dist, pow(charge_ratio, 1.4))
 
-			var left_ray: Vector2 = facing_direction.rotated(-current_spread) * current_range
-			var right_ray: Vector2 = facing_direction.rotated(current_spread) * current_range
+			var aim_base_angle: float = facing_direction.angle()
 			var center_tip: Vector2 = facing_direction * current_range
 
-			# Draw cone sector fill
-			var cone_pts: PackedVector2Array = PackedVector2Array([
-				hand_pos,
-				hand_pos + left_ray,
-				hand_pos + center_tip,
-				hand_pos + right_ray
-			])
-			var cone_fill_col: Color = Color(0.95, 0.72, 0.25, lerpf(0.10, 0.22, charge_ratio))
+			# Build circular sector arc polygon (rounded cone bottom)
+			var arc_steps: int = 20
+			var cone_pts: PackedVector2Array = PackedVector2Array()
+			var arc_pts: PackedVector2Array = PackedVector2Array()
+			cone_pts.append(hand_pos)
+
+			for step in range(arc_steps + 1):
+				var t: float = float(step) / float(arc_steps)
+				var cur_ang: float = lerpf(aim_base_angle - current_spread, aim_base_angle + current_spread, t)
+				var pt: Vector2 = hand_pos + Vector2(cos(cur_ang), sin(cur_ang)) * current_range
+				cone_pts.append(pt)
+				arc_pts.append(pt)
+
+			# Translucent soft fill (subtle, non-intrusive)
+			var cone_fill_col: Color = Color(0.96, 0.82, 0.32, lerpf(0.04, 0.09, charge_ratio))
 			draw_colored_polygon(cone_pts, cone_fill_col)
 
-			# Boundary guide lines
-			var cone_line_col: Color = Color(0.88, 0.88, 0.92, 0.35).lerp(Color(1.0, 0.88, 0.38, 0.85), charge_ratio)
-			draw_line(hand_pos, hand_pos + left_ray, cone_line_col, 1.4)
-			draw_line(hand_pos, hand_pos + right_ray, cone_line_col, 1.4)
-			draw_line(hand_pos + left_ray, hand_pos + right_ray, cone_line_col, 1.2)
+			# Elegant side boundary lines & smooth rounded bottom arc
+			var cone_line_col: Color = Color(1.0, 0.88, 0.42, lerpf(0.20, 0.48, charge_ratio))
+			draw_line(hand_pos, arc_pts[0], cone_line_col, 1.3)
+			draw_line(hand_pos, arc_pts[arc_pts.size() - 1], cone_line_col, 1.3)
+			draw_polyline(arc_pts, cone_line_col, 1.3)
 
 			# Center dashed sight line & reticle
-			draw_dashed_line(hand_pos + facing_direction * 12.0, hand_pos + center_tip, cone_line_col, 1.2, 5.0)
+			var sight_line_col: Color = Color(1.0, 0.92, 0.52, lerpf(0.24, 0.58, charge_ratio))
+			draw_dashed_line(hand_pos + facing_direction * 12.0, hand_pos + center_tip, sight_line_col, 1.1, 5.0)
 			var reticle_r: float = lerpf(8.0, 3.5, charge_ratio)
 			draw_polyline(IsoMath.diamond_polygon(hand_pos + center_tip, reticle_r * 1.5, reticle_r * 0.75), cone_line_col, 1.4, true)
 			if charge_ratio >= 0.98:
