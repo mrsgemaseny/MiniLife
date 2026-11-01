@@ -397,23 +397,6 @@ func perform_attack() -> void:
 			hit_target = true
 			break
 
-	if hit_target:
-		return
-
-	# Otherwise harvest closest ResourceNode
-	var closest_node: ResourceNode = null
-	var closest_dist: float = Config.MELEE_RANGE
-	for node in get_tree().get_nodes_in_group("harvestable"):
-		if node is ResourceNode:
-			var rn: ResourceNode = node as ResourceNode
-			var d: float = rn.global_position.distance_to(global_position)
-			if d <= closest_dist:
-				closest_dist = d
-				closest_node = rn
-
-	if closest_node != null:
-		closest_node.harvest_hit(self)
-
 func perform_interact() -> void:
 	var player_tile: Vector2i = Config.iso_to_world(global_position)
 	var mouse_world: Vector2 = get_global_mouse_position()

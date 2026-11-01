@@ -357,39 +357,21 @@ func _draw_procedural_bush(ofs: Vector2, outline_col: Color, radius: float) -> v
 	draw_circle(ofs + Vector2(0.0, -11.0), br * 0.88, primary_col.lightened(0.08))
 
 
-func harvest_hit(harvester: Node) -> bool:
-	if harvester == null:
-		return false
-	var equip: EquipmentComponent = harvester.get("equipment") as EquipmentComponent
-	var req_tool: String = str(_def.get("required_tool", ""))
-	var pref_tool: String = str(_def.get("preferred_tool", ""))
-	var held_tool: String = equip.get_tool_type() if equip != null else ""
-
-	if req_tool != "" and held_tool != req_tool:
-		SignalBus.notification_posted.emit("Requires " + req_tool + " to harvest " + str(_def.get("name", node_def_id)))
-		return false
-
-	var power: int = 2 if (pref_tool != "" and held_tool == pref_tool) else 1
-	hits_remaining -= power
-	_shake_timer = 0.30
+func harvest_hit(_harvester: Node) -> bool:
+	# Single click attack hits only produce visual impact shake/splinters, NEVER deplete or break resource
+	_shake_timer = 0.22
 	_spring_phase = 0.0
 	var chip_col: Color = Color.from_string(str(_def.get("trunk_color", "#7a5434")), Color(0.55, 0.38, 0.22))
 	if node_def_id.find("stone") != -1 or node_def_id.find("iron") != -1 or node_def_id.find("copper") != -1:
 		chip_col = Color(0.72, 0.76, 0.80)
-	for i in range(7):
+	for i in range(5):
 		_chips.append({
 			"pos": Vector2(randf_range(-6.0, 6.0), randf_range(-18.0, -6.0)),
-			"vel": Vector2(randf_range(-52.0, 52.0), randf_range(-95.0, -35.0)),
+			"vel": Vector2(randf_range(-45.0, 45.0), randf_range(-80.0, -30.0)),
 			"col": chip_col.lightened(randf_range(-0.1, 0.18)),
 			"age": 0.0
 		})
 	queue_redraw()
-	if equip != null and held_tool != "":
-		equip.damage_weapon(Config.TOOL_WEAR_PER_HIT)
-
-	if hits_remaining <= 0:
-		_deplete_and_grant(harvester)
-		return true
 	return false
 
 
