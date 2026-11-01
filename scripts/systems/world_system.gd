@@ -177,34 +177,28 @@ func _draw() -> void:
 				draw_colored_polygon(right_skirt, col.darkened(0.44))
 
 				var poly: PackedVector2Array = PackedVector2Array([top_pt, right_pt, bot_pt, left_pt])
-				draw_colored_polygon(poly, col)
-				draw_line(top_pt, right_pt, col.lightened(0.10), 1.0)
-				draw_line(top_pt, left_pt, col.lightened(0.06), 1.0)
-				draw_line(left_pt, bot_pt, col.darkened(0.18), 1.0)
-				draw_line(bot_pt, right_pt, col.darkened(0.22), 1.0)
-
-			# Rich surface detail (lush grass blades, wildflowers, pebbles, camp warmth)
-			if fstate == int(FogState.VISIBLE):
-				if is_camp_dirt:
-					if (hash_val % 3) == 0:
-						draw_circle(center + Vector2(float(hash_val % 11 - 5), float((hash_val >> 3) % 7 - 3)), 1.6, col.darkened(0.20))
-				elif biome_id == "plains" or biome_id == "forest":
-					var tuft_col: Color = col.lightened(0.20)
-					if (hash_val % 3) == 0:
-						var ox: float = float((hash_val % 13) - 6)
-						var oy: float = float(((hash_val >> 4) % 7) - 3)
-						draw_line(center + Vector2(ox - 2.0, oy + 2.0), center + Vector2(ox - 4.0, oy - 3.0), tuft_col, 1.4)
-						draw_line(center + Vector2(ox, oy + 2.0), center + Vector2(ox + 1.0, oy - 4.0), tuft_col, 1.4)
-						draw_line(center + Vector2(ox + 2.0, oy + 2.0), center + Vector2(ox + 4.0, oy - 2.0), tuft_col.darkened(0.08), 1.3)
-					if (hash_val % 11) == 0:
-						var flower_col: Color = Color(0.96, 0.84, 0.25) if (hash_val & 1) == 0 else Color(0.95, 0.95, 0.98)
-						draw_circle(center + Vector2(4.0, -2.0), 1.7, flower_col)
-						draw_circle(center + Vector2(-5.0, 1.0), 1.4, flower_col)
-				elif biome_id == "swamp":
-					if (hash_val % 4) == 0:
-						draw_circle(center + Vector2(0.0, 1.0), 4.0, Color(0.16, 0.26, 0.22, 0.55))
-				elif (hash_val % 7) == 0:
-					draw_circle(center + Vector2(5.0, -2.0), 1.8, col.darkened(0.24))
+				# Procedural surface detail fallback only when texture is missing
+				if fstate == int(FogState.VISIBLE):
+					if is_camp_dirt:
+						if (hash_val % 3) == 0:
+							draw_circle(center + Vector2(float(hash_val % 11 - 5), float((hash_val >> 3) % 7 - 3)), 1.6, col.darkened(0.20))
+					elif biome_id == "plains" or biome_id == "forest":
+						var tuft_col: Color = col.lightened(0.20)
+						if (hash_val % 3) == 0:
+							var ox: float = float((hash_val % 13) - 6)
+							var oy: float = float(((hash_val >> 4) % 7) - 3)
+							draw_line(center + Vector2(ox - 2.0, oy + 2.0), center + Vector2(ox - 4.0, oy - 3.0), tuft_col, 1.4)
+							draw_line(center + Vector2(ox, oy + 2.0), center + Vector2(ox + 1.0, oy - 4.0), tuft_col, 1.4)
+							draw_line(center + Vector2(ox + 2.0, oy + 2.0), center + Vector2(ox + 4.0, oy - 2.0), tuft_col.darkened(0.08), 1.3)
+						if (hash_val % 11) == 0:
+							var flower_col: Color = Color(0.96, 0.84, 0.25) if (hash_val & 1) == 0 else Color(0.95, 0.95, 0.98)
+							draw_circle(center + Vector2(4.0, -2.0), 1.7, flower_col)
+							draw_circle(center + Vector2(-5.0, 1.0), 1.4, flower_col)
+					elif biome_id == "swamp":
+						if (hash_val % 4) == 0:
+							draw_circle(center + Vector2(0.0, 1.0), 4.0, Color(0.16, 0.26, 0.22, 0.55))
+					elif (hash_val % 7) == 0:
+						draw_circle(center + Vector2(5.0, -2.0), 1.8, col.darkened(0.24))
 
 	for cpos in _chunk_pois:
 		var poi_info: Dictionary = _chunk_pois[cpos]
