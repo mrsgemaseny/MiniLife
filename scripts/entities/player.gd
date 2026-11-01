@@ -92,9 +92,13 @@ func _physics_process(delta: float) -> void:
 	else:
 		_knockback_velocity = Vector2.ZERO
 
-	# Stamina regeneration
+	# Stamina regeneration & well-fed health recovery
 	if stats.stamina < stats.max_stamina:
 		stats.modify("stamina", Config.STAMINA_REGEN_PER_SEC * delta)
+	if stats.health <= 0.0 and not is_dead:
+		stats.modify("health", stats.max_health)
+	elif stats.hunger > 40.0 and stats.health < stats.max_health:
+		stats.modify("health", 1.8 * delta)
 
 	health_comp.tick_regen(delta)
 	status_effects.tick(delta)

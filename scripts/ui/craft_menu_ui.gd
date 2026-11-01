@@ -3,6 +3,8 @@ extends Control
 
 const PANEL_ID: String = "craft"
 
+@onready var panel_container: PanelContainer = $PanelContainer
+@onready var vbox: VBoxContainer = $PanelContainer/VBoxContainer
 @onready var station_label: Label = $PanelContainer/VBoxContainer/StationLabel
 @onready var recipe_list: VBoxContainer = $PanelContainer/VBoxContainer/RecipeList
 
@@ -14,11 +16,44 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	_recipes = GameManager.load_json_indexed("recipes.json")
+	_setup_styled_craft_menu()
 	SignalBus.ui_panel_requested.connect(_on_panel_requested)
 	SignalBus.ui_close_all_requested.connect(close_panel)
 	SignalBus.craft_station_opened.connect(_on_craft_station_opened)
 	SignalBus.item_crafted.connect(_on_item_crafted)
 	SignalBus.inventory_changed.connect(_on_inventory_changed)
+
+
+func _setup_styled_craft_menu() -> void:
+	if panel_container != null:
+		panel_container.offset_left = -240.0
+		panel_container.offset_top = -200.0
+		panel_container.offset_right = 240.0
+		panel_container.offset_bottom = 200.0
+		var sb: StyleBoxFlat = StyleBoxFlat.new()
+		sb.bg_color = Color(0.06, 0.08, 0.12, 0.78)
+		sb.border_color = Color(0.78, 0.64, 0.34, 0.85)
+		sb.set_border_width_all(2)
+		sb.set_corner_radius_all(10)
+		sb.set_content_margin_all(14)
+		panel_container.add_theme_stylebox_override("panel", sb)
+
+	if vbox != null:
+		vbox.add_theme_constant_override("separation", 8)
+		var hdr_hbox: HBoxContainer = HBoxContainer.new()
+		if station_label != null:
+			vbox.remove_child(station_label)
+			station_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			station_label.add_theme_font_size_override("font_size", 14)
+			station_label.modulate = Color(0.96, 0.86, 0.52)
+			hdr_hbox.add_child(station_label)
+		var close_btn: Button = Button.new()
+		close_btn.text = " [X] Close "
+		close_btn.add_theme_font_size_override("font_size", 11)
+		close_btn.pressed.connect(close_panel)
+		hdr_hbox.add_child(close_btn)
+		vbox.add_child(hdr_hbox)
+		vbox.move_child(hdr_hbox, 0)
 
 
 func open_panel(station_id: String = "") -> void:
@@ -38,7 +73,7 @@ func close_panel() -> void:
 
 func refresh() -> void:
 	if station_label != null:
-		station_label.text = "Station: " + (_active_station if _active_station != "" else "Hand Crafting")
+		station_label.text = "CRAFTING  —  " + (_active_station.capitalize() if _active_station != "" else "Hand Crafting")
 	if recipe_list == null:
 		return
 	for child in recipe_list.get_children():
@@ -57,9 +92,27 @@ func refresh() -> void:
 		var out: Dictionary = recipe.get("output", {})
 		var out_id: String = str(out.get("item_id", rid))
 		var out_count: int = int(out.get("count", 1))
+		var item_def: Dictionary = DataRegistry.get_item(out_id)
+		var item_title: String = str(item_def.get("name", out_id))
+		var can_craft: bool = _meets_requirements(player, recipe)
+
 		var btn: Button = Button.new()
-		btn.text = "%s x%d (%s)" % [out_id, out_count, _format_inputs(recipe.get("inputs", []))]
-		btn.disabled = not _meets_requirements(player, recipe)
+		btn.custom_minimum_size = Vector2(440, 38)
+		btn.icon = ItemIconFactory.get_icon(out_id)
+		btn.expand_icon = true
+		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		btn.add_theme_font_size_override("font_size", 12)
+		btn.text = "  %s x%d   —   Requires: %s" % [item_title, out_count, _format_inputs(recipe.get("inputs", []))]
+		btn.disabled = not can_craft
+		var rsb: StyleBoxFlat = StyleBoxFlat.new()
+		rsb.bg_color = Color(0.12, 0.16, 0.22, 0.76) if can_craft else Color(0.08, 0.09, 0.12, 0.48)
+		rsb.border_color = Color(0.45, 0.82, 0.52, 0.85) if can_craft else Color(0.32, 0.34, 0.38, 0.45)
+		rsb.set_border_width_all(1)
+		rsb.set_corner_radius_all(6)
+		rsb.content_margin_left = 8
+		btn.add_theme_stylebox_override("normal", rsb)
+		btn.add_theme_stylebox_override("disabled", rsb)
+
 		var recipe_id_str: String = str(rid)
 		btn.pressed.connect(func() -> void:
 			if player != null:

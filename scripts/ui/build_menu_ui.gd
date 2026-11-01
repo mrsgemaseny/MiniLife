@@ -3,6 +3,9 @@ extends Control
 
 const PANEL_ID: String = "build"
 
+@onready var panel_container: PanelContainer = $PanelContainer
+@onready var vbox: VBoxContainer = $PanelContainer/VBoxContainer
+@onready var title_label: Label = $PanelContainer/VBoxContainer/TitleLabel
 @onready var structure_list: VBoxContainer = $PanelContainer/VBoxContainer/StructureList
 
 var _structures: Dictionary = {}
@@ -12,9 +15,43 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	_structures = GameManager.load_json_indexed("structures.json")
+	_setup_styled_build_menu()
 	SignalBus.ui_panel_requested.connect(_on_panel_requested)
 	SignalBus.ui_close_all_requested.connect(close_panel)
 	SignalBus.inventory_changed.connect(_on_inventory_changed)
+
+
+func _setup_styled_build_menu() -> void:
+	if panel_container != null:
+		panel_container.offset_left = -240.0
+		panel_container.offset_top = -190.0
+		panel_container.offset_right = 240.0
+		panel_container.offset_bottom = 190.0
+		var sb: StyleBoxFlat = StyleBoxFlat.new()
+		sb.bg_color = Color(0.06, 0.08, 0.12, 0.78)
+		sb.border_color = Color(0.78, 0.64, 0.34, 0.85)
+		sb.set_border_width_all(2)
+		sb.set_corner_radius_all(10)
+		sb.set_content_margin_all(14)
+		panel_container.add_theme_stylebox_override("panel", sb)
+
+	if vbox != null:
+		vbox.add_theme_constant_override("separation", 8)
+		var hdr_hbox: HBoxContainer = HBoxContainer.new()
+		if title_label != null:
+			vbox.remove_child(title_label)
+			title_label.text = "CONSTRUCTION BLUEPRINTS"
+			title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			title_label.add_theme_font_size_override("font_size", 14)
+			title_label.modulate = Color(0.96, 0.86, 0.52)
+			hdr_hbox.add_child(title_label)
+		var close_btn: Button = Button.new()
+		close_btn.text = " [X] Close "
+		close_btn.add_theme_font_size_override("font_size", 11)
+		close_btn.pressed.connect(close_panel)
+		hdr_hbox.add_child(close_btn)
+		vbox.add_child(hdr_hbox)
+		vbox.move_child(hdr_hbox, 0)
 
 
 func open_panel() -> void:
@@ -41,9 +78,25 @@ func refresh() -> void:
 	for sid in _structures:
 		var def: Dictionary = _structures[sid]
 		var mats: Array = def.get("materials", [])
+		var can_build: bool = _has_materials(player, mats)
 		var btn: Button = Button.new()
-		btn.text = "%s (%s)" % [str(def.get("name", sid)), _format_materials(mats)]
-		btn.disabled = not _has_materials(player, mats)
+		btn.custom_minimum_size = Vector2(440, 38)
+		var icon_key: String = "campfire" if str(sid).find("campfire") != -1 or str(sid).find("furnace") != -1 else ("stone" if str(sid).find("stone") != -1 else "wood")
+		btn.icon = ItemIconFactory.get_icon(icon_key)
+		btn.expand_icon = true
+		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		btn.add_theme_font_size_override("font_size", 12)
+		btn.text = "  %s   —   Cost: %s" % [str(def.get("name", sid)), _format_materials(mats)]
+		btn.disabled = not can_build
+		var bsb: StyleBoxFlat = StyleBoxFlat.new()
+		bsb.bg_color = Color(0.12, 0.16, 0.22, 0.76) if can_build else Color(0.08, 0.09, 0.12, 0.48)
+		bsb.border_color = Color(0.45, 0.82, 0.52, 0.85) if can_build else Color(0.32, 0.34, 0.38, 0.45)
+		bsb.set_border_width_all(1)
+		bsb.set_corner_radius_all(6)
+		bsb.content_margin_left = 8
+		btn.add_theme_stylebox_override("normal", bsb)
+		btn.add_theme_stylebox_override("disabled", bsb)
+
 		var structure_id_str: String = str(sid)
 		btn.pressed.connect(func() -> void:
 			close_panel()
