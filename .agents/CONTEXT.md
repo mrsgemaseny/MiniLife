@@ -35,4 +35,8 @@
   - **How to Restore**: Uncomment the `[SANDBOX_EXPLORATION_MODE` blocks in:
     1. `scripts/systems/world_system.gd` (`_spawn_chunk_inhabitants`, lines 445–497).
     2. `scripts/systems/event_system.gd` (`_execute_event_effects`, lines 120–139).
+- **RimWorld-Style Procedural Animations (2026-11-01)**:
+  - **Movement (`Player`)**: Smooth velocity interpolation, RimWorld walk bob & sway (`_walk_phase`, `_walk_blend`), alternating leg stride, billowing cloak, and footstep dust puffs (`_dust_puffs`).
+  - **Attack & Harvesting (`Player`, `ResourceNode`)**: RimWorld forward lunge (`_lunge_offset`) on attack/harvest/build, dynamic weapon wind-up & slash rotation arc, damped spring squash-and-stretch on trees/rocks (`_spring_phase`), flying wood chips / rock splinters (`_chips`), and smooth golden harvesting progress bar (`_display_progress`).
+  - **Construction (`StructureEntity`, `BuildingSystem`, `BlueprintPlacer`)**: Smoothly gliding 3D wireframe blueprint ghost (`_smooth_cursor_world`), elastic construction pop-in curve (`_build_progress`), rising construction dust particles (`_build_particles`), golden build progress bar, and animated flickering campfire flames (`_flame_phase`).
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

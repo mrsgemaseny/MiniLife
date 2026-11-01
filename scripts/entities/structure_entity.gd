@@ -6,8 +6,12 @@ var tile_pos: Vector2i = Vector2i.ZERO
 var current_hp: float = 100.0
 var max_hp: float = 100.0
 var is_door_open: bool = false
+var animate_construction: bool = false
 var _def: Dictionary = {}
 var _collision: CollisionShape2D = null
+var _build_progress: float = 1.0
+var _flame_phase: float = 0.0
+var _build_particles: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -23,10 +27,55 @@ func _ready() -> void:
 	if structure_id in ["workbench", "forge", "campfire"]:
 		add_to_group("craft_station")
 
+	if animate_construction:
+		_build_progress = 0.0
+		scale = Vector2(0.85, 0.15)
+		for i in range(10):
+			var ang: float = (TAU / 10.0) * float(i) + randf_range(-0.2, 0.2)
+			_build_particles.append({
+				"pos": Vector2(cos(ang) * 10.0, sin(ang) * 5.0),
+				"vel": Vector2(cos(ang) * 28.0, sin(ang) * 14.0 - randf_range(22.0, 48.0)),
+				"age": 0.0
+			})
+
 	_setup_collision(passable)
 	if _def.has("trap"):
 		_setup_trap_trigger()
 	queue_redraw()
+
+
+func _process(delta: float) -> void:
+	var needs_redraw: bool = false
+	if _build_progress < 1.0:
+		_build_progress = minf(1.0, _build_progress + delta / 0.52)
+		var t: float = _build_progress
+		# RimWorld elastic pop-in curve
+		var overshoot: float = 1.0 + sin(t * PI) * 0.14 * (1.0 - t)
+		scale = Vector2(lerpf(0.86, 1.0, t) * overshoot, lerpf(0.18, 1.0, ease(t, 0.35)) * overshoot)
+		if _build_progress >= 1.0:
+			scale = Vector2.ONE
+		needs_redraw = true
+
+	for i in range(_build_particles.size() - 1, -1, -1):
+		var p: Dictionary = _build_particles[i]
+		var age: float = float(p.get("age", 0.0)) + delta
+		if age >= 0.55:
+			_build_particles.remove_at(i)
+		else:
+			p["age"] = age
+			var vel: Vector2 = p["vel"] as Vector2
+			vel.y += 95.0 * delta
+			p["vel"] = vel
+			p["pos"] = (p["pos"] as Vector2) + vel * delta
+			_build_particles[i] = p
+		needs_redraw = true
+
+	if structure_id == "campfire" or structure_id == "forge":
+		_flame_phase += delta * 7.5
+		needs_redraw = true
+
+	if needs_redraw:
+		queue_redraw()
 
 
 func _draw() -> void:
@@ -40,9 +89,11 @@ func _draw() -> void:
 	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 2.5), hw * 0.95, hh * 0.95), Color(0.0, 0.0, 0.0, 0.30))
 
 	if structure_id == "campfire":
+		var flicker: float = sin(_flame_phase) * 1.8
+		var halo_pulse: float = cos(_flame_phase * 0.7) * 3.0
 		# Warm ground light halo
-		draw_circle(Vector2(0.0, -2.0), 42.0, Color(1.0, 0.56, 0.14, 0.11))
-		draw_circle(Vector2(0.0, -2.0), 24.0, Color(1.0, 0.65, 0.20, 0.18))
+		draw_circle(Vector2(0.0, -2.0), 42.0 + halo_pulse, Color(1.0, 0.56, 0.14, 0.11))
+		draw_circle(Vector2(0.0, -2.0), 24.0 + halo_pulse * 0.5, Color(1.0, 0.65, 0.20, 0.18))
 		# Ash bed
 		draw_colored_polygon(IsoMath.diamond_polygon(Vector2.ZERO, 13.0, 7.0), Color(0.22, 0.18, 0.16))
 		# Ring of 8 gray fieldstones
@@ -56,17 +107,18 @@ func _draw() -> void:
 		var log_col: Color = Color(0.46, 0.29, 0.16)
 		draw_line(Vector2(-8.0, 2.0), Vector2(8.0, -5.0), log_col, 3.6)
 		draw_line(Vector2(-8.0, -4.0), Vector2(8.0, 2.0), log_col.darkened(0.15), 3.6)
-		# Multi-layered fire flames
+		# Multi-layered animated fire flames
 		var outer_flame: PackedVector2Array = PackedVector2Array([
-			Vector2(-7.5, -1.0), Vector2(-5.0, -14.0), Vector2(-1.5, -9.0),
-			Vector2(0.5, -21.0), Vector2(4.0, -11.0), Vector2(6.5, -15.0), Vector2(7.5, -1.0)
+			Vector2(-7.5, -1.0), Vector2(-5.0 + flicker * 0.4, -14.0 - flicker * 0.5), Vector2(-1.5, -9.0),
+			Vector2(0.5 - flicker * 0.6, -21.0 + flicker), Vector2(4.0, -11.0), Vector2(6.5, -15.0 - flicker * 0.4), Vector2(7.5, -1.0)
 		])
 		var inner_flame: PackedVector2Array = PackedVector2Array([
-			Vector2(-4.5, -1.0), Vector2(-2.0, -11.0), Vector2(0.5, -16.0),
+			Vector2(-4.5, -1.0), Vector2(-2.0, -11.0), Vector2(0.5 + flicker * 0.4, -16.0 - flicker * 0.6),
 			Vector2(3.0, -9.0), Vector2(4.5, -1.0)
 		])
 		draw_colored_polygon(outer_flame, Color(0.98, 0.42, 0.08, 0.95))
 		draw_colored_polygon(inner_flame, Color(1.0, 0.86, 0.24, 0.98))
+		_draw_construction_overlay()
 		return
 
 	if structure_id == "workbench":
@@ -84,6 +136,7 @@ func _draw() -> void:
 		draw_line(top_ofs + Vector2(-9.0, -4.5), top_ofs + Vector2(9.0, 4.5), wood_col.darkened(0.22), 1.2)
 		draw_line(top_ofs + Vector2(-5.0, 1.0), top_ofs + Vector2(4.0, -3.0), Color(0.78, 0.82, 0.86), 2.4)
 		draw_circle(top_ofs + Vector2(-6.0, 1.5), 2.2, Color(0.38, 0.24, 0.14))
+		_draw_construction_overlay()
 		return
 
 	if structure_id == "door" and is_door_open:
@@ -93,6 +146,7 @@ func _draw() -> void:
 	if height_px <= 6.0:
 		draw_colored_polygon(bottom_diamond, base_col)
 		draw_polyline(bottom_diamond, outline_col, 1.5, true)
+		_draw_construction_overlay()
 		return
 
 	var top_offset: Vector2 = Vector2(0.0, -height_px)
@@ -121,6 +175,24 @@ func _draw() -> void:
 	elif structure_id == "forge":
 		draw_circle(top_offset, 6.0, Color(1.0, 0.48, 0.1, 0.9))
 		draw_circle(top_offset + Vector2(0.0, -2.0), 3.5, Color(1.0, 0.85, 0.2, 0.95))
+	_draw_construction_overlay()
+
+
+func _draw_construction_overlay() -> void:
+	for p in _build_particles:
+		var age: float = float(p.get("age", 0.0))
+		var alpha: float = clampf(1.0 - (age / 0.55), 0.0, 1.0)
+		var ppos: Vector2 = p["pos"] as Vector2
+		draw_circle(ppos, lerpf(2.2, 4.8, age / 0.55), Color(0.84, 0.74, 0.56, alpha * 0.7))
+
+	if _build_progress < 1.0:
+		var bar_w: float = 34.0
+		var bar_h: float = 5.5
+		var bar_y: float = -34.0
+		var bg_rect: Rect2 = Rect2(-bar_w * 0.5, bar_y, bar_w, bar_h)
+		draw_rect(bg_rect, Color(0.08, 0.09, 0.12, 0.92), true)
+		draw_rect(Rect2(-bar_w * 0.5 + 1.0, bar_y + 1.0, (bar_w - 2.0) * _build_progress, bar_h - 2.0), Color(0.96, 0.80, 0.26, 0.96), true)
+		draw_rect(bg_rect, Color(0.68, 0.55, 0.28, 0.95), false, 1.0)
 
 
 func get_station_id() -> String:

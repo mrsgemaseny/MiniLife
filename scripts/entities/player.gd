@@ -15,7 +15,13 @@ var facing_direction: Vector2 = Vector2.DOWN
 var is_dead: bool = false
 var _attack_cooldown: float = 0.0
 var _swing_timer: float = 0.0
+var _swing_duration: float = 0.26
 var _knockback_velocity: Vector2 = Vector2.ZERO
+var _walk_phase: float = 0.0
+var _walk_blend: float = 0.0
+var _lunge_offset: Vector2 = Vector2.ZERO
+var _step_dust_timer: float = 0.0
+var _dust_puffs: Array[Dictionary] = []
 
 func _ready() -> void:
 	add_to_group("player")
@@ -55,11 +61,29 @@ func _physics_process(delta: float) -> void:
 	if is_dead or GameManager.is_paused():
 		return
 
+	var needs_redraw: bool = false
 	if _attack_cooldown > 0.0:
 		_attack_cooldown = maxf(0.0, _attack_cooldown - delta)
 	if _swing_timer > 0.0:
 		_swing_timer = maxf(0.0, _swing_timer - delta)
-		queue_redraw()
+		needs_redraw = true
+	if _lunge_offset.length_squared() > 0.05:
+		_lunge_offset = _lunge_offset.lerp(Vector2.ZERO, clampf(delta * 14.0, 0.0, 1.0))
+		needs_redraw = true
+	else:
+		_lunge_offset = Vector2.ZERO
+
+	# Update footstep dust puffs
+	for i in range(_dust_puffs.size() - 1, -1, -1):
+		var puff: Dictionary = _dust_puffs[i]
+		var age: float = float(puff.get("age", 0.0)) + delta
+		if age >= 0.38:
+			_dust_puffs.remove_at(i)
+		else:
+			puff["age"] = age
+			puff["pos"] = (puff["pos"] as Vector2) + (puff["vel"] as Vector2) * delta
+			_dust_puffs[i] = puff
+		needs_redraw = true
 
 	if _knockback_velocity.length_squared() > 1.0:
 		_knockback_velocity = _knockback_velocity.move_toward(Vector2.ZERO, Config.KNOCKBACK_DECAY * delta)
@@ -80,26 +104,46 @@ func _physics_process(delta: float) -> void:
 
 	var input_dir: Vector2 = _read_movement_input()
 	if input_dir.length_squared() > 0.0:
-		facing_direction = input_dir.normalized()
+		facing_direction = facing_direction.lerp(input_dir.normalized(), clampf(delta * 16.0, 0.0, 1.0)).normalized()
 		var speed_mult: float = traits.get_modifier("move_speed")
 		speed_mult *= status_effects.get_speed_multiplier()
 		speed_mult *= inventory.get_encumbrance_speed_multiplier()
 		speed_mult *= health_comp.get_mobility_multiplier()
-		velocity = input_dir * Config.BASE_MOVE_SPEED * speed_mult + _knockback_velocity
+		var target_vel: Vector2 = input_dir * Config.BASE_MOVE_SPEED * speed_mult + _knockback_velocity
+		velocity = velocity.lerp(target_vel, clampf(delta * 15.0, 0.0, 1.0))
 		move_and_slide()
 		GameManager.set_player_world_pos(global_position)
-		queue_redraw()
+
+		_walk_phase += delta * 14.0
+		_walk_blend = move_toward(_walk_blend, 1.0, delta * 8.0)
+		_step_dust_timer -= delta
+		if _step_dust_timer <= 0.0:
+			_step_dust_timer = 0.22
+			_dust_puffs.append({
+				"pos": global_position + Vector2(randf_range(-4.0, 4.0), 2.0),
+				"vel": -input_dir.normalized() * 14.0 + Vector2(0.0, -8.0),
+				"age": 0.0
+			})
+		needs_redraw = true
 
 		var new_tile: Vector2i = Config.iso_to_world(global_position)
 		if new_tile != current_tile:
 			current_tile = new_tile
 			SignalBus.player_tile_changed.emit(current_tile)
-	elif _knockback_velocity.length_squared() > 0.0:
-		velocity = _knockback_velocity
-		move_and_slide()
-		GameManager.set_player_world_pos(global_position)
 	else:
-		velocity = Vector2.ZERO
+		if velocity.length_squared() > 2.0 or _knockback_velocity.length_squared() > 0.0:
+			velocity = velocity.lerp(_knockback_velocity, clampf(delta * 16.0, 0.0, 1.0))
+			move_and_slide()
+			GameManager.set_player_world_pos(global_position)
+			needs_redraw = true
+		else:
+			velocity = Vector2.ZERO
+		if _walk_blend > 0.0:
+			_walk_blend = move_toward(_walk_blend, 0.0, delta * 10.0)
+			needs_redraw = true
+
+	if needs_redraw:
+		queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if is_dead or GameManager.is_paused():
@@ -126,13 +170,15 @@ func perform_attack() -> void:
 	var w_stats: Dictionary = equipment.get_weapon_stats()
 	var atk_speed: float = maxf(0.25, float(w_stats.get("attack_speed", 1.0)))
 	_attack_cooldown = Config.BASE_ATTACK_COOLDOWN / atk_speed
-	_swing_timer = 0.22
-	queue_redraw()
+	_swing_duration = 0.26
+	_swing_timer = _swing_duration
 
 	var mouse_world: Vector2 = get_global_mouse_position()
 	var aim_dir: Vector2 = (mouse_world - global_position).normalized()
 	if aim_dir.length_squared() > 0.01:
 		facing_direction = aim_dir
+	_lunge_offset = facing_direction * 10.5
+	queue_redraw()
 
 	var is_ranged: bool = str(w_stats.get("range", "melee")) == "ranged"
 	if is_ranged:
@@ -345,6 +391,16 @@ func _connect_bus_signals() -> void:
 		if entity == self:
 			use_slot_item(slot_index)
 	)
+	SignalBus.structure_built.connect(func(_sid: String, tile_pos: Vector2i) -> void:
+		var build_world: Vector2 = Config.world_to_iso(tile_pos)
+		var bdir: Vector2 = (build_world - global_position).normalized()
+		if bdir.length_squared() > 0.01:
+			facing_direction = bdir
+		_lunge_offset = facing_direction * 9.0
+		_swing_duration = 0.28
+		_swing_timer = _swing_duration
+		queue_redraw()
+	)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
 
@@ -389,25 +445,44 @@ func _on_save_data_loaded(bundle: Dictionary) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	var outline_col: Color = Color(0.07, 0.08, 0.10, 0.95)
-	# Isometric ground shadow
-	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 3.0), 12.0, 6.0), Color(0.0, 0.0, 0.0, 0.38))
+	# Footstep dust puffs (drawn in local space relative to global_position)
+	for puff in _dust_puffs:
+		var age: float = float(puff.get("age", 0.0))
+		var t: float = clampf(age / 0.38, 0.0, 1.0)
+		var local_p: Vector2 = (puff["pos"] as Vector2) - global_position
+		draw_circle(local_p, lerpf(2.2, 6.2, t), Color(0.74, 0.68, 0.56, (1.0 - t) * 0.42))
 
-	# Traveller Cloak / Cape behind torso
+	var outline_col: Color = Color(0.07, 0.08, 0.10, 0.95)
+	var bob_y: float = -absf(sin(_walk_phase)) * 3.8 * _walk_blend
+	var sway_x: float = cos(_walk_phase) * 1.5 * _walk_blend
+	var stride: float = sin(_walk_phase) * 3.6 * _walk_blend
+	var body_ofs: Vector2 = _lunge_offset + Vector2(sway_x, bob_y)
+
+	# Isometric ground shadow (scales slightly when jumping/bobbing)
+	var shadow_scale: float = 1.0 - (-bob_y * 0.03)
+	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(_lunge_offset.x, _lunge_offset.y + 3.0), 12.0 * shadow_scale, 6.0 * shadow_scale), Color(0.0, 0.0, 0.0, 0.38))
+
+	# Traveller Cloak / Cape behind torso (billows with walk & lunge)
+	var cape_sway: float = -sway_x * 1.4 - _lunge_offset.x * 0.25
 	var cape_pts: PackedVector2Array = PackedVector2Array([
-		Vector2(-7.0, -22.0), Vector2(7.0, -22.0), Vector2(9.0, -5.0), Vector2(-9.0, -5.0)
+		body_ofs + Vector2(-7.0, -22.0),
+		body_ofs + Vector2(7.0, -22.0),
+		body_ofs + Vector2(9.5 + cape_sway, -5.0 - bob_y * 0.4),
+		body_ofs + Vector2(-9.5 + cape_sway, -5.0 - bob_y * 0.4)
 	])
 	draw_colored_polygon(cape_pts, Color(0.24, 0.27, 0.22))
 	draw_polyline(cape_pts, outline_col, 1.3, true)
 
-	# Boots & Trousers
+	# Boots & Trousers with alternating RimWorld stride
 	var legs_id: String = equipment.get_item_id("legs") if equipment != null else ""
 	var pant_col: Color = Color(0.32, 0.28, 0.22) if legs_id.is_empty() else Color(0.45, 0.34, 0.22)
 	var boot_col: Color = Color(0.24, 0.16, 0.10)
-	draw_rect(Rect2(-5.5, -10.0, 4.5, 7.0), pant_col, true)
-	draw_rect(Rect2(1.0, -10.0, 4.5, 7.0), pant_col, true)
-	draw_rect(Rect2(-6.0, -4.0, 5.0, 5.0), boot_col, true)
-	draw_rect(Rect2(1.0, -4.0, 5.0, 5.0), boot_col, true)
+	var left_leg_y: float = minf(0.0, stride)
+	var right_leg_y: float = minf(0.0, -stride)
+	draw_rect(Rect2(body_ofs.x - 5.5, body_ofs.y - 10.0 + left_leg_y * 0.5, 4.5, 7.0), pant_col, true)
+	draw_rect(Rect2(body_ofs.x + 1.0, body_ofs.y - 10.0 + right_leg_y * 0.5, 4.5, 7.0), pant_col, true)
+	draw_rect(Rect2(body_ofs.x - 6.0 - stride * 0.3, body_ofs.y - 4.0 + left_leg_y, 5.0, 5.0), boot_col, true)
+	draw_rect(Rect2(body_ofs.x + 1.0 + stride * 0.3, body_ofs.y - 4.0 + right_leg_y, 5.0, 5.0), boot_col, true)
 
 	# Tunic / Chainmail / Leather Armor
 	var chest_id: String = equipment.get_item_id("chest") if equipment != null else ""
@@ -416,42 +491,53 @@ func _draw() -> void:
 		torso_col = Color(0.62, 0.66, 0.72)
 	elif chest_id.find("leather") != -1:
 		torso_col = Color(0.48, 0.31, 0.17)
-	# Sleeves
-	draw_rect(Rect2(-9.5, -21.0, 3.5, 9.0), Color(0.72, 0.66, 0.56), true)
-	draw_rect(Rect2(6.0, -21.0, 3.5, 9.0), Color(0.72, 0.66, 0.56), true)
+	# Sleeves with arm swing
+	draw_rect(Rect2(body_ofs.x - 9.5, body_ofs.y - 21.0 - stride * 0.35, 3.5, 9.0), Color(0.72, 0.66, 0.56), true)
+	draw_rect(Rect2(body_ofs.x + 6.0, body_ofs.y - 21.0 + stride * 0.35, 3.5, 9.0), Color(0.72, 0.66, 0.56), true)
 	# Main torso
-	draw_rect(Rect2(-6.5, -22.0, 13.0, 13.0), torso_col, true)
-	draw_rect(Rect2(-6.5, -22.0, 13.0, 13.0), outline_col, false, 1.4)
+	draw_rect(Rect2(body_ofs.x - 6.5, body_ofs.y - 22.0, 13.0, 13.0), torso_col, true)
+	draw_rect(Rect2(body_ofs.x - 6.5, body_ofs.y - 22.0, 13.0, 13.0), outline_col, false, 1.4)
 	# Belt & Brass Buckle
-	draw_rect(Rect2(-6.5, -12.5, 13.0, 2.5), Color(0.20, 0.14, 0.09), true)
-	draw_rect(Rect2(-1.5, -13.0, 3.0, 3.2), Color(0.88, 0.72, 0.24), true)
+	draw_rect(Rect2(body_ofs.x - 6.5, body_ofs.y - 12.5, 13.0, 2.5), Color(0.20, 0.14, 0.09), true)
+	draw_rect(Rect2(body_ofs.x - 1.5, body_ofs.y - 13.0, 3.0, 3.2), Color(0.88, 0.72, 0.24), true)
 
-	# Head, Hair, Eyes
+	# Head, Hair, Eyes (slightly delayed secondary bob)
+	var head_ofs: Vector2 = body_ofs + Vector2(facing_direction.x * 1.2, bob_y * 0.18)
 	var skin_col: Color = Color(0.91, 0.76, 0.62)
-	draw_circle(Vector2(0.0, -28.0), 6.8, outline_col)
-	draw_circle(Vector2(0.0, -28.0), 5.8, skin_col)
-	draw_circle(Vector2(-2.0, -28.0), 0.9, Color(0.14, 0.12, 0.10))
-	draw_circle(Vector2(2.0, -28.0), 0.9, Color(0.14, 0.12, 0.10))
+	draw_circle(head_ofs + Vector2(0.0, -28.0), 6.8, outline_col)
+	draw_circle(head_ofs + Vector2(0.0, -28.0), 5.8, skin_col)
+	draw_circle(head_ofs + Vector2(-2.0 + facing_direction.x * 0.8, -28.0), 0.9, Color(0.14, 0.12, 0.10))
+	draw_circle(head_ofs + Vector2(2.0 + facing_direction.x * 0.8, -28.0), 0.9, Color(0.14, 0.12, 0.10))
 	var head_id: String = equipment.get_item_id("head") if equipment != null else ""
 	if not head_id.is_empty():
-		draw_arc(Vector2(0.0, -29.0), 6.2, PI, TAU, 12, Color(0.64, 0.68, 0.74), 3.4)
+		draw_arc(head_ofs + Vector2(0.0, -29.0), 6.2, PI, TAU, 12, Color(0.64, 0.68, 0.74), 3.4)
 	else:
-		draw_arc(Vector2(0.0, -29.5), 5.8, PI * 0.92, TAU * 1.04, 12, Color(0.36, 0.23, 0.13), 3.6)
+		draw_arc(head_ofs + Vector2(0.0, -29.5), 5.8, PI * 0.92, TAU * 1.04, 12, Color(0.36, 0.23, 0.13), 3.6)
 
-	# Weapon in Hand (Axe / Sword / Bow)
-	var hand_pos: Vector2 = Vector2(4.5, -14.0)
+	# Weapon in Hand with Smooth Wind-Up & Slash Arc Rotation
+	var hand_pos: Vector2 = body_ofs + Vector2(4.5, -14.0)
 	var weapon_id: String = equipment.get_item_id("weapon") if equipment != null else ""
-	var weapon_dir: Vector2 = facing_direction.normalized()
-	if weapon_dir.length_squared() < 0.01:
-		weapon_dir = Vector2.RIGHT
-	var weapon_tip: Vector2 = hand_pos + weapon_dir * 18.0
+	var aim_dir: Vector2 = facing_direction.normalized()
+	if aim_dir.length_squared() < 0.01:
+		aim_dir = Vector2.RIGHT
+
+	var swing_angle_ofs: float = 0.0
+	if _swing_timer > 0.0:
+		var prog: float = 1.0 - (_swing_timer / maxf(0.01, _swing_duration))
+		var eased: float = 1.0 - pow(1.0 - prog, 3.0)
+		swing_angle_ofs = lerpf(-1.15, 1.05, eased)
+	else:
+		swing_angle_ofs = sin(_walk_phase) * 0.14 * _walk_blend
+
+	var weapon_dir: Vector2 = aim_dir.rotated(swing_angle_ofs)
+	var weapon_tip: Vector2 = hand_pos + weapon_dir * 19.0
 	if weapon_id.find("axe") != -1 or weapon_id.find("pick") != -1:
-		draw_line(hand_pos, weapon_tip, Color(0.48, 0.32, 0.18), 2.4)
+		draw_line(hand_pos, weapon_tip, Color(0.48, 0.32, 0.18), 2.5)
 		var perp: Vector2 = Vector2(-weapon_dir.y, weapon_dir.x)
 		var head_pts: PackedVector2Array = PackedVector2Array([
-			weapon_tip - weapon_dir * 4.0,
-			weapon_tip + perp * 6.0,
-			weapon_tip + weapon_dir * 2.0 + perp * 3.0
+			weapon_tip - weapon_dir * 4.5,
+			weapon_tip + perp * 6.5,
+			weapon_tip + weapon_dir * 2.0 + perp * 3.5
 		])
 		draw_colored_polygon(head_pts, Color(0.76, 0.80, 0.85))
 	elif weapon_id.find("bow") != -1:
@@ -462,7 +548,11 @@ func _draw() -> void:
 		var guard_perp: Vector2 = Vector2(-weapon_dir.y, weapon_dir.x) * 4.0
 		draw_line(hand_pos + weapon_dir * 3.0 - guard_perp, hand_pos + weapon_dir * 3.0 + guard_perp, Color(0.78, 0.64, 0.24), 2.2)
 
-	# Attack Swing Arc
+	# RimWorld-style Smooth Weapon Slash Trail
 	if _swing_timer > 0.0:
-		var base_angle: float = weapon_dir.angle()
-		draw_arc(Vector2(0.0, -14.0), 28.0, base_angle - 0.85, base_angle + 0.85, 16, Color(1.0, 0.90, 0.55, 0.80), 3.5)
+		var prog: float = 1.0 - (_swing_timer / maxf(0.01, _swing_duration))
+		var alpha: float = sin(prog * PI) * 0.85
+		var base_angle: float = aim_dir.angle()
+		var cur_angle: float = base_angle + swing_angle_ofs
+		draw_arc(body_ofs + Vector2(0.0, -14.0), 27.0, cur_angle - 0.95, cur_angle + 0.15, 16, Color(1.0, 0.92, 0.58, alpha), 3.8)
+		draw_arc(body_ofs + Vector2(0.0, -14.0), 23.0, cur_angle - 0.70, cur_angle + 0.10, 12, Color(1.0, 0.98, 0.88, alpha * 0.75), 2.0)

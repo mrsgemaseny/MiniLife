@@ -6,6 +6,8 @@ var _storage_mgr: StorageManager = StorageManager.new()
 var _defense_net: DefenseNetwork = DefenseNetwork.new()
 var _active_build_id: String = ""
 var _cursor_tile: Vector2i = Vector2i.ZERO
+var _smooth_cursor_world: Vector2 = Vector2.ZERO
+var _pulse_phase: float = 0.0
 
 
 func _ready() -> void:
@@ -17,14 +19,20 @@ func _ready() -> void:
 	SignalBus.trap_triggered.connect(_on_trap_triggered)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _active_build_id == "":
 		return
 	var mouse_world: Vector2 = get_global_mouse_position()
 	var next_tile: Vector2i = Config.iso_to_world(mouse_world)
 	if next_tile != _cursor_tile:
 		_cursor_tile = next_tile
-		queue_redraw()
+	var target_world: Vector2 = Config.world_to_iso(_cursor_tile)
+	if _smooth_cursor_world == Vector2.ZERO:
+		_smooth_cursor_world = target_world
+	else:
+		_smooth_cursor_world = _smooth_cursor_world.lerp(target_world, clampf(delta * 18.0, 0.0, 1.0))
+	_pulse_phase += delta * 5.5
+	queue_redraw()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -54,13 +62,14 @@ func _draw() -> void:
 		return
 	var player: Node = get_tree().get_first_node_in_group("player")
 	var valid: bool = has_materials(player, _active_build_id)
-	BlueprintPlacer.draw_ghost_preview(self, _cursor_tile, valid)
+	BlueprintPlacer.draw_ghost_preview(self, _cursor_tile, valid, _smooth_cursor_world, _pulse_phase, _active_build_id)
 
 
 func set_build_mode(structure_id: String) -> void:
 	if structure_id != "" and DataRegistry.get_structure(structure_id).is_empty():
 		return
 	_active_build_id = structure_id
+	_smooth_cursor_world = Vector2.ZERO
 	queue_redraw()
 
 
@@ -107,11 +116,11 @@ func _on_structure_placement_validated(structure_id: String, tile_pos: Vector2i,
 		var skills: SkillsComponent = builder.get("skills") as SkillsComponent
 		if skills != null:
 			skills.gain_xp("construction", 14.0)
-	_spawn_structure_node(structure_id, tile_pos)
+	_spawn_structure_node(structure_id, tile_pos, true)
 
 
 func _on_structure_restored(structure_id: String, tile_pos: Vector2i) -> void:
-	_spawn_structure_node(structure_id, tile_pos)
+	_spawn_structure_node(structure_id, tile_pos, false)
 
 
 func _on_structure_destroyed(_structure_id: String, tile_pos: Vector2i) -> void:
@@ -125,13 +134,14 @@ func _on_structure_destroyed(_structure_id: String, tile_pos: Vector2i) -> void:
 		_placed_nodes.erase(key)
 
 
-func _spawn_structure_node(structure_id: String, tile_pos: Vector2i) -> void:
+func _spawn_structure_node(structure_id: String, tile_pos: Vector2i, animate_build: bool = false) -> void:
 	var key: String = Config.vec2i_to_key(tile_pos)
 	if _placed_nodes.has(key) and is_instance_valid(_placed_nodes[key]):
 		return
 	var inst: StructureEntity = StructureEntity.new()
 	inst.structure_id = structure_id
 	inst.tile_pos = tile_pos
+	inst.animate_construction = animate_build
 	inst.global_position = Config.world_to_iso(tile_pos)
 	add_child(inst)
 	_placed_nodes[key] = inst
