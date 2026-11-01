@@ -40,6 +40,10 @@ func _ready() -> void:
 			})
 
 	_setup_collision(passable)
+	var h_px: float = float(_def.get("height_px", 18.0))
+	if structure_id in ["floor", "stone_floor"] or (passable and h_px <= 6.0):
+		z_as_relative = false
+		z_index = -1
 	if _def.has("trap"):
 		_setup_trap_trigger()
 	if structure_id in ["campfire", "forge", "furnace"]:
@@ -252,6 +256,19 @@ func _draw() -> void:
 
 	if structure_id == "door" and is_door_open:
 		base_col.a = 0.42
+
+	if structure_id == "floor":
+		var plank_col: Color = Color(0.56, 0.38, 0.22)
+		var seam_col: Color = Color(0.28, 0.18, 0.10)
+		var floor_poly: PackedVector2Array = IsoMath.diamond_polygon(Vector2.ZERO, float(Config.HALF_TILE.x), float(Config.HALF_TILE.y))
+		draw_colored_polygon(floor_poly, plank_col)
+		for t in [-0.5, 0.0, 0.5]:
+			var p1: Vector2 = Vector2(-Config.HALF_TILE.x * 0.5 + t * Config.HALF_TILE.x * 0.5, -Config.HALF_TILE.y * 0.5 - t * Config.HALF_TILE.y * 0.5)
+			var p2: Vector2 = Vector2(Config.HALF_TILE.x * 0.5 + t * Config.HALF_TILE.x * 0.5, Config.HALF_TILE.y * 0.5 - t * Config.HALF_TILE.y * 0.5)
+			draw_line(p1, p2, seam_col, 1.2)
+		draw_polyline(floor_poly, seam_col, 1.4, true)
+		_draw_construction_overlay()
+		return
 
 	var bottom_diamond: PackedVector2Array = IsoMath.diamond_polygon(Vector2.ZERO, hw, hh)
 	if height_px <= 6.0:

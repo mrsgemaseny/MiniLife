@@ -11,6 +11,7 @@ var slot_index: int = 0
 var slot_group: String = "inventory" # "inventory", "hotbar", "armor", "chest", "craft"
 var item_data: Dictionary = {}
 var is_hovered: bool = false
+var is_active: bool = false
 var hotbar_num: int = 0
 var placeholder_text: String = ""
 
@@ -110,6 +111,11 @@ func _draw() -> void:
 	if item_data.is_empty() and placeholder_text != "":
 		var font: Font = ThemeDB.fallback_font
 		draw_string(font, Vector2(5.0, sz.y * 0.5 + 4.0), placeholder_text, HORIZONTAL_ALIGNMENT_CENTER, sz.x - 10.0, 9, Color(0.42, 0.46, 0.52, 0.55))
+
+	# 5. Active selection highlight frame (Minecraft-style 2px frame)
+	if is_active:
+		var sel_rect: Rect2 = Rect2(-1.0, -1.0, sz.x + 2.0, sz.y + 2.0)
+		draw_rect(sel_rect, Color(0.98, 0.88, 0.38, 0.95), false, 2.5)
 
 	# 6. Minecraft Durability Bar
 	if not item_data.is_empty() and item_data.has("durability"):
