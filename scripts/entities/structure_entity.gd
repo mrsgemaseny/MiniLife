@@ -144,7 +144,7 @@ func _draw() -> void:
 	# Voxel block sprite mapping for walls
 	var block_name: String = ""
 	if structure_id == "wall" or structure_id == "stone_wall":
-		block_name = "voxelTile_19"
+		block_name = "voxelTile_50"
 	elif structure_id == "wood_wall":
 		block_name = "voxelTile_14"
 

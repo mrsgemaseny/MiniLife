@@ -20,6 +20,8 @@ var _hunger_val_label: Label = null
 var _stam_val_label: Label = null
 var _hotbar_buttons: Array[Button] = []
 var _toast_timer: float = 0.0
+var _toast_panel: PanelContainer = null
+var _toast_label: Label = null
 var _minimap: MinimapWidget = null
 var _current_biome: String = "plains"
 var _current_tile: Vector2i = Vector2i(140, 140)
@@ -43,8 +45,13 @@ func _process(delta: float) -> void:
 	_refresh_time_display()
 	if _toast_timer > 0.0:
 		_toast_timer -= delta
-		if _toast_timer <= 0.0 and notification_label != null:
-			notification_label.text = ""
+		if _toast_panel != null:
+			_toast_panel.modulate.a = clampf(_toast_timer / 0.5, 0.0, 1.0)
+		if _toast_timer <= 0.0:
+			if _toast_panel != null:
+				_toast_panel.visible = false
+			if notification_label != null:
+				notification_label.text = ""
 	if _banner_timer > 0.0:
 		_banner_timer -= delta
 		if _location_banner != null:
@@ -130,17 +137,34 @@ func _setup_styled_hud() -> void:
 	_exit_hint_label.visible = false
 	add_child(_exit_hint_label)
 
+	# Dedicated floating toast notification pill above hotbar
+	_toast_panel = PanelContainer.new()
+	_toast_panel.add_theme_stylebox_override("panel", _make_card_style())
+	_toast_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_toast_panel.position = Vector2(-200, -145)
+	_toast_panel.custom_minimum_size = Vector2(400, 28)
+	_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_toast_panel.visible = false
+	add_child(_toast_panel)
+
+	_toast_label = Label.new()
+	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_toast_label.add_theme_font_size_override("font_size", 11)
+	_toast_label.modulate = Color(0.98, 0.88, 0.52)
+	_toast_panel.add_child(_toast_label)
+
 	var margin: MarginContainer = $MarginContainer
 	if margin != null:
 		margin.offset_left = 18.0
 		margin.offset_top = 14.0
 		margin.offset_right = 248.0
-		margin.offset_bottom = 198.0
+		margin.offset_bottom = 222.0
 
 		var bg_panel: Panel = Panel.new()
 		bg_panel.add_theme_stylebox_override("panel", _make_card_style())
 		bg_panel.position = Vector2(10, 10)
-		bg_panel.size = Vector2(246, 192)
+		bg_panel.size = Vector2(246, 218)
 		bg_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(bg_panel)
 		move_child(bg_panel, 0)
@@ -500,11 +524,14 @@ func _refresh_biome_label() -> void:
 		_biome_label.text = "%s (%d, %d)" % [_current_biome.capitalize(), _current_tile.x, _current_tile.y]
 
 func _on_notification_posted(message: String) -> void:
-	if notification_label == null:
-		return
-	notification_label.text = message
-	notification_label.modulate = Color(0.95, 0.90, 0.55)
-	_toast_timer = 4.0
+	if _toast_panel != null and _toast_label != null:
+		_toast_label.text = message
+		_toast_panel.visible = true
+		_toast_panel.modulate.a = 1.0
+	if notification_label != null:
+		notification_label.text = message
+		notification_label.modulate = Color(0.95, 0.90, 0.55)
+	_toast_timer = 3.5
 
 func _on_effect_applied(entity: Node, effect_id: String, _duration: float) -> void:
 	if entity == null or not entity.is_in_group("player"):

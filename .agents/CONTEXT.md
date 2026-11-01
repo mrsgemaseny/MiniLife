@@ -68,4 +68,6 @@
   - Eliminated procedural white dots on identical boulders. Generated 4x3 isometric sprite sheet via `image-generator` subagent and extracted 12 distinct transparent PNG nodes: 4 rock types (`boulder_granite`, `boulder_limestone`, `boulder_slate`, `boulder_fieldstone`), 4 metal/fuel ores (`ore_iron_vein`, `ore_iron_rich`, `ore_copper_vein`, `ore_coal_deposit`), and 4 rare minerals (`ore_gold_quartz`, `ore_silver_galena`, `ore_crystal_amethyst`, `ore_crystal_mithril`).
   - `ResourceNode._draw()` deterministically distributes rock variants based on world tile position and renders authentic metallic/crystal sprites for ores.
   - Sliced clean `berry_bush.png` (428x299, roots completely removed) and `oak_tree.png` (633x611 with full roots and clean branch holes).
+  - Switched stone walls from cartoon orange bricks (`voxelTile_19`) to natural grey stone masonry (`voxelTile_50`).
+  - Replaced clipped Vitals bottom notification with a dedicated floating bronze toast banner above the hotbar.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.
