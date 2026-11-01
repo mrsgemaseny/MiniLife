@@ -70,4 +70,6 @@
   - Sliced clean `berry_bush.png` (428x299, roots completely removed) and `oak_tree.png` (633x611 with full roots and clean branch holes).
   - Switched stone walls from cartoon orange bricks (`voxelTile_19`) to natural grey stone masonry (`voxelTile_50`).
   - Replaced clipped Vitals bottom notification with a dedicated floating bronze toast banner above the hotbar.
+  - Trees break completely to the ground upon depletion (removed infinite stump respawn); all resources are soft/walkable (collision disabled), while solid walls remain impassable.
+  - Pressing `[B]` cleanly toggles the build menu open/closed and cancels active blueprint placement.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

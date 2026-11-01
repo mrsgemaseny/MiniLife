@@ -35,6 +35,10 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
+func is_build_mode_active() -> bool:
+	return _active_build_id != ""
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("demolish"):
 		var target_tile: Vector2i = Config.iso_to_world(get_global_mouse_position())
@@ -45,7 +49,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if _active_build_id == "":
 		return
-	if event.is_action_pressed("build_cancel"):
+	if event.is_action_pressed("build_cancel") or (event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_B or event.keycode == KEY_ESCAPE)):
 		set_build_mode("")
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("build_place"):

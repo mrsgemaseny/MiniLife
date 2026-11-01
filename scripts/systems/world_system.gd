@@ -228,7 +228,7 @@ func get_tile(pos: Vector2i) -> TileState:
 		if is_instance_valid(rnode):
 			state.resource_id = rnode.node_def_id
 			state.resource_amount = rnode.hits_remaining
-			state.passable = false
+			# Resources are soft/walkable — only solid structures (walls, closed doors) block movement
 	var cpos: Vector2i = Config.tile_to_chunk(pos)
 	if _chunk_deltas.has(Config.vec2i_to_key(cpos)):
 		var delta: Dictionary = _chunk_deltas[Config.vec2i_to_key(cpos)]
@@ -616,16 +616,13 @@ func _on_resource_node_depleted(pos: Vector2i, resource_node_id: String) -> void
 	harvested[key] = {
 		"resource_id": resource_node_id,
 		"day": GameManager.get_day(),
-		"stage": "stump" if is_tree_node else "depleted",
+		"stage": "cleared",
 		"regrows": is_tree_node,
 		"regrow_days": 3 if is_tree_node else 0
 	}
 	delta["harvested"] = harvested
 	_commit_delta(cpos, delta)
-
-	if is_tree_node and _loaded_chunks.has(cpos):
-		var chunk_node: Node2D = _loaded_chunks[cpos] as Node2D
-		_spawn_resource_node(chunk_node, resource_node_id, pos, "stump")
+	# Tree breaks completely to the ground and is removed — no unwanted stump spawned!
 
 
 func _on_chunk_delta_loaded(cpos: Vector2i, delta: Dictionary) -> void:

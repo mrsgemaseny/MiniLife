@@ -17,6 +17,9 @@ var _chips: Array[Dictionary] = []
 func _ready() -> void:
 	y_sort_enabled = true
 	add_to_group("harvestable")
+	# Resources are walkable/soft — zero collision so player and entities can walk freely through them
+	collision_layer = 0
+	collision_mask = 0
 	_def = DataRegistry.get_resource_node(node_def_id)
 	hits_remaining = int(_def.get("hits", 4))
 	_max_hits = maxi(1, hits_remaining)
@@ -358,11 +361,8 @@ func _deplete_and_grant(harvester: Node) -> void:
 
 
 func _ensure_collision() -> void:
+	collision_layer = 0
+	collision_mask = 0
 	for child in get_children():
 		if child is CollisionShape2D:
-			return
-	var col: CollisionShape2D = CollisionShape2D.new()
-	var shape: CircleShape2D = CircleShape2D.new()
-	shape.radius = 11.0
-	col.shape = shape
-	add_child(col)
+			(child as CollisionShape2D).disabled = true

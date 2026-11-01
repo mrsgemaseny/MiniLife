@@ -22,6 +22,16 @@ func _ready() -> void:
 	SignalBus.inventory_changed.connect(_on_inventory_changed)
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if not visible:
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		var k: InputEventKey = event as InputEventKey
+		if k.keycode == KEY_B or k.keycode == KEY_ESCAPE:
+			close_panel()
+			get_viewport().set_input_as_handled()
+
+
 func _setup_styled_build_menu() -> void:
 	if panel_container != null:
 		panel_container.offset_left = -240.0

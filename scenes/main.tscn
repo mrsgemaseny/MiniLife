@@ -50,7 +50,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		SignalBus.ui_panel_requested.emit(\"inventory\")
 	elif event.is_action_pressed(\"ui_craft\"):
 		SignalBus.ui_panel_requested.emit(\"craft\")
-	elif event.is_action_pressed(\"ui_build\"):
+	elif event.is_action_pressed(\"ui_build\") or (event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_B):
+		var bsys: BuildingSystem = get_node_or_null(\"BuildingSystem\") as BuildingSystem
+		if bsys != null and bsys.is_build_mode_active():
+			bsys.set_build_mode(\"\")
+			get_viewport().set_input_as_handled()
+			return
 		SignalBus.ui_panel_requested.emit(\"build\")
 	elif event.is_action_pressed(\"ui_quests\"):
 		SignalBus.ui_panel_requested.emit(\"quests\")
