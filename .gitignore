@@ -36,6 +36,8 @@ desktop.ini
 .vscode/
 *.swp
 *.tmp
+scripts/tools/inspect_*.gd
+scripts/tools/*.uid
 
 # Environment & Secrets
 .env
