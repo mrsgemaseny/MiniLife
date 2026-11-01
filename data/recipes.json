@@ -221,5 +221,16 @@
 		"output": { "item_id": "hunters_stew", "count": 1 },
 		"skill_required": { "cooking": 10 },
 		"xp_reward": { "cooking": 25 }
+	},
+	{
+		"id": "craft_torch",
+		"station": "",
+		"inputs": [
+			{ "item_id": "wood", "count": 1 },
+			{ "item_id": "cloth", "count": 1 }
+		],
+		"output": { "item_id": "torch", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "survival": 8 }
 	}
 ]

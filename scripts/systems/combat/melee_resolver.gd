@@ -25,6 +25,9 @@ static func compute_raw_melee_damage(attacker: Node, weapon_stats: Dictionary) -
 		var atraits: TraitsComponent = attacker.get("traits") as TraitsComponent
 		if atraits != null:
 			trait_mult = atraits.get_modifier("melee_damage")
+		var astatus: StatusEffectsComponent = attacker.get("status_effects") as StatusEffectsComponent
+		if astatus != null:
+			trait_mult *= astatus.get_damage_multiplier()
 		var ahealth: HealthComponent = attacker.get("health_comp") as HealthComponent
 		if ahealth != null:
 			manip_mult = ahealth.get_manipulation_multiplier()

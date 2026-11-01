@@ -31,6 +31,37 @@ func _run_e2e_smoke_test() -> void:
 	if first_npc != null:
 		SignalBus.trade_transaction_requested.emit(first_npc, "bread", 1, true)
 		SignalBus.trade_transaction_requested.emit(first_npc, "wood", 1, false)
+	# Verification of Task 1: Fixed World Seed
+	assert(GameManager.get_world_seed() == Config.DEFAULT_WORLD_SEED)
+
+	# Verification of Task 2: Hand-Crafted Ruins
+	assert(not DataRegistry.get_ruin("abandoned_fort").is_empty())
+	assert(not DataRegistry.get_ruin("old_village").is_empty())
+	assert(not DataRegistry.get_ruin("collapsed_tower").is_empty())
+	assert(not DataRegistry.get_ruin("underground_vault").is_empty())
+
+	# Verification of Task 3: Interior HUD & Minimap signals
+	SignalBus.interior_entered.emit("collapsed_tower_depths", "Collapsed Tower Depths")
+	SignalBus.interior_exited.emit("collapsed_tower_depths")
+
+	# Verification of Task 4a: Torch lighting & durability
+	assert(not DataRegistry.get_item("torch").is_empty())
+	assert(not DataRegistry.get_recipe("craft_torch").is_empty())
+
+	# Verification of Task 4b: Tree-only Regrowth
+	assert(ResourceRegrowth.is_tree("oak_tree"))
+	assert(ResourceRegrowth.is_tree("forest_pine"))
+	assert(not ResourceRegrowth.is_tree("stone_boulder"))
+	assert(not ResourceRegrowth.is_tree("iron_vein"))
+
+	# Verification of Task 4c: Hunger status effects
+	assert(StatusEffectsComponent.EFFECT_RULES.has("hungry"))
+	assert(StatusEffectsComponent.EFFECT_RULES.has("starving"))
+
+	# Verification of Task 4d: Weather system
+	SignalBus.weather_changed.emit("rain")
+	SignalBus.weather_changed.emit("clear")
+
 	SignalBus.save_requested.emit("e2e_smoke_slot")
 	SignalBus.load_requested.emit("e2e_smoke_slot")
 	SignalBus.world_delete_requested.emit("e2e_smoke_slot")

@@ -23,6 +23,10 @@ var _toast_timer: float = 0.0
 var _minimap: MinimapWidget = null
 var _current_biome: String = "plains"
 var _current_tile: Vector2i = Vector2i(140, 140)
+var _location_banner: Label = null
+var _banner_timer: float = 0.0
+var _vignette_overlay: ColorRect = null
+var _exit_hint_label: Label = null
 
 func _ready() -> void:
 	_setup_styled_hud()
@@ -39,6 +43,12 @@ func _process(delta: float) -> void:
 		_toast_timer -= delta
 		if _toast_timer <= 0.0 and notification_label != null:
 			notification_label.text = ""
+	if _banner_timer > 0.0:
+		_banner_timer -= delta
+		if _location_banner != null:
+			_location_banner.modulate.a = clampf(_banner_timer / 0.8, 0.0, 1.0)
+			if _banner_timer <= 0.0:
+				_location_banner.visible = false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -86,6 +96,38 @@ func _attach_bar_overlay_label(bar: ProgressBar, init_text: String) -> Label:
 	return lbl
 
 func _setup_styled_hud() -> void:
+	# Vignette Overlay for interiors
+	_vignette_overlay = ColorRect.new()
+	_vignette_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_vignette_overlay.color = Color(0.01, 0.02, 0.03, 0.58)
+	_vignette_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_vignette_overlay.visible = false
+	add_child(_vignette_overlay)
+	move_child(_vignette_overlay, 0)
+
+	# Location Banner at top-center
+	_location_banner = Label.new()
+	_location_banner.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_location_banner.position = Vector2(-220, 24)
+	_location_banner.custom_minimum_size = Vector2(440, 30)
+	_location_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_location_banner.add_theme_font_size_override("font_size", 16)
+	_location_banner.modulate = Color(0.98, 0.88, 0.52)
+	_location_banner.visible = false
+	add_child(_location_banner)
+
+	# Exit Hint at bottom
+	_exit_hint_label = Label.new()
+	_exit_hint_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_exit_hint_label.position = Vector2(-160, -135)
+	_exit_hint_label.custom_minimum_size = Vector2(320, 22)
+	_exit_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_exit_hint_label.add_theme_font_size_override("font_size", 11)
+	_exit_hint_label.modulate = Color(0.96, 0.84, 0.42)
+	_exit_hint_label.text = "Press [E] near entrance to leave"
+	_exit_hint_label.visible = false
+	add_child(_exit_hint_label)
+
 	var margin: MarginContainer = $MarginContainer
 	if margin != null:
 		margin.offset_left = 18.0
@@ -295,6 +337,30 @@ func _connect_signals() -> void:
 	SignalBus.inventory_changed.connect(_on_inventory_changed)
 	SignalBus.equipment_changed.connect(func(_s: String, _id: String) -> void: _refresh_hotbar_from_player())
 	SignalBus.notification_posted.connect(_on_notification_posted)
+	SignalBus.interior_entered.connect(_on_interior_entered)
+	SignalBus.interior_exited.connect(_on_interior_exited)
+
+func _on_interior_entered(_zone_id: String, zone_name: String) -> void:
+	if _location_banner != null:
+		_location_banner.text = "Entering: " + zone_name
+		_location_banner.visible = true
+		_location_banner.modulate.a = 1.0
+		_banner_timer = 3.0
+	if _vignette_overlay != null:
+		_vignette_overlay.visible = true
+	if _exit_hint_label != null:
+		_exit_hint_label.visible = true
+
+func _on_interior_exited(_zone_id: String) -> void:
+	if _location_banner != null:
+		_location_banner.text = "Returning to Realm..."
+		_location_banner.visible = true
+		_location_banner.modulate.a = 1.0
+		_banner_timer = 2.0
+	if _vignette_overlay != null:
+		_vignette_overlay.visible = false
+	if _exit_hint_label != null:
+		_exit_hint_label.visible = false
 
 func _on_inventory_changed(entity: Node, _snapshot: Dictionary) -> void:
 	if entity != null and entity.is_in_group("player"):
@@ -361,6 +427,12 @@ func update_stat(stat_name: String, current: float, maximum: float) -> void:
 			if hunger_bar != null:
 				hunger_bar.value = pct
 				hunger_bar.tooltip_text = "Hunger: %d / %d" % [int(current), int(maximum)]
+				var h_col: Color = Color(0.28, 0.76, 0.38, 0.88)
+				if pct < 10.0:
+					h_col = Color(0.88, 0.20, 0.22, 0.92)
+				elif pct < 30.0:
+					h_col = Color(0.94, 0.58, 0.18, 0.90)
+				hunger_bar.add_theme_stylebox_override("fill", _make_bar_style(h_col, h_col.lightened(0.20)))
 			if _hunger_val_label != null:
 				_hunger_val_label.text = "Food: %d / %d" % [int(round(current)), int(round(maximum))]
 		"stamina":

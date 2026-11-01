@@ -1,6 +1,7 @@
 extends Node
 
 # Grid & Isometric Geometry
+const DEFAULT_WORLD_SEED: int = 42819
 const CHUNK_SIZE: int = 16
 const TILE_SIZE: Vector2i = Vector2i(64, 32)
 const HALF_TILE: Vector2i = Vector2i(32, 16)

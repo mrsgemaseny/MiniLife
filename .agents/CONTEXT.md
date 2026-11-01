@@ -51,4 +51,12 @@
     - `resources/isometric_resources_sheet_3x3.jpg`: Hand-drawn isometric foliage and resources (oak, pine, boulder, berry bush, mushrooms, dead tree, flowers, reeds, pebbles).
     - `resources/tree_growth_stages_1x4.jpg`: 4-stage tree ecology lifecycle (sapling, young, mature, ancient oak).
     - `blocks/`: Kenney isometric voxel blocks (`tilesheet_complete.png` and 55 `voxelTile_*.png` building blocks for stone, dirt, grass, wood, ores, furnace, chests).
+- **Fixed Seed, Ruins, Interiors, Lighting & Regrowth Overhaul (2026-11-01)**:
+  - **Fixed World Seed (Task 1)**: `Config.DEFAULT_WORLD_SEED = 42819` passed through `GameManager`, `WorldSystem`, `TerrainGenerator`, and `SaveSystem` world_seed persistence, ensuring identical world layout on restart.
+  - **Hand-Crafted Ruins (Task 2)**: Added `data/ruins.json` with 4 unique POIs (`abandoned_fort`, `old_village`, `collapsed_tower`, `underground_vault`), deterministically placed at anchor chunks via `PoiGenerator` with `SignalBus.poi_discovered`.
+  - **Interior Zones & Interior HUD (Task 3)**: Created `InteriorZone` with rooms, stone/wood walls, floors, and exit ladders. `HUD` displays top location banner, dark edge vignette, and bottom exit hint. `MinimapWidget` renders real-time interior room layouts on `SignalBus.interior_entered` / `interior_exited`.
+  - **Torch & Lighting System (Task 4a)**: Added `torch` item/recipe, attached flickering `PointLight2D` to `Player` with 5-minute (300s) burn durability, and ambient darkness modulation (0.40 at night, 0.12 in interiors).
+  - **Tree-Only Resource Respawn (Task 4b)**: `ResourceRegrowth` permanently depletes rocks/ores, while harvested trees leave stumps, grow into small trees after 3 days, and full trees after 7 days.
+  - **Hunger Consequences (Task 4c)**: `hungry` status at <30% (-20% move speed, -10% damage), `starving` status at <10% (-40% speed, -25% damage, 1 HP/min health drain), and permadeath at 0%. Dynamic HUD hunger bar color transitions green -> orange -> red.
+  - **Simple Weather (Task 4d)**: `WeatherSystem` rolls 30% chance for rain every 2 hours lasting 1-3 hours, with `GPUParticles2D` rain overlay auto-hidden in interiors and `SignalBus.weather_changed`.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

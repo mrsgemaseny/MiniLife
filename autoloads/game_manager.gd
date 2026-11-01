@@ -3,7 +3,7 @@ extends Node
 enum State { BOOT, PLAYING, PAUSED, DEAD }
 
 var _state: State = State.BOOT
-var _world_seed: int = 1337
+var _world_seed: int = Config.DEFAULT_WORLD_SEED
 var _active_slot: String = Config.DEFAULT_SAVE_SLOT
 var _day: int = 1
 var _hour: float = Config.START_HOUR

@@ -3,6 +3,7 @@ extends StaticBody2D
 
 @export var node_def_id: String = "oak_tree"
 var tile_pos: Vector2i = Vector2i.ZERO
+var growth_stage: String = "full"
 var hits_remaining: int = 4
 var _max_hits: int = 4
 var _def: Dictionary = {}
@@ -68,6 +69,19 @@ func _draw() -> void:
 
 	# Ground shadow
 	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 3.0), radius * 1.15, radius * 0.56), Color(0.0, 0.0, 0.0, 0.34))
+
+	if growth_stage == "stump":
+		var stump_pts: PackedVector2Array = PackedVector2Array([
+			ofs + Vector2(-6.0, 3.0), ofs + Vector2(-5.0, -5.0),
+			ofs + Vector2(5.0, -5.0), ofs + Vector2(6.0, 3.0)
+		])
+		draw_colored_polygon(stump_pts, secondary_col)
+		draw_polyline(stump_pts, outline_col, 1.4, true)
+		var cut_top: PackedVector2Array = IsoMath.diamond_polygon(ofs + Vector2(0.0, -5.0), 5.5, 3.0)
+		draw_colored_polygon(cut_top, secondary_col.lightened(0.24))
+		draw_polyline(cut_top, outline_col, 1.2, true)
+		draw_circle(ofs + Vector2(0.0, -5.0), 1.6, secondary_col.darkened(0.20))
+		return
 
 	if node_def_id.find("pine") != -1:
 		# Conifer / Pine Tree (tiered evergreen triangles with dark outline & bark trunk)

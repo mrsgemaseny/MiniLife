@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=29 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/world.tscn" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/entities/player.tscn" id="2_player"]
@@ -27,13 +27,14 @@
 [ext_resource type="Script" path="res://scripts/ui/world_chronicle_ui.gd" id="25_chron_ui"]
 [ext_resource type="Script" path="res://scripts/ui/pause_menu_ui.gd" id="26_pause_ui"]
 [ext_resource type="Script" path="res://autoloads/audio_director.gd" id="27_audio"]
+[ext_resource type="Script" path="res://scripts/systems/world/weather_system.gd" id="28_weather"]
 
 [sub_resource type="GDScript" id="GDScript_main"]
 script/source = "extends Node2D
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	GameManager.start_new_game(randi(), Config.DEFAULT_SAVE_SLOT)
+	GameManager.start_new_game(Config.DEFAULT_WORLD_SEED, Config.DEFAULT_SAVE_SLOT)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -127,6 +128,9 @@ script = ExtResource("22_debug")
 
 [node name="AudioDirector" type="Node" parent="Systems"]
 script = ExtResource("27_audio")
+
+[node name="WeatherSystem" type="Node2D" parent="Systems"]
+script = ExtResource("28_weather")
 
 [node name="UILayer" type="CanvasLayer" parent="."]
 process_mode = 3

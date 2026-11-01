@@ -21,8 +21,8 @@ const ENEMY_SCENE: PackedScene = preload("res://scenes/entities/enemy_base.tscn"
 @onready var chunk_container: Node2D = $ChunkContainer
 @onready var fog_layer: TileMap = $FogLayer
 
-var _seed: int = 1337
-var _terrain: TerrainGenerator = TerrainGenerator.new(1337)
+var _seed: int = Config.DEFAULT_WORLD_SEED
+var _terrain: TerrainGenerator = TerrainGenerator.new(Config.DEFAULT_WORLD_SEED)
 var _fog: FogOfWarSystem = FogOfWarSystem.new()
 var _loaded_chunks: Dictionary = {}
 var _chunk_deltas: Dictionary = {}
@@ -36,6 +36,7 @@ var _last_exploration_pct: int = 0
 var _spawned_entities_by_chunk: Dictionary = {}
 var _starter_camp_spawned: bool = false
 var _biome_cache: Dictionary = {}
+var _interior_zone: InteriorZone = null
 
 
 func _ready() -> void:
@@ -44,6 +45,10 @@ func _ready() -> void:
 	if chunk_container != null:
 		chunk_container.y_sort_enabled = true
 	_setup_runtime_tilesets()
+
+	_interior_zone = InteriorZone.new()
+	_interior_zone.name = "InteriorZone"
+	add_child(_interior_zone)
 
 	SignalBus.game_started.connect(_on_game_started)
 	SignalBus.player_tile_changed.connect(_on_player_tile_changed)
@@ -56,6 +61,15 @@ func _ready() -> void:
 	SignalBus.day_passed.connect(_on_day_passed)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
+
+
+func _process(delta: float) -> void:
+	var target_col: Color = Color(1.0, 1.0, 1.0, 1.0)
+	if _interior_zone != null and _interior_zone.is_player_inside():
+		target_col = Color(0.12, 0.12, 0.15, 1.0)
+	elif GameManager.is_night():
+		target_col = Color(0.40, 0.40, 0.46, 1.0)
+	modulate = modulate.lerp(target_col, clampf(delta * 2.5, 0.0, 1.0))
 
 
 func get_biome_cached(tpos: Vector2i) -> String:
@@ -307,9 +321,9 @@ func _setup_runtime_tilesets() -> void:
 func _on_game_started(world_seed: int, _slot: String, is_new: bool) -> void:
 	_unload_all_chunks()
 	_biome_cache.clear()
-	_seed = world_seed
-	_terrain.setup(world_seed)
 	if is_new:
+		_seed = Config.DEFAULT_WORLD_SEED if world_seed <= 0 else world_seed
+		_terrain.setup(_seed)
 		_chunk_deltas.clear()
 		_fog.clear()
 		_discovered_pois.clear()
@@ -320,6 +334,8 @@ func _on_game_started(world_seed: int, _slot: String, is_new: bool) -> void:
 		SignalBus.player_teleport_requested.emit(spawn_world)
 		_on_player_tile_changed(spawn_tile)
 		_ensure_starter_camp(spawn_tile)
+		# Immediately commit world seed to save system
+		SignalBus.save_requested.emit(_slot)
 	else:
 		_last_player_tile = Vector2i(-99999, -99999)
 		var ptile: Vector2i = GameManager.get_player_tile()
@@ -353,6 +369,13 @@ func _on_player_tile_changed(tile_pos: Vector2i) -> void:
 	if tile_pos == _last_player_tile:
 		return
 	_last_player_tile = tile_pos
+
+	if _interior_zone != null and _interior_zone.is_player_inside():
+		_interior_zone.check_interaction(tile_pos)
+		return
+
+	_check_poi_discovery(tile_pos)
+	_check_interior_entry(tile_pos)
 	_stream_chunks_around(tile_pos)
 	update_visibility(Config.world_to_iso(tile_pos))
 	var biome_id: String = get_biome_cached(tile_pos)
@@ -413,10 +436,15 @@ func _load_chunk(cpos: Vector2i) -> void:
 			get_biome_cached(tpos)
 			var tkey: String = Config.vec2i_to_key(tpos)
 			if harvested.has(tkey):
+				var h_entry: Dictionary = harvested[tkey]
+				var stage: String = str(h_entry.get("stage", "depleted"))
+				if stage == "stump" or stage == "small_tree":
+					var rnode_id: String = str(h_entry.get("resource_id", "oak_tree"))
+					_spawn_resource_node(chunk_node, rnode_id, tpos, stage)
 				continue
 			var rnode_id: String = _terrain.get_resource_node_at(tpos)
 			if rnode_id != "":
-				_spawn_resource_node(chunk_node, rnode_id, tpos)
+				_spawn_resource_node(chunk_node, rnode_id, tpos, "full")
 
 	var structures: Dictionary = delta.get("structures", {})
 	for tile_key in structures:
@@ -428,16 +456,26 @@ func _load_chunk(cpos: Vector2i) -> void:
 	queue_redraw()
 
 
-func _spawn_resource_node(chunk_node: Node2D, node_def_id: String, tpos: Vector2i) -> void:
+func _spawn_resource_node(chunk_node: Node2D, node_def_id: String, tpos: Vector2i, stage: String = "full") -> void:
 	var rnode: ResourceNode = ResourceNode.new()
 	rnode.node_def_id = node_def_id
 	rnode.tile_pos = tpos
+	rnode.growth_stage = stage
 	rnode.global_position = Config.world_to_iso(tpos)
 	var st: int = _fog.get_state(tpos)
 	rnode.visible = (st != int(FogState.UNEXPLORED))
 	rnode.modulate = Color(1, 1, 1, 1) if st == int(FogState.VISIBLE) else Color(0.55, 0.55, 0.62, 1)
 	chunk_node.add_child(rnode)
 	_resource_nodes_by_tile[Config.vec2i_to_key(tpos)] = rnode
+
+
+func _remove_resource_node_at(tpos: Vector2i) -> void:
+	var key: String = Config.vec2i_to_key(tpos)
+	if _resource_nodes_by_tile.has(key):
+		var rnode: Node = _resource_nodes_by_tile[key]
+		if is_instance_valid(rnode):
+			rnode.queue_free()
+		_resource_nodes_by_tile.erase(key)
 
 
 func _spawn_chunk_inhabitants(cpos: Vector2i, _biome_id: String, _delta: Dictionary) -> void:
@@ -534,15 +572,20 @@ func _on_resource_node_depleted(pos: Vector2i, resource_node_id: String) -> void
 	var cpos: Vector2i = Config.tile_to_chunk(pos)
 	var delta: Dictionary = _get_or_create_delta(cpos)
 	var harvested: Dictionary = delta.get("harvested", {})
-	var def: Dictionary = DataRegistry.get_resource_node(resource_node_id)
+	var is_tree_node: bool = ResourceRegrowth.is_tree(resource_node_id)
 	harvested[key] = {
 		"resource_id": resource_node_id,
 		"day": GameManager.get_day(),
-		"regrows": bool(def.get("regrows", false)),
-		"regrow_days": int(def.get("regrow_days", 3))
+		"stage": "stump" if is_tree_node else "depleted",
+		"regrows": is_tree_node,
+		"regrow_days": 3 if is_tree_node else 0
 	}
 	delta["harvested"] = harvested
 	_commit_delta(cpos, delta)
+
+	if is_tree_node and _loaded_chunks.has(cpos):
+		var chunk_node: Node2D = _loaded_chunks[cpos] as Node2D
+		_spawn_resource_node(chunk_node, resource_node_id, pos, "stump")
 
 
 func _on_chunk_delta_loaded(cpos: Vector2i, delta: Dictionary) -> void:
@@ -584,22 +627,32 @@ func _on_entity_died(entity: Node, _killer_id: String) -> void:
 
 
 func _on_day_passed(day_number: int) -> void:
-	for ckey in _chunk_deltas:
+	for ckey in _chunk_deltas.keys():
 		var delta: Dictionary = _chunk_deltas[ckey]
 		var cpos: Vector2i = Config.key_to_vec2i(str(ckey))
-		var regrown_tiles: Array[Vector2i] = ResourceRegrowth.pop_regrown_tiles(delta, day_number)
-		if not regrown_tiles.is_empty():
-			if _loaded_chunks.has(cpos):
-				var chunk_node: Node2D = _loaded_chunks[cpos] as Node2D
-				for tpos in regrown_tiles:
-					var rnode_id: String = _terrain.get_resource_node_at(tpos)
-					if rnode_id != "" and chunk_node != null:
-						_spawn_resource_node(chunk_node, rnode_id, tpos)
-			_commit_delta(cpos, delta)
+		var reg_result: Dictionary = ResourceRegrowth.process_regrowth(delta, day_number)
+		var chunk_node: Node2D = _loaded_chunks.get(cpos, null) as Node2D
+
+		for item in reg_result.get("spawn_small", []):
+			var tpos: Vector2i = item["tile"]
+			var nid: String = str(item["node_id"])
+			if chunk_node != null:
+				_remove_resource_node_at(tpos)
+				_spawn_resource_node(chunk_node, nid, tpos, "small_tree")
+
+		for item in reg_result.get("spawn_full", []):
+			var tpos: Vector2i = item["tile"]
+			var nid: String = str(item["node_id"])
+			if chunk_node != null:
+				_remove_resource_node_at(tpos)
+				_spawn_resource_node(chunk_node, nid, tpos, "full")
+
+		_commit_delta(cpos, delta)
 
 
 func _on_save_data_requested(bundle: Dictionary) -> void:
 	var w: Dictionary = bundle.get("world", {})
+	w["world_seed"] = _seed
 	w["fog"] = _fog.to_dict()
 	w["discovered_pois"] = _discovered_pois.duplicate()
 	bundle["world"] = w
@@ -608,6 +661,9 @@ func _on_save_data_requested(bundle: Dictionary) -> void:
 func _on_save_data_loaded(bundle: Dictionary) -> void:
 	_chunk_deltas.clear()
 	var w: Dictionary = bundle.get("world", {})
+	_seed = int(w.get("world_seed", Config.DEFAULT_WORLD_SEED))
+	_terrain.setup(_seed)
+	_biome_cache.clear()
 	_fog.from_dict(w.get("fog", {}))
 	_discovered_pois = w.get("discovered_pois", {}).duplicate()
 	var explored: Array = []
@@ -619,19 +675,31 @@ func _on_save_data_loaded(bundle: Dictionary) -> void:
 
 
 func _check_poi_discovery(pos: Vector2i) -> void:
-	var cpos: Vector2i = Config.tile_to_chunk(pos)
-	if not _chunk_pois.has(cpos):
+	for cpos in _chunk_pois:
+		var pinfo: Dictionary = _chunk_pois[cpos]
+		var ptile: Vector2i = pinfo.get("tile_pos", Vector2i(-999, -999))
+		if Config.tile_distance(ptile, pos) <= 4:
+			var key: String = Config.vec2i_to_key(ptile)
+			if not _discovered_pois.has(key):
+				var poi_id: String = str(pinfo.get("poi_id", ""))
+				_discovered_pois[key] = poi_id
+				SignalBus.poi_discovered.emit(poi_id, ptile)
+				SignalBus.notification_posted.emit("Discovered Point of Interest: " + poi_id.capitalize())
+
+
+func _check_interior_entry(pos: Vector2i) -> void:
+	if _interior_zone == null or _interior_zone.is_player_inside():
 		return
-	var pinfo: Dictionary = _chunk_pois[cpos]
-	if pinfo.get("tile_pos") != pos:
-		return
-	var key: String = Config.vec2i_to_key(pos)
-	if _discovered_pois.has(key):
-		return
-	var poi_id: String = str(pinfo.get("poi_id", ""))
-	_discovered_pois[key] = poi_id
-	SignalBus.poi_discovered.emit(poi_id, pos)
-	SignalBus.notification_posted.emit("Discovered Point of Interest: " + poi_id.capitalize())
+	for cpos in _chunk_pois:
+		var pinfo: Dictionary = _chunk_pois[cpos]
+		var ptile: Vector2i = pinfo.get("tile_pos", Vector2i(-999, -999))
+		if Config.tile_distance(ptile, pos) <= 1:
+			var poi_id: String = str(pinfo.get("poi_id", ""))
+			var ruin_def: Dictionary = DataRegistry.get_ruin(poi_id)
+			if ruin_def.has("interior_zone_id"):
+				var zone_id: String = str(ruin_def["interior_zone_id"])
+				_interior_zone.enter_zone(zone_id, ptile)
+				break
 
 
 func _update_exploration_progress() -> void:

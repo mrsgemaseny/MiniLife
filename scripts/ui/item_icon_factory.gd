@@ -161,7 +161,11 @@ static func _draw_item_art(img: Image, id: String) -> void:
 		var ccol: Color = Color(0.84, 0.80, 0.72) if id.find("cloth") != -1 else Color(0.62, 0.40, 0.22)
 		_fill_rect(img, Rect2i(7, 9, 18, 14), ccol, out)
 		_fill_rect(img, Rect2i(9, 12, 14, 4), ccol.lightened(0.15), Color(0, 0, 0, 0))
-	elif id.find("campfire") != -1 or id.find("torch") != -1 or id.find("forge") != -1:
+	elif id.find("torch") != -1:
+		_draw_thick_line(img, Vector2i(9, 25), Vector2i(18, 12), Color(0.52, 0.34, 0.18), 2, out)
+		_fill_circle(img, Vector2i(19, 11), 6, Color(0.96, 0.45, 0.12), out)
+		_fill_circle(img, Vector2i(20, 9), 3, Color(1.0, 0.88, 0.28), Color(0, 0, 0, 0))
+	elif id.find("campfire") != -1 or id.find("forge") != -1:
 		_fill_circle(img, Vector2i(16, 20), 7, Color(0.96, 0.42, 0.10), out)
 		_fill_circle(img, Vector2i(16, 15), 5, Color(1.0, 0.86, 0.24), out)
 	else:

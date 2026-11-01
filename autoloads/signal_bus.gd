@@ -16,6 +16,9 @@ signal player_tile_changed(tile_pos: Vector2i)
 signal player_biome_changed(biome_id: String)
 signal player_vision_changed(radius: int)
 signal exploration_progress_changed(percent: float)
+signal interior_entered(zone_id: String, zone_name: String)
+signal interior_exited(zone_id: String)
+signal weather_changed(weather_type: String)
 
 # Building & Defenses
 signal build_mode_changed(structure_id: String)

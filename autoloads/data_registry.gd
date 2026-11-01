@@ -15,6 +15,7 @@ const TABLE_FILES: Dictionary = {
 	"classes": "classes.json",
 	"biomes": "biomes.json",
 	"poi": "poi.json",
+	"ruins": "ruins.json",
 	"resource_nodes": "resource_nodes.json",
 	"achievements": "achievements.json"
 }
@@ -120,6 +121,10 @@ static func get_biome(biome_id: String) -> Dictionary:
 
 static func get_poi(poi_id: String) -> Dictionary:
 	return get_entry("poi", poi_id)
+
+
+static func get_ruin(ruin_id: String) -> Dictionary:
+	return get_entry("ruins", ruin_id)
 
 
 static func get_resource_node(node_id: String) -> Dictionary:

@@ -25,6 +25,8 @@ var _walk_blend: float = 0.0
 var _lunge_offset: Vector2 = Vector2.ZERO
 var _step_dust_timer: float = 0.0
 var _dust_puffs: Array[Dictionary] = []
+var _torch_light: PointLight2D = null
+var _torch_burn_accum: float = 0.0
 
 func _ready() -> void:
 	add_to_group("player")
@@ -33,6 +35,7 @@ func _ready() -> void:
 	_ensure_components()
 	_connect_component_signals()
 	_connect_bus_signals()
+	_setup_torch_light()
 	_grant_starter_kit()
 	current_tile = Config.iso_to_world(global_position)
 	GameManager.set_player_world_pos(global_position)
@@ -59,6 +62,7 @@ func _grant_starter_kit() -> void:
 		inventory.add_item("iron_dagger", 1)
 		inventory.add_item("heavy_crossbow", 1)
 		inventory.add_item("wooden_shield", 1)
+		inventory.add_item("torch", 1)
 		inventory.add_item("arrow", 20)
 		inventory.add_item("cloth", 8)
 		inventory.add_gold(35)
@@ -103,10 +107,33 @@ func _physics_process(delta: float) -> void:
 	# Stamina regeneration & well-fed health recovery
 	if stats.stamina < stats.max_stamina:
 		stats.modify("stamina", Config.STAMINA_REGEN_PER_SEC * delta)
-	if stats.health <= 0.0 and not is_dead:
-		stats.modify("health", stats.max_health)
-	elif stats.hunger > 40.0 and stats.health < stats.max_health:
-		stats.modify("health", 1.8 * delta)
+
+	# Hunger Consequences (Task 4c)
+	if stats.hunger <= 0.0 and not is_dead and not GameManager.debug_god_mode:
+		die()
+	elif stats.hunger < 10.0:
+		if not status_effects.has_effect("starving"):
+			status_effects.apply("starving", -1.0)
+		status_effects.remove("hungry")
+		if not GameManager.debug_god_mode:
+			stats.modify("health", -(1.0 / 60.0) * delta)
+			if stats.health <= 0.0 and not is_dead:
+				die()
+	elif stats.hunger < 30.0:
+		if not status_effects.has_effect("hungry"):
+			status_effects.apply("hungry", -1.0)
+		status_effects.remove("starving")
+	else:
+		status_effects.remove("hungry")
+		status_effects.remove("starving")
+		if stats.hunger > 40.0 and stats.health < stats.max_health:
+			stats.modify("health", 1.8 * delta)
+
+	if stats.health <= 0.0 and not is_dead and not GameManager.debug_god_mode:
+		die()
+
+	# Torch Lighting & Durability Burn (Task 4a)
+	_tick_torch(delta)
 
 	health_comp.tick_regen(delta)
 	status_effects.tick(delta)
@@ -350,6 +377,44 @@ func die() -> void:
 	is_dead = true
 	SignalBus.entity_died.emit(self, "world")
 	SignalBus.player_died.emit()
+
+func _setup_torch_light() -> void:
+	_torch_light = PointLight2D.new()
+	_torch_light.name = "TorchLight"
+	_torch_light.color = Color(1.0, 0.88, 0.58, 1.0)
+	_torch_light.energy = 1.15
+	_torch_light.texture_scale = 1.0
+	var grad: Gradient = Gradient.new()
+	grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 0.88, 0.55, 0.72), Color(1, 0.75, 0.35, 0.0)])
+	grad.offsets = PackedFloat32Array([0.0, 0.42, 1.0])
+	var gtex: GradientTexture2D = GradientTexture2D.new()
+	gtex.gradient = grad
+	gtex.fill = GradientTexture2D.FILL_RADIAL
+	gtex.fill_from = Vector2(0.5, 0.5)
+	gtex.fill_to = Vector2(1.0, 0.5)
+	gtex.width = 160
+	gtex.height = 160
+	_torch_light.texture = gtex
+	_torch_light.enabled = false
+	add_child(_torch_light)
+
+func _tick_torch(delta: float) -> void:
+	if _torch_light == null or equipment == null:
+		return
+	var is_torch_active: bool = (equipment.get_item_id("weapon") == "torch" or equipment.get_item_id("offhand") == "torch")
+	if is_torch_active:
+		_torch_light.enabled = true
+		_torch_light.energy = 1.15 + sin(Time.get_ticks_msec() * 0.007) * 0.08
+		_torch_burn_accum += delta
+		if _torch_burn_accum >= 1.0:
+			_torch_burn_accum -= 1.0
+			var broken: bool = equipment.damage_weapon(1)
+			if broken:
+				SignalBus.notification_posted.emit("Your torch burned out and extinguished.")
+				_torch_light.enabled = false
+	else:
+		_torch_light.enabled = false
+		_torch_burn_accum = 0.0
 
 func _ensure_components() -> void:
 	if stats == null:

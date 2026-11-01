@@ -12,8 +12,10 @@ const EFFECT_RULES: Dictionary = {
 	"stunned": {"duration": 1.2, "tick_interval": 0.0, "damage": 0.0, "damage_type": "physical", "speed_mult": 0.0, "blocks_attack": true},
 	"bleeding": {"duration": 8.0, "tick_interval": 1.5, "damage": 2.5, "damage_type": "true", "speed_mult": 0.92, "blocks_attack": false},
 	"infected": {"duration": 20.0, "tick_interval": 4.0, "damage": 2.0, "damage_type": "poison", "speed_mult": 0.85, "blocks_attack": false},
-	"well_fed": {"duration": 30.0, "tick_interval": 5.0, "damage": -1.5, "damage_type": "true", "speed_mult": 1.08, "blocks_attack": false},
-	"exhausted": {"duration": 15.0, "tick_interval": 0.0, "damage": 0.0, "damage_type": "true", "speed_mult": 0.7, "blocks_attack": false}
+	"well_fed": {"duration": 30.0, "tick_interval": 5.0, "damage": -1.5, "damage_type": "true", "speed_mult": 1.08, "damage_mult": 1.05, "blocks_attack": false},
+	"exhausted": {"duration": 15.0, "tick_interval": 0.0, "damage": 0.0, "damage_type": "true", "speed_mult": 0.7, "damage_mult": 0.85, "blocks_attack": false},
+	"hungry": {"duration": -1.0, "tick_interval": 0.0, "damage": 0.0, "damage_type": "true", "speed_mult": 0.8, "damage_mult": 0.9, "blocks_attack": false},
+	"starving": {"duration": -1.0, "tick_interval": 1.0, "damage": 1.0 / 60.0, "damage_type": "true", "speed_mult": 0.6, "damage_mult": 0.75, "blocks_attack": false}
 }
 
 var _active: Dictionary = {}
@@ -57,12 +59,13 @@ func tick(delta: float) -> void:
 		var state: Dictionary = _active[effect]
 		var rule: Dictionary = EFFECT_RULES.get(effect, {})
 		var remaining: float = float(state.get("remaining", 0.0))
-		var step: float = minf(delta, remaining)
-		remaining -= delta
-		state["remaining"] = remaining
+		var is_infinite: bool = (remaining < 0.0)
+		if not is_infinite:
+			remaining -= delta
+			state["remaining"] = remaining
 		var interval: float = float(rule.get("tick_interval", 0.0))
 		if interval > 0.0:
-			var accum: float = float(state.get("tick_accum", 0.0)) + step
+			var accum: float = float(state.get("tick_accum", 0.0)) + delta
 			while accum >= interval:
 				accum -= interval
 				var dmg: float = float(rule.get("damage", 0.0)) * float(state.get("intensity", 1.0))
@@ -71,7 +74,7 @@ func tick(delta: float) -> void:
 					effect_damage_tick.emit(dmg, dtype)
 			state["tick_accum"] = accum
 		_active[effect] = state
-		if remaining <= 0.0:
+		if not is_infinite and remaining <= 0.0:
 			expired.append(effect)
 	for e in expired:
 		remove(e)
@@ -83,6 +86,14 @@ func get_speed_multiplier() -> float:
 		var rule: Dictionary = EFFECT_RULES.get(str(effect_key), {})
 		mult *= float(rule.get("speed_mult", 1.0))
 	return clampf(mult, 0.0, 1.35)
+
+
+func get_damage_multiplier() -> float:
+	var mult: float = 1.0
+	for effect_key in _active:
+		var rule: Dictionary = EFFECT_RULES.get(str(effect_key), {})
+		mult *= float(rule.get("damage_mult", 1.0))
+	return clampf(mult, 0.1, 2.0)
 
 
 func is_action_blocked() -> bool:

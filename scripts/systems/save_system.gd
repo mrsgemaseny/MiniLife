@@ -31,6 +31,10 @@ func save_slot(slot: String) -> bool:
 	var meta: Dictionary = bundle.get("meta", {})
 	meta["schema_version"] = SCHEMA_VERSION
 	bundle["meta"] = meta
+	var w: Dictionary = bundle.get("world", {})
+	if not w.has("world_seed"):
+		w["world_seed"] = GameManager.get_world_seed()
+	bundle["world"] = w
 
 	var base_dir: String = _slot_dir(target_slot)
 	DirAccess.make_dir_recursive_absolute(base_dir + "chunks")
@@ -58,6 +62,8 @@ func load_slot(slot: String) -> bool:
 		return false
 	var player_data: Dictionary = _read_json(base_dir + "player.json")
 	var world_data: Dictionary = _read_json(base_dir + "world.json")
+	var loaded_seed: int = int(world_data.get("world_seed", Config.DEFAULT_WORLD_SEED))
+	GameManager._world_seed = loaded_seed
 
 	_active_slot = slot
 	_dirty_chunks.clear()

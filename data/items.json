@@ -537,6 +537,25 @@
 		"skill_required": { "smithing": 25 }
 	},
 	{
+		"id": "torch",
+		"name": "Pine Pitch Torch",
+		"type": "tool",
+		"equip_slot": "offhand",
+		"weight": 0.8,
+		"value": 15,
+		"stackable": false,
+		"durability": 300,
+		"stats": {
+			"light_radius": 80.0,
+			"burn_time_sec": 300.0,
+			"damage": 6
+		},
+		"visual": { "sprite": "items/torch.png", "color": "#f59e0b" },
+		"craft_requirements": { "wood": 1, "resin": 1, "cloth": 1 },
+		"craft_station": "",
+		"skill_required": {}
+	},
+	{
 		"id": "chainmail_leggings",
 		"name": "Iron Chainmail Chausses",
 		"type": "armor_legs",

@@ -1,0 +1,103 @@
+[
+	{
+		"id": "abandoned_fort",
+		"name": "Abandoned Stone Fort",
+		"type": "ruins",
+		"color": "#8b7355",
+		"size": [5, 5],
+		"description": "Rectangular stone fort perimeter with broken breaches, a collapsed watchtower, and ancient loot chests guarded by bandits.",
+		"layout": {
+			"walls": [
+				{"pos": [0, 0], "type": "stone_wall"}, {"pos": [1, 0], "type": "stone_wall"}, {"pos": [2, 0], "type": "stone_wall"}, {"pos": [3, 0], "type": "stone_wall"}, {"pos": [4, 0], "type": "stone_wall"},
+				{"pos": [0, 1], "type": "stone_wall"}, {"pos": [0, 4], "type": "stone_wall"},
+				{"pos": [4, 1], "type": "stone_wall"}, {"pos": [4, 4], "type": "stone_wall"},
+				{"pos": [0, 4], "type": "stone_wall"}, {"pos": [1, 4], "type": "stone_wall"}, {"pos": [4, 4], "type": "stone_wall"}
+			],
+			"corner_tower": {"pos": [0, 0], "type": "collapsed_watchtower"},
+			"chests": [
+				{
+					"pos": [2, 2],
+					"id": "fort_garrison_chest",
+					"loot": {"gold": 85, "items": {"iron_sword": 1, "iron_ingot": 3, "bandage": 3, "bread": 2}}
+				}
+			]
+		},
+		"enemies": [
+			{"id": "bandit_scout", "offset": [1, 2]},
+			{"id": "bandit_raider", "offset": [3, 2]},
+			{"id": "bandit_scout", "offset": [2, 3]}
+		],
+		"interior_zone": ""
+	},
+	{
+		"id": "old_village",
+		"name": "Forgotten Village Hamlet",
+		"type": "ruins",
+		"color": "#6e7f52",
+		"size": [8, 8],
+		"description": "Three weathered timber huts with wooden doors, a central dry stone well, and a wandering spectral villager.",
+		"layout": {
+			"huts": [
+				{"origin": [0, 0], "size": [3, 3], "door": [1, 2], "walls": "wood_wall"},
+				{"origin": [5, 0], "size": [3, 3], "door": [6, 2], "walls": "wood_wall"},
+				{"origin": [1, 5], "size": [3, 3], "door": [2, 5], "walls": "wood_wall"}
+			],
+			"well": {"pos": [4, 4], "type": "village_well"},
+			"crates": [
+				{"pos": [3, 2], "type": "storage"},
+				{"pos": [4, 6], "type": "storage"}
+			]
+		},
+		"npc": {
+			"id": "ghost_villager",
+			"name": "Spectral Elder",
+			"pos": [4, 3],
+			"quest_id": "explore_ruins_01",
+			"dialogue": "You walk where living blood has not stepped in decades. Seek the collapsed spire..."
+		},
+		"enemies": [],
+		"interior_zone": "village_hut"
+	},
+	{
+		"id": "collapsed_tower",
+		"name": "Collapsed Spire of the Ancients",
+		"type": "ruins",
+		"color": "#5c6b73",
+		"size": [5, 5],
+		"description": "A single tall ruined stone structure with rubble field and a dark passage leading underground.",
+		"layout": {
+			"tower_footprint": {"origin": [1, 1], "size": [3, 3], "type": "ancient_spire"},
+			"rubble": [[0, 0], [4, 0], [0, 4], [4, 4], [2, 0], [0, 2]],
+			"entrance": {"pos": [2, 2], "type": "dungeon_entrance"}
+		},
+		"interior_zone": "collapsed_tower_depths",
+		"boss": {
+			"id": "ancient_guardian",
+			"name": "Ruin Behemoth",
+			"depth": 1,
+			"loot": {"gold": 250, "items": {"war_hammer": 1, "iron_chainmail": 1, "medicine": 2}}
+		}
+	},
+	{
+		"id": "underground_vault",
+		"name": "Subterranean Iron Vault",
+		"type": "ruins",
+		"color": "#3f4e4f",
+		"size": [6, 4],
+		"description": "A secret vault entrance camouflaged as a normal rock. Inside lies a reinforced subterranean bunker.",
+		"entrance": {
+			"disguise": "normal_rock",
+			"actual": "vault_hatch"
+		},
+		"interior_zone": "underground_vault_interior",
+		"interior_layout": {
+			"size": [6, 4],
+			"doors": [{"pos": [0, 2], "type": "reinforced_iron_door"}],
+			"traps": [{"pos": [2, 1], "type": "spike_trap"}, {"pos": [4, 2], "type": "alarm_trap"}],
+			"chests": [
+				{"pos": [5, 1], "locked": true, "loot": {"gold": 160, "items": {"iron_dagger": 1, "wooden_shield": 1, "iron_ingot": 4}}},
+				{"pos": [5, 3], "locked": true, "loot": {"gold": 220, "items": {"heavy_crossbow": 1, "arrow": 30, "medicine": 3}}}
+			]
+		}
+	}
+]
