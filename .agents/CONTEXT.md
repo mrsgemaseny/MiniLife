@@ -60,6 +60,7 @@
   - Custom dark-steel and gold medieval RPG mouse cursor configured in `project.godot` and `GameManager`.
   - Fixed bow grip anchor and rotation angle (135 deg forward stave arc) in `Player._draw()`.
   - Smooth 1.0s hover inspect card in `HUD` (`_inspect_card`) displaying object name, skill/tool requirements, integrity, and yields for trees, rocks, ores, and NPCs.
+  - Tactical bow aiming & charging mechanic: holding LMB draws the bowstring (`_is_charging_bow`), tracks mouse aim direction while strafing (52% speed), displays nocked arrow and dynamic shrinking reticle with dashed trajectory, and releasing LMB looses the arrow scaled by draw power with authentic recoil kick.
 - **Fixed Seed, Ruins, Interiors, Lighting & Regrowth Overhaul (2026-11-01)**:
   - **Fixed World Seed (Task 1)**: `Config.DEFAULT_WORLD_SEED = 42819` passed through `GameManager`, `WorldSystem`, `TerrainGenerator`, and `SaveSystem` world_seed persistence, ensuring identical world layout on restart.
   - **Hand-Crafted Ruins (Task 2)**: Added `data/ruins.json` with 4 unique POIs (`abandoned_fort`, `old_village`, `collapsed_tower`, `underground_vault`), deterministically placed at anchor chunks via `PoiGenerator` with `SignalBus.poi_discovered`.

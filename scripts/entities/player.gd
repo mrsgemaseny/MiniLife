@@ -27,6 +27,9 @@ var _step_dust_timer: float = 0.0
 var _dust_puffs: Array[Dictionary] = []
 var _torch_light: PointLight2D = null
 var _torch_burn_accum: float = 0.0
+var _is_charging_bow: bool = false
+var _bow_charge_time: float = 0.0
+const MAX_BOW_CHARGE_TIME: float = 0.85
 
 func _ready() -> void:
 	add_to_group("player")
@@ -135,6 +138,23 @@ func _physics_process(delta: float) -> void:
 	# Torch Lighting & Durability Burn (Task 4a)
 	_tick_torch(delta)
 
+	# Bow Aiming & Charging Mechanics
+	if _is_charging_bow:
+		if not _is_holding_bow() or stats.stamina <= 0.0:
+			_is_charging_bow = false
+			_bow_charge_time = 0.0
+			needs_redraw = true
+		elif not Input.is_action_pressed("attack"):
+			_release_bow_shot()
+			needs_redraw = true
+		else:
+			_bow_charge_time = minf(_bow_charge_time + delta, MAX_BOW_CHARGE_TIME)
+			var mouse_world: Vector2 = get_global_mouse_position()
+			var aim_dir: Vector2 = (mouse_world - (global_position + Vector2(0.0, -12.0))).normalized()
+			if aim_dir.length_squared() > 0.01:
+				facing_direction = aim_dir
+			needs_redraw = true
+
 	health_comp.tick_regen(delta)
 	status_effects.tick(delta)
 
@@ -145,11 +165,14 @@ func _physics_process(delta: float) -> void:
 
 	var input_dir: Vector2 = _read_movement_input()
 	if input_dir.length_squared() > 0.0:
-		facing_direction = facing_direction.lerp(input_dir.normalized(), clampf(delta * 16.0, 0.0, 1.0)).normalized()
+		if not _is_charging_bow:
+			facing_direction = facing_direction.lerp(input_dir.normalized(), clampf(delta * 16.0, 0.0, 1.0)).normalized()
 		var speed_mult: float = traits.get_modifier("move_speed")
 		speed_mult *= status_effects.get_speed_multiplier()
 		speed_mult *= inventory.get_encumbrance_speed_multiplier()
 		speed_mult *= health_comp.get_mobility_multiplier()
+		if _is_charging_bow:
+			speed_mult *= 0.52
 		var target_vel: Vector2 = input_dir * Config.BASE_MOVE_SPEED * speed_mult + _knockback_velocity
 		velocity = velocity.lerp(target_vel, clampf(delta * 15.0, 0.0, 1.0))
 		move_and_slide()
@@ -190,7 +213,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if is_dead or GameManager.is_paused():
 		return
 	if event.is_action_pressed("attack"):
-		perform_attack()
+		if _is_holding_bow():
+			_start_bow_charge()
+		else:
+			perform_attack()
+	elif event.is_action_released("attack"):
+		if _is_charging_bow:
+			_release_bow_shot()
 	elif event.is_action_pressed("interact"):
 		perform_interact()
 
@@ -200,8 +229,74 @@ func _read_movement_input() -> Vector2:
 		return Vector2.ZERO
 	return Vector2(dir.x, dir.y * 0.5).normalized()
 
+func _is_holding_bow() -> bool:
+	if equipment == null:
+		return false
+	var weapon_id: String = equipment.get_item_id("weapon")
+	var w_stats: Dictionary = equipment.get_weapon_stats()
+	return weapon_id.find("bow") != -1 or weapon_id.find("crossbow") != -1 or str(w_stats.get("range", "melee")) == "ranged"
+
+func _start_bow_charge() -> void:
+	if _attack_cooldown > 0.0:
+		return
+	if not inventory.has_item("arrow", 1):
+		SignalBus.notification_posted.emit("Out of arrows!")
+		return
+	if stats.stamina < 5.0:
+		SignalBus.notification_posted.emit("Too exhausted to draw bow!")
+		return
+	_is_charging_bow = true
+	_bow_charge_time = 0.0
+	var mouse_world: Vector2 = get_global_mouse_position()
+	var aim_dir: Vector2 = (mouse_world - (global_position + Vector2(0.0, -12.0))).normalized()
+	if aim_dir.length_squared() > 0.01:
+		facing_direction = aim_dir
+	queue_redraw()
+
+func _release_bow_shot() -> void:
+	if not _is_charging_bow:
+		return
+	_is_charging_bow = false
+
+	var charge_ratio: float = clampf(_bow_charge_time / MAX_BOW_CHARGE_TIME, 0.25, 1.0)
+	_bow_charge_time = 0.0
+
+	if not inventory.has_item("arrow", 1):
+		SignalBus.notification_posted.emit("Out of arrows!")
+		queue_redraw()
+		return
+
+	var stam_cost: float = Config.STAMINA_COST_ATTACK * charge_ratio
+	if stats.stamina < stam_cost:
+		SignalBus.notification_posted.emit("Too exhausted to loose arrow!")
+		queue_redraw()
+		return
+
+	stats.modify("stamina", -stam_cost)
+	inventory.remove_item("arrow", 1)
+
+	var w_stats: Dictionary = equipment.get_weapon_stats()
+	var base_dmg: float = float(w_stats.get("damage", 16.0))
+	var skill_lvl: int = skills.get_level("ranged")
+	var scaled_dmg: float = base_dmg * (1.0 + float(skill_lvl) * Config.SKILL_DAMAGE_BONUS_PER_LEVEL) * (0.35 + 0.65 * charge_ratio)
+	var proj_speed: float = Config.PROJECTILE_SPEED * (0.55 + 0.45 * charge_ratio)
+
+	var shoot_origin: Vector2 = global_position + Vector2(0.0, -12.0) + facing_direction * 12.0
+	SignalBus.projectile_fired.emit(shoot_origin, facing_direction, proj_speed, scaled_dmg, "physical", self)
+	skills.gain_xp("ranged", Config.XP_PER_RANGED_HIT)
+	equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
+
+	_attack_cooldown = 0.28
+	_swing_duration = 0.18
+	_swing_timer = _swing_duration
+	_lunge_offset = -facing_direction * 4.0
+	queue_redraw()
+
 func perform_attack() -> void:
 	if _attack_cooldown > 0.0:
+		return
+	if _is_holding_bow():
+		_start_bow_charge()
 		return
 	if stats.stamina < Config.STAMINA_COST_ATTACK:
 		SignalBus.notification_posted.emit("Too exhausted to swing!")
@@ -651,7 +746,11 @@ func _draw() -> void:
 			anchor_rect = Rect2(-6.0, -18.0, 24.0, 24.0)
 
 		var swing_angle_ofs: float = 0.0
-		if _swing_timer > 0.0:
+		if is_bow and _is_charging_bow:
+			var charge_ratio: float = clampf(_bow_charge_time / MAX_BOW_CHARGE_TIME, 0.0, 1.0)
+			hand_pos = body_ofs + Vector2(hand_x, -13.0) + facing_direction * 2.0
+			swing_angle_ofs = -charge_ratio * deg_to_rad(22.0) * rot_dir
+		elif _swing_timer > 0.0:
 			var prog: float = 1.0 - (_swing_timer / maxf(0.01, _swing_duration))
 			var eased: float = 1.0 - pow(1.0 - prog, 3.0)
 			if is_bow:
@@ -676,8 +775,28 @@ func _draw() -> void:
 			var weapon_tip: Vector2 = hand_pos + Vector2(tip_local.x * weapon_scale.x, tip_local.y)
 			draw_line(hand_pos, weapon_tip, Color(0.84, 0.88, 0.92), 2.8)
 
-	# RimWorld-style Smooth Weapon Slash Trail
-	if _swing_timer > 0.0:
+		if is_bow and _is_charging_bow:
+			var charge_ratio: float = clampf(_bow_charge_time / MAX_BOW_CHARGE_TIME, 0.0, 1.0)
+			var arrow_back: Vector2 = hand_pos - facing_direction * (5.0 + charge_ratio * 7.0)
+			var arrow_front: Vector2 = hand_pos + facing_direction * 11.0
+			draw_line(arrow_back, arrow_front, Color(0.72, 0.58, 0.38), 2.0)
+			draw_line(arrow_front - facing_direction * 3.5, arrow_front, Color(0.88, 0.90, 0.94), 2.8)
+			draw_line(arrow_back, arrow_back + facing_direction * 3.0, Color(0.88, 0.28, 0.28), 2.2)
+
+			# Aiming trajectory sight line & reticle
+			var sight_dist: float = lerpf(80.0, 250.0, charge_ratio)
+			var sight_start: Vector2 = hand_pos + facing_direction * 14.0
+			var sight_end: Vector2 = hand_pos + facing_direction * sight_dist
+			var sight_col: Color = Color(0.85, 0.88, 0.92, 0.35).lerp(Color(0.98, 0.86, 0.35, 0.82), charge_ratio)
+			draw_dashed_line(sight_start, sight_end, sight_col, 1.4, 6.0)
+
+			var reticle_r: float = lerpf(9.0, 4.0, charge_ratio)
+			draw_polyline(IsoMath.diamond_polygon(sight_end, reticle_r * 1.5, reticle_r * 0.75), sight_col, 1.4, true)
+			if charge_ratio >= 0.98:
+				draw_circle(sight_end, 2.0, Color(1.0, 0.95, 0.55, 0.95))
+
+	# RimWorld-style Smooth Weapon Slash Trail (Melee weapons only)
+	if _swing_timer > 0.0 and not (equipment != null and (equipment.get_item_id("weapon").find("bow") != -1 or equipment.get_item_id("weapon").find("crossbow") != -1)):
 		var prog: float = 1.0 - (_swing_timer / maxf(0.01, _swing_duration))
 		var alpha: float = sin(prog * PI) * 0.85
 		var center_arc: Vector2 = body_ofs + Vector2(0.0, -14.0)
