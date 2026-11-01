@@ -100,7 +100,18 @@ func refresh() -> void:
 		child.queue_free()
 
 	var player: Node = get_tree().get_first_node_in_group("player")
-	for sid in _structures:
+	var sorted_sids: Array = _structures.keys()
+	sorted_sids.sort_custom(func(a: String, b: String) -> bool:
+		var req_a: String = str(_structures[a].get("tech_required", ""))
+		var req_b: String = str(_structures[b].get("tech_required", ""))
+		var lock_a: bool = (req_a != "" and ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_a))
+		var lock_b: bool = (req_b != "" and ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_b))
+		if lock_a != lock_b:
+			return not lock_a
+		return false
+	)
+
+	for sid in sorted_sids:
 		var def: Dictionary = _structures[sid]
 		var sname: String = str(def.get("name", sid.capitalize()))
 		var mats: Array = def.get("materials", [])

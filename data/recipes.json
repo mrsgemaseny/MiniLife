@@ -33,8 +33,7 @@
 	},
 	{
 		"id": "craft_plank",
-		"station": "workbench",
-		"tech_required": "woodworking",
+		"station": "",
 		"inputs": [
 			{ "item_id": "wood", "count": 1 }
 		],
@@ -44,8 +43,7 @@
 	},
 	{
 		"id": "craft_cloth",
-		"station": "workbench",
-		"tech_required": "woodworking",
+		"station": "",
 		"inputs": [
 			{ "item_id": "herb", "count": 2 }
 		],

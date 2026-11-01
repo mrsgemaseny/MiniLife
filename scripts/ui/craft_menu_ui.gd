@@ -161,7 +161,18 @@ func refresh() -> void:
 		btn.modulate = Color(1.0, 0.85, 0.35) if cid == _current_category else Color(0.70, 0.72, 0.78)
 
 	var player: Node = get_tree().get_first_node_in_group("player")
-	for rid in _recipes:
+	var sorted_rids: Array = _recipes.keys()
+	sorted_rids.sort_custom(func(a: String, b: String) -> bool:
+		var req_a: String = str(_recipes[a].get("tech_required", ""))
+		var req_b: String = str(_recipes[b].get("tech_required", ""))
+		var lock_a: bool = (req_a != "" and ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_a))
+		var lock_b: bool = (req_b != "" and ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_b))
+		if lock_a != lock_b:
+			return not lock_a
+		return false
+	)
+
+	for rid in sorted_rids:
 		var recipe: Dictionary = _recipes[rid]
 		var req_station: String = str(recipe.get("station", ""))
 		if _active_station == "" and req_station != "":

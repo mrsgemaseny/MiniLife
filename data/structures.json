@@ -2,12 +2,11 @@
 	{
 		"id": "floor",
 		"name": "Wooden Floor",
-		"tech_required": "woodworking",
 		"hp": 120,
 		"color": "#8c6239",
 		"height_px": 4.0,
 		"materials": [
-			{ "item_id": "plank", "count": 2 }
+			{ "item_id": "wood", "count": 2 }
 		],
 		"passable": true,
 		"interactable": false
@@ -28,12 +27,11 @@
 	{
 		"id": "door",
 		"name": "Wooden Door",
-		"tech_required": "woodworking",
 		"hp": 150,
 		"color": "#9c6644",
 		"height_px": 24.0,
 		"materials": [
-			{ "item_id": "plank", "count": 3 }
+			{ "item_id": "wood", "count": 3 }
 		],
 		"passable": true,
 		"interactable": true
@@ -41,12 +39,11 @@
 	{
 		"id": "workbench",
 		"name": "Workbench",
-		"tech_required": "woodworking",
 		"hp": 100,
 		"color": "#b07d4f",
 		"height_px": 16.0,
 		"materials": [
-			{ "item_id": "plank", "count": 5 }
+			{ "item_id": "wood", "count": 4 }
 		],
 		"passable": false,
 		"interactable": true
@@ -81,12 +78,11 @@
 	{
 		"id": "research_table",
 		"name": "Research Table",
-		"tech_required": "woodworking",
 		"hp": 140,
 		"color": "#3d5a80",
 		"height_px": 16.0,
 		"materials": [
-			{ "item_id": "plank", "count": 6 },
+			{ "item_id": "wood", "count": 4 },
 			{ "item_id": "stone", "count": 2 }
 		],
 		"passable": false,
@@ -107,12 +103,11 @@
 	{
 		"id": "storage",
 		"name": "Storage Chest",
-		"tech_required": "woodworking",
 		"hp": 150,
 		"color": "#7f5539",
 		"height_px": 14.0,
 		"materials": [
-			{ "item_id": "plank", "count": 6 }
+			{ "item_id": "wood", "count": 4 }
 		],
 		"passable": false,
 		"interactable": true
@@ -120,12 +115,11 @@
 	{
 		"id": "bed",
 		"name": "Simple Bed",
-		"tech_required": "woodworking",
 		"hp": 80,
 		"color": "#a8dadc",
 		"height_px": 12.0,
 		"materials": [
-			{ "item_id": "plank", "count": 4 },
+			{ "item_id": "wood", "count": 4 },
 			{ "item_id": "cloth", "count": 2 }
 		],
 		"passable": false,

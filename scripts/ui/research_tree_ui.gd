@@ -102,7 +102,7 @@ func _build_ui() -> void:
 	main_vbox.add_child(_scroll)
 
 	_canvas = Control.new()
-	_canvas.custom_minimum_size = Vector2(1100.0, 520.0)
+	_canvas.custom_minimum_size = Vector2(1180.0, 720.0)
 	_canvas.mouse_filter = Control.MOUSE_FILTER_PASS
 	_canvas.draw.connect(_on_canvas_draw)
 	_scroll.add_child(_canvas)
@@ -120,10 +120,45 @@ func refresh() -> void:
 
 	var all_techs: Dictionary = ResearchSys.instance.get_all_techs()
 	var player: Node = get_tree().get_first_node_in_group("player")
-	var origin_x: float = 320.0
-	var origin_y: float = 80.0
-	var step_x: float = 240.0
-	var step_y: float = 140.0
+	var origin_x: float = 30.0
+	var origin_y: float = 60.0
+	var step_x: float = 280.0
+	var step_y: float = 155.0
+
+	# Tier Column Headers
+	var tier_titles: Array[String] = [
+		"TIER I — PRIMITIVE",
+		"TIER II — ADVANCED",
+		"TIER III — IRON AGE",
+		"TIER IV — MASTERY"
+	]
+	var tier_colors: Array[Color] = [
+		Color(0.40, 0.78, 0.95),
+		Color(0.96, 0.78, 0.32),
+		Color(0.95, 0.45, 0.30),
+		Color(0.85, 0.50, 0.95)
+	]
+
+	for i in range(4):
+		var thdr: PanelContainer = PanelContainer.new()
+		thdr.custom_minimum_size = Vector2(230.0, 32.0)
+		thdr.position = Vector2(origin_x + float(i) * step_x, 14.0)
+
+		var tbox: StyleBoxFlat = StyleBoxFlat.new()
+		tbox.bg_color = Color(0.08, 0.11, 0.16, 0.92)
+		tbox.border_color = tier_colors[i]
+		tbox.set_border_width_all(1)
+		tbox.set_corner_radius_all(6)
+		thdr.add_theme_stylebox_override("panel", tbox)
+
+		var tlbl: Label = Label.new()
+		tlbl.text = "[ %s ]" % tier_titles[i]
+		tlbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		tlbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		tlbl.add_theme_font_size_override("font_size", 11)
+		tlbl.modulate = tier_colors[i]
+		thdr.add_child(tlbl)
+		_canvas.add_child(thdr)
 
 	for tid in all_techs:
 		var tech: Dictionary = all_techs[tid]
@@ -142,19 +177,24 @@ func _on_canvas_draw() -> void:
 	if ResearchSys.instance == null:
 		return
 	var all_techs: Dictionary = ResearchSys.instance.get_all_techs()
-	var origin_x: float = 320.0
-	var origin_y: float = 80.0
-	var step_x: float = 240.0
-	var step_y: float = 140.0
-	var card_w: float = 190.0
-	var card_h: float = 100.0
+	var origin_x: float = 30.0
+	var origin_y: float = 60.0
+	var step_x: float = 280.0
+	var step_y: float = 155.0
+	var card_w: float = 230.0
+	var card_h: float = 135.0
+
+	# Vertical Tier Guide Dividers
+	for i in range(1, 4):
+		var div_x: float = origin_x + float(i) * step_x - 25.0
+		_canvas.draw_dashed_line(Vector2(div_x, 10.0), Vector2(div_x, 680.0), Color(0.24, 0.30, 0.40, 0.40), 1.0, 6.0)
 
 	for tid in all_techs:
 		var tech: Dictionary = all_techs[tid]
 		var prereqs: Array = tech.get("prerequisites", [])
 		var gx: int = int(tech.get("grid_x", 0))
 		var gy: int = int(tech.get("grid_y", 0))
-		var to_pt: Vector2 = Vector2(origin_x + float(gx) * step_x + card_w * 0.5, origin_y + float(gy) * step_y + card_h * 0.5)
+		var to_pt: Vector2 = Vector2(origin_x + float(gx) * step_x, origin_y + float(gy) * step_y + card_h * 0.5)
 
 		for pre in prereqs:
 			var pre_str: String = str(pre)
@@ -162,13 +202,23 @@ func _on_canvas_draw() -> void:
 				var ptech: Dictionary = all_techs[pre_str]
 				var pgx: int = int(ptech.get("grid_x", 0))
 				var pgy: int = int(ptech.get("grid_y", 0))
-				var from_pt: Vector2 = Vector2(origin_x + float(pgx) * step_x + card_w * 0.5, origin_y + float(pgy) * step_y + card_h * 0.5)
+				var from_pt: Vector2 = Vector2(origin_x + float(pgx) * step_x + card_w, origin_y + float(pgy) * step_y + card_h * 0.5)
 
 				var is_pre_done: bool = ResearchSys.instance.is_researched(pre_str)
 				var is_target_done: bool = ResearchSys.instance.is_researched(tid)
 				var line_col: Color = Color(0.96, 0.82, 0.32, 0.85) if is_target_done else (Color(0.35, 0.70, 0.95, 0.75) if is_pre_done else Color(0.28, 0.32, 0.38, 0.45))
 				var line_w: float = 2.4 if is_target_done else (1.8 if is_pre_done else 1.2)
-				_canvas.draw_line(from_pt, to_pt, line_col, line_w)
+
+				# Draw horizontal S-curve connecting line from source right-edge to target left-edge
+				var mid_x: float = (from_pt.x + to_pt.x) * 0.5
+				var p1: Vector2 = Vector2(mid_x, from_pt.y)
+				var p2: Vector2 = Vector2(mid_x, to_pt.y)
+				_canvas.draw_line(from_pt, p1, line_col, line_w)
+				_canvas.draw_line(p1, p2, line_col, line_w)
+				_canvas.draw_line(p2, to_pt, line_col, line_w)
+				# Arrow tip at target
+				_canvas.draw_line(to_pt + Vector2(-6.0, -4.0), to_pt, line_col, line_w)
+				_canvas.draw_line(to_pt + Vector2(-6.0, 4.0), to_pt, line_col, line_w)
 
 
 func _build_tech_card(tech: Dictionary, player: Node) -> PanelContainer:
@@ -176,19 +226,20 @@ func _build_tech_card(tech: Dictionary, player: Node) -> PanelContainer:
 	var is_done: bool = ResearchSys.instance.is_researched(tid)
 	var check: Dictionary = ResearchSys.instance.can_research(tid, player)
 	var can_do: bool = bool(check.get("ok", false))
+	var tier_label: String = str(tech.get("tier_label", "TIER I"))
 
 	var card: PanelContainer = PanelContainer.new()
-	card.custom_minimum_size = Vector2(190.0, 100.0)
+	card.custom_minimum_size = Vector2(230.0, 135.0)
 
 	var c_box: StyleBoxFlat = StyleBoxFlat.new()
 	if is_done:
-		c_box.bg_color = Color(0.08, 0.18, 0.12, 0.90)
+		c_box.bg_color = Color(0.08, 0.18, 0.12, 0.92)
 		c_box.border_color = Color(0.35, 0.85, 0.45, 0.95)
 	elif can_do:
-		c_box.bg_color = Color(0.08, 0.14, 0.22, 0.90)
+		c_box.bg_color = Color(0.08, 0.14, 0.22, 0.92)
 		c_box.border_color = Color(0.40, 0.75, 1.0, 0.95)
 	else:
-		c_box.bg_color = Color(0.06, 0.07, 0.09, 0.82)
+		c_box.bg_color = Color(0.06, 0.07, 0.09, 0.84)
 		c_box.border_color = Color(0.30, 0.34, 0.40, 0.60)
 
 	c_box.set_border_width_all(2)
@@ -200,16 +251,16 @@ func _build_tech_card(tech: Dictionary, player: Node) -> PanelContainer:
 	vb.add_theme_constant_override("separation", 3)
 	card.add_child(vb)
 
-	# Status Badge
+	# Status Badge with Tier
 	var badge: Label = Label.new()
 	if is_done:
-		badge.text = "[ MASTERED ]"
+		badge.text = "[ %s • MASTERED ]" % tier_label
 		badge.modulate = Color(0.45, 0.92, 0.50)
 	elif can_do:
-		badge.text = "[ AVAILABLE ]"
+		badge.text = "[ %s • AVAILABLE ]" % tier_label
 		badge.modulate = Color(0.40, 0.80, 1.0)
 	else:
-		badge.text = "[ LOCKED ]"
+		badge.text = "[ %s • LOCKED ]" % tier_label
 		badge.modulate = Color(0.55, 0.58, 0.65)
 	badge.add_theme_font_size_override("font_size", 9)
 	vb.add_child(badge)
@@ -221,7 +272,21 @@ func _build_tech_card(tech: Dictionary, player: Node) -> PanelContainer:
 	lbl_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vb.add_child(lbl_name)
 
-	# Costs / Description
+	# Unlocks Preview
+	var unlocks: Array = tech.get("unlocks", [])
+	if not unlocks.is_empty():
+		var unl_lbl: Label = Label.new()
+		var unl_names: Array[String] = []
+		for u in unlocks:
+			var s: String = str(u).replace("craft_", "").replace("forge_", "").replace("smelt_", "").replace("_", " ").capitalize()
+			unl_names.append(s)
+		unl_lbl.text = "Unlocks: " + ", ".join(unl_names)
+		unl_lbl.add_theme_font_size_override("font_size", 8)
+		unl_lbl.modulate = Color(0.50, 0.85, 0.70)
+		unl_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		vb.add_child(unl_lbl)
+
+	# Costs
 	var costs: Dictionary = tech.get("costs", {})
 	if not is_done and not costs.is_empty():
 		var cost_strs: Array[String] = []
