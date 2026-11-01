@@ -133,6 +133,8 @@ func _on_panel_requested(panel_id: String) -> void:
 			close_panel()
 		else:
 			open_panel()
+	elif visible:
+		close_panel()
 
 
 func _on_inventory_changed(_entity: Node, _snapshot: Dictionary) -> void:

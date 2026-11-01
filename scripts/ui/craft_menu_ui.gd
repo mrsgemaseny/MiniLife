@@ -152,6 +152,8 @@ func _on_panel_requested(panel_id: String) -> void:
 			close_panel()
 		else:
 			open_panel("")
+	elif visible:
+		close_panel()
 
 
 func _on_craft_station_opened(station_id: String) -> void:

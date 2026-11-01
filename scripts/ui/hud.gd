@@ -246,9 +246,10 @@ func _setup_styled_hud() -> void:
 		{"label": "Bag [I]", "panel": "inventory", "icon": "cloth"},
 		{"label": "Craft [C]", "panel": "craft", "icon": "stone_axe"},
 		{"label": "Build [B]", "panel": "build", "icon": "wood"},
-		{"label": "Quests [J]", "panel": "quest", "icon": "herb"},
+		{"label": "Quests [J]", "panel": "quests", "icon": "herb"},
 		{"label": "Hero [K]", "panel": "character", "icon": "iron_sword"},
-		{"label": "Lore [H]", "panel": "journal", "icon": "cooked_food"},
+		{"label": "Factions [N]", "panel": "factions", "icon": "chainmail"},
+		{"label": "Lore [H]", "panel": "chronicle", "icon": "cooked_food"},
 		{"label": "Trophies [L]", "panel": "achievements", "icon": "iron_ingot"},
 		{"label": "Save [F5]", "panel": "__save__", "icon": "campfire"}
 	]

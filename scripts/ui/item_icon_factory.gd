@@ -35,15 +35,16 @@ static func _draw_item_art(img: Image, id: String) -> void:
 		_draw_thick_line(img, Vector2i(14, 6), Vector2i(26, 18), head_col, 2, out)
 	elif id.find("sword") != -1 or id.find("blade") != -1 or id.find("dagger") != -1:
 		# Metallic blade + brass crossguard + grip
-		var steel_col: Color = Color(0.84, 0.88, 0.94)
-		_draw_thick_line(img, Vector2i(10, 22), Vector2i(26, 6), steel_col, 2, out)
-		_draw_thick_line(img, Vector2i(7, 17), Vector2i(15, 25), Color(0.86, 0.68, 0.24), 2, out)
-		_draw_thick_line(img, Vector2i(5, 27), Vector2i(10, 22), Color(0.45, 0.26, 0.14), 2, out)
+		var blade_col: Color = Color(0.86, 0.90, 0.98)
+		_draw_thick_line(img, Vector2i(10, 22), Vector2i(26, 6), blade_col, 3, out)
+		_draw_thick_line(img, Vector2i(11, 21), Vector2i(25, 7), Color(0.98, 0.99, 1.0), 1, Color(0, 0, 0, 0))
+		_draw_thick_line(img, Vector2i(7, 17), Vector2i(15, 25), Color(0.92, 0.74, 0.28), 2, out)
+		_draw_thick_line(img, Vector2i(5, 27), Vector2i(10, 22), Color(0.55, 0.32, 0.18), 2, out)
 	elif id.find("bow") != -1:
 		# Curved wooden bow + taut white bowstring
-		_draw_thick_line(img, Vector2i(9, 6), Vector2i(22, 16), Color(0.62, 0.40, 0.20), 2, out)
-		_draw_thick_line(img, Vector2i(22, 16), Vector2i(9, 26), Color(0.62, 0.40, 0.20), 2, out)
-		_draw_thick_line(img, Vector2i(9, 6), Vector2i(9, 26), Color(0.88, 0.90, 0.94), 1, Color(0, 0, 0, 0))
+		_draw_thick_line(img, Vector2i(10, 5), Vector2i(23, 16), Color(0.76, 0.50, 0.24), 2, out)
+		_draw_thick_line(img, Vector2i(23, 16), Vector2i(10, 27), Color(0.76, 0.50, 0.24), 2, out)
+		_draw_thick_line(img, Vector2i(10, 6), Vector2i(10, 26), Color(0.92, 0.94, 0.98), 1, Color(0, 0, 0, 0))
 	elif id.find("arrow") != -1:
 		_draw_thick_line(img, Vector2i(6, 26), Vector2i(25, 7), Color(0.60, 0.42, 0.22), 1, out)
 		_fill_circle(img, Vector2i(25, 7), 3, Color(0.80, 0.84, 0.90), out)
@@ -131,8 +132,14 @@ static func _draw_thick_line(img: Image, a: Vector2i, b: Vector2i, col: Color, t
 	var steps: int = maxi(absi(b.x - a.x), absi(b.y - a.y))
 	if steps == 0:
 		return
+	if border.a > 0.0:
+		for s in range(steps + 1):
+			var t: float = float(s) / float(steps)
+			var px: int = int(round(lerpf(float(a.x), float(b.x), t)))
+			var py: int = int(round(lerpf(float(a.y), float(b.y), t)))
+			_fill_circle(img, Vector2i(px, py), thickness + 1, border, Color(0, 0, 0, 0))
 	for s in range(steps + 1):
-		var t: float = float(s) / float(steps)
-		var px: int = int(round(lerpf(float(a.x), float(b.x), t)))
-		var py: int = int(round(lerpf(float(a.y), float(b.y), t)))
-		_fill_circle(img, Vector2i(px, py), thickness, col, border)
+		var t2: float = float(s) / float(steps)
+		var px2: int = int(round(lerpf(float(a.x), float(b.x), t2)))
+		var py2: int = int(round(lerpf(float(a.y), float(b.y), t2)))
+		_fill_circle(img, Vector2i(px2, py2), thickness, col, Color(0, 0, 0, 0))
