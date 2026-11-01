@@ -94,6 +94,44 @@
 		]
 	},
 	{
+		"id": "coal_deposit",
+		"name": "Anthracite Coal Deposit",
+		"biome": "mountains",
+		"hits": 5,
+		"required_tool": "pickaxe",
+		"preferred_tool": "pickaxe",
+		"skill": "mining",
+		"xp": 20.0,
+		"regrows": false,
+		"regrow_days": 0,
+		"color": "#282a2e",
+		"trunk_color": "#181a1d",
+		"radius": 16.0,
+		"drops": [
+			{ "item_id": "coal", "min": 2, "max": 5 },
+			{ "item_id": "stone", "min": 1, "max": 2 }
+		]
+	},
+	{
+		"id": "gold_quartz_vein",
+		"name": "Gold Quartz Deposit",
+		"biome": "mountains",
+		"hits": 8,
+		"required_tool": "pickaxe",
+		"preferred_tool": "pickaxe",
+		"skill": "mining",
+		"xp": 36.0,
+		"regrows": false,
+		"regrow_days": 0,
+		"color": "#d9ab2b",
+		"trunk_color": "#6e5d2b",
+		"radius": 17.0,
+		"drops": [
+			{ "item_id": "gold_ore", "min": 1, "max": 3 },
+			{ "item_id": "stone", "min": 2, "max": 3 }
+		]
+	},
+	{
 		"id": "wild_berry_bush",
 		"name": "Berry Shrub",
 		"biome": "plains",

@@ -117,31 +117,74 @@ func _draw() -> void:
 	elif node_def_id.find("tree") != -1:
 		var oak_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/oak_tree.png")
 		if oak_tex != null:
-			draw_texture_rect(oak_tex, Rect2(-39.0 + ofs.x, -58.0 + ofs.y, 78.0, 62.0), false)
+			draw_texture_rect(oak_tex, Rect2(-36.0 + ofs.x, -64.0 + ofs.y, 72.0, 68.0), false)
 		else:
 			_draw_procedural_oak(ofs, outline_col, radius)
-	elif node_def_id.find("stone") != -1 or node_def_id.find("iron") != -1 or node_def_id.find("copper") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("vein") != -1:
-		var rock_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/boulder.png")
+	elif node_def_id.find("iron") != -1:
+		var pos_key: int = absi(int(global_position.x * 0.19) ^ int(global_position.y * 0.43)) % 2
+		var iron_path: String = "res://assets/sprites/world/resources/ore_iron_vein.png" if pos_key == 0 else "res://assets/sprites/world/resources/ore_iron_rich.png"
+		var iron_tex: Texture2D = _get_tex(iron_path)
+		if iron_tex != null:
+			draw_texture_rect(iron_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false)
+		else:
+			_draw_procedural_rock(ofs, outline_col, radius)
+	elif node_def_id.find("copper") != -1:
+		var copper_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/ore_copper_vein.png")
+		if copper_tex != null:
+			draw_texture_rect(copper_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false)
+		else:
+			_draw_procedural_rock(ofs, outline_col, radius)
+	elif node_def_id.find("coal") != -1:
+		var coal_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/ore_coal_deposit.png")
+		if coal_tex != null:
+			draw_texture_rect(coal_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false)
+		else:
+			_draw_procedural_rock(ofs, outline_col, radius)
+	elif node_def_id.find("gold") != -1:
+		var gold_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/ore_gold_quartz.png")
+		if gold_tex != null:
+			draw_texture_rect(gold_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false)
+		else:
+			_draw_procedural_rock(ofs, outline_col, radius)
+	elif node_def_id.find("silver") != -1:
+		var silver_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/ore_silver_galena.png")
+		if silver_tex != null:
+			draw_texture_rect(silver_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false)
+		else:
+			_draw_procedural_rock(ofs, outline_col, radius)
+	elif node_def_id.find("crystal") != -1 or node_def_id.find("gem") != -1:
+		var pos_key: int = absi(int(global_position.x * 0.17) ^ int(global_position.y * 0.31)) % 2
+		var crystal_path: String = "res://assets/sprites/world/resources/ore_crystal_amethyst.png" if pos_key == 0 else "res://assets/sprites/world/resources/ore_crystal_mithril.png"
+		var crystal_tex: Texture2D = _get_tex(crystal_path)
+		if crystal_tex != null:
+			draw_texture_rect(crystal_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false)
+		else:
+			_draw_procedural_rock(ofs, outline_col, radius)
+	elif node_def_id.find("stone") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("rock") != -1:
+		var rock_paths: Array[String] = [
+			"res://assets/sprites/world/resources/boulder_granite.png",
+			"res://assets/sprites/world/resources/boulder_limestone.png",
+			"res://assets/sprites/world/resources/boulder_slate.png",
+			"res://assets/sprites/world/resources/boulder_fieldstone.png"
+		]
+		var pos_idx: int = absi(int(global_position.x * 0.17) ^ int(global_position.y * 0.31)) % 4
+		var rock_tex: Texture2D = _get_tex(rock_paths[pos_idx])
+		if rock_tex == null:
+			rock_tex = _get_tex("res://assets/sprites/world/resources/boulder.png")
 		if rock_tex != null:
-			draw_texture_rect(rock_tex, Rect2(-24.0 + ofs.x, -28.0 + ofs.y, 48.0, 34.0), false)
-			if node_def_id.find("iron") != -1:
-				draw_circle(ofs + Vector2(-4.0, -11.0), 2.2, Color(0.95, 0.98, 1.0, 0.95))
-				draw_circle(ofs + Vector2(6.0, -7.0), 2.0, Color(0.72, 0.85, 0.98, 0.90))
-			elif node_def_id.find("copper") != -1:
-				draw_circle(ofs + Vector2(-4.0, -11.0), 2.2, Color(0.98, 0.65, 0.35, 0.95))
-				draw_circle(ofs + Vector2(6.0, -7.0), 2.0, Color(0.85, 0.50, 0.25, 0.90))
+			draw_texture_rect(rock_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false)
 		else:
 			_draw_procedural_rock(ofs, outline_col, radius)
 	elif node_def_id.find("berry") != -1:
 		var bush_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/berry_bush.png")
 		if bush_tex != null:
-			draw_texture_rect(bush_tex, Rect2(-17.0 + ofs.x, -33.0 + ofs.y, 34.0, 38.0), false)
+			draw_texture_rect(bush_tex, Rect2(-20.0 + ofs.x, -24.0 + ofs.y, 40.0, 28.0), false)
 		else:
 			_draw_procedural_bush(ofs, outline_col, radius)
 	else:
 		var def_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/boulder.png")
 		if def_tex != null:
-			draw_texture_rect(def_tex, Rect2(-24.0 + ofs.x, -28.0 + ofs.y, 48.0, 34.0), false)
+			draw_texture_rect(def_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false)
 		else:
 			_draw_procedural_rock(ofs, outline_col, radius)
 

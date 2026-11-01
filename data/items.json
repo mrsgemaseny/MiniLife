@@ -98,6 +98,34 @@
 		"skill_required": {}
 	},
 	{
+		"id": "coal",
+		"name": "Anthracite Coal",
+		"type": "material",
+		"weight": 1.0,
+		"value": 8,
+		"stackable": true,
+		"durability": -1,
+		"stats": {},
+		"visual": { "sprite": "items/coal.png", "color": "#222226" },
+		"craft_requirements": {},
+		"craft_station": "",
+		"skill_required": {}
+	},
+	{
+		"id": "gold_ore",
+		"name": "Gold Ore",
+		"type": "material",
+		"weight": 2.5,
+		"value": 35,
+		"stackable": true,
+		"durability": -1,
+		"stats": {},
+		"visual": { "sprite": "items/gold_ore.png", "color": "#e6b820" },
+		"craft_requirements": {},
+		"craft_station": "",
+		"skill_required": {}
+	},
+	{
 		"id": "iron_ingot",
 		"name": "Iron Ingot",
 		"type": "material",

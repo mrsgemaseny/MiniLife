@@ -49,8 +49,10 @@
 		"alt_color": "#68707a",
 		"tile_ids": ["rock", "cliff"],
 		"resource_nodes": {
-			"iron_vein": 0.055,
-			"stone_boulder": 0.065
+			"iron_vein": 0.040,
+			"coal_deposit": 0.025,
+			"gold_quartz_vein": 0.012,
+			"stone_boulder": 0.055
 		},
 		"resources": {
 			"iron_ore": [2, 4],
@@ -69,7 +71,8 @@
 		"alt_color": "#cca55c",
 		"tile_ids": ["sand", "dune"],
 		"resource_nodes": {
-			"copper_vein": 0.04,
+			"copper_vein": 0.040,
+			"coal_deposit": 0.015,
 			"stone_boulder": 0.025
 		},
 		"resources": {
