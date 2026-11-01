@@ -69,6 +69,7 @@ func _process(delta: float) -> void:
 			continue
 		var target_center: Vector2 = n2d.global_position + Vector2(0.0, -14.0)
 		if tip_world.distance_to(target_center) <= 22.0:
+			SignalBus.arrow_impacted.emit(tip_world, "flesh")
 			SignalBus.damage_requested.emit(node, damage, damage_type, shooter)
 			queue_free()
 			return
@@ -76,6 +77,7 @@ func _process(delta: float) -> void:
 	if _distance_travelled >= max_range:
 		_is_stuck = true
 		_current_altitude = 0.0
+		SignalBus.arrow_impacted.emit(global_position, "ground")
 		# Natural landing angle into the ground along shot direction
 		var land_vec: Vector2 = direction + Vector2(0.0, 0.45)
 		_flight_dir = land_vec.normalized()

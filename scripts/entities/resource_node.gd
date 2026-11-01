@@ -275,6 +275,7 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 		_pulse_accum = 0.0
 		_shake_timer = 0.18
 		_spring_phase = 0.0
+		SignalBus.resource_hit.emit(node_def_id, skill_type, global_position)
 		var chip_col: Color = Color(0.72, 0.76, 0.80) if is_rock else (Color(0.24, 0.48, 0.18) if is_bush else Color(0.55, 0.38, 0.22))
 		for i in range(4):
 			_chips.append({

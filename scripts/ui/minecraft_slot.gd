@@ -156,5 +156,6 @@ func _on_gui_input(event: InputEvent) -> void:
 		var mb: InputEventMouseButton = event as InputEventMouseButton
 		var is_shift: bool = mb.shift_pressed
 		if mb.button_index == MOUSE_BUTTON_LEFT or mb.button_index == MOUSE_BUTTON_RIGHT:
+			SignalBus.ui_sound_requested.emit("click")
 			slot_clicked.emit(slot_index, mb.button_index, is_shift)
 			accept_event()

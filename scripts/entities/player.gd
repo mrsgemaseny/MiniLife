@@ -232,6 +232,7 @@ func _physics_process(delta: float) -> void:
 		_step_dust_timer -= delta
 		if _step_dust_timer <= 0.0:
 			_step_dust_timer = 0.22
+			SignalBus.footstep_stepped.emit(global_position, "turf")
 			_dust_puffs.append({
 				"pos": global_position + Vector2(randf_range(-4.0, 4.0), 2.0),
 				"vel": -input_dir.normalized() * 14.0 + Vector2(0.0, -8.0),
@@ -296,6 +297,7 @@ func _start_bow_charge() -> void:
 		return
 	_is_charging_bow = true
 	_bow_charge_time = 0.0
+	SignalBus.bow_drawn.emit()
 	var mouse_world: Vector2 = get_global_mouse_position()
 	var aim_dir: Vector2 = (mouse_world - (global_position + Vector2(0.0, -12.0))).normalized()
 	if aim_dir.length_squared() > 0.01:
@@ -343,6 +345,7 @@ func _release_bow_shot() -> void:
 
 	var shoot_origin: Vector2 = global_position + Vector2(0.0, -12.0) + facing_direction * 12.0
 	SignalBus.projectile_fired.emit(shoot_origin, fire_dir, proj_speed, scaled_dmg, "physical", self, current_range)
+	SignalBus.bow_released.emit(charge_ratio)
 	skills.gain_xp("ranged", Config.XP_PER_RANGED_HIT)
 	equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
 
@@ -368,6 +371,7 @@ func perform_attack() -> void:
 	_attack_cooldown = Config.BASE_ATTACK_COOLDOWN / atk_speed
 	_swing_duration = 0.26
 	_swing_timer = _swing_duration
+	SignalBus.weapon_swung.emit(equipment.get_item_id("weapon"))
 
 	var mouse_world: Vector2 = get_global_mouse_position()
 	var aim_dir: Vector2 = (mouse_world - global_position).normalized()
