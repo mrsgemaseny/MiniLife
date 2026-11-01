@@ -31,6 +31,14 @@ var _vignette_overlay: ColorRect = null
 var _exit_hint_label: Label = null
 var _current_weather: String = "clear"
 
+var _hovered_node: Node2D = null
+var _hover_timer: float = 0.0
+var _inspect_card: PanelContainer = null
+var _inspect_title: Label = null
+var _inspect_badge: Label = null
+var _inspect_details: Label = null
+var _inspect_alpha: float = 0.0
+
 func _ready() -> void:
 	_setup_styled_hud()
 	_connect_signals()
@@ -43,6 +51,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_refresh_time_display()
+	_update_world_hover_inspect(delta)
 	if _toast_timer > 0.0:
 		_toast_timer -= delta
 		if _toast_panel != null:
@@ -351,6 +360,47 @@ func _setup_styled_hud() -> void:
 		)
 		dock_hbox.add_child(mbtn)
 
+	# Smooth World Hover Inspect Card (for trees, rocks, ores, NPCs)
+	_inspect_card = PanelContainer.new()
+	var ic_style: StyleBoxFlat = StyleBoxFlat.new()
+	ic_style.bg_color = Color(0.06, 0.08, 0.12, 0.90)
+	ic_style.border_color = Color(0.85, 0.72, 0.38, 0.92)
+	ic_style.set_border_width_all(1)
+	ic_style.set_corner_radius_all(6)
+	ic_style.content_margin_left = 10
+	ic_style.content_margin_right = 10
+	ic_style.content_margin_top = 6
+	ic_style.content_margin_bottom = 6
+	_inspect_card.add_theme_stylebox_override("panel", ic_style)
+	_inspect_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_inspect_card.z_index = 80
+	_inspect_card.visible = false
+	_inspect_card.modulate.a = 0.0
+
+	var ic_vbox: VBoxContainer = VBoxContainer.new()
+	ic_vbox.add_theme_constant_override("separation", 2)
+	_inspect_card.add_child(ic_vbox)
+
+	_inspect_title = Label.new()
+	_inspect_title.text = "Oak Tree"
+	_inspect_title.add_theme_font_size_override("font_size", 12)
+	_inspect_title.modulate = Color(0.98, 0.88, 0.52)
+	ic_vbox.add_child(_inspect_title)
+
+	_inspect_badge = Label.new()
+	_inspect_badge.text = "[ Woodcutting • Axe ]"
+	_inspect_badge.add_theme_font_size_override("font_size", 10)
+	_inspect_badge.modulate = Color(0.55, 0.82, 0.98)
+	ic_vbox.add_child(_inspect_badge)
+
+	_inspect_details = Label.new()
+	_inspect_details.text = "Yields: Logs, Wood Chips"
+	_inspect_details.add_theme_font_size_override("font_size", 10)
+	_inspect_details.modulate = Color(0.82, 0.85, 0.88)
+	ic_vbox.add_child(_inspect_details)
+
+	add_child(_inspect_card)
+
 func _connect_signals() -> void:
 	SignalBus.player_stat_changed.connect(update_stat)
 	SignalBus.player_gold_changed.connect(update_gold)
@@ -549,3 +599,106 @@ func _on_effect_expired(entity: Node, effect_id: String) -> void:
 func _refresh_status_label() -> void:
 	if status_label != null:
 		status_label.text = "Status: " + (", ".join(_active_effects) if not _active_effects.is_empty() else "Healthy")
+
+func _update_world_hover_inspect(delta: float) -> void:
+	if _inspect_card == null:
+		return
+
+	var mouse_world: Vector2 = get_global_mouse_position()
+	var candidate: Node2D = null
+	var candidate_top_offset: float = -40.0
+
+	var harvestables: Array[Node] = get_tree().get_nodes_in_group("harvestable")
+	for node in harvestables:
+		if not (node is Node2D) or not (node as Node2D).is_visible_in_tree():
+			continue
+		var n2d: Node2D = node as Node2D
+		var gpos: Vector2 = n2d.global_position
+		var def_id: String = str(n2d.get("node_def_id"))
+		var is_tree: bool = def_id.find("tree") != -1 or def_id.find("pine") != -1 or def_id.find("oak") != -1
+		var is_rock: bool = def_id.find("rock") != -1 or def_id.find("ore") != -1 or def_id.find("boulder") != -1 or def_id.find("deposit") != -1
+
+		var hw: float = 38.0 if is_tree else (28.0 if is_rock else 22.0)
+		var top_y: float = -74.0 if is_tree else (-36.0 if is_rock else -26.0)
+		var bot_y: float = 14.0
+
+		if mouse_world.x >= gpos.x - hw and mouse_world.x <= gpos.x + hw and mouse_world.y >= gpos.y + top_y and mouse_world.y <= gpos.y + bot_y:
+			candidate = n2d
+			candidate_top_offset = top_y
+			break
+
+	if candidate == null:
+		var npcs: Array[Node] = get_tree().get_nodes_in_group("npc")
+		for node in npcs:
+			if not (node is Node2D) or not (node as Node2D).is_visible_in_tree():
+				continue
+			var n2d: Node2D = node as Node2D
+			var gpos: Vector2 = n2d.global_position
+			if mouse_world.distance_to(gpos + Vector2(0.0, -18.0)) <= 26.0:
+				candidate = n2d
+				candidate_top_offset = -48.0
+				break
+
+	if candidate != null:
+		if candidate == _hovered_node:
+			_hover_timer += delta
+			if _hover_timer >= 1.0:
+				_inspect_alpha = move_toward(_inspect_alpha, 1.0, delta * 4.5)
+				_inspect_card.visible = true
+				_populate_inspect_card(candidate)
+				var screen_pos: Vector2 = get_viewport().get_canvas_transform() * (candidate.global_position + Vector2(0.0, candidate_top_offset - 6.0))
+				_inspect_card.position = Vector2(
+					clampf(screen_pos.x - _inspect_card.size.x * 0.5, 10.0, get_viewport_rect().size.x - _inspect_card.size.x - 10.0),
+					clampf(screen_pos.y - _inspect_card.size.y, 10.0, get_viewport_rect().size.y - _inspect_card.size.y - 10.0)
+				)
+		else:
+			_hovered_node = candidate
+			_hover_timer = 0.0
+			_inspect_alpha = move_toward(_inspect_alpha, 0.0, delta * 8.0)
+	else:
+		_hovered_node = null
+		_hover_timer = 0.0
+		_inspect_alpha = move_toward(_inspect_alpha, 0.0, delta * 6.0)
+
+	_inspect_card.modulate.a = _inspect_alpha
+	if _inspect_alpha <= 0.001:
+		_inspect_card.visible = false
+
+func _populate_inspect_card(target: Node2D) -> void:
+	if target == null:
+		return
+	if target is ResourceNode or target.is_in_group("harvestable"):
+		var def_id: String = str(target.get("node_def_id"))
+		var def: Dictionary = DataRegistry.get_resource_node(def_id)
+		var display_name: String = str(def.get("name", def_id.capitalize().replace("_", " ")))
+		var tool_req: String = str(def.get("tool", "hands")).capitalize()
+		var skill_req: String = str(def.get("skill", "survival")).capitalize()
+		var hits_left: int = int(target.get("hits_remaining"))
+		var max_hits: int = int(def.get("hits", 4))
+
+		_inspect_title.text = display_name
+		_inspect_badge.text = "[ %s • Required: %s ]" % [skill_req, tool_req]
+
+		var drops_desc: String = ""
+		var drops: Array = def.get("drops", [])
+		if not drops.is_empty():
+			var item_names: Array[String] = []
+			for d in drops:
+				if d is Dictionary:
+					var it_id: String = str(d.get("item_id", ""))
+					var it_def: Dictionary = DataRegistry.get_item(it_id)
+					var it_name: String = str(it_def.get("name", it_id.capitalize().replace("_", " ")))
+					item_names.append(it_name)
+			drops_desc = "Yields: " + (", ".join(item_names) if not item_names.is_empty() else "Raw Materials")
+		else:
+			var res_type: String = str(def.get("type", "resource"))
+			drops_desc = "Resource (" + res_type.capitalize() + ")"
+
+		_inspect_details.text = "%s  |  Integrity: %d/%d" % [drops_desc, hits_left, max_hits]
+	elif target.is_in_group("npc"):
+		var npc_name: String = str(target.get("display_name"))
+		var faction: String = str(target.get("faction_id")).capitalize()
+		_inspect_title.text = npc_name if not npc_name.is_empty() else "Inhabitant"
+		_inspect_badge.text = "[ Faction: %s ]" % faction
+		_inspect_details.text = "Press [E] to interact or trade"
+

@@ -31,6 +31,8 @@ gdscript/warnings/unused_signal=0
 
 [display]
 
+mouse_cursor/custom_image="res://assets/sprites/ui/cursor_default.png"
+mouse_cursor/custom_image_hotspot=Vector2(1, 1)
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/size/mode=3

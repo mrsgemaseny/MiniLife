@@ -56,6 +56,10 @@
   - Replaced procedural polygons in `WorldSystem._draw()` with cached `draw_texture_rect` tile sprites (`tile_grass`, `tile_dirt`, `tile_sand`, `tile_swamp`, `tile_mountain`, `tile_water`) with fog modulation.
   - Replaced procedural structure boxes in `StructureEntity._draw()` with Kenney voxel blocks (`voxelTile_18` workbench, `voxelTile_17` forge with flame glow, `voxelTile_28` storage, `voxelTile_19` wall, `voxelTile_14` wood/door).
   - Wired `ResourceNode._draw()` with robust fallback loading to display oak, pine, boulders, berry bushes, mushrooms, and small trees.
+- **Custom RPG Cursor, Bow Stance & Hover Inspect Tooltips (2026-11-01)**:
+  - Custom dark-steel and gold medieval RPG mouse cursor configured in `project.godot` and `GameManager`.
+  - Fixed bow grip anchor and rotation angle (135 deg forward stave arc) in `Player._draw()`.
+  - Smooth 1.0s hover inspect card in `HUD` (`_inspect_card`) displaying object name, skill/tool requirements, integrity, and yields for trees, rocks, ores, and NPCs.
 - **Fixed Seed, Ruins, Interiors, Lighting & Regrowth Overhaul (2026-11-01)**:
   - **Fixed World Seed (Task 1)**: `Config.DEFAULT_WORLD_SEED = 42819` passed through `GameManager`, `WorldSystem`, `TerrainGenerator`, and `SaveSystem` world_seed persistence, ensuring identical world layout on restart.
   - **Hand-Crafted Ruins (Task 2)**: Added `data/ruins.json` with 4 unique POIs (`abandoned_fort`, `old_village`, `collapsed_tower`, `underground_vault`), deterministically placed at anchor chunks via `PoiGenerator` with `SignalBus.poi_discovered`.

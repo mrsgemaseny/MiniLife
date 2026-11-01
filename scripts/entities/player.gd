@@ -637,15 +637,29 @@ func _draw() -> void:
 	var weapon_id: String = equipment.get_item_id("weapon") if equipment != null else ""
 	if not weapon_id.is_empty():
 		var weapon_tex: ImageTexture = IconFactory.get_world_sprite(weapon_id)
-		# Base idle angle is ~70 degrees upright (between 60 and 80 degrees, tilted slightly forward)
-		var base_angle: float = -deg_to_rad(28.0) * rot_dir
+		var is_bow: bool = weapon_id.find("bow") != -1 or weapon_id.find("crossbow") != -1
+		var base_angle: float = 0.0
+		var anchor_rect: Rect2 = Rect2(-6.0, -18.0, 24.0, 24.0)
+
+		if is_bow:
+			# Bow is held centered in the hand, standing upright facing outward
+			base_angle = deg_to_rad(135.0) * rot_dir
+			anchor_rect = Rect2(-12.0, -12.0, 24.0, 24.0)
+		else:
+			# Melee weapon (sword, axe, hammer, spear, dagger) idle angle ~70 deg upright
+			base_angle = -deg_to_rad(28.0) * rot_dir
+			anchor_rect = Rect2(-6.0, -18.0, 24.0, 24.0)
 
 		var swing_angle_ofs: float = 0.0
 		if _swing_timer > 0.0:
 			var prog: float = 1.0 - (_swing_timer / maxf(0.01, _swing_duration))
 			var eased: float = 1.0 - pow(1.0 - prog, 3.0)
-			# Wind-up over shoulder (-45 deg), then slash forward down (+65 deg)
-			swing_angle_ofs = lerpf(-deg_to_rad(45.0), deg_to_rad(65.0), eased) * rot_dir
+			if is_bow:
+				# Bow draw string back and snap
+				swing_angle_ofs = -sin(prog * PI) * deg_to_rad(18.0) * rot_dir
+			else:
+				# Wind-up over shoulder (-45 deg), then slash forward down (+65 deg)
+				swing_angle_ofs = lerpf(-deg_to_rad(45.0), deg_to_rad(65.0), eased) * rot_dir
 		else:
 			# Natural walking weapon sway
 			swing_angle_ofs = sin(_walk_phase) * deg_to_rad(3.5) * _walk_blend * rot_dir
@@ -655,8 +669,7 @@ func _draw() -> void:
 
 		if weapon_tex != null:
 			draw_set_transform(hand_pos, final_rot, weapon_scale)
-			# Draw weapon anchored at the handle grip (-6 px horizontal, -18 px vertical from top-right head)
-			draw_texture_rect(weapon_tex, Rect2(-6.0, -18.0, 24.0, 24.0), false)
+			draw_texture_rect(weapon_tex, anchor_rect, false)
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		else:
 			var tip_local: Vector2 = Vector2(cos(final_rot), sin(final_rot)) * 19.0

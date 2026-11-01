@@ -24,6 +24,17 @@ var debug_reveal_map: bool = false
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_register_default_inputs()
+	var cursor_tex: Texture2D = null
+	if ResourceLoader.exists("res://assets/sprites/ui/cursor_default.png"):
+		var res: Resource = load("res://assets/sprites/ui/cursor_default.png")
+		if res is Texture2D:
+			cursor_tex = res as Texture2D
+	if cursor_tex == null:
+		var c_img: Image = Image.load_from_file("res://assets/sprites/ui/cursor_default.png")
+		if c_img != null and not c_img.is_empty():
+			cursor_tex = ImageTexture.create_from_image(c_img)
+	if cursor_tex != null:
+		Input.set_custom_mouse_cursor(cursor_tex, Input.CURSOR_ARROW, Vector2(1, 1))
 	SignalBus.player_died.connect(_on_player_died)
 	SignalBus.ui_panel_toggled.connect(_on_ui_panel_toggled)
 	SignalBus.character_creation_completed.connect(_on_character_creation_completed)
