@@ -30,6 +30,12 @@ func can_craft(recipe_id: String, crafter: Node, active_station: String = "") ->
 		if not _is_near_station(crafter, required_station):
 			return {"ok": false, "reason": "Requires station: " + required_station}
 
+	var req_tech: String = str(recipe.get("tech_required", ""))
+	if req_tech != "":
+		var RS = load("res://scripts/systems/research_system.gd")
+		if RS.instance != null and not RS.instance.is_researched(req_tech):
+			return {"ok": false, "reason": "Requires Research: " + req_tech.capitalize()}
+
 	var skills: SkillsComponent = crafter.get("skills") as SkillsComponent
 	var req_skills: Dictionary = recipe.get("skill_required", {})
 	if skills != null and not skills.meets_requirements(req_skills):

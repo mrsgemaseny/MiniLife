@@ -5,7 +5,20 @@ static var instance: FurnaceSystem = null
 
 signal furnace_updated(furnace_id: String)
 
-# furnace_id -> Dictionary { "fuel_item": String, "fuel_count": int, "burn_remaining": float, "ore_item": String, "ore_count": int, "smelt_progress": float, "out_item": String, "out_count": int }
+const SMELT_RECIPES: Dictionary = {
+	"iron_ore": "iron_ingot",
+	"copper_ore": "bronze_ingot",
+	"food_raw": "cooked_food",
+	"wood": "coal"
+}
+
+const FUEL_BURN_TIMES: Dictionary = {
+	"coal": 20.0,
+	"wood": 8.0,
+	"plank": 4.0
+}
+
+# furnace_id -> Dictionary { "fuel_item": String, "fuel_count": int, "burn_remaining": float, "max_burn_time": float, "ore_item": String, "ore_count": int, "smelt_progress": float, "out_item": String, "out_count": int }
 var _furnaces: Dictionary = {}
 
 
@@ -15,12 +28,25 @@ func _ready() -> void:
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
 
 
+static func is_valid_fuel(item_id: String) -> bool:
+	return FUEL_BURN_TIMES.has(item_id)
+
+
+static func is_valid_input(item_id: String) -> bool:
+	return SMELT_RECIPES.has(item_id)
+
+
+static func get_output_item(input_id: String) -> String:
+	return str(SMELT_RECIPES.get(input_id, ""))
+
+
 func get_furnace_state(furnace_id: String) -> Dictionary:
 	if not _furnaces.has(furnace_id):
 		_furnaces[furnace_id] = {
 			"fuel_item": "",
 			"fuel_count": 0,
 			"burn_remaining": 0.0,
+			"max_burn_time": 8.0,
 			"ore_item": "",
 			"ore_count": 0,
 			"smelt_progress": 0.0,
@@ -30,9 +56,23 @@ func get_furnace_state(furnace_id: String) -> Dictionary:
 	return _furnaces[furnace_id]
 
 
+func set_slot_data(furnace_id: String, slot_type: String, item_id: String, count: int) -> void:
+	var state: Dictionary = get_furnace_state(furnace_id)
+	if slot_type == "input":
+		state["ore_item"] = item_id if count > 0 else ""
+		state["ore_count"] = count if item_id != "" else 0
+	elif slot_type == "fuel":
+		state["fuel_item"] = item_id if count > 0 else ""
+		state["fuel_count"] = count if item_id != "" else 0
+	elif slot_type == "output":
+		state["out_item"] = item_id if count > 0 else ""
+		state["out_count"] = count if item_id != "" else 0
+	furnace_updated.emit(furnace_id)
+
+
 func add_fuel(furnace_id: String, player: Node, item_id: String, amount: int = 1) -> bool:
-	if item_id != "coal" and item_id != "wood":
-		SignalBus.notification_posted.emit("Furnace only accepts Coal or Wood as fuel.")
+	if not is_valid_fuel(item_id):
+		SignalBus.notification_posted.emit("Furnace only accepts Coal, Wood, or Planks as fuel.")
 		return false
 
 	var inv: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
@@ -49,8 +89,8 @@ func add_fuel(furnace_id: String, player: Node, item_id: String, amount: int = 1
 
 
 func add_ore(furnace_id: String, player: Node, item_id: String, amount: int = 1) -> bool:
-	if item_id != "iron_ore" and item_id != "copper_ore":
-		SignalBus.notification_posted.emit("Furnace only smelts Iron Ore or Copper Ore.")
+	if not is_valid_input(item_id):
+		SignalBus.notification_posted.emit("Furnace can only smelt Ore, Raw Meat, or Wood.")
 		return false
 
 	var inv: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
@@ -101,26 +141,30 @@ func _process(delta: float) -> void:
 		var ore_cnt: int = int(state.get("ore_count", 0))
 		var burn_rem: float = float(state.get("burn_remaining", 0.0))
 		var fuel_cnt: int = int(state.get("fuel_count", 0))
+		var cur_in: String = str(state.get("ore_item", ""))
 
-		# Consume fuel to maintain fire when smelting ore
+		# Consume fuel to maintain fire when smelting
 		if ore_cnt > 0 and burn_rem <= 0.0 and fuel_cnt > 0:
 			var fuel_id: String = str(state.get("fuel_item", "coal"))
+			var btime: float = float(FUEL_BURN_TIMES.get(fuel_id, 8.0))
 			state["fuel_count"] = fuel_cnt - 1
-			state["burn_remaining"] = 20.0 if fuel_id == "coal" else 8.0
-			burn_rem = float(state["burn_remaining"])
+			state["max_burn_time"] = btime
+			state["burn_remaining"] = btime
+			burn_rem = btime
 			any_changed = true
 
 		# Active smelting tick
 		if burn_rem > 0.0:
 			state["burn_remaining"] = maxf(0.0, burn_rem - delta)
-			if ore_cnt > 0:
-				var prog: float = float(state.get("smelt_progress", 0.0)) + delta / 4.0
+			if ore_cnt > 0 and SMELT_RECIPES.has(cur_in):
+				# Base 4s per smelt. Smithing skill speeds this up.
+				var base_duration: float = 3.6
+				var prog: float = float(state.get("smelt_progress", 0.0)) + (delta / base_duration)
 				if prog >= 1.0:
 					prog = 0.0
 					state["ore_count"] = ore_cnt - 1
-					var ore_id: String = str(state.get("ore_item", ""))
-					var ingot_id: String = "iron_ingot" if ore_id == "iron_ore" else "bronze_ingot"
-					state["out_item"] = ingot_id
+					var target_out: String = get_output_item(cur_in)
+					state["out_item"] = target_out
 					state["out_count"] = int(state.get("out_count", 0)) + 1
 					if int(state["ore_count"]) <= 0:
 						state["ore_item"] = ""

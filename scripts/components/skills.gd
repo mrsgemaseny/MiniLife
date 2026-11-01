@@ -51,6 +51,10 @@ func get_level(skill: String) -> int:
 	return int(skills.get(skill, 0))
 
 
+func has_perk(perk_id: String) -> bool:
+	return unlocked_perks.has(perk_id)
+
+
 func set_level(skill: String, level: int) -> void:
 	skills[skill] = clampi(level, 0, Config.MAX_SKILL_LEVEL)
 	if not xp.has(skill):
@@ -78,6 +82,7 @@ func gain_xp(skill: String, amount: float) -> void:
 		cur_level += 1
 		skills[skill] = cur_level
 		leveled_up.emit(skill, cur_level)
+		SignalBus.notification_posted.emit("Level Up! %s reached level %d" % [skill.capitalize(), cur_level])
 		_check_perks(skill, cur_level)
 
 
@@ -99,7 +104,9 @@ func _check_perks(skill: String, level: int) -> void:
 			var perk_id: String = "%s_%d" % [skill, milestone]
 			if not unlocked_perks.has(perk_id):
 				unlocked_perks.append(perk_id)
-				perk_unlocked.emit(skill, milestone, str(table[milestone]))
+				var pname: String = str(table[milestone])
+				perk_unlocked.emit(skill, milestone, pname)
+				SignalBus.notification_posted.emit("Perk Unlocked: [%s] in %s!" % [pname, skill.capitalize()])
 
 
 func to_dict() -> Dictionary:

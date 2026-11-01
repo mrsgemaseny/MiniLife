@@ -9,6 +9,7 @@ var _panel: PanelContainer = null
 var _armor_slots: Dictionary = {} # slot_key -> MCSlot ("head", "chest", "legs", "weapon", "offhand")
 var _inv_slots: Array = []
 var _hotbar_slots: Array = []
+var _hovered_slot_index: int = -1
 
 # Floating cursor stack for Minecraft drag & drop
 var _cursor_stack: Dictionary = {}
@@ -53,6 +54,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif k.keycode == KEY_Q:
 			_drop_hovered_or_cursor_item(k.ctrl_pressed)
 			get_viewport().set_input_as_handled()
+		elif k.keycode >= KEY_1 and k.keycode <= KEY_8:
+			var target_hotbar: int = k.keycode - KEY_1
+			if _hovered_slot_index >= 0 and _hovered_slot_index != target_hotbar:
+				var player: Node = get_tree().get_first_node_in_group("player")
+				var inv: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
+				if inv != null:
+					inv.swap_slots(_hovered_slot_index, target_hotbar)
+					refresh()
+					get_viewport().set_input_as_handled()
 
 
 func _process(_delta: float) -> void:
@@ -102,23 +112,34 @@ func _build_minecraft_inventory_ui() -> void:
 	anchor_bottom = 1.0
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
+	# Full-screen dark backdrop overlay (freezes focus, blocks world clicks)
+	var backdrop: ColorRect = ColorRect.new()
+	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color(0.04, 0.05, 0.08, 0.78)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	backdrop.gui_input.connect(func(ev: InputEvent) -> void:
+		if ev is InputEventMouseButton and ev.pressed and not _cursor_stack.is_empty():
+			_drop_hovered_or_cursor_item(false)
+	)
+	add_child(backdrop)
+
 	# Dark glassmorphic backdrop frame
 	_panel = PanelContainer.new()
 	_panel.anchor_left = 0.5
 	_panel.anchor_top = 0.5
 	_panel.anchor_right = 0.5
 	_panel.anchor_bottom = 0.5
-	_panel.offset_left = -230.0
-	_panel.offset_top = -250.0
-	_panel.offset_right = 230.0
-	_panel.offset_bottom = 250.0
+	_panel.offset_left = -260.0
+	_panel.offset_top = -260.0
+	_panel.offset_right = 260.0
+	_panel.offset_bottom = 260.0
 
 	var frame_sb: StyleBoxFlat = StyleBoxFlat.new()
 	frame_sb.bg_color = Color(0.12, 0.13, 0.16, 0.96)
 	frame_sb.border_color = Color(0.38, 0.42, 0.50, 0.90)
 	frame_sb.set_border_width_all(2)
 	frame_sb.set_corner_radius_all(8)
-	frame_sb.set_content_margin_all(12)
+	frame_sb.set_content_margin_all(14)
 	_panel.add_theme_stylebox_override("panel", frame_sb)
 	add_child(_panel)
 
@@ -134,6 +155,19 @@ func _build_minecraft_inventory_ui() -> void:
 	title.add_theme_font_size_override("font_size", 13)
 	title.modulate = Color(0.96, 0.86, 0.45)
 	hdr.add_child(title)
+
+	var sort_btn: Button = Button.new()
+	sort_btn.text = " [ ⇵ Sort & Merge ] "
+	sort_btn.add_theme_font_size_override("font_size", 10)
+	sort_btn.pressed.connect(func() -> void:
+		var player: Node = get_tree().get_first_node_in_group("player")
+		var inv: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
+		if inv != null:
+			inv.sort_and_consolidate(false)
+			refresh()
+			SignalBus.notification_posted.emit("Backpack sorted and consolidated.")
+	)
+	hdr.add_child(sort_btn)
 
 	var close_btn: Button = Button.new()
 	close_btn.text = " [X] "
@@ -222,8 +256,15 @@ func _build_minecraft_inventory_ui() -> void:
 		s.slot_index = i
 		s.slot_group = "inventory"
 		s.slot_clicked.connect(_on_slot_clicked)
-		s.slot_hovered.connect(_on_slot_hovered)
-		s.slot_unhovered.connect(func(_idx): _hide_tooltip())
+		s.slot_hovered.connect(func(idx):
+			_hovered_slot_index = idx
+			_on_slot_hovered(idx)
+		)
+		s.slot_unhovered.connect(func(idx):
+			if _hovered_slot_index == idx:
+				_hovered_slot_index = -1
+			_hide_tooltip()
+		)
 		_inv_slots.append(s)
 		inv_grid.add_child(s)
 
@@ -254,8 +295,15 @@ func _build_minecraft_inventory_ui() -> void:
 		s.slot_group = "hotbar"
 		s.hotbar_num = i + 1
 		s.slot_clicked.connect(_on_slot_clicked)
-		s.slot_hovered.connect(_on_slot_hovered)
-		s.slot_unhovered.connect(func(_idx): _hide_tooltip())
+		s.slot_hovered.connect(func(idx):
+			_hovered_slot_index = idx
+			_on_slot_hovered(idx)
+		)
+		s.slot_unhovered.connect(func(idx):
+			if _hovered_slot_index == idx:
+				_hovered_slot_index = -1
+			_hide_tooltip()
+		)
 		_hotbar_slots.append(s)
 		hotbar_grid.add_child(s)
 

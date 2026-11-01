@@ -90,4 +90,11 @@
   - `MinecraftSlot` recessed 3D-beveled slots with durability bars and stack count drop-shadows.
   - Floating cursor stack drag-and-drop: LMB pick/place/swap/merge, RMB split/place 1, Shift+LMB instant quick-move between hotbar, backpack, and chest containers.
   - Rich floating tooltip with rarity colors, stats breakdown, and control hints.
+- **Full-Page UI Freeze & Core Systems 2.0 (2026-11-01)**:
+  - Full-page Minecraft screens with dark blocking backdrop vignette (`mouse_filter = MOUSE_FILTER_STOP`) and complete game time freeze (`get_tree().paused = true`) in `InventoryUI`, `FurnaceUI`, `CraftMenuUI`, `ResearchTreeUI`, `BuildMenuUI`, `ChestLootUI`, `CharacterSheetUI`.
+  - Inventory 2.0: quick slot swap hovering backpack + pressing `[1-8]`, drop on backdrop/`[Q]`, and `[ ⇵ Sort & Merge ]` button to consolidate stacks and sort backpack by item category.
+  - Furnace 2.0: canonical Minecraft 3-slot layout (input, fuel, output), animated burning flame widget, animated progress arrow, Shift-click transfers, and recipes for iron, bronze, coal, and cooked meat.
+  - Craft & Build 2.0: strict research gating via `tech_required` in `data/recipes.json` and `data/structures.json`, locked padlock indicators in UI, category tabs, and batch crafting (Shift-click crafts 5).
+  - Progression 2.0: `has_perk()` checks, level-up/perk unlock notifications, and `mining_75` double-yield mining perk.
+  - 12 authentic clean isometric structure sprites sliced natively with Godot Image API into `assets/sprites/structures/` (furnace, workbench, research_table, campfire, chest, iron_vault, bed, water_collector, stone_wall, wood_wall, wood_door, stone_floor) and wired into `StructureEntity`.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

@@ -34,6 +34,7 @@
 	{
 		"id": "craft_plank",
 		"station": "workbench",
+		"tech_required": "woodworking",
 		"inputs": [
 			{ "item_id": "wood", "count": 1 }
 		],
@@ -44,6 +45,7 @@
 	{
 		"id": "craft_cloth",
 		"station": "workbench",
+		"tech_required": "woodworking",
 		"inputs": [
 			{ "item_id": "herb", "count": 2 }
 		],
@@ -54,6 +56,7 @@
 	{
 		"id": "craft_arrows",
 		"station": "workbench",
+		"tech_required": "archery",
 		"inputs": [
 			{ "item_id": "wood", "count": 1 },
 			{ "item_id": "stone", "count": 1 }
@@ -65,6 +68,7 @@
 	{
 		"id": "craft_medicine",
 		"station": "workbench",
+		"tech_required": "herbalism_medicine",
 		"inputs": [
 			{ "item_id": "herb", "count": 3 },
 			{ "item_id": "cloth", "count": 1 }
@@ -76,6 +80,7 @@
 	{
 		"id": "craft_poison",
 		"station": "workbench",
+		"tech_required": "herbalism_medicine",
 		"inputs": [
 			{ "item_id": "herb", "count": 4 }
 		],
@@ -86,6 +91,7 @@
 	{
 		"id": "craft_hunting_bow",
 		"station": "workbench",
+		"tech_required": "archery",
 		"inputs": [
 			{ "item_id": "wood", "count": 3 },
 			{ "item_id": "cloth", "count": 1 }
@@ -97,6 +103,7 @@
 	{
 		"id": "craft_leather_armor",
 		"station": "workbench",
+		"tech_required": "woodworking",
 		"inputs": [
 			{ "item_id": "cloth", "count": 4 }
 		],
@@ -107,6 +114,7 @@
 	{
 		"id": "smelt_bronze_ingot",
 		"station": "forge",
+		"tech_required": "pyrology_coal",
 		"inputs": [
 			{ "item_id": "copper_ore", "count": 2 }
 		],
@@ -117,6 +125,7 @@
 	{
 		"id": "smelt_iron_ingot",
 		"station": "forge",
+		"tech_required": "iron_smelting",
 		"inputs": [
 			{ "item_id": "iron_ore", "count": 2 }
 		],
@@ -127,6 +136,7 @@
 	{
 		"id": "forge_bronze_spear",
 		"station": "forge",
+		"tech_required": "pyrology_coal",
 		"inputs": [
 			{ "item_id": "bronze_ingot", "count": 2 },
 			{ "item_id": "wood", "count": 2 }
@@ -138,6 +148,7 @@
 	{
 		"id": "forge_iron_axe",
 		"station": "forge",
+		"tech_required": "iron_smelting",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 3 },
 			{ "item_id": "wood", "count": 2 }
@@ -149,6 +160,7 @@
 	{
 		"id": "forge_iron_sword",
 		"station": "forge",
+		"tech_required": "iron_forging",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 3 },
 			{ "item_id": "wood", "count": 1 }
@@ -160,6 +172,7 @@
 	{
 		"id": "forge_heavy_crossbow",
 		"station": "forge",
+		"tech_required": "crossbows",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 3 },
 			{ "item_id": "plank", "count": 2 }
@@ -171,6 +184,7 @@
 	{
 		"id": "forge_chainmail_coif",
 		"station": "forge",
+		"tech_required": "chainmail_armor",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 2 },
 			{ "item_id": "cloth", "count": 1 }
@@ -182,6 +196,7 @@
 	{
 		"id": "forge_iron_chainmail",
 		"station": "forge",
+		"tech_required": "chainmail_armor",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 5 },
 			{ "item_id": "cloth", "count": 2 }
@@ -193,6 +208,7 @@
 	{
 		"id": "forge_chainmail_leggings",
 		"station": "forge",
+		"tech_required": "chainmail_armor",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 3 },
 			{ "item_id": "cloth", "count": 1 }

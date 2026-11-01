@@ -84,6 +84,34 @@ func _process(delta: float) -> void:
 
 
 static var _block_tex_cache: Dictionary = {}
+static var _structure_tex_cache: Dictionary = {}
+
+static func _get_structure_tex(struct_id: String) -> Texture2D:
+	if _structure_tex_cache.has(struct_id):
+		return _structure_tex_cache[struct_id] as Texture2D
+	var mapped_name: String = struct_id
+	if struct_id == "wall":
+		mapped_name = "stone_wall"
+	elif struct_id == "door":
+		mapped_name = "wood_door"
+	elif struct_id == "storage":
+		mapped_name = "chest"
+	elif struct_id == "forge":
+		mapped_name = "furnace"
+	
+	var path: String = "res://assets/sprites/structures/" + mapped_name + ".png"
+	var tex: Texture2D = null
+	if ResourceLoader.exists(path):
+		tex = load(path) as Texture2D
+	if tex == null:
+		var global_p: String = ProjectSettings.globalize_path(path)
+		if FileAccess.file_exists(global_p):
+			var img: Image = Image.load_from_file(global_p)
+			if img != null:
+				tex = ImageTexture.create_from_image(img)
+	if tex != null:
+		_structure_tex_cache[struct_id] = tex
+	return tex
 
 static func _get_block_tex(tex_name: String) -> Texture2D:
 	if _block_tex_cache.has(tex_name):
@@ -112,6 +140,46 @@ func _draw() -> void:
 
 	# Ground shadow
 	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 2.5), hw * 0.95, hh * 0.95), Color(0.0, 0.0, 0.0, 0.30))
+
+	# 1. High-fidelity isometric structure sprite
+	var stex: Texture2D = _get_structure_tex(structure_id)
+	if stex != null:
+		var mod_col: Color = Color.WHITE
+		if (structure_id == "door" or structure_id == "wood_door") and is_door_open:
+			mod_col.a = 0.42
+		
+		# Campfire warm ground lighting halo
+		if structure_id == "campfire":
+			var halo_pulse: float = cos(_flame_phase * 0.7) * 3.0
+			draw_circle(Vector2(0.0, -2.0), 42.0 + halo_pulse, Color(1.0, 0.56, 0.14, 0.11))
+			draw_circle(Vector2(0.0, -2.0), 24.0 + halo_pulse * 0.5, Color(1.0, 0.65, 0.20, 0.18))
+		
+		var tw: float = float(stex.get_width())
+		var th: float = float(stex.get_height())
+		var target_w: float = 64.0
+		if structure_id == "workbench" or structure_id == "research_table":
+			target_w = 76.0
+		elif structure_id == "bed":
+			target_w = 80.0
+		elif structure_id == "stone_floor":
+			target_w = 68.0
+		elif structure_id == "chest" or structure_id == "storage" or structure_id == "iron_vault":
+			target_w = 56.0
+		elif structure_id == "wood_wall" or structure_id == "stone_wall" or structure_id == "door" or structure_id == "wood_door":
+			target_w = 62.0
+		elif structure_id == "campfire":
+			target_w = 58.0
+		elif structure_id == "water_collector":
+			target_w = 48.0
+		
+		var scale_f: float = target_w / tw
+		var target_h: float = th * scale_f
+		var rx: float = -target_w * 0.5
+		var ry: float = 12.0 - target_h
+		
+		draw_texture_rect(stex, Rect2(rx, ry, target_w, target_h), false, mod_col)
+		_draw_construction_overlay()
+		return
 
 	if structure_id == "campfire":
 		var flicker: float = sin(_flame_phase) * 1.8

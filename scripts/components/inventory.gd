@@ -296,6 +296,84 @@ func from_dict(data: Dictionary) -> void:
 	gold_changed.emit(gold)
 
 
+func sort_and_consolidate(include_hotbar: bool = false) -> void:
+	var start_idx: int = 0 if include_hotbar else 8
+	var end_idx: int = mini(slots.size(), max_slots)
+
+	# 1. Consolidate incomplete stacks
+	for i in range(start_idx, end_idx):
+		if slots[i].is_empty():
+			continue
+		var it_id: String = str(slots[i].get("item_id", ""))
+		var dur: int = int(slots[i].get("durability", -1))
+		var def: Dictionary = _get_item_def(it_id)
+		var stack_limit: int = int(def.get("stack_limit", 64))
+		if stack_limit <= 1 or dur >= 0:
+			continue # Not stackable or damaged tool
+
+		var cur_cnt: int = int(slots[i].get("count", 1))
+		if cur_cnt >= stack_limit:
+			continue
+
+		for j in range(i + 1, end_idx):
+			if slots[j].is_empty():
+				continue
+			if str(slots[j].get("item_id", "")) == it_id and int(slots[j].get("durability", -1)) == dur:
+				var donor_cnt: int = int(slots[j].get("count", 1))
+				var space: int = stack_limit - cur_cnt
+				var transfer: int = mini(space, donor_cnt)
+				cur_cnt += transfer
+				donor_cnt -= transfer
+				slots[i]["count"] = cur_cnt
+				if donor_cnt <= 0:
+					slots[j] = {}
+				else:
+					slots[j]["count"] = donor_cnt
+				if cur_cnt >= stack_limit:
+					break
+
+	# 2. Extract and sort items
+	var items: Array[Dictionary] = []
+	for i in range(start_idx, end_idx):
+		if not slots[i].is_empty():
+			items.append(slots[i].duplicate(true))
+			slots[i] = {}
+
+	# Sort priority: weapon/tool (0) -> armor (1) -> resource/material (2) -> consumable (3) -> other (4)
+	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var def_a: Dictionary = _get_item_def(str(a.get("item_id", "")))
+		var def_b: Dictionary = _get_item_def(str(b.get("item_id", "")))
+		var cat_a: int = _get_sort_category(def_a)
+		var cat_b: int = _get_sort_category(def_b)
+		if cat_a != cat_b:
+			return cat_a < cat_b
+		var name_a: String = str(def_a.get("name", a.get("item_id", "")))
+		var name_b: String = str(def_b.get("name", b.get("item_id", "")))
+		if name_a != name_b:
+			return name_a < name_b
+		return int(a.get("count", 1)) > int(b.get("count", 1))
+	)
+
+	# 3. Place sorted items back
+	for k in range(items.size()):
+		slots[start_idx + k] = items[k]
+
+	contents_changed.emit()
+
+
+func _get_sort_category(def: Dictionary) -> int:
+	var t: String = str(def.get("type", ""))
+	if t == "weapon" or t == "tool":
+		return 0
+	elif t == "armor" or t == "shield":
+		return 1
+	elif t == "resource" or t == "material":
+		return 2
+	elif t == "consumable" or t == "medicine" or t == "food":
+		return 3
+	return 4
+
+
 func _max_count_by_weight(unit_weight: float, desired: int) -> int:
 	if unit_weight <= 0.0:
 		return desired

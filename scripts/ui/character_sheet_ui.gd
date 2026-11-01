@@ -45,11 +45,23 @@ func _make_card_sb(bg: Color, border: Color, bw: int = 1) -> StyleBoxFlat:
 	return sb
 
 func _setup_styled_character_sheet() -> void:
+	anchor_right = 1.0
+	anchor_bottom = 1.0
+	mouse_filter = Control.MOUSE_FILTER_PASS
+
+	# Full-screen dark backdrop overlay (freezes focus, blocks world clicks)
+	var backdrop: ColorRect = ColorRect.new()
+	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color(0.04, 0.05, 0.08, 0.78)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(backdrop)
+	move_child(backdrop, 0)
+
 	if panel_container != null:
-		panel_container.offset_left = -296.0
-		panel_container.offset_top = -215.0
-		panel_container.offset_right = 296.0
-		panel_container.offset_bottom = 215.0
+		panel_container.offset_left = -320.0
+		panel_container.offset_top = -240.0
+		panel_container.offset_right = 320.0
+		panel_container.offset_bottom = 240.0
 		var frame_sb: StyleBoxFlat = StyleBoxFlat.new()
 		frame_sb.bg_color = Color(0.06, 0.08, 0.12, 0.78)
 		frame_sb.border_color = Color(0.78, 0.64, 0.34, 0.85)

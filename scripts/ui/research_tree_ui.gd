@@ -49,6 +49,13 @@ func _build_ui() -> void:
 	anchor_bottom = 1.0
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
+	# Full-screen dark backdrop overlay (freezes focus, blocks world clicks)
+	var backdrop: ColorRect = ColorRect.new()
+	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color(0.04, 0.05, 0.08, 0.78)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(backdrop)
+
 	_panel = PanelContainer.new()
 	_panel.anchor_left = 0.5
 	_panel.anchor_top = 0.5
