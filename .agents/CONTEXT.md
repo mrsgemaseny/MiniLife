@@ -77,4 +77,12 @@
   - Replaced clipped Vitals bottom notification with a dedicated floating bronze toast banner above the hotbar.
   - Trees break completely to the ground upon depletion (removed infinite stump respawn); all resources are soft/walkable (collision disabled), while solid walls remain impassable.
   - Pressing `[B]` cleanly toggles the build menu open/closed and cancels active blueprint placement.
+- **Campfire Lighting, MiniDayZ Aiming Cone, Minecraft Harvesting, Ruins, Chests, Smelting & Tech Tree (2026-11-01)**:
+  - PointLight2D radial warm lighting on campfires and furnaces with animated flame flicker.
+  - MiniDayZ dynamic aiming cone: expands to ±42° on quick draw with short 65px drop; narrows to ±1.5° sniper cone with full range.
+  - Minecraft time-based continuous harvesting via held LMB (stone pickaxe 5s on rock, axe 4s on tree, wrong tool 25-28s).
+  - Physical hand-crafted ruin complexes generated from `data/ruins.json` with perimeter walls, debris, and pre-populated treasure chests.
+  - Two-pane `ChestLootUI` with chest items, gold, take all button, and backpack transfer.
+  - Workbench unlocks advanced crafting; Stone Furnace (`FurnaceSystem`, `FurnaceUI`) smelts ore using coal (20s) or wood (8s) over time.
+  - Research Table opens 2D Tech Tree (`ResearchSystem`, `ResearchTreeUI`, `data/tech_tree.json`) with multi-directional branching, prerequisites, and resource costs.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

@@ -11,6 +11,7 @@ var _def: Dictionary = {}
 var _collision: CollisionShape2D = null
 var _build_progress: float = 1.0
 var _flame_phase: float = 0.0
+var _fire_light: PointLight2D = null
 var _build_particles: Array[Dictionary] = []
 
 
@@ -24,7 +25,7 @@ func _ready() -> void:
 
 	if interactable:
 		add_to_group("interactable")
-	if structure_id in ["workbench", "forge", "campfire"]:
+	if structure_id in ["workbench", "forge", "campfire", "furnace", "research_table"]:
 		add_to_group("craft_station")
 
 	if animate_construction:
@@ -41,6 +42,8 @@ func _ready() -> void:
 	_setup_collision(passable)
 	if _def.has("trap"):
 		_setup_trap_trigger()
+	if structure_id in ["campfire", "forge", "furnace"]:
+		_setup_fire_light()
 	queue_redraw()
 
 
@@ -70,8 +73,10 @@ func _process(delta: float) -> void:
 			_build_particles[i] = p
 		needs_redraw = true
 
-	if structure_id == "campfire" or structure_id == "forge":
+	if structure_id in ["campfire", "forge", "furnace"]:
 		_flame_phase += delta * 7.5
+		if _fire_light != null:
+			_fire_light.energy = 1.35 + sin(_flame_phase * 2.8) * 0.16 + cos(_flame_phase * 4.4) * 0.09
 		needs_redraw = true
 
 	if needs_redraw:
@@ -213,6 +218,17 @@ func _draw() -> void:
 	elif structure_id == "forge":
 		draw_circle(top_offset, 6.0, Color(1.0, 0.48, 0.1, 0.9))
 		draw_circle(top_offset + Vector2(0.0, -2.0), 3.5, Color(1.0, 0.85, 0.2, 0.95))
+	elif structure_id == "furnace":
+		# Stone kiln chimney and glowing fire arch
+		var arch_pt: Vector2 = top_offset + Vector2(0.0, 8.0)
+		draw_circle(arch_pt, 5.0, Color(0.12, 0.10, 0.10))
+		draw_circle(arch_pt + Vector2(0.0, -1.0), 3.2, Color(1.0, 0.52, 0.12, 0.95))
+		draw_circle(arch_pt + Vector2(0.0, -2.0), 1.8, Color(1.0, 0.88, 0.28, 0.98))
+	elif structure_id == "research_table":
+		# Scholar desk with open parchment scroll and blue crystal/inkpot
+		var scroll: PackedVector2Array = IsoMath.diamond_polygon(top_offset + Vector2(-2.0, -1.0), 8.0, 4.5)
+		draw_colored_polygon(scroll, Color(0.92, 0.88, 0.78))
+		draw_circle(top_offset + Vector2(6.0, 1.0), 2.5, Color(0.25, 0.55, 0.95))
 	_draw_construction_overlay()
 
 
@@ -234,7 +250,7 @@ func _draw_construction_overlay() -> void:
 
 
 func get_station_id() -> String:
-	if structure_id in ["workbench", "forge", "campfire"]:
+	if structure_id in ["workbench", "forge", "campfire", "furnace", "research_table"]:
 		return structure_id
 	return ""
 
@@ -248,8 +264,12 @@ func interact(actor: Node) -> void:
 			queue_redraw()
 		"workbench", "forge", "campfire":
 			SignalBus.craft_station_opened.emit(structure_id)
+		"furnace":
+			SignalBus.furnace_opened.emit("furnace_" + Config.vec2i_to_key(tile_pos), tile_pos)
+		"research_table":
+			SignalBus.research_table_opened.emit()
 		"storage":
-			SignalBus.ui_panel_requested.emit("inventory")
+			SignalBus.storage_container_opened.emit("chest_" + Config.vec2i_to_key(tile_pos), tile_pos)
 		"bed":
 			if actor != null:
 				var stats: StatsComponent = actor.get("stats") as StatsComponent
@@ -289,3 +309,25 @@ func _setup_trap_trigger() -> void:
 			SignalBus.trap_triggered.emit(structure_id, tile_pos, body)
 	)
 	add_child(area)
+
+
+func _setup_fire_light() -> void:
+	_fire_light = PointLight2D.new()
+	_fire_light.name = "FireLight"
+	_fire_light.color = Color(1.0, 0.76, 0.38, 1.0)
+	_fire_light.energy = 1.35
+	_fire_light.texture_scale = 1.0
+	var grad: Gradient = Gradient.new()
+	grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1.0, 0.78, 0.45, 0.75), Color(1.0, 0.55, 0.15, 0.0)])
+	grad.offsets = PackedFloat32Array([0.0, 0.40, 1.0])
+	var gtex: GradientTexture2D = GradientTexture2D.new()
+	gtex.gradient = grad
+	gtex.fill = GradientTexture2D.FILL_RADIAL
+	gtex.fill_from = Vector2(0.5, 0.5)
+	gtex.fill_to = Vector2(1.0, 0.5)
+	gtex.width = 240
+	gtex.height = 240
+	_fire_light.texture = gtex
+	_fire_light.enabled = true
+	add_child(_fire_light)
+

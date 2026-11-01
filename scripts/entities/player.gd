@@ -30,6 +30,7 @@ var _torch_burn_accum: float = 0.0
 var _is_charging_bow: bool = false
 var _bow_charge_time: float = 0.0
 const MAX_BOW_CHARGE_TIME: float = 0.85
+var _harvest_swing_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("player")
@@ -155,6 +156,45 @@ func _physics_process(delta: float) -> void:
 				facing_direction = aim_dir
 			needs_redraw = true
 
+	# Continuous Minecraft-style Resource Harvesting
+	var is_mining_channel: bool = false
+	if Input.is_action_pressed("attack") and not _is_holding_bow() and not is_dead and not GameManager.is_paused():
+		var mouse_world: Vector2 = get_global_mouse_position()
+		var candidate_res: ResourceNode = null
+		var best_dist: float = Config.MELEE_RANGE
+
+		var harvestables: Array[Node] = get_tree().get_nodes_in_group("harvestable")
+		for node in harvestables:
+			if node is ResourceNode and (node as ResourceNode).is_visible_in_tree():
+				var rn: ResourceNode = node as ResourceNode
+				var dist_to_player: float = rn.global_position.distance_to(global_position)
+				if dist_to_player <= Config.MELEE_RANGE:
+					var dist_to_mouse: float = rn.global_position.distance_to(mouse_world)
+					if dist_to_mouse <= 38.0 and dist_to_player < best_dist:
+						best_dist = dist_to_player
+						candidate_res = rn
+
+		if candidate_res == null:
+			for node in harvestables:
+				if node is ResourceNode and (node as ResourceNode).is_visible_in_tree():
+					var rn: ResourceNode = node as ResourceNode
+					var dist: float = rn.global_position.distance_to(global_position)
+					if dist <= Config.MELEE_RANGE and dist < best_dist:
+						best_dist = dist
+						candidate_res = rn
+
+		if candidate_res != null:
+			is_mining_channel = true
+			facing_direction = (candidate_res.global_position - global_position).normalized()
+			candidate_res.harvest_channel(self, delta)
+			_harvest_swing_timer -= delta
+			if _harvest_swing_timer <= 0.0:
+				_harvest_swing_timer = 0.30
+				_swing_timer = 0.22
+				_lunge_offset = facing_direction * 3.5
+				stats.modify("stamina", -0.75)
+			needs_redraw = true
+
 	health_comp.tick_regen(delta)
 	status_effects.tick(delta)
 
@@ -165,7 +205,7 @@ func _physics_process(delta: float) -> void:
 
 	var input_dir: Vector2 = _read_movement_input()
 	if input_dir.length_squared() > 0.0:
-		if not _is_charging_bow:
+		if not _is_charging_bow and not is_mining_channel:
 			facing_direction = facing_direction.lerp(input_dir.normalized(), clampf(delta * 16.0, 0.0, 1.0)).normalized()
 		var speed_mult: float = traits.get_modifier("move_speed")
 		speed_mult *= status_effects.get_speed_multiplier()
@@ -173,6 +213,8 @@ func _physics_process(delta: float) -> void:
 		speed_mult *= health_comp.get_mobility_multiplier()
 		if _is_charging_bow:
 			speed_mult *= 0.52
+		if is_mining_channel:
+			speed_mult *= 0.38
 		var target_vel: Vector2 = input_dir * Config.BASE_MOVE_SPEED * speed_mult + _knockback_velocity
 		velocity = velocity.lerp(target_vel, clampf(delta * 15.0, 0.0, 1.0))
 		move_and_slide()
@@ -279,10 +321,21 @@ func _release_bow_shot() -> void:
 	var base_dmg: float = float(w_stats.get("damage", 16.0))
 	var skill_lvl: int = skills.get_level("ranged")
 	var scaled_dmg: float = base_dmg * (1.0 + float(skill_lvl) * Config.SKILL_DAMAGE_BONUS_PER_LEVEL) * (0.35 + 0.65 * charge_ratio)
-	var proj_speed: float = Config.PROJECTILE_SPEED * (0.55 + 0.45 * charge_ratio)
+	var proj_speed: float = Config.PROJECTILE_SPEED * (0.45 + 0.55 * charge_ratio)
+
+	# MiniDayZ Aiming Cone Spread & Range
+	var min_spread: float = deg_to_rad(lerpf(5.5, 1.2, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
+	var max_spread: float = deg_to_rad(lerpf(42.0, 24.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
+	var current_spread: float = lerpf(max_spread, min_spread, pow(charge_ratio, 1.7))
+	var random_spread: float = randf_range(-current_spread, current_spread)
+	var fire_dir: Vector2 = facing_direction.rotated(random_spread)
+
+	var min_dist: float = 65.0
+	var max_dist: float = lerpf(260.0, 420.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0))
+	var current_range: float = lerpf(min_dist, max_dist, pow(charge_ratio, 1.4))
 
 	var shoot_origin: Vector2 = global_position + Vector2(0.0, -12.0) + facing_direction * 12.0
-	SignalBus.projectile_fired.emit(shoot_origin, facing_direction, proj_speed, scaled_dmg, "physical", self)
+	SignalBus.projectile_fired.emit(shoot_origin, fire_dir, proj_speed, scaled_dmg, "physical", self, current_range)
 	skills.gain_xp("ranged", Config.XP_PER_RANGED_HIT)
 	equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
 
@@ -324,7 +377,7 @@ func perform_attack() -> void:
 		inventory.remove_item("arrow", 1)
 		var base_dmg: float = float(w_stats.get("damage", 16.0))
 		var scaled_dmg: float = base_dmg * (1.0 + float(skills.get_level("ranged")) * Config.SKILL_DAMAGE_BONUS_PER_LEVEL)
-		SignalBus.projectile_fired.emit(global_position + Vector2(0, -12), facing_direction, Config.PROJECTILE_SPEED, scaled_dmg, "physical", self)
+		SignalBus.projectile_fired.emit(global_position + Vector2(0, -12), facing_direction, Config.PROJECTILE_SPEED, scaled_dmg, "physical", self, Config.RANGED_MAX_RANGE)
 		skills.gain_xp("ranged", Config.XP_PER_RANGED_HIT)
 		equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
 		return
@@ -783,17 +836,42 @@ func _draw() -> void:
 			draw_line(arrow_front - facing_direction * 3.5, arrow_front, Color(0.88, 0.90, 0.94), 2.8)
 			draw_line(arrow_back, arrow_back + facing_direction * 3.0, Color(0.88, 0.28, 0.28), 2.2)
 
-			# Aiming trajectory sight line & reticle
-			var sight_dist: float = lerpf(80.0, 250.0, charge_ratio)
-			var sight_start: Vector2 = hand_pos + facing_direction * 14.0
-			var sight_end: Vector2 = hand_pos + facing_direction * sight_dist
-			var sight_col: Color = Color(0.85, 0.88, 0.92, 0.35).lerp(Color(0.98, 0.86, 0.35, 0.82), charge_ratio)
-			draw_dashed_line(sight_start, sight_end, sight_col, 1.4, 6.0)
+			# MiniDayZ Dynamic Aiming Cone (Wide & short -> Narrow laser sniper beam)
+			var skill_lvl: int = skills.get_level("ranged")
+			var min_spread: float = deg_to_rad(lerpf(5.5, 1.2, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
+			var max_spread: float = deg_to_rad(lerpf(42.0, 24.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
+			var current_spread: float = lerpf(max_spread, min_spread, pow(charge_ratio, 1.7))
 
-			var reticle_r: float = lerpf(9.0, 4.0, charge_ratio)
-			draw_polyline(IsoMath.diamond_polygon(sight_end, reticle_r * 1.5, reticle_r * 0.75), sight_col, 1.4, true)
+			var min_dist: float = 65.0
+			var max_dist: float = lerpf(260.0, 420.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0))
+			var current_range: float = lerpf(min_dist, max_dist, pow(charge_ratio, 1.4))
+
+			var left_ray: Vector2 = facing_direction.rotated(-current_spread) * current_range
+			var right_ray: Vector2 = facing_direction.rotated(current_spread) * current_range
+			var center_tip: Vector2 = facing_direction * current_range
+
+			# Draw cone sector fill
+			var cone_pts: PackedVector2Array = PackedVector2Array([
+				hand_pos,
+				hand_pos + left_ray,
+				hand_pos + center_tip,
+				hand_pos + right_ray
+			])
+			var cone_fill_col: Color = Color(0.95, 0.72, 0.25, lerpf(0.10, 0.22, charge_ratio))
+			draw_colored_polygon(cone_pts, cone_fill_col)
+
+			# Boundary guide lines
+			var cone_line_col: Color = Color(0.88, 0.88, 0.92, 0.35).lerp(Color(1.0, 0.88, 0.38, 0.85), charge_ratio)
+			draw_line(hand_pos, hand_pos + left_ray, cone_line_col, 1.4)
+			draw_line(hand_pos, hand_pos + right_ray, cone_line_col, 1.4)
+			draw_line(hand_pos + left_ray, hand_pos + right_ray, cone_line_col, 1.2)
+
+			# Center dashed sight line & reticle
+			draw_dashed_line(hand_pos + facing_direction * 12.0, hand_pos + center_tip, cone_line_col, 1.2, 5.0)
+			var reticle_r: float = lerpf(8.0, 3.5, charge_ratio)
+			draw_polyline(IsoMath.diamond_polygon(hand_pos + center_tip, reticle_r * 1.5, reticle_r * 0.75), cone_line_col, 1.4, true)
 			if charge_ratio >= 0.98:
-				draw_circle(sight_end, 2.0, Color(1.0, 0.95, 0.55, 0.95))
+				draw_circle(hand_pos + center_tip, 2.0, Color(1.0, 0.95, 0.55, 0.95))
 
 	# RimWorld-style Smooth Weapon Slash Trail (Melee weapons only)
 	if _swing_timer > 0.0 and not (equipment != null and (equipment.get_item_id("weapon").find("bow") != -1 or equipment.get_item_id("weapon").find("crossbow") != -1)):

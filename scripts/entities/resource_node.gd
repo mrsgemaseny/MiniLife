@@ -12,6 +12,10 @@ var _shake_timer: float = 0.0
 var _spring_phase: float = 0.0
 var _display_progress: float = 0.0
 var _chips: Array[Dictionary] = []
+var harvest_progress: float = 0.0
+var _decay_timer: float = 0.0
+var _pulse_accum: float = 0.0
+var _last_warning_time: float = -10.0
 
 
 func _ready() -> void:
@@ -40,9 +44,10 @@ func _process(delta: float) -> void:
 			scale = Vector2.ONE
 		needs_redraw = true
 
-	var target_prog: float = 1.0 - (float(clampi(hits_remaining, 0, _max_hits)) / float(_max_hits))
-	if absf(_display_progress - target_prog) > 0.005:
-		_display_progress = lerpf(_display_progress, target_prog, clampf(delta * 12.0, 0.0, 1.0))
+	_decay_timer += delta
+	if _decay_timer > 1.6 and harvest_progress > 0.0:
+		harvest_progress = maxf(0.0, harvest_progress - delta * 0.45)
+		_display_progress = harvest_progress
 		needs_redraw = true
 
 	for i in range(_chips.size() - 1, -1, -1):
@@ -200,8 +205,8 @@ func _draw() -> void:
 		ccol.a = alpha
 		draw_rect(Rect2(cpos.x - 1.8, cpos.y - 1.8, 3.6, 3.6), ccol, true)
 
-	# RimWorld-style Smooth Harvesting Progress Bar
-	if hits_remaining < _max_hits and _display_progress > 0.01:
+	# RimWorld/Minecraft-style Smooth Harvesting Progress Bar
+	if _display_progress > 0.01:
 		var bar_y: float = -60.0 if (node_def_id.find("tree") != -1 or node_def_id.find("pine") != -1) else -30.0
 		var bar_w: float = 34.0
 		var bar_h: float = 5.5
@@ -209,6 +214,79 @@ func _draw() -> void:
 		draw_rect(bg_rect, Color(0.08, 0.09, 0.12, 0.90), true)
 		draw_rect(Rect2(-bar_w * 0.5 + 1.0, bar_y + 1.0, (bar_w - 2.0) * clampf(_display_progress, 0.0, 1.0), bar_h - 2.0), Color(0.95, 0.76, 0.22, 0.96), true)
 		draw_rect(bg_rect, Color(0.68, 0.55, 0.28, 0.92), false, 1.0)
+
+
+func harvest_channel(harvester: Node, delta: float) -> bool:
+	if harvester == null:
+		return false
+	_decay_timer = 0.0
+
+	var equip: EquipmentComponent = harvester.get("equipment") as EquipmentComponent
+	var held_weapon: String = equip.get_item_id("weapon") if equip != null else ""
+	var is_pick: bool = held_weapon.find("pickaxe") != -1
+	var is_axe: bool = held_weapon.find("axe") != -1
+	var is_iron: bool = held_weapon.find("iron") != -1
+
+	var is_rock: bool = (node_def_id.find("stone") != -1 or node_def_id.find("rock") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("ore") != -1 or node_def_id.find("deposit") != -1)
+	var is_tree: bool = (node_def_id.find("tree") != -1 or node_def_id.find("oak") != -1 or node_def_id.find("pine") != -1 or growth_stage == "small_tree")
+	var is_bush: bool = (node_def_id.find("bush") != -1 or node_def_id.find("berry") != -1 or node_def_id.find("herb") != -1 or node_def_id.find("mushroom") != -1)
+
+	var req_time: float = 5.0
+
+	if is_rock:
+		if is_pick:
+			req_time = 2.4 if is_iron else 5.0
+		else:
+			req_time = 28.0 # Extremely slow without a pickaxe
+			var now_msec: float = float(Time.get_ticks_msec()) * 0.001
+			if now_msec - _last_warning_time > 3.0:
+				_last_warning_time = now_msec
+				SignalBus.notification_posted.emit("Requires pickaxe to mine stone efficiently! (Very slow)")
+	elif is_tree:
+		if is_axe:
+			req_time = 2.0 if is_iron else 4.0
+		else:
+			req_time = 25.0 # Extremely slow without an axe
+			var now_msec: float = float(Time.get_ticks_msec()) * 0.001
+			if now_msec - _last_warning_time > 3.0:
+				_last_warning_time = now_msec
+				SignalBus.notification_posted.emit("Requires axe to chop trees efficiently! (Very slow)")
+	elif is_bush:
+		req_time = 1.2
+
+	var skills: SkillsComponent = harvester.get("skills") as SkillsComponent
+	var skill_type: String = "mining" if is_rock else ("woodcutting" if is_tree else "foraging")
+	if skills != null:
+		var lvl: int = skills.get_level(skill_type)
+		req_time *= maxf(0.55, 1.0 - float(lvl) * 0.008)
+
+	harvest_progress += delta / maxf(0.1, req_time)
+	_display_progress = clampf(harvest_progress, 0.0, 1.0)
+
+	_pulse_accum += delta
+	if _pulse_accum >= 0.32:
+		_pulse_accum = 0.0
+		_shake_timer = 0.18
+		_spring_phase = 0.0
+		var chip_col: Color = Color(0.72, 0.76, 0.80) if is_rock else (Color(0.24, 0.48, 0.18) if is_bush else Color(0.55, 0.38, 0.22))
+		for i in range(4):
+			_chips.append({
+				"pos": Vector2(randf_range(-6.0, 6.0), randf_range(-18.0, -6.0)),
+				"vel": Vector2(randf_range(-40.0, 40.0), randf_range(-80.0, -25.0)),
+				"col": chip_col.lightened(randf_range(-0.1, 0.18)),
+				"age": 0.0
+			})
+		if equip != null and held_weapon != "" and randf() < 0.25:
+			equip.damage_weapon(1)
+
+	queue_redraw()
+
+	if harvest_progress >= 1.0:
+		_deplete_and_grant(harvester)
+		return true
+
+	return false
+
 
 
 func _draw_procedural_pine(ofs: Vector2, outline_col: Color) -> void:
@@ -277,25 +355,6 @@ func _draw_procedural_bush(ofs: Vector2, outline_col: Color, radius: float) -> v
 	draw_circle(ofs + Vector2(-5.0, -7.0), br * 0.78, primary_col.darkened(0.15))
 	draw_circle(ofs + Vector2(5.0, -7.0), br * 0.78, primary_col.darkened(0.10))
 	draw_circle(ofs + Vector2(0.0, -11.0), br * 0.88, primary_col.lightened(0.08))
-
-	# Flying wood chips / stone splinters / leaf particles
-	for c in _chips:
-		var age: float = float(c.get("age", 0.0))
-		var alpha: float = clampf(1.0 - (age / 0.48), 0.0, 1.0)
-		var cpos: Vector2 = c["pos"] as Vector2
-		var ccol: Color = c["col"] as Color
-		ccol.a = alpha
-		draw_rect(Rect2(cpos.x - 1.8, cpos.y - 1.8, 3.6, 3.6), ccol, true)
-
-	# RimWorld-style Smooth Harvesting Progress Bar
-	if hits_remaining < _max_hits and _display_progress > 0.01:
-		var bar_y: float = -60.0 if (node_def_id.find("tree") != -1 or node_def_id.find("pine") != -1) else -30.0
-		var bar_w: float = 34.0
-		var bar_h: float = 5.5
-		var bg_rect: Rect2 = Rect2(-bar_w * 0.5, bar_y, bar_w, bar_h)
-		draw_rect(bg_rect, Color(0.08, 0.09, 0.12, 0.90), true)
-		draw_rect(Rect2(-bar_w * 0.5 + 1.0, bar_y + 1.0, (bar_w - 2.0) * clampf(_display_progress, 0.0, 1.0), bar_h - 2.0), Color(0.95, 0.76, 0.22, 0.96), true)
-		draw_rect(bg_rect, Color(0.68, 0.55, 0.28, 0.92), false, 1.0)
 
 
 func harvest_hit(harvester: Node) -> bool:

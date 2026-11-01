@@ -1,6 +1,8 @@
 class_name BuildingSystem
 extends Node2D
 
+static var instance: BuildingSystem = null
+
 var _placed_nodes: Dictionary = {}
 var _storage_mgr: StorageManager = StorageManager.new()
 var _defense_net: DefenseNetwork = DefenseNetwork.new()
@@ -11,6 +13,7 @@ var _pulse_phase: float = 0.0
 
 
 func _ready() -> void:
+	instance = self
 	y_sort_enabled = true
 	SignalBus.build_mode_changed.connect(_on_build_mode_changed)
 	SignalBus.structure_placement_validated.connect(_on_structure_placement_validated)
@@ -37,6 +40,10 @@ func _process(delta: float) -> void:
 
 func is_build_mode_active() -> bool:
 	return _active_build_id != ""
+
+
+func get_storage_manager() -> StorageManager:
+	return _storage_mgr
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -491,6 +491,9 @@ func _load_chunk(cpos: Vector2i) -> void:
 		var tpos: Vector2i = Config.key_to_vec2i(str(tile_key))
 		SignalBus.structure_restored.emit(str(structures[tile_key]), tpos)
 
+	if poi_data.get("is_ruin", false):
+		_spawn_ruin_complex(chunk_node, cpos, poi_data)
+
 	_spawn_chunk_inhabitants(cpos, center_biome, delta)
 	SignalBus.chunk_loaded.emit(cpos)
 	queue_redraw()
@@ -516,6 +519,122 @@ func _remove_resource_node_at(tpos: Vector2i) -> void:
 		if is_instance_valid(rnode):
 			rnode.queue_free()
 		_resource_nodes_by_tile.erase(key)
+
+
+func _spawn_ruin_complex(_chunk_node: Node2D, cpos: Vector2i, poi_data: Dictionary) -> void:
+	var anchor: Vector2i = poi_data.get("tile_pos", Vector2i.ZERO)
+	var ruin_id: String = str(poi_data.get("poi_id", ""))
+	var ruin_data: Dictionary = poi_data.get("ruin_data", {})
+	if ruin_data.is_empty():
+		ruin_data = DataRegistry.get_ruin(ruin_id)
+	var layout: Dictionary = ruin_data.get("layout", {})
+
+	# 1. Clear foliage & trees in ruin boundary
+	var size_arr: Array = ruin_data.get("size", [6, 6])
+	var rw: int = int(size_arr[0]) if size_arr.size() > 0 else 6
+	var rh: int = int(size_arr[1]) if size_arr.size() > 1 else 6
+	for dx in range(-1, rw + 2):
+		for dy in range(-1, rh + 2):
+			_remove_resource_node_at(anchor + Vector2i(dx, dy))
+
+	# 2. Spawn structure walls and chests per ruin type
+	match ruin_id:
+		"abandoned_fort":
+			var walls: Array = layout.get("walls", [])
+			for w in walls:
+				if w is Dictionary:
+					var p: Array = w.get("pos", [0, 0])
+					SignalBus.structure_restored.emit("wall", anchor + Vector2i(int(p[0]), int(p[1])))
+			var chests: Array = layout.get("chests", [])
+			for ch in chests:
+				if ch is Dictionary:
+					var cp: Array = ch.get("pos", [2, 2])
+					var c_tile: Vector2i = anchor + Vector2i(int(cp[0]), int(cp[1]))
+					SignalBus.structure_restored.emit("storage", c_tile)
+					var chest_key: String = "chest_" + Config.vec2i_to_key(c_tile)
+					var loot: Dictionary = ch.get("loot", {})
+					var gold: int = int(loot.get("gold", 85))
+					var items: Dictionary = loot.get("items", {})
+					if BuildingSystem.instance != null:
+						var sm = BuildingSystem.instance.get_storage_manager()
+						if sm != null:
+							sm.populate_chest_loot(c_tile, "Fort Garrison Chest", gold, items)
+
+		"old_village":
+			var huts: Array = layout.get("huts", [])
+			for hut in huts:
+				if hut is Dictionary:
+					var horig: Array = hut.get("origin", [0, 0])
+					var hsize: Array = hut.get("size", [3, 3])
+					var hdoor: Array = hut.get("door", [1, 2])
+					var door_rel: Vector2i = Vector2i(int(hdoor[0]), int(hdoor[1]))
+					var ox: int = int(horig[0])
+					var oy: int = int(horig[1])
+					var sw: int = int(hsize[0])
+					var sh: int = int(hsize[1])
+					for hx in range(sw):
+						for hy in range(sh):
+							var cur_rel: Vector2i = Vector2i(ox + hx, oy + hy)
+							var is_perimeter: bool = (hx == 0 or hy == 0 or hx == sw - 1 or hy == sh - 1)
+							if is_perimeter:
+								if cur_rel == door_rel:
+									SignalBus.structure_restored.emit("door", anchor + cur_rel)
+								else:
+									SignalBus.structure_restored.emit("wall", anchor + cur_rel)
+			var well_dict: Dictionary = layout.get("well", {})
+			if not well_dict.is_empty():
+				var wp: Array = well_dict.get("pos", [4, 4])
+				SignalBus.structure_restored.emit("wall", anchor + Vector2i(int(wp[0]), int(wp[1])))
+			var crates: Array = layout.get("crates", [])
+			for cr in crates:
+				if cr is Dictionary:
+					var crp: Array = cr.get("pos", [3, 2])
+					var cr_tile: Vector2i = anchor + Vector2i(int(crp[0]), int(crp[1]))
+					SignalBus.structure_restored.emit("storage", cr_tile)
+					var cr_key: String = "chest_" + Config.vec2i_to_key(cr_tile)
+					if BuildingSystem.instance != null:
+						var sm = BuildingSystem.instance.get_storage_manager()
+						if sm != null:
+							sm.populate_chest_loot(cr_tile, "Forgotten Village Crate", 45, {"wood": 6, "plank": 4, "herb": 4, "bread": 3})
+
+		"collapsed_tower":
+			for tx in range(1, 4):
+				for ty in range(1, 4):
+					var is_edge: bool = (tx == 1 or tx == 3 or ty == 1 or ty == 3)
+					if is_edge and not (tx == 2 and ty == 3):
+						SignalBus.structure_restored.emit("wall", anchor + Vector2i(tx, ty))
+			var t_chest: Vector2i = anchor + Vector2i(2, 2)
+			SignalBus.structure_restored.emit("storage", t_chest)
+			var t_key: String = "chest_" + Config.vec2i_to_key(t_chest)
+			if BuildingSystem.instance != null:
+				var sm = BuildingSystem.instance.get_storage_manager()
+				if sm != null:
+					sm.populate_chest_loot(t_chest, "Spire Ancient Reliquary", 180, {"iron_ingot": 4, "hunting_bow": 1, "arrow": 24, "medicine": 2})
+
+		"underground_vault":
+			for vx in range(6):
+				for vy in range(4):
+					var is_v_edge: bool = (vx == 0 or vx == 5 or vy == 0 or vy == 3)
+					if is_v_edge and not (vx == 0 and vy == 2):
+						SignalBus.structure_restored.emit("wall", anchor + Vector2i(vx, vy))
+					elif vx == 0 and vy == 2:
+						SignalBus.structure_restored.emit("door", anchor + Vector2i(vx, vy))
+			var v_chests: Array = layout.get("chests", [])
+			if v_chests.is_empty():
+				v_chests = ruin_data.get("interior_layout", {}).get("chests", [])
+			for vch in v_chests:
+				if vch is Dictionary:
+					var vp: Array = vch.get("pos", [5, 1])
+					var v_tile: Vector2i = anchor + Vector2i(int(vp[0]), int(vp[1]))
+					SignalBus.structure_restored.emit("storage", v_tile)
+					var v_key: String = "chest_" + Config.vec2i_to_key(v_tile)
+					var vloot: Dictionary = vch.get("loot", {})
+					var vgold: int = int(vloot.get("gold", 160))
+					var vitems: Dictionary = vloot.get("items", {"iron_ingot": 3, "arrow": 20})
+					if BuildingSystem.instance != null:
+						var sm = BuildingSystem.instance.get_storage_manager()
+						if sm != null:
+							sm.populate_chest_loot(v_tile, "Subterranean Vault Safe", vgold, vitems)
 
 
 func _spawn_chunk_inhabitants(cpos: Vector2i, _biome_id: String, _delta: Dictionary) -> void:

@@ -40,6 +40,10 @@ signal craft_failed(recipe_id: String, reason: String)
 signal item_crafted(item_id: String)
 signal item_repaired(item_id: String, new_durability: int)
 signal item_salvaged(item_id: String, yields: Dictionary)
+signal furnace_opened(furnace_id: String, tile_pos: Vector2i)
+signal research_table_opened()
+signal tech_researched(tech_id: String)
+signal tech_tree_updated()
 
 # Character, Needs & Limb Health
 signal character_creation_completed(class_id: String, chosen_traits: Array, world_seed: int)
@@ -71,7 +75,7 @@ signal loot_bag_spawned(world_pos: Vector2, items: Array, gold: int)
 
 # Combat & Projectiles
 signal damage_requested(target: Node, amount: float, damage_type: String, source: Node)
-signal projectile_fired(origin: Vector2, direction: Vector2, speed: float, damage: float, damage_type: String, shooter: Node)
+signal projectile_fired(origin: Vector2, direction: Vector2, speed: float, damage: float, damage_type: String, shooter: Node, max_range: float)
 signal combat_state_changed(in_combat: bool)
 signal status_apply_requested(target: Node, effect: String, duration: float, intensity: float)
 signal status_effect_applied(target: Node, effect: String, duration: float)

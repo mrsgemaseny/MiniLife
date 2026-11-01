@@ -61,6 +61,31 @@
 		"interactable": true
 	},
 	{
+		"id": "furnace",
+		"name": "Stone Smelting Furnace",
+		"hp": 220,
+		"color": "#9e472a",
+		"height_px": 20.0,
+		"materials": [
+			{ "item_id": "stone", "count": 6 }
+		],
+		"passable": false,
+		"interactable": true
+	},
+	{
+		"id": "research_table",
+		"name": "Research Table",
+		"hp": 140,
+		"color": "#3d5a80",
+		"height_px": 16.0,
+		"materials": [
+			{ "item_id": "plank", "count": 6 },
+			{ "item_id": "stone", "count": 2 }
+		],
+		"passable": false,
+		"interactable": true
+	},
+	{
 		"id": "campfire",
 		"name": "Campfire",
 		"hp": 50,

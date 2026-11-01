@@ -34,7 +34,40 @@ script/source = "extends Node2D
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_setup_dynamic_systems()
 	GameManager.start_new_game(Config.DEFAULT_WORLD_SEED, Config.DEFAULT_SAVE_SLOT)
+
+func _setup_dynamic_systems() -> void:
+	var systems: Node = get_node_or_null(\"Systems\")
+	if systems != null:
+		if systems.get_node_or_null(\"ResearchSystem\") == null:
+			var r_sys: Node = Node.new()
+			r_sys.name = \"ResearchSystem\"
+			r_sys.set_script(load(\"res://scripts/systems/research_system.gd\"))
+			systems.add_child(r_sys)
+		if systems.get_node_or_null(\"FurnaceSystem\") == null:
+			var f_sys: Node = Node.new()
+			f_sys.name = \"FurnaceSystem\"
+			f_sys.set_script(load(\"res://scripts/systems/crafting/furnace_system.gd\"))
+			systems.add_child(f_sys)
+
+	var ui_layer: CanvasLayer = get_node_or_null(\"UILayer\") as CanvasLayer
+	if ui_layer != null:
+		if ui_layer.get_node_or_null(\"ChestLoot\") == null:
+			var cl: Control = Control.new()
+			cl.name = \"ChestLoot\"
+			cl.set_script(load(\"res://scripts/ui/chest_loot_ui.gd\"))
+			ui_layer.add_child(cl)
+		if ui_layer.get_node_or_null(\"FurnaceUI\") == null:
+			var fu: Control = Control.new()
+			fu.name = \"FurnaceUI\"
+			fu.set_script(load(\"res://scripts/ui/furnace_ui.gd\"))
+			ui_layer.add_child(fu)
+		if ui_layer.get_node_or_null(\"ResearchTreeUI\") == null:
+			var rt: Control = Control.new()
+			rt.name = \"ResearchTreeUI\"
+			rt.set_script(load(\"res://scripts/ui/research_tree_ui.gd\"))
+			ui_layer.add_child(rt)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:

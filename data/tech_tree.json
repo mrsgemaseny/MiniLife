@@ -1,0 +1,102 @@
+[
+	{
+		"id": "primitive_survival",
+		"name": "Primitive Survival",
+		"description": "Fundamental knowledge of stone shaping and rough timber crafting.",
+		"grid_x": 0,
+		"grid_y": 0,
+		"prerequisites": [],
+		"costs": {},
+		"unlocks": ["craft_stone_axe", "craft_stone_pickaxe", "craft_bandage"]
+	},
+	{
+		"id": "woodworking",
+		"name": "Carpentry & Joinery",
+		"description": "Process raw logs into flat structural planks, crafting tables and storage chests.",
+		"grid_x": 0,
+		"grid_y": 1,
+		"prerequisites": ["primitive_survival"],
+		"costs": { "wood": 4 },
+		"unlocks": ["craft_plank", "workbench", "storage", "floor", "door"]
+	},
+	{
+		"id": "stone_masonry",
+		"name": "Stone Masonry",
+		"description": "Heft rough stone blocks into defensive fortifications and thermal fire kilns.",
+		"grid_x": 1,
+		"grid_y": 0,
+		"prerequisites": ["primitive_survival"],
+		"costs": { "stone": 6 },
+		"unlocks": ["wall", "furnace"]
+	},
+	{
+		"id": "pyrology_coal",
+		"name": "Pyrology & Kiln Charcoal",
+		"description": "Utilize dense anthracite coal to reach the extreme temperatures needed for metallurgy.",
+		"grid_x": 2,
+		"grid_y": 0,
+		"prerequisites": ["stone_masonry"],
+		"costs": { "stone": 4, "coal": 2 },
+		"unlocks": ["smelt_bronze_ingot", "forge"]
+	},
+	{
+		"id": "archery",
+		"name": "Hunting Archery",
+		"description": "Fashion curved wooden hunting bows and sharp stone-tipped arrows for long-range defense.",
+		"grid_x": 0,
+		"grid_y": 2,
+		"prerequisites": ["woodworking"],
+		"costs": { "wood": 6, "cloth": 2 },
+		"unlocks": ["craft_hunting_bow", "craft_arrows"]
+	},
+	{
+		"id": "iron_smelting",
+		"name": "Iron Ore Smelting",
+		"description": "Melt raw iron ore in stone furnaces to produce pure iron ingots.",
+		"grid_x": 2,
+		"grid_y": 1,
+		"prerequisites": ["pyrology_coal", "woodworking"],
+		"costs": { "iron_ore": 3, "coal": 3 },
+		"unlocks": ["smelt_iron_ingot", "forge_iron_axe"]
+	},
+	{
+		"id": "iron_forging",
+		"name": "Iron Blade Forging",
+		"description": "Hammer glowing iron ingots into sharp swords and spike perimeter traps.",
+		"grid_x": 3,
+		"grid_y": 1,
+		"prerequisites": ["iron_smelting"],
+		"costs": { "iron_ingot": 3, "wood": 2 },
+		"unlocks": ["forge_iron_sword", "spike_trap"]
+	},
+	{
+		"id": "chainmail_armor",
+		"name": "Chainmail Weaving",
+		"description": "Link hundreds of iron rings into flexible, impenetrable chainmail coifs and hauberks.",
+		"grid_x": 3,
+		"grid_y": 2,
+		"prerequisites": ["iron_forging"],
+		"costs": { "iron_ingot": 5, "cloth": 3 },
+		"unlocks": ["forge_chainmail_coif", "forge_iron_chainmail", "forge_chainmail_leggings"]
+	},
+	{
+		"id": "crossbows",
+		"name": "Mechanical Crossbows",
+		"description": "Assemble steel-tension composite crossbows with immense penetrating force.",
+		"grid_x": 1,
+		"grid_y": 2,
+		"prerequisites": ["archery", "iron_forging"],
+		"costs": { "iron_ingot": 3, "plank": 4 },
+		"unlocks": ["forge_heavy_crossbow"]
+	},
+	{
+		"id": "herbalism_medicine",
+		"name": "Herbalism & Field Medicine",
+		"description": "Distill curative compounds from wild meadow herbs to treat severe bleeding and disease.",
+		"grid_x": -1,
+		"grid_y": 1,
+		"prerequisites": ["primitive_survival"],
+		"costs": { "herb": 4 },
+		"unlocks": ["craft_medicine", "craft_poison"]
+	}
+]

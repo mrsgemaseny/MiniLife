@@ -6,13 +6,20 @@ var speed: float = Config.PROJECTILE_SPEED
 var damage: float = 14.0
 var damage_type: String = "physical"
 var shooter: Node = null
+var max_range: float = Config.RANGED_MAX_RANGE
 var _distance_travelled: float = 0.0
+var _ground_drop_y: float = 0.0
 
 
 func _process(delta: float) -> void:
 	var step: float = speed * delta
 	global_position += direction * step
 	_distance_travelled += step
+
+	var rem: float = max_range - _distance_travelled
+	if rem < 45.0:
+		_ground_drop_y += (45.0 - rem) * 0.12
+
 	queue_redraw()
 
 	for node in get_tree().get_nodes_in_group("combatant"):
@@ -23,11 +30,13 @@ func _process(delta: float) -> void:
 			queue_free()
 			return
 
-	if _distance_travelled >= Config.RANGED_MAX_RANGE:
+	if _distance_travelled >= max_range:
 		queue_free()
 
 
 func _draw() -> void:
-	var tail: Vector2 = -direction * 14.0
-	draw_line(tail, Vector2.ZERO, Color(0.92, 0.82, 0.55), 2.5)
-	draw_circle(Vector2.ZERO, 2.5, Color(0.85, 0.88, 0.92))
+	var tail: Vector2 = -direction * 14.0 + Vector2(0.0, -_ground_drop_y)
+	var head: Vector2 = Vector2(0.0, _ground_drop_y * 0.4)
+	draw_line(tail, head, Color(0.92, 0.82, 0.55), 2.5)
+	draw_circle(head, 2.5, Color(0.85, 0.88, 0.92))
+
