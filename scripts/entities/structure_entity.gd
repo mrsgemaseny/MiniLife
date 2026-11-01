@@ -87,7 +87,6 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 
-static var _block_tex_cache: Dictionary = {}
 static var _structure_tex_cache: Dictionary = {}
 
 static func _get_structure_tex(struct_id: String) -> Texture2D:
@@ -117,22 +116,7 @@ static func _get_structure_tex(struct_id: String) -> Texture2D:
 		_structure_tex_cache[struct_id] = tex
 	return tex
 
-static func _get_block_tex(tex_name: String) -> Texture2D:
-	if _block_tex_cache.has(tex_name):
-		return _block_tex_cache[tex_name] as Texture2D
-	var path: String = "res://assets/sprites/blocks/" + tex_name + ".png"
-	var tex: Texture2D = null
-	if ResourceLoader.exists(path):
-		tex = load(path) as Texture2D
-	if tex == null:
-		var global_p: String = ProjectSettings.globalize_path(path)
-		if FileAccess.file_exists(global_p):
-			var img: Image = Image.load_from_file(global_p)
-			if img != null:
-				tex = ImageTexture.create_from_image(img)
-	if tex != null:
-		_block_tex_cache[tex_name] = tex
-	return tex
+
 
 
 func _draw() -> void:
@@ -218,23 +202,7 @@ func _draw() -> void:
 		_draw_construction_overlay()
 		return
 
-	# Voxel block sprite mapping for walls
-	var block_name: String = ""
-	if structure_id == "wall" or structure_id == "stone_wall":
-		block_name = "voxelTile_50"
-	elif structure_id == "wood_wall":
-		block_name = "voxelTile_14"
 
-	if block_name != "":
-		var btex: Texture2D = _get_block_tex(block_name)
-		if btex != null:
-			var mod_col: Color = Color.WHITE
-			if structure_id == "door" and is_door_open:
-				mod_col.a = 0.42
-			# Perfectly align block base (bottom apex at +16px, width 64px) with isometric tile
-			draw_texture_rect(btex, Rect2(-32.0, -58.0, 64.0, 74.0), false, mod_col)
-			_draw_construction_overlay()
-			return
 
 	if structure_id == "workbench":
 		var wood_col: Color = Color(0.58, 0.39, 0.22)

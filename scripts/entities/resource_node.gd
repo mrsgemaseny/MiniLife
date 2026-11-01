@@ -45,10 +45,8 @@ func _process(delta: float) -> void:
 		needs_redraw = true
 
 	_decay_timer += delta
-	if _decay_timer > 1.6 and harvest_progress > 0.0:
-		harvest_progress = maxf(0.0, harvest_progress - delta * 0.45)
-		_display_progress = harvest_progress
-		needs_redraw = true
+	if _decay_timer > 0.15 and harvest_progress > 0.0:
+		cancel_harvest()
 
 	for i in range(_chips.size() - 1, -1, -1):
 		var c: Dictionary = _chips[i]
@@ -216,6 +214,14 @@ func _draw() -> void:
 		draw_rect(bg_rect, Color(0.68, 0.55, 0.28, 0.92), false, 1.0)
 
 
+func cancel_harvest() -> void:
+	if harvest_progress > 0.0 or _display_progress > 0.0:
+		harvest_progress = 0.0
+		_display_progress = 0.0
+		_pulse_accum = 0.0
+		queue_redraw()
+
+
 func harvest_channel(harvester: Node, delta: float) -> bool:
 	if harvester == null:
 		return false
@@ -231,26 +237,27 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 	var is_tree: bool = (node_def_id.find("tree") != -1 or node_def_id.find("oak") != -1 or node_def_id.find("pine") != -1 or growth_stage == "small_tree")
 	var is_bush: bool = (node_def_id.find("bush") != -1 or node_def_id.find("berry") != -1 or node_def_id.find("herb") != -1 or node_def_id.find("mushroom") != -1)
 
-	var req_time: float = 5.0
+	if is_rock and not is_pick:
+		cancel_harvest()
+		var now_msec: float = float(Time.get_ticks_msec()) * 0.001
+		if now_msec - _last_warning_time > 2.5:
+			_last_warning_time = now_msec
+			SignalBus.notification_posted.emit("Requires a pickaxe to mine stone and ores!")
+		return false
 
+	if is_tree and not is_axe:
+		cancel_harvest()
+		var now_msec: float = float(Time.get_ticks_msec()) * 0.001
+		if now_msec - _last_warning_time > 2.5:
+			_last_warning_time = now_msec
+			SignalBus.notification_posted.emit("Requires an axe to chop trees!")
+		return false
+
+	var req_time: float = 5.0
 	if is_rock:
-		if is_pick:
-			req_time = 2.4 if is_iron else 5.0
-		else:
-			req_time = 28.0 # Extremely slow without a pickaxe
-			var now_msec: float = float(Time.get_ticks_msec()) * 0.001
-			if now_msec - _last_warning_time > 3.0:
-				_last_warning_time = now_msec
-				SignalBus.notification_posted.emit("Requires pickaxe to mine stone efficiently! (Very slow)")
+		req_time = 2.4 if is_iron else 5.0
 	elif is_tree:
-		if is_axe:
-			req_time = 2.0 if is_iron else 4.0
-		else:
-			req_time = 25.0 # Extremely slow without an axe
-			var now_msec: float = float(Time.get_ticks_msec()) * 0.001
-			if now_msec - _last_warning_time > 3.0:
-				_last_warning_time = now_msec
-				SignalBus.notification_posted.emit("Requires axe to chop trees efficiently! (Very slow)")
+		req_time = 2.0 if is_iron else 4.0
 	elif is_bush:
 		req_time = 1.2
 

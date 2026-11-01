@@ -31,6 +31,7 @@ var _is_charging_bow: bool = false
 var _bow_charge_time: float = 0.0
 const MAX_BOW_CHARGE_TIME: float = 0.85
 var _harvest_swing_timer: float = 0.0
+var _current_mining_target: ResourceNode = null
 
 func _ready() -> void:
 	add_to_group("player")
@@ -158,7 +159,9 @@ func _physics_process(delta: float) -> void:
 
 	# Continuous Minecraft-style Resource Harvesting
 	var is_mining_channel: bool = false
-	if Input.is_action_pressed("attack") and not _is_holding_bow() and not is_dead and not GameManager.is_paused():
+	var is_attack_pressed: bool = Input.is_action_pressed("attack") and not _is_holding_bow() and not is_dead and not GameManager.is_paused()
+
+	if is_attack_pressed:
 		var mouse_world: Vector2 = get_global_mouse_position()
 		var candidate_res: ResourceNode = null
 		var best_dist: float = Config.MELEE_RANGE
@@ -170,23 +173,20 @@ func _physics_process(delta: float) -> void:
 				var dist_to_player: float = rn.global_position.distance_to(global_position)
 				if dist_to_player <= Config.MELEE_RANGE:
 					var dist_to_mouse: float = rn.global_position.distance_to(mouse_world)
-					if dist_to_mouse <= 38.0 and dist_to_player < best_dist:
+					# Cursor must be specifically pointed at the resource node
+					if dist_to_mouse <= 42.0 and dist_to_player < best_dist:
 						best_dist = dist_to_player
 						candidate_res = rn
 
-		if candidate_res == null:
-			for node in harvestables:
-				if node is ResourceNode and (node as ResourceNode).is_visible_in_tree():
-					var rn: ResourceNode = node as ResourceNode
-					var dist: float = rn.global_position.distance_to(global_position)
-					if dist <= Config.MELEE_RANGE and dist < best_dist:
-						best_dist = dist
-						candidate_res = rn
-
 		if candidate_res != null:
+			if _current_mining_target != null and _current_mining_target != candidate_res and is_instance_valid(_current_mining_target):
+				_current_mining_target.cancel_harvest()
+			_current_mining_target = candidate_res
 			is_mining_channel = true
 			facing_direction = (candidate_res.global_position - global_position).normalized()
-			candidate_res.harvest_channel(self, delta)
+			var broke: bool = candidate_res.harvest_channel(self, delta)
+			if broke:
+				_current_mining_target = null
 			_harvest_swing_timer -= delta
 			if _harvest_swing_timer <= 0.0:
 				_harvest_swing_timer = 0.30
@@ -194,6 +194,14 @@ func _physics_process(delta: float) -> void:
 				_lunge_offset = facing_direction * 3.5
 				stats.modify("stamina", -0.75)
 			needs_redraw = true
+		else:
+			if _current_mining_target != null and is_instance_valid(_current_mining_target):
+				_current_mining_target.cancel_harvest()
+			_current_mining_target = null
+	else:
+		if _current_mining_target != null and is_instance_valid(_current_mining_target):
+			_current_mining_target.cancel_harvest()
+		_current_mining_target = null
 
 	health_comp.tick_regen(delta)
 	status_effects.tick(delta)
@@ -419,15 +427,6 @@ func perform_interact() -> void:
 
 	if best_node != null and best_node.has_method("interact"):
 		best_node.call("interact", self)
-		return
-
-	for node in get_tree().get_nodes_in_group("harvestable"):
-		if node is ResourceNode and (node as ResourceNode).is_visible_in_tree():
-			var rn: ResourceNode = node as ResourceNode
-			var target_tile: Vector2i = Config.iso_to_world(rn.global_position)
-			if Config.tile_distance(player_tile, target_tile) <= 2:
-				rn.harvest_hit(self)
-				return
 
 func use_slot_item(slot_index: int) -> void:
 	if slot_index >= 0 and slot_index < 8:

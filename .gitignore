@@ -36,7 +36,10 @@ desktop.ini
 .vscode/
 *.swp
 *.tmp
+tools/
 scripts/tools/
+PixelBuilder/
+*.bat
 
 # Environment & Secrets
 .env
