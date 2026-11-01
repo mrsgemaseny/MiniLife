@@ -2,6 +2,7 @@ class_name BuildMenuUI
 extends Control
 
 const PANEL_ID: String = "build"
+const IconFactory = preload("res://scripts/ui/item_icon_factory.gd")
 
 @onready var panel_container: PanelContainer = $PanelContainer
 @onready var vbox: VBoxContainer = $PanelContainer/VBoxContainer
@@ -82,7 +83,7 @@ func refresh() -> void:
 		var btn: Button = Button.new()
 		btn.custom_minimum_size = Vector2(440, 38)
 		var icon_key: String = "campfire" if str(sid).find("campfire") != -1 or str(sid).find("furnace") != -1 else ("stone" if str(sid).find("stone") != -1 else "wood")
-		btn.icon = ItemIconFactory.get_icon(icon_key)
+		btn.icon = IconFactory.get_icon(icon_key)
 		btn.expand_icon = true
 		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		btn.add_theme_font_size_override("font_size", 12)

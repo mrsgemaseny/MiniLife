@@ -1,6 +1,8 @@
 class_name HUD
 extends Control
 
+const IconFactory = preload("res://scripts/ui/item_icon_factory.gd")
+
 @onready var health_bar: ProgressBar = $MarginContainer/VBoxContainer/HealthBar
 @onready var hunger_bar: ProgressBar = $MarginContainer/VBoxContainer/HungerBar
 @onready var stamina_bar: ProgressBar = $MarginContainer/VBoxContainer/StaminaBar
@@ -253,7 +255,7 @@ func _setup_styled_hud() -> void:
 	for mdef in menu_defs:
 		var mbtn: Button = Button.new()
 		mbtn.text = str(mdef.get("label", ""))
-		mbtn.icon = ItemIconFactory.get_icon(str(mdef.get("icon", "")))
+		mbtn.icon = IconFactory.get_icon(str(mdef.get("icon", "")))
 		mbtn.expand_icon = true
 		mbtn.custom_minimum_size = Vector2(82, 22)
 		mbtn.add_theme_font_size_override("font_size", 10)
@@ -334,7 +336,7 @@ func _refresh_hotbar_from_player() -> void:
 			var count: int = int(slot.get("count", 1))
 			var def: Dictionary = DataRegistry.get_item(item_id)
 			var full_name: String = str(def.get("name", item_id))
-			btn.icon = ItemIconFactory.get_icon(item_id)
+			btn.icon = IconFactory.get_icon(item_id)
 			btn.text = "[%d] x%d" % [i + 1, count] if count > 1 else "[%d]" % (i + 1)
 			btn.tooltip_text = "%s (x%d) — Press [%d] or Click" % [full_name, count, i + 1]
 			btn.modulate = Color(1.0, 0.98, 0.86, 1.0) if is_active else Color(0.94, 0.92, 0.88, 0.92)

@@ -2,6 +2,7 @@ class_name CraftMenuUI
 extends Control
 
 const PANEL_ID: String = "craft"
+const IconFactory = preload("res://scripts/ui/item_icon_factory.gd")
 
 @onready var panel_container: PanelContainer = $PanelContainer
 @onready var vbox: VBoxContainer = $PanelContainer/VBoxContainer
@@ -98,7 +99,7 @@ func refresh() -> void:
 
 		var btn: Button = Button.new()
 		btn.custom_minimum_size = Vector2(440, 38)
-		btn.icon = ItemIconFactory.get_icon(out_id)
+		btn.icon = IconFactory.get_icon(out_id)
 		btn.expand_icon = true
 		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		btn.add_theme_font_size_override("font_size", 12)

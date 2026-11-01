@@ -2,6 +2,7 @@ class_name InventoryUI
 extends Control
 
 const PANEL_ID: String = "inventory"
+const IconFactory = preload("res://scripts/ui/item_icon_factory.gd")
 
 @onready var panel_container: PanelContainer = $PanelContainer
 @onready var vbox: VBoxContainer = $PanelContainer/VBoxContainer
@@ -149,8 +150,8 @@ func refresh() -> void:
 			var skey: String = str(sinfo.get("key", ""))
 			var slbl: String = str(sinfo.get("label", ""))
 			var eq_id: String = ""
-			if eq_comp != null and skey in eq_comp.slots:
-				eq_id = str(eq_comp.slots.get(skey, ""))
+			if eq_comp != null:
+				eq_id = eq_comp.get_item_id(skey)
 			var badge: Button = Button.new()
 			badge.custom_minimum_size = Vector2(124, 34)
 			badge.expand_icon = true
@@ -161,7 +162,7 @@ func refresh() -> void:
 			if eq_id != "":
 				var edef: Dictionary = _items_table.get(eq_id, DataRegistry.get_item(eq_id))
 				var ename: String = str(edef.get("name", eq_id)).split(" ")[-1]
-				badge.icon = ItemIconFactory.get_icon(eq_id)
+				badge.icon = IconFactory.get_icon(eq_id)
 				badge.text = "%s: %s" % [slbl, ename]
 				badge.modulate = Color(0.98, 0.94, 0.78)
 			else:
@@ -206,7 +207,7 @@ func refresh() -> void:
 			btn.add_theme_stylebox_override("hover", hov_sb)
 			btn.add_theme_stylebox_override("pressed", hov_sb)
 
-			btn.icon = ItemIconFactory.get_icon(item_id)
+			btn.icon = IconFactory.get_icon(item_id)
 			var prefix: String = "[%d] " % (i + 1) if is_hotbar else ""
 			btn.text = "%s%s x%d" % [prefix, short_title, count] if count > 1 else "%s%s" % [prefix, short_title]
 
