@@ -228,7 +228,9 @@ func _build_tech_card(tech: Dictionary, player: Node) -> PanelContainer:
 		var inv: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
 		for mat_id in costs:
 			var req_cnt: int = int(costs[mat_id])
-			var cur_cnt: int = inv.get_item_count(str(mat_id)) if inv != null else 0
+			var cur_cnt: int = 0
+			if inv != null:
+				cur_cnt = inv.count_of(str(mat_id))
 			cost_strs.append("%s: %d/%d" % [str(mat_id).capitalize(), cur_cnt, req_cnt])
 		var cost_lbl: Label = Label.new()
 		cost_lbl.text = "Cost: " + ", ".join(cost_strs)

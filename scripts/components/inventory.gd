@@ -213,6 +213,10 @@ func count_item(item_id: String) -> int:
 	return count_of(item_id)
 
 
+func get_item_count(item_id: String) -> int:
+	return count_of(item_id)
+
+
 func has_item(item_id: String, count: int = 1) -> bool:
 	return count_of(item_id) >= count
 
