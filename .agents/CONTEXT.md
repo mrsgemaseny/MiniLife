@@ -86,4 +86,8 @@
   - Workbench unlocks advanced crafting; Stone Furnace (`FurnaceSystem`, `FurnaceUI`) smelts ore using coal (20s) or wood (8s) over time.
   - Research Table opens 2D Tech Tree (`ResearchSystem`, `ResearchTreeUI`, `data/tech_tree.json`) with multi-directional branching, prerequisites, and resource costs.
   - Workbench & station interaction distance calibrated: converted Euclidean pixel distance to isometric grid tile distance (`<= 3` tiles in all directions), added mouse cursor priority on `[E]`, right-click (RMB) interaction, auto-station detection in `CraftMenuUI`, and HUD inspect for structures.
+- **Minecraft-Style Inventory & Container UI Overhaul (2026-11-01)**:
+  - `MinecraftSlot` recessed 3D-beveled slots with durability bars and stack count drop-shadows.
+  - Floating cursor stack drag-and-drop: LMB pick/place/swap/merge, RMB split/place 1, Shift+LMB instant quick-move between hotbar, backpack, and chest containers.
+  - Rich floating tooltip with rarity colors, stats breakdown, and control hints.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

@@ -56,6 +56,11 @@ func get_item_id(slot: String) -> String:
 	return str(entry.get("item_id", ""))
 
 
+func get_durability(slot: String) -> int:
+	var entry: Dictionary = _equipped.get(slot, {})
+	return int(entry.get("durability", -1))
+
+
 func get_slot_entry(slot: String) -> Dictionary:
 	return _equipped.get(slot, {"item_id": "", "durability": -1}).duplicate()
 

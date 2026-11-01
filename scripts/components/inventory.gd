@@ -32,16 +32,30 @@ func add_item(item_id: String, count: int = 1, durability: int = -1) -> int:
 					remaining -= can_fit
 				break
 
-	while remaining > 0 and slots.size() < max_slots:
+	while remaining > 0:
 		var batch: int = remaining if stackable else 1
 		var can_fit: int = _max_count_by_weight(unit_weight, batch)
 		if can_fit <= 0:
 			break
-		slots.append({
-			"item_id": item_id,
-			"count": can_fit,
-			"durability": durability if durability >= 0 else default_dur
-		})
+		var placed: bool = false
+		for i in range(slots.size()):
+			if slots[i].is_empty() or str(slots[i].get("item_id", "")).is_empty():
+				slots[i] = {
+					"item_id": item_id,
+					"count": can_fit,
+					"durability": durability if durability >= 0 else default_dur
+				}
+				placed = true
+				break
+		if not placed:
+			if slots.size() < max_slots:
+				slots.append({
+					"item_id": item_id,
+					"count": can_fit,
+					"durability": durability if durability >= 0 else default_dur
+				})
+			else:
+				break
 		remaining -= can_fit
 
 	var added: int = count - remaining
@@ -78,6 +92,8 @@ func remove_at_index(slot_index: int, count: int = 1) -> Dictionary:
 	if slot_index < 0 or slot_index >= slots.size():
 		return {}
 	var slot: Dictionary = slots[slot_index]
+	if slot.is_empty():
+		return {}
 	var cur: int = int(slot.get("count", 1))
 	var take: int = mini(cur, count)
 	var out: Dictionary = {
@@ -87,11 +103,68 @@ func remove_at_index(slot_index: int, count: int = 1) -> Dictionary:
 	}
 	cur -= take
 	if cur <= 0:
-		slots.remove_at(slot_index)
+		slots[slot_index] = {}
 	else:
 		slot["count"] = cur
 	contents_changed.emit()
 	return out
+
+
+func set_slot(slot_index: int, item_data: Dictionary) -> void:
+	if slot_index < 0 or slot_index >= max_slots:
+		return
+	while slots.size() <= slot_index:
+		slots.append({})
+	if item_data.is_empty() or int(item_data.get("count", 0)) <= 0:
+		slots[slot_index] = {}
+	else:
+		slots[slot_index] = item_data.duplicate(true)
+	contents_changed.emit()
+
+
+func swap_slots(idx_a: int, idx_b: int) -> void:
+	if idx_a < 0 or idx_a >= max_slots or idx_b < 0 or idx_b >= max_slots:
+		return
+	var max_idx: int = maxi(idx_a, idx_b)
+	while slots.size() <= max_idx:
+		slots.append({})
+	var tmp: Dictionary = slots[idx_a]
+	slots[idx_a] = slots[idx_b]
+	slots[idx_b] = tmp
+	contents_changed.emit()
+
+
+func quick_move_slot(slot_index: int) -> int:
+	if slot_index < 0 or slot_index >= slots.size() or slots[slot_index].is_empty():
+		return -1
+	var item: Dictionary = slots[slot_index]
+	var item_id: String = str(item.get("item_id", ""))
+	var is_in_hotbar: bool = (slot_index < 8)
+	var target_start: int = 8 if is_in_hotbar else 0
+	var target_end: int = max_slots if is_in_hotbar else 8
+
+	while slots.size() < max_slots:
+		slots.append({})
+
+	# First try merging into existing stack in target area
+	var def: Dictionary = _get_item_def(item_id)
+	if bool(def.get("stackable", true)):
+		for i in range(target_start, target_end):
+			if not slots[i].is_empty() and str(slots[i].get("item_id", "")) == item_id:
+				slots[i]["count"] = int(slots[i]["count"]) + int(item["count"])
+				slots[slot_index] = {}
+				contents_changed.emit()
+				return i
+
+	# Else find first empty slot in target area
+	for i in range(target_start, target_end):
+		if slots[i].is_empty() or str(slots[i].get("item_id", "")).is_empty():
+			slots[i] = item.duplicate(true)
+			slots[slot_index] = {}
+			contents_changed.emit()
+			return i
+
+	return -1
 
 
 func split_slot(slot_index: int, split_count: int) -> bool:
