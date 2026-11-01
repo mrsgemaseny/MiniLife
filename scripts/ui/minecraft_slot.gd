@@ -54,16 +54,6 @@ func _ready() -> void:
 	_count_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_count_label)
 
-	if hotbar_num > 0:
-		_hotbar_label = Label.new()
-		_hotbar_label.text = str(hotbar_num)
-		_hotbar_label.offset_left = 3.0
-		_hotbar_label.offset_top = 1.0
-		_hotbar_label.add_theme_font_size_override("font_size", 9)
-		_hotbar_label.add_theme_color_override("font_color", Color(0.85, 0.75, 0.35, 0.85))
-		_hotbar_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_hotbar_label)
-
 	refresh()
 
 
@@ -116,11 +106,7 @@ func _draw() -> void:
 	draw_line(Vector2(1.0, sz.y - 1.5), Vector2(sz.x - 1.0, sz.y - 1.5), Color(0.38, 0.42, 0.50, 0.70), 1.0)
 	draw_line(Vector2(sz.x - 1.5, 1.0), Vector2(sz.x - 1.5, sz.y - 1.0), Color(0.38, 0.42, 0.50, 0.70), 1.0)
 
-	# 4. Hotbar gold accent border if in hotbar
-	if slot_group == "hotbar":
-		draw_rect(Rect2(0.0, 0.0, sz.x, sz.y), Color(0.85, 0.68, 0.25, 0.60), false, 1.0)
-
-	# 5. Placeholder text for empty armor/shield slots
+	# 4. Placeholder text for empty armor/shield slots
 	if item_data.is_empty() and placeholder_text != "":
 		var font: Font = ThemeDB.fallback_font
 		draw_string(font, Vector2(5.0, sz.y * 0.5 + 4.0), placeholder_text, HORIZONTAL_ALIGNMENT_CENTER, sz.x - 10.0, 9, Color(0.42, 0.46, 0.52, 0.55))

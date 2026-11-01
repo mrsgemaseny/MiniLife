@@ -163,9 +163,9 @@ func _build_minecraft_inventory_ui() -> void:
 		var player: Node = get_tree().get_first_node_in_group("player")
 		var inv: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
 		if inv != null:
-			inv.sort_and_consolidate(false)
+			inv.sort_and_consolidate(true)
 			refresh()
-			SignalBus.notification_posted.emit("Backpack sorted and consolidated.")
+			SignalBus.notification_posted.emit("Inventory sorted and consolidated.")
 	)
 	hdr.add_child(sort_btn)
 
@@ -233,16 +233,10 @@ func _build_minecraft_inventory_ui() -> void:
 	vitals_vbox.add_child(_gold_label)
 	eq_hbox.add_child(vitals_vbox)
 
-	# 3. Main Inventory Grid (3 rows of 8 = 24 slots, indices 8 to 31)
+	# 3. Unified Minecraft Inventory Grid (3 rows main + 1 row hotbar = 32 slots total)
 	var inv_sec: VBoxContainer = VBoxContainer.new()
-	inv_sec.add_theme_constant_override("separation", 3)
+	inv_sec.add_theme_constant_override("separation", 6)
 	main_vbox.add_child(inv_sec)
-
-	var inv_lbl: Label = Label.new()
-	inv_lbl.text = "BACKPACK (STORAGE)"
-	inv_lbl.add_theme_font_size_override("font_size", 10)
-	inv_lbl.modulate = Color(0.68, 0.74, 0.82)
-	inv_sec.add_child(inv_lbl)
 
 	var inv_grid: GridContainer = GridContainer.new()
 	inv_grid.columns = 8
@@ -268,32 +262,18 @@ func _build_minecraft_inventory_ui() -> void:
 		_inv_slots.append(s)
 		inv_grid.add_child(s)
 
-	# 4. Hotbar Separator & Hotbar (1 row of 8 = 8 slots, indices 0 to 7)
-	var sep: HSeparator = HSeparator.new()
-	main_vbox.add_child(sep)
-
-	var hotbar_sec: VBoxContainer = VBoxContainer.new()
-	hotbar_sec.add_theme_constant_override("separation", 3)
-	main_vbox.add_child(hotbar_sec)
-
-	var hotbar_lbl: Label = Label.new()
-	hotbar_lbl.text = "HOTBAR (KEYS 1 - 8)"
-	hotbar_lbl.add_theme_font_size_override("font_size", 10)
-	hotbar_lbl.modulate = Color(0.95, 0.80, 0.35)
-	hotbar_sec.add_child(hotbar_lbl)
-
+	# Hotbar Row (4th row of inventory, identical slot style with 6px spacing)
 	var hotbar_grid: GridContainer = GridContainer.new()
 	hotbar_grid.columns = 8
 	hotbar_grid.add_theme_constant_override("h_separation", 4)
 	hotbar_grid.add_theme_constant_override("v_separation", 4)
-	hotbar_sec.add_child(hotbar_grid)
+	inv_sec.add_child(hotbar_grid)
 
 	_hotbar_slots.clear()
 	for i in range(8):
 		var s: Control = MCSlot.new()
 		s.slot_index = i
-		s.slot_group = "hotbar"
-		s.hotbar_num = i + 1
+		s.slot_group = "inventory"
 		s.slot_clicked.connect(_on_slot_clicked)
 		s.slot_hovered.connect(func(idx):
 			_hovered_slot_index = idx
