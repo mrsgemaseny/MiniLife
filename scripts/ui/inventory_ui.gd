@@ -142,6 +142,7 @@ func refresh() -> void:
 		var eq_comp: EquipmentComponent = player.get("equipment") as EquipmentComponent if player != null else null
 		var slot_names: Array[Dictionary] = [
 			{"key": "weapon", "label": "Hand"},
+			{"key": "offhand", "label": "Shield"},
 			{"key": "head", "label": "Head"},
 			{"key": "chest", "label": "Chest"},
 			{"key": "legs", "label": "Legs"}
@@ -153,7 +154,7 @@ func refresh() -> void:
 			if eq_comp != null:
 				eq_id = eq_comp.get_item_id(skey)
 			var badge: Button = Button.new()
-			badge.custom_minimum_size = Vector2(124, 34)
+			badge.custom_minimum_size = Vector2(98, 34)
 			badge.expand_icon = true
 			badge.add_theme_font_size_override("font_size", 10)
 			var bsb: StyleBoxFlat = _make_slot_style(Color(0.11, 0.14, 0.20, 0.72), Color(0.68, 0.56, 0.30, 0.80))

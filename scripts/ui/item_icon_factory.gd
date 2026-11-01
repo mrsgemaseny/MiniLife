@@ -4,6 +4,44 @@ extends RefCounted
 # Procedural 32x32 pixel-art ImageTexture generator & cache for all items and structures.
 
 static var _icon_cache: Dictionary = {}
+static var _world_sprite_cache: Dictionary = {}
+
+
+static func _resolve_sprite_path(id: String) -> String:
+	if id.find("pick") != -1:
+		return "res://assets/sprites/items/stone_pickaxe.png"
+	if id.find("axe") != -1:
+		return "res://assets/sprites/items/iron_axe.png"
+	if id.find("dagger") != -1:
+		return "res://assets/sprites/items/iron_dagger.png"
+	if id.find("sword") != -1 or id.find("blade") != -1:
+		return "res://assets/sprites/items/iron_sword.png"
+	if id.find("spear") != -1 or id.find("lance") != -1:
+		return "res://assets/sprites/items/spear.png"
+	if id.find("hammer") != -1 or id.find("mace") != -1:
+		return "res://assets/sprites/items/war_hammer.png"
+	if id.find("crossbow") != -1:
+		return "res://assets/sprites/items/crossbow.png"
+	if id.find("bow") != -1:
+		return "res://assets/sprites/items/hunting_bow.png"
+	if id.find("shield") != -1:
+		return "res://assets/sprites/items/wooden_shield.png"
+	return ""
+
+
+static func _load_raw_image(res_path: String) -> Image:
+	if res_path.is_empty():
+		return null
+	var abs_path: String = ProjectSettings.globalize_path(res_path)
+	if FileAccess.file_exists(abs_path):
+		var raw: Image = Image.load_from_file(abs_path)
+		if raw != null and not raw.is_empty():
+			return raw
+	if ResourceLoader.exists(res_path):
+		var tex: Texture2D = load(res_path) as Texture2D
+		if tex != null:
+			return tex.get_image()
+	return null
 
 
 static func get_icon(item_id: String) -> ImageTexture:
@@ -12,12 +50,39 @@ static func get_icon(item_id: String) -> ImageTexture:
 	if _icon_cache.has(item_id):
 		return _icon_cache[item_id] as ImageTexture
 
+	var sp_path: String = _resolve_sprite_path(item_id)
+	if not sp_path.is_empty():
+		var raw_img: Image = _load_raw_image(sp_path)
+		if raw_img != null:
+			var icon_img: Image = raw_img.duplicate() as Image
+			icon_img.resize(36, 36, Image.INTERPOLATE_LANCZOS)
+			var ext_tex: ImageTexture = ImageTexture.create_from_image(icon_img)
+			_icon_cache[item_id] = ext_tex
+			return ext_tex
+
 	var img: Image = Image.create(32, 32, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
 	_draw_item_art(img, item_id)
 	var tex: ImageTexture = ImageTexture.create_from_image(img)
 	_icon_cache[item_id] = tex
 	return tex
+
+
+static func get_world_sprite(item_id: String) -> ImageTexture:
+	if item_id.is_empty():
+		return null
+	if _world_sprite_cache.has(item_id):
+		return _world_sprite_cache[item_id] as ImageTexture
+	var sp_path: String = _resolve_sprite_path(item_id)
+	if not sp_path.is_empty():
+		var raw_img: Image = _load_raw_image(sp_path)
+		if raw_img != null:
+			var w_img: Image = raw_img.duplicate() as Image
+			w_img.resize(64, 64, Image.INTERPOLATE_LANCZOS)
+			var w_tex: ImageTexture = ImageTexture.create_from_image(w_img)
+			_world_sprite_cache[item_id] = w_tex
+			return w_tex
+	return get_icon(item_id)
 
 
 static func _draw_item_art(img: Image, id: String) -> void:

@@ -437,6 +437,61 @@
 		"skill_required": { "smithing": 22 }
 	},
 	{
+		"id": "iron_dagger",
+		"name": "Iron Dagger",
+		"type": "weapon",
+		"equip_slot": "weapon",
+		"weight": 1.4,
+		"value": 45,
+		"stackable": false,
+		"durability": 90,
+		"stats": {
+			"damage": 13,
+			"damage_type": "physical",
+			"attack_speed": 1.55,
+			"range": "melee"
+		},
+		"visual": { "sprite": "items/iron_dagger.png", "color": "#c0c8d0" },
+		"craft_requirements": { "iron_ingot": 1, "wood": 1 },
+		"craft_station": "forge",
+		"skill_required": { "smithing": 8 }
+	},
+	{
+		"id": "war_hammer",
+		"name": "Iron War Hammer",
+		"type": "weapon",
+		"equip_slot": "weapon",
+		"weight": 4.8,
+		"value": 95,
+		"stackable": false,
+		"durability": 140,
+		"stats": {
+			"damage": 25,
+			"damage_type": "physical",
+			"attack_speed": 0.85,
+			"range": "melee"
+		},
+		"visual": { "sprite": "items/war_hammer.png", "color": "#8c96a0" },
+		"craft_requirements": { "iron_ingot": 4, "wood": 2 },
+		"craft_station": "forge",
+		"skill_required": { "smithing": 22 }
+	},
+	{
+		"id": "wooden_shield",
+		"name": "Iron-Rimmed Shield",
+		"type": "armor",
+		"equip_slot": "offhand",
+		"weight": 3.5,
+		"value": 50,
+		"stackable": false,
+		"durability": 110,
+		"stats": { "defense": 10 },
+		"visual": { "sprite": "items/wooden_shield.png", "color": "#8b5a2b" },
+		"craft_requirements": { "wood": 3, "iron_ingot": 1 },
+		"craft_station": "workbench",
+		"skill_required": { "construction": 5 }
+	},
+	{
 		"id": "leather_armor",
 		"name": "Cured Hide Tunic",
 		"type": "armor",

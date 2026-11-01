@@ -1,6 +1,8 @@
 class_name Player
 extends CharacterBody2D
 
+const IconFactory = preload("res://scripts/ui/item_icon_factory.gd")
+
 @export var stats: StatsComponent
 @export var health_comp: HealthComponent
 @export var skills: SkillsComponent
@@ -52,11 +54,17 @@ func _grant_starter_kit() -> void:
 		inventory.add_item("bandage", 4)
 		inventory.add_item("wood", 14)
 		inventory.add_item("stone", 12)
+		inventory.add_item("bronze_spear", 1)
+		inventory.add_item("war_hammer", 1)
+		inventory.add_item("iron_dagger", 1)
+		inventory.add_item("heavy_crossbow", 1)
+		inventory.add_item("wooden_shield", 1)
 		inventory.add_item("arrow", 20)
 		inventory.add_item("cloth", 8)
 		inventory.add_gold(35)
 		active_hotbar_index = 0
 		equipment.equip("stone_axe")
+		equipment.equip("wooden_shield")
 		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 
 func _physics_process(delta: float) -> void:
@@ -558,23 +566,23 @@ func _draw() -> void:
 		swing_angle_ofs = sin(_walk_phase) * 0.14 * _walk_blend
 
 	var weapon_dir: Vector2 = aim_dir.rotated(swing_angle_ofs)
-	var weapon_tip: Vector2 = hand_pos + weapon_dir * 19.0
-	if weapon_id.find("axe") != -1 or weapon_id.find("pick") != -1:
-		draw_line(hand_pos, weapon_tip, Color(0.48, 0.32, 0.18), 2.5)
-		var perp: Vector2 = Vector2(-weapon_dir.y, weapon_dir.x)
-		var head_pts: PackedVector2Array = PackedVector2Array([
-			weapon_tip - weapon_dir * 4.5,
-			weapon_tip + perp * 6.5,
-			weapon_tip + weapon_dir * 2.0 + perp * 3.5
-		])
-		draw_colored_polygon(head_pts, Color(0.76, 0.80, 0.85))
-	elif weapon_id.find("bow") != -1:
-		var b_angle: float = weapon_dir.angle()
-		draw_arc(hand_pos, 11.0, b_angle - 1.1, b_angle + 1.1, 12, Color(0.55, 0.36, 0.18), 2.2)
+	var offhand_id: String = equipment.get_item_id("offhand") if equipment != null else ""
+	if not offhand_id.is_empty():
+		var shield_tex: ImageTexture = IconFactory.get_world_sprite(offhand_id)
+		if shield_tex != null:
+			var shield_pos: Vector2 = body_ofs + Vector2(-7.5, -14.0 - stride * 0.25)
+			draw_texture_rect(shield_tex, Rect2(shield_pos.x - 8.5, shield_pos.y - 8.5, 17.0, 17.0), false)
+
+	var weapon_tex: ImageTexture = IconFactory.get_world_sprite(weapon_id if not weapon_id.is_empty() else "stone_axe")
+	if weapon_tex != null:
+		var pivot_pos: Vector2 = hand_pos + weapon_dir * 6.5
+		var rot_angle: float = weapon_dir.angle() + PI * 0.25
+		draw_set_transform(pivot_pos, rot_angle, Vector2(1.0, 1.0))
+		draw_texture_rect(weapon_tex, Rect2(-12.0, -12.0, 24.0, 24.0), false)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	else:
+		var weapon_tip: Vector2 = hand_pos + weapon_dir * 19.0
 		draw_line(hand_pos, weapon_tip, Color(0.84, 0.88, 0.92), 2.8)
-		var guard_perp: Vector2 = Vector2(-weapon_dir.y, weapon_dir.x) * 4.0
-		draw_line(hand_pos + weapon_dir * 3.0 - guard_perp, hand_pos + weapon_dir * 3.0 + guard_perp, Color(0.78, 0.64, 0.24), 2.2)
 
 	# RimWorld-style Smooth Weapon Slash Trail
 	if _swing_timer > 0.0:
