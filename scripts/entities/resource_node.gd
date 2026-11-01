@@ -85,13 +85,14 @@ func _draw() -> void:
 	var outline_col: Color = Color(0.08, 0.09, 0.11, 0.92)
 	var secondary_col: Color = Color.from_string(str(_def.get("trunk_color", "#5c4028")), Color(0.36, 0.25, 0.16))
 
-	# Ground shadow
-	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 3.0), radius * 1.15, radius * 0.56), Color(0.0, 0.0, 0.0, 0.34))
+	# Ground shadow firmly anchored under the resource base
+	var shadow_y: float = 4.0
+	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, shadow_y), radius * 1.25, radius * 0.62), Color(0.0, 0.0, 0.0, 0.36))
 
 	if growth_stage == "stump":
 		var stump_pts: PackedVector2Array = PackedVector2Array([
-			ofs + Vector2(-6.0, 3.0), ofs + Vector2(-5.0, -5.0),
-			ofs + Vector2(5.0, -5.0), ofs + Vector2(6.0, 3.0)
+			ofs + Vector2(-6.0, 4.0), ofs + Vector2(-5.0, -5.0),
+			ofs + Vector2(5.0, -5.0), ofs + Vector2(6.0, 4.0)
 		])
 		draw_colored_polygon(stump_pts, secondary_col)
 		draw_polyline(stump_pts, outline_col, 1.4, true)
@@ -102,27 +103,27 @@ func _draw() -> void:
 	elif growth_stage == "small_tree":
 		var st_tex: Texture2D = _get_tex("res://assets/sprites/world/growth/tree_small.png")
 		if st_tex != null:
-			draw_texture_rect(st_tex, Rect2(-16.0 + ofs.x, -38.0 + ofs.y, 32.0, 38.0), false)
+			draw_texture_rect(st_tex, Rect2(-20.0 + ofs.x, -48.0 + ofs.y, 40.0, 52.0), false)
 		else:
 			var oak_fallback: Texture2D = _get_tex("res://assets/sprites/world/resources/oak_tree.png")
 			if oak_fallback != null:
-				draw_texture_rect(oak_fallback, Rect2(-14.0 + ofs.x, -32.0 + ofs.y, 28.0, 30.0), false)
+				draw_texture_rect(oak_fallback, Rect2(-20.0 + ofs.x, -46.0 + ofs.y, 40.0, 50.0), false)
 	elif node_def_id.find("pine") != -1:
 		var pine_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/pine_tree.png")
 		if pine_tex != null:
-			draw_texture_rect(pine_tex, Rect2(-19.0 + ofs.x, -54.0 + ofs.y, 38.0, 54.0), false)
+			draw_texture_rect(pine_tex, Rect2(-27.0 + ofs.x, -66.0 + ofs.y, 54.0, 70.0), false)
 		else:
 			_draw_procedural_pine(ofs, outline_col)
 	elif node_def_id.find("tree") != -1:
 		var oak_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/oak_tree.png")
 		if oak_tex != null:
-			draw_texture_rect(oak_tex, Rect2(-28.0 + ofs.x, -52.0 + ofs.y, 56.0, 50.0), false)
+			draw_texture_rect(oak_tex, Rect2(-39.0 + ofs.x, -58.0 + ofs.y, 78.0, 62.0), false)
 		else:
 			_draw_procedural_oak(ofs, outline_col, radius)
 	elif node_def_id.find("stone") != -1 or node_def_id.find("iron") != -1 or node_def_id.find("copper") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("vein") != -1:
 		var rock_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/boulder.png")
 		if rock_tex != null:
-			draw_texture_rect(rock_tex, Rect2(-21.0 + ofs.x, -26.0 + ofs.y, 42.0, 28.0), false)
+			draw_texture_rect(rock_tex, Rect2(-24.0 + ofs.x, -28.0 + ofs.y, 48.0, 34.0), false)
 			if node_def_id.find("iron") != -1:
 				draw_circle(ofs + Vector2(-4.0, -11.0), 2.2, Color(0.95, 0.98, 1.0, 0.95))
 				draw_circle(ofs + Vector2(6.0, -7.0), 2.0, Color(0.72, 0.85, 0.98, 0.90))
@@ -134,13 +135,13 @@ func _draw() -> void:
 	elif node_def_id.find("berry") != -1:
 		var bush_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/berry_bush.png")
 		if bush_tex != null:
-			draw_texture_rect(bush_tex, Rect2(-17.0 + ofs.x, -24.0 + ofs.y, 34.0, 26.0), false)
+			draw_texture_rect(bush_tex, Rect2(-17.0 + ofs.x, -33.0 + ofs.y, 34.0, 38.0), false)
 		else:
 			_draw_procedural_bush(ofs, outline_col, radius)
 	else:
 		var def_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/boulder.png")
 		if def_tex != null:
-			draw_texture_rect(def_tex, Rect2(-18.0 + ofs.x, -22.0 + ofs.y, 36.0, 24.0), false)
+			draw_texture_rect(def_tex, Rect2(-24.0 + ofs.x, -28.0 + ofs.y, 48.0, 34.0), false)
 		else:
 			_draw_procedural_rock(ofs, outline_col, radius)
 

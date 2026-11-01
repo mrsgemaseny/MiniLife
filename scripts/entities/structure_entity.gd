@@ -141,17 +141,11 @@ func _draw() -> void:
 		_draw_construction_overlay()
 		return
 
-	# Voxel block sprite mapping for structures
+	# Voxel block sprite mapping for walls
 	var block_name: String = ""
-	if structure_id == "workbench":
-		block_name = "voxelTile_18"
-	elif structure_id == "forge":
-		block_name = "voxelTile_17"
-	elif structure_id == "storage":
-		block_name = "voxelTile_28"
-	elif structure_id == "wall":
+	if structure_id == "wall" or structure_id == "stone_wall":
 		block_name = "voxelTile_19"
-	elif structure_id == "wood_wall" or structure_id == "door":
+	elif structure_id == "wood_wall":
 		block_name = "voxelTile_14"
 
 	if block_name != "":
@@ -160,11 +154,8 @@ func _draw() -> void:
 			var mod_col: Color = Color.WHITE
 			if structure_id == "door" and is_door_open:
 				mod_col.a = 0.42
-			draw_texture_rect(btex, Rect2(-24.0, -38.0, 48.0, 46.0), false, mod_col)
-			if structure_id == "forge":
-				var flame_flicker: float = sin(_flame_phase) * 1.5
-				draw_circle(Vector2(0.0, -12.0), 3.5 + flame_flicker * 0.4, Color(1.0, 0.55, 0.12, 0.90))
-				draw_circle(Vector2(0.0, -13.0), 2.0, Color(1.0, 0.88, 0.28, 0.95))
+			# Perfectly align block base (bottom apex at +16px, width 64px) with isometric tile
+			draw_texture_rect(btex, Rect2(-32.0, -58.0, 64.0, 74.0), false, mod_col)
 			_draw_construction_overlay()
 			return
 

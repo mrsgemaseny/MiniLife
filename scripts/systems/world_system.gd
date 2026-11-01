@@ -177,6 +177,12 @@ func _draw() -> void:
 				draw_colored_polygon(right_skirt, col.darkened(0.44))
 
 				var poly: PackedVector2Array = PackedVector2Array([top_pt, right_pt, bot_pt, left_pt])
+				draw_colored_polygon(poly, col)
+				draw_line(top_pt, right_pt, col.lightened(0.10), 1.0)
+				draw_line(top_pt, left_pt, col.lightened(0.06), 1.0)
+				draw_line(left_pt, bot_pt, col.darkened(0.18), 1.0)
+				draw_line(bot_pt, right_pt, col.darkened(0.22), 1.0)
+
 				# Procedural surface detail fallback only when texture is missing
 				if fstate == int(FogState.VISIBLE):
 					if is_camp_dirt:
