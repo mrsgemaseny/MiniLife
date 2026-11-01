@@ -628,6 +628,18 @@ func _update_world_hover_inspect(delta: float) -> void:
 			break
 
 	if candidate == null:
+		var interactables: Array[Node] = get_tree().get_nodes_in_group("interactable")
+		for node in interactables:
+			if not (node is Node2D) or not (node as Node2D).is_visible_in_tree():
+				continue
+			var n2d: Node2D = node as Node2D
+			var gpos: Vector2 = n2d.global_position
+			if mouse_world.distance_to(gpos + Vector2(0.0, -10.0)) <= 32.0:
+				candidate = n2d
+				candidate_top_offset = -32.0
+				break
+
+	if candidate == null:
 		var npcs: Array[Node] = get_tree().get_nodes_in_group("npc")
 		for node in npcs:
 			if not (node is Node2D) or not (node as Node2D).is_visible_in_tree():
@@ -701,4 +713,11 @@ func _populate_inspect_card(target: Node2D) -> void:
 		_inspect_title.text = npc_name if not npc_name.is_empty() else "Inhabitant"
 		_inspect_badge.text = "[ Faction: %s ]" % faction
 		_inspect_details.text = "Press [E] to interact or trade"
+	elif target.is_in_group("interactable") or target.has_method("get_station_id"):
+		var sid: String = str(target.get("structure_id"))
+		var sdef: Dictionary = DataRegistry.get_structure(sid)
+		var sname: String = str(sdef.get("name", sid.capitalize().replace("_", " ")))
+		_inspect_title.text = sname
+		_inspect_badge.text = "[ Station / Structure • E or RMB ]"
+		_inspect_details.text = "Interact range: 3 tiles"
 

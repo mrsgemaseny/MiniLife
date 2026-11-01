@@ -58,10 +58,32 @@ func _setup_styled_craft_menu() -> void:
 
 
 func open_panel(station_id: String = "") -> void:
+	if station_id == "":
+		station_id = _detect_nearby_station()
 	_active_station = station_id
 	visible = true
 	refresh()
 	SignalBus.ui_panel_toggled.emit(PANEL_ID, true, true)
+
+
+func _detect_nearby_station() -> String:
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if player == null or not (player is Node2D):
+		return ""
+	var ptile: Vector2i = Config.iso_to_world((player as Node2D).global_position)
+	var stations: Array[Node] = get_tree().get_nodes_in_group("craft_station")
+	var best_station: String = ""
+	var best_dist: int = 999
+	for node in stations:
+		if node is Node2D and node.has_method("get_station_id"):
+			var st_id: String = str(node.call("get_station_id"))
+			if st_id != "":
+				var stile: Vector2i = Config.iso_to_world((node as Node2D).global_position)
+				var d: int = Config.tile_distance(ptile, stile)
+				if d <= 3 and d < best_dist:
+					best_dist = d
+					best_station = st_id
+	return best_station
 
 
 func close_panel() -> void:
@@ -73,6 +95,8 @@ func close_panel() -> void:
 
 
 func refresh() -> void:
+	if _active_station == "":
+		_active_station = _detect_nearby_station()
 	if station_label != null:
 		station_label.text = "CRAFTING  —  " + (_active_station.capitalize() if _active_station != "" else "Hand Crafting")
 	if recipe_list == null:

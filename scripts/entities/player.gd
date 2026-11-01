@@ -262,7 +262,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_released("attack"):
 		if _is_charging_bow:
 			_release_bow_shot()
-	elif event.is_action_pressed("interact"):
+	elif event.is_action_pressed("interact") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT):
 		perform_interact()
 
 func _read_movement_input() -> Vector2:
@@ -415,24 +415,34 @@ func perform_attack() -> void:
 		closest_node.harvest_hit(self)
 
 func perform_interact() -> void:
+	var player_tile: Vector2i = Config.iso_to_world(global_position)
+	var mouse_world: Vector2 = get_global_mouse_position()
+
 	var best_node: Node2D = null
-	var best_dist: float = Config.INTERACT_RANGE
+	var best_score: float = 9999.0
+
 	for node in get_tree().get_nodes_in_group("interactable"):
-		if node is Node2D:
+		if node is Node2D and (node as Node2D).is_visible_in_tree():
 			var n2d: Node2D = node as Node2D
-			var d: float = n2d.global_position.distance_to(global_position)
-			if d <= best_dist:
-				best_dist = d
-				best_node = n2d
+			var target_tile: Vector2i = Config.iso_to_world(n2d.global_position)
+			var tile_dist: int = Config.tile_distance(player_tile, target_tile)
+			if tile_dist <= 3:
+				var mouse_dist: float = n2d.global_position.distance_to(mouse_world)
+				# Strongly prioritize the object under or closest to mouse cursor
+				var score: float = float(tile_dist) * 15.0 + (0.0 if mouse_dist <= 36.0 else mouse_dist * 0.15)
+				if score < best_score:
+					best_score = score
+					best_node = n2d
 
 	if best_node != null and best_node.has_method("interact"):
 		best_node.call("interact", self)
 		return
 
 	for node in get_tree().get_nodes_in_group("harvestable"):
-		if node is ResourceNode:
+		if node is ResourceNode and (node as ResourceNode).is_visible_in_tree():
 			var rn: ResourceNode = node as ResourceNode
-			if rn.global_position.distance_to(global_position) <= Config.INTERACT_RANGE:
+			var target_tile: Vector2i = Config.iso_to_world(rn.global_position)
+			if Config.tile_distance(player_tile, target_tile) <= 2:
 				rn.harvest_hit(self)
 				return
 

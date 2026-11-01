@@ -100,9 +100,11 @@ func _is_near_station(crafter: Node, station_id: String) -> bool:
 	if not (crafter is Node2D):
 		return false
 	var cpos: Vector2 = (crafter as Node2D).global_position
+	var ctile: Vector2i = Config.iso_to_world(cpos)
 	for node in get_tree().get_nodes_in_group("craft_station"):
 		if node is Node2D and node.has_method("get_station_id"):
 			if str(node.call("get_station_id")) == station_id:
-				if cpos.distance_to((node as Node2D).global_position) <= Config.CRAFT_STATION_RANGE:
+				var stile: Vector2i = Config.iso_to_world((node as Node2D).global_position)
+				if Config.tile_distance(ctile, stile) <= 3:
 					return true
 	return false
