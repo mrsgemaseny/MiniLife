@@ -440,60 +440,61 @@ func _spawn_resource_node(chunk_node: Node2D, node_def_id: String, tpos: Vector2
 	_resource_nodes_by_tile[Config.vec2i_to_key(tpos)] = rnode
 
 
-func _spawn_chunk_inhabitants(cpos: Vector2i, biome_id: String, delta: Dictionary) -> void:
-	var killed: Array = delta.get("killed", [])
+func _spawn_chunk_inhabitants(cpos: Vector2i, _biome_id: String, _delta: Dictionary) -> void:
 	var spawned_list: Array[Node] = []
-	var origin: Vector2i = Config.chunk_origin(cpos)
-	var center_chunk: Vector2i = Vector2i(Config.WORLD_SIZE_CHUNKS / 2, Config.WORLD_SIZE_CHUNKS / 2)
-	var world_center_tile: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
-
-	if cpos == center_chunk:
-		var trader_uid: String = "npc_starter_trader"
-		if not killed.has(trader_uid):
-			var trader: NPCBase = NPC_SCENE.instantiate() as NPCBase
-			trader.npc_id = "merchant_common"
-			trader.spawn_uid = trader_uid
-			trader.global_position = Config.world_to_iso(world_center_tile + Vector2i(3, -1))
-			add_child(trader)
-			spawned_list.append(trader)
-
-		var elder_uid: String = "npc_starter_elder"
-		if not killed.has(elder_uid):
-			var elder: NPCBase = NPC_SCENE.instantiate() as NPCBase
-			elder.npc_id = "village_elder"
-			elder.spawn_uid = elder_uid
-			elder.global_position = Config.world_to_iso(world_center_tile + Vector2i(-3, 0))
-			add_child(elder)
-			spawned_list.append(elder)
-	else:
-		var rng: RandomNumberGenerator = RngService.make_chunk_rng(_seed, cpos, 777)
-		var biome_def: Dictionary = DataRegistry.get_biome(biome_id)
-		var enemy_pool: Array = biome_def.get("enemy_pool", [])
-		if not enemy_pool.is_empty() and rng.randf() < 0.60:
-			var enemy_uid: String = "enemy_%d_%d_0" % [cpos.x, cpos.y]
-			var etile: Vector2i = origin + Vector2i(rng.randi_range(3, 12), rng.randi_range(3, 12))
-			# Keep starter safe zone (within 22 tiles of world center) free of hostile spawns
-			if not killed.has(enemy_uid) and Config.tile_distance(etile, world_center_tile) > 22:
-				var enemy: EnemyBase = ENEMY_SCENE.instantiate() as EnemyBase
-				enemy.enemy_id = str(enemy_pool[rng.randi() % enemy_pool.size()])
-				enemy.spawn_uid = enemy_uid
-				enemy.global_position = Config.world_to_iso(etile)
-				enemy.visible = (_fog.get_state(etile) == int(FogState.VISIBLE))
-				add_child(enemy)
-				spawned_list.append(enemy)
-
-		var npc_pool: Array = biome_def.get("npc_pool", [])
-		if not npc_pool.is_empty() and rng.randf() < 0.35:
-			var npc_uid: String = "npc_%d_%d_0" % [cpos.x, cpos.y]
-			if not killed.has(npc_uid):
-				var npc: NPCBase = NPC_SCENE.instantiate() as NPCBase
-				npc.npc_id = str(npc_pool[rng.randi() % npc_pool.size()])
-				npc.spawn_uid = npc_uid
-				var ntile: Vector2i = origin + Vector2i(rng.randi_range(4, 11), rng.randi_range(4, 11))
-				npc.global_position = Config.world_to_iso(ntile)
-				npc.visible = (_fog.get_state(ntile) != int(FogState.UNEXPLORED))
-				add_child(npc)
-				spawned_list.append(npc)
+	# [SANDBOX_EXPLORATION_MODE: Temporarily commented out all NPC and enemy spawns for pure Minecraft-style world exploration]
+	# var killed: Array = _delta.get("killed", [])
+	# var origin: Vector2i = Config.chunk_origin(cpos)
+	# var center_chunk: Vector2i = Vector2i(Config.WORLD_SIZE_CHUNKS / 2, Config.WORLD_SIZE_CHUNKS / 2)
+	# var world_center_tile: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
+	#
+	# if cpos == center_chunk:
+	# 	var trader_uid: String = "npc_starter_trader"
+	# 	if not killed.has(trader_uid):
+	# 		var trader: NPCBase = NPC_SCENE.instantiate() as NPCBase
+	# 		trader.npc_id = "merchant_common"
+	# 		trader.spawn_uid = trader_uid
+	# 		trader.global_position = Config.world_to_iso(world_center_tile + Vector2i(3, -1))
+	# 		add_child(trader)
+	# 		spawned_list.append(trader)
+	#
+	# 	var elder_uid: String = "npc_starter_elder"
+	# 	if not killed.has(elder_uid):
+	# 		var elder: NPCBase = NPC_SCENE.instantiate() as NPCBase
+	# 		elder.npc_id = "village_elder"
+	# 		elder.spawn_uid = elder_uid
+	# 		elder.global_position = Config.world_to_iso(world_center_tile + Vector2i(-3, 0))
+	# 		add_child(elder)
+	# 		spawned_list.append(elder)
+	# else:
+	# 	var rng: RandomNumberGenerator = RngService.make_chunk_rng(_seed, cpos, 777)
+	# 	var biome_def: Dictionary = DataRegistry.get_biome(_biome_id)
+	# 	var enemy_pool: Array = biome_def.get("enemy_pool", [])
+	# 	if not enemy_pool.is_empty() and rng.randf() < 0.60:
+	# 		var enemy_uid: String = "enemy_%d_%d_0" % [cpos.x, cpos.y]
+	# 		var etile: Vector2i = origin + Vector2i(rng.randi_range(3, 12), rng.randi_range(3, 12))
+	# 		# Keep starter safe zone (within 22 tiles of world center) free of hostile spawns
+	# 		if not killed.has(enemy_uid) and Config.tile_distance(etile, world_center_tile) > 22:
+	# 			var enemy: EnemyBase = ENEMY_SCENE.instantiate() as EnemyBase
+	# 			enemy.enemy_id = str(enemy_pool[rng.randi() % enemy_pool.size()])
+	# 			enemy.spawn_uid = enemy_uid
+	# 			enemy.global_position = Config.world_to_iso(etile)
+	# 			enemy.visible = (_fog.get_state(etile) == int(FogState.VISIBLE))
+	# 			add_child(enemy)
+	# 			spawned_list.append(enemy)
+	#
+	# 	var npc_pool: Array = biome_def.get("npc_pool", [])
+	# 	if not npc_pool.is_empty() and rng.randf() < 0.35:
+	# 		var npc_uid: String = "npc_%d_%d_0" % [cpos.x, cpos.y]
+	# 		if not killed.has(npc_uid):
+	# 			var npc: NPCBase = NPC_SCENE.instantiate() as NPCBase
+	# 			npc.npc_id = str(npc_pool[rng.randi() % npc_pool.size()])
+	# 			npc.spawn_uid = npc_uid
+	# 			var ntile: Vector2i = origin + Vector2i(rng.randi_range(4, 11), rng.randi_range(4, 11))
+	# 			npc.global_position = Config.world_to_iso(ntile)
+	# 			npc.visible = (_fog.get_state(ntile) != int(FogState.UNEXPLORED))
+	# 			add_child(npc)
+	# 			spawned_list.append(npc)
 
 	_spawned_entities_by_chunk[cpos] = spawned_list
 

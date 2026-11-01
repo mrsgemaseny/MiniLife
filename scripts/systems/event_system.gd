@@ -117,25 +117,26 @@ func _execute_event_effects(def: Dictionary) -> void:
 			if player.get("status_effects") is StatusEffectsComponent:
 				(player.get("status_effects") as StatusEffectsComponent).apply_effect(status_id, dur, inten)
 
-	var effects: Dictionary = def.get("effects", {})
-	var spawn_enemies: Array = effects.get("spawn_enemies", [])
-	for entry_v in spawn_enemies:
-		if entry_v is Dictionary:
-			var entry: Dictionary = entry_v
-			var enemy_id: String = str(entry.get("enemy_id", "bandit"))
-			var count: int = int(entry.get("count", 1))
-			for i in range(count):
-				var enemy: EnemyBase = EnemyScene.instantiate() as EnemyBase
-				enemy.enemy_id = enemy_id
-				var angle: float = (TAU / float(maxi(1, count))) * float(i)
-				enemy.global_position = player.global_position + Vector2(cos(angle), sin(angle)) * 260.0
-				world.add_child(enemy)
-
-	if bool(effects.get("spawn_trader", false)) or str(def.get("id", "")) == "trader_visit":
-		var trader: NPCBase = NPCScene.instantiate() as NPCBase
-		trader.npc_id = "merchant_common"
-		trader.global_position = player.global_position + Vector2(120.0, -70.0)
-		world.add_child(trader)
+	# [SANDBOX_EXPLORATION_MODE: Temporarily commented out event NPC/enemy spawns]
+	# var effects: Dictionary = def.get("effects", {})
+	# var spawn_enemies: Array = effects.get("spawn_enemies", [])
+	# for entry_v in spawn_enemies:
+	# 	if entry_v is Dictionary:
+	# 		var entry: Dictionary = entry_v
+	# 		var enemy_id: String = str(entry.get("enemy_id", "bandit"))
+	# 		var count: int = int(entry.get("count", 1))
+	# 		for i in range(count):
+	# 			var enemy: EnemyBase = EnemyScene.instantiate() as EnemyBase
+	# 			enemy.enemy_id = enemy_id
+	# 			var angle: float = (TAU / float(maxi(1, count))) * float(i)
+	# 			enemy.global_position = player.global_position + Vector2(cos(angle), sin(angle)) * 260.0
+	# 			world.add_child(enemy)
+	#
+	# if bool(effects.get("spawn_trader", false)) or str(def.get("id", "")) == "trader_visit":
+	# 	var trader: NPCBase = NPCScene.instantiate() as NPCBase
+	# 	trader.npc_id = "merchant_common"
+	# 	trader.global_position = player.global_position + Vector2(120.0, -70.0)
+	# 	world.add_child(trader)
 
 func _on_boss_defeated(boss_id: String, _world_pos: Vector2) -> void:
 	var res: Dictionary = _endgame.register_boss_kill(boss_id)

@@ -30,4 +30,9 @@
   - Eliminated rendering lag: added `_biome_cache` and `get_biome_color_fast()` in `WorldSystem`, restricted `WorldSystem._draw()` to camera-visible explored tiles (`[-18..18]`), and converted `MinimapWidget` to a single-draw-call cached `ImageTexture`.
   - Fixed all JSON schema mismatches in `DialogueSystem`, `QuestSystem`, `EventSystem`, `FactionSystem`, `RumorNetwork`, `LootTableRoller`, and `Player.use_slot_item`.
   - Upgraded isometric visuals for `WorldSystem` (3D tile bevels, wildflowers, camp dirt clearing), `ResourceNode` (tiered pines, multi-canopy oaks, faceted ore boulders, crimson berry bushes), `StructureEntity` (stone-ringed campfire with light halo, carpenter workbench with tools, brass-bound chest), `Player`, `NPCBase`, `EnemyBase`, and dark-iron/gold RPG `HUD` with 8-slot `Hotkey Action Bar [1-8]`.
+- **Sandbox Exploration Mode (2026-11-01 — Temporary NPC/Inhabitant Pause)**:
+  - All NPC and inhabitant spawns are temporarily commented out under the tag `[SANDBOX_EXPLORATION_MODE` so the user can explore the world, gather resources, craft, and build in pure Minecraft-style sandbox mode.
+  - **How to Restore**: Uncomment the `[SANDBOX_EXPLORATION_MODE` blocks in:
+    1. `scripts/systems/world_system.gd` (`_spawn_chunk_inhabitants`, lines 445–497).
+    2. `scripts/systems/event_system.gd` (`_execute_event_effects`, lines 120–139).
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.
