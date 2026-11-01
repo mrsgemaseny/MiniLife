@@ -78,6 +78,26 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 
+static var _block_tex_cache: Dictionary = {}
+
+static func _get_block_tex(tex_name: String) -> Texture2D:
+	if _block_tex_cache.has(tex_name):
+		return _block_tex_cache[tex_name] as Texture2D
+	var path: String = "res://assets/sprites/blocks/" + tex_name + ".png"
+	var tex: Texture2D = null
+	if ResourceLoader.exists(path):
+		tex = load(path) as Texture2D
+	if tex == null:
+		var global_p: String = ProjectSettings.globalize_path(path)
+		if FileAccess.file_exists(global_p):
+			var img: Image = Image.load_from_file(global_p)
+			if img != null:
+				tex = ImageTexture.create_from_image(img)
+	if tex != null:
+		_block_tex_cache[tex_name] = tex
+	return tex
+
+
 func _draw() -> void:
 	var base_col: Color = Color.from_string(str(_def.get("color", "#6c757d")), Color(0.55, 0.42, 0.28))
 	var height_px: float = float(_def.get("height_px", 18.0))
@@ -120,6 +140,33 @@ func _draw() -> void:
 		draw_colored_polygon(inner_flame, Color(1.0, 0.86, 0.24, 0.98))
 		_draw_construction_overlay()
 		return
+
+	# Voxel block sprite mapping for structures
+	var block_name: String = ""
+	if structure_id == "workbench":
+		block_name = "voxelTile_18"
+	elif structure_id == "forge":
+		block_name = "voxelTile_17"
+	elif structure_id == "storage":
+		block_name = "voxelTile_28"
+	elif structure_id == "wall":
+		block_name = "voxelTile_19"
+	elif structure_id == "wood_wall" or structure_id == "door":
+		block_name = "voxelTile_14"
+
+	if block_name != "":
+		var btex: Texture2D = _get_block_tex(block_name)
+		if btex != null:
+			var mod_col: Color = Color.WHITE
+			if structure_id == "door" and is_door_open:
+				mod_col.a = 0.42
+			draw_texture_rect(btex, Rect2(-24.0, -38.0, 48.0, 46.0), false, mod_col)
+			if structure_id == "forge":
+				var flame_flicker: float = sin(_flame_phase) * 1.5
+				draw_circle(Vector2(0.0, -12.0), 3.5 + flame_flicker * 0.4, Color(1.0, 0.55, 0.12, 0.90))
+				draw_circle(Vector2(0.0, -13.0), 2.0, Color(1.0, 0.88, 0.28, 0.95))
+			_draw_construction_overlay()
+			return
 
 	if structure_id == "workbench":
 		var wood_col: Color = Color(0.58, 0.39, 0.22)

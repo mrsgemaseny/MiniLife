@@ -81,6 +81,26 @@ func get_biome_cached(tpos: Vector2i) -> String:
 	return b
 
 
+var _tile_tex_cache: Dictionary = {}
+
+func _get_tile_tex(tex_name: String) -> Texture2D:
+	if _tile_tex_cache.has(tex_name):
+		return _tile_tex_cache[tex_name] as Texture2D
+	var path: String = "res://assets/sprites/world/tiles/" + tex_name + ".png"
+	var tex: Texture2D = null
+	if ResourceLoader.exists(path):
+		tex = load(path) as Texture2D
+	if tex == null:
+		var global_p: String = ProjectSettings.globalize_path(path)
+		if FileAccess.file_exists(global_p):
+			var img: Image = Image.load_from_file(global_p)
+			if img != null:
+				tex = ImageTexture.create_from_image(img)
+	if tex != null:
+		_tile_tex_cache[tex_name] = tex
+	return tex
+
+
 func get_biome_color_fast(tpos: Vector2i) -> Color:
 	var b: String = get_biome_cached(tpos)
 	return ProceduralTileset.BIOME_PALETTE.get(b, Color(0.31, 0.54, 0.26))
@@ -106,42 +126,62 @@ func _draw() -> void:
 
 			var center: Vector2 = Config.world_to_iso(tpos)
 			var biome_id: String = get_biome_cached(tpos)
-			var col: Color = ProceduralTileset.BIOME_PALETTE.get(biome_id, Color(0.34, 0.56, 0.25))
 			var hash_val: int = absi((tpos.x * 73856093) ^ (tpos.y * 19349663))
 
 			# Warm dirt clearing/path around the starter settlement camp
 			var dist_center: int = Config.tile_distance(tpos, world_center)
 			var is_camp_dirt: bool = (dist_center <= 3) or (tpos.y == world_center.y and abs(tpos.x - world_center.x) <= 6)
+
+			var col: Color = ProceduralTileset.BIOME_PALETTE.get(biome_id, Color(0.34, 0.56, 0.25))
 			if is_camp_dirt and biome_id != "mountains":
 				col = Color(0.52, 0.39, 0.25)
-
 			var variation: float = float(hash_val % 9 - 4) * 0.014
 			col = col.lightened(variation) if variation > 0.0 else col.darkened(-variation)
-
 			if fstate == int(FogState.VISITED):
 				col = col.darkened(0.48)
 
-			var top_pt: Vector2 = center + Vector2(0.0, -hh)
-			var right_pt: Vector2 = center + Vector2(hw, 0.0)
-			var bot_pt: Vector2 = center + Vector2(0.0, hh)
-			var left_pt: Vector2 = center + Vector2(-hw, 0.0)
+			var tile_tex_name: String = "tile_grass"
+			if is_camp_dirt:
+				tile_tex_name = "tile_dirt"
+			elif biome_id == "desert":
+				tile_tex_name = "tile_sand"
+			elif biome_id == "swamp":
+				tile_tex_name = "tile_swamp"
+			elif biome_id == "mountains":
+				tile_tex_name = "tile_mountain"
+			elif biome_id == "snow":
+				tile_tex_name = "tile_snow"
+			elif biome_id == "water":
+				tile_tex_name = "tile_water"
+			else:
+				tile_tex_name = "tile_grass"
 
-			# 3D extruded isometric tile skirts (left & right bevels)
-			var left_skirt: PackedVector2Array = PackedVector2Array([
-				left_pt, bot_pt, bot_pt + Vector2(0.0, bevel_h), left_pt + Vector2(0.0, bevel_h)
-			])
-			var right_skirt: PackedVector2Array = PackedVector2Array([
-				bot_pt, right_pt, right_pt + Vector2(0.0, bevel_h), bot_pt + Vector2(0.0, bevel_h)
-			])
-			draw_colored_polygon(left_skirt, col.darkened(0.32))
-			draw_colored_polygon(right_skirt, col.darkened(0.44))
+			var tile_tex: Texture2D = _get_tile_tex(tile_tex_name)
+			if tile_tex != null:
+				var modulate_col: Color = Color(0.46, 0.46, 0.52, 1.0) if fstate == int(FogState.VISITED) else Color.WHITE
+				draw_texture_rect(tile_tex, Rect2(center.x - 32.0, center.y - 16.0, 64.0, 37.0), false, modulate_col)
+			else:
+				var top_pt: Vector2 = center + Vector2(0.0, -hh)
+				var right_pt: Vector2 = center + Vector2(hw, 0.0)
+				var bot_pt: Vector2 = center + Vector2(0.0, hh)
+				var left_pt: Vector2 = center + Vector2(-hw, 0.0)
 
-			var poly: PackedVector2Array = PackedVector2Array([top_pt, right_pt, bot_pt, left_pt])
-			draw_colored_polygon(poly, col)
-			draw_line(top_pt, right_pt, col.lightened(0.10), 1.0)
-			draw_line(top_pt, left_pt, col.lightened(0.06), 1.0)
-			draw_line(left_pt, bot_pt, col.darkened(0.18), 1.0)
-			draw_line(bot_pt, right_pt, col.darkened(0.22), 1.0)
+				# 3D extruded isometric tile skirts (left & right bevels)
+				var left_skirt: PackedVector2Array = PackedVector2Array([
+					left_pt, bot_pt, bot_pt + Vector2(0.0, bevel_h), left_pt + Vector2(0.0, bevel_h)
+				])
+				var right_skirt: PackedVector2Array = PackedVector2Array([
+					bot_pt, right_pt, right_pt + Vector2(0.0, bevel_h), bot_pt + Vector2(0.0, bevel_h)
+				])
+				draw_colored_polygon(left_skirt, col.darkened(0.32))
+				draw_colored_polygon(right_skirt, col.darkened(0.44))
+
+				var poly: PackedVector2Array = PackedVector2Array([top_pt, right_pt, bot_pt, left_pt])
+				draw_colored_polygon(poly, col)
+				draw_line(top_pt, right_pt, col.lightened(0.10), 1.0)
+				draw_line(top_pt, left_pt, col.lightened(0.06), 1.0)
+				draw_line(left_pt, bot_pt, col.darkened(0.18), 1.0)
+				draw_line(bot_pt, right_pt, col.darkened(0.22), 1.0)
 
 			# Rich surface detail (lush grass blades, wildflowers, pebbles, camp warmth)
 			if fstate == int(FogState.VISIBLE):

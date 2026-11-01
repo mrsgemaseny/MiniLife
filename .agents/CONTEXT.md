@@ -51,6 +51,11 @@
     - `resources/isometric_resources_sheet_3x3.jpg`: Hand-drawn isometric foliage and resources (oak, pine, boulder, berry bush, mushrooms, dead tree, flowers, reeds, pebbles).
     - `resources/tree_growth_stages_1x4.jpg`: 4-stage tree ecology lifecycle (sapling, young, mature, ancient oak).
     - `blocks/`: Kenney isometric voxel blocks (`tilesheet_complete.png` and 55 `voxelTile_*.png` building blocks for stone, dirt, grass, wood, ores, furnace, chests).
+- **World & Object Sprite Texture Rendering Overhaul (2026-11-01)**:
+  - Extracted 22 transparent PNG sprites into `assets/sprites/world/tiles/`, `resources/`, and `growth/`.
+  - Replaced procedural polygons in `WorldSystem._draw()` with cached `draw_texture_rect` tile sprites (`tile_grass`, `tile_dirt`, `tile_sand`, `tile_swamp`, `tile_mountain`, `tile_water`) with fog modulation.
+  - Replaced procedural structure boxes in `StructureEntity._draw()` with Kenney voxel blocks (`voxelTile_18` workbench, `voxelTile_17` forge with flame glow, `voxelTile_28` storage, `voxelTile_19` wall, `voxelTile_14` wood/door).
+  - Wired `ResourceNode._draw()` with robust fallback loading to display oak, pine, boulders, berry bushes, mushrooms, and small trees.
 - **Fixed Seed, Ruins, Interiors, Lighting & Regrowth Overhaul (2026-11-01)**:
   - **Fixed World Seed (Task 1)**: `Config.DEFAULT_WORLD_SEED = 42819` passed through `GameManager`, `WorldSystem`, `TerrainGenerator`, and `SaveSystem` world_seed persistence, ensuring identical world layout on restart.
   - **Hand-Crafted Ruins (Task 2)**: Added `data/ruins.json` with 4 unique POIs (`abandoned_fort`, `old_village`, `collapsed_tower`, `underground_vault`), deterministically placed at anchor chunks via `PoiGenerator` with `SignalBus.poi_discovered`.

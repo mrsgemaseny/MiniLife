@@ -65,18 +65,18 @@ static var _res_tex_cache: Dictionary = {}
 static func _get_tex(path: String) -> Texture2D:
 	if _res_tex_cache.has(path):
 		return _res_tex_cache[path] as Texture2D
+	var tex: Texture2D = null
 	if ResourceLoader.exists(path):
-		var t: Texture2D = load(path) as Texture2D
-		_res_tex_cache[path] = t
-		return t
-	var global_p: String = ProjectSettings.globalize_path(path)
-	if FileAccess.file_exists(global_p):
-		var img: Image = Image.load_from_file(global_p)
-		if img != null:
-			var itex: ImageTexture = ImageTexture.create_from_image(img)
-			_res_tex_cache[path] = itex
-			return itex
-	return null
+		tex = load(path) as Texture2D
+	if tex == null:
+		var global_p: String = ProjectSettings.globalize_path(path)
+		if FileAccess.file_exists(global_p):
+			var img: Image = Image.load_from_file(global_p)
+			if img != null:
+				tex = ImageTexture.create_from_image(img)
+	if tex != null:
+		_res_tex_cache[path] = tex
+	return tex
 
 
 func _draw() -> void:
