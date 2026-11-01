@@ -238,6 +238,7 @@ func _connect_signals() -> void:
 	SignalBus.player_tile_changed.connect(_on_player_tile_changed)
 	SignalBus.player_biome_changed.connect(_on_player_biome_changed)
 	SignalBus.inventory_changed.connect(_on_inventory_changed)
+	SignalBus.equipment_changed.connect(func(_s: String, _id: String) -> void: _refresh_hotbar_from_player())
 	SignalBus.notification_posted.connect(_on_notification_posted)
 
 func _on_inventory_changed(entity: Node, _snapshot: Dictionary) -> void:
@@ -249,6 +250,7 @@ func _refresh_hotbar_from_player() -> void:
 	if player == null or not (player.get("inventory") is InventoryComponent):
 		return
 	var inv: InventoryComponent = player.get("inventory") as InventoryComponent
+	var active_idx: int = int(player.get("active_hotbar_index")) if "active_hotbar_index" in player else 0
 	if _resources_label != null:
 		var wood_cnt: int = inv.count_of("wood")
 		var stone_cnt: int = inv.count_of("stone")
@@ -256,17 +258,28 @@ func _refresh_hotbar_from_player() -> void:
 
 	for i in range(_hotbar_buttons.size()):
 		var btn: Button = _hotbar_buttons[i]
+		var is_active: bool = (i == active_idx)
+		var slot_sb: StyleBoxFlat = StyleBoxFlat.new()
+		slot_sb.bg_color = Color(0.24, 0.20, 0.11, 0.98) if is_active else Color(0.13, 0.15, 0.19, 0.95)
+		slot_sb.border_color = Color(0.98, 0.84, 0.30, 1.0) if is_active else Color(0.45, 0.39, 0.25, 0.90)
+		slot_sb.set_border_width_all(2 if is_active else 1)
+		slot_sb.set_corner_radius_all(4)
+		btn.add_theme_stylebox_override("normal", slot_sb)
+		btn.add_theme_stylebox_override("hover", slot_sb)
+		btn.add_theme_stylebox_override("pressed", slot_sb)
+		btn.add_theme_stylebox_override("focus", slot_sb)
+
 		var slot: Dictionary = inv.get_slot(i)
 		if slot.is_empty():
 			btn.text = "[%d]\n--" % (i + 1)
-			btn.modulate = Color(0.65, 0.68, 0.72)
+			btn.modulate = Color(0.98, 0.92, 0.68) if is_active else Color(0.65, 0.68, 0.72)
 		else:
 			var item_id: String = str(slot.get("item_id", ""))
 			var count: int = int(slot.get("count", 1))
 			var def: Dictionary = DataRegistry.get_item(item_id)
 			var short_name: String = str(def.get("name", item_id)).split(" ")[-1].substr(0, 7)
 			btn.text = "[%d] %s\nx%d" % [i + 1, short_name, count]
-			btn.modulate = Color(0.98, 0.94, 0.80)
+			btn.modulate = Color(1.0, 0.96, 0.78) if is_active else Color(0.92, 0.90, 0.82)
 
 func _activate_hotbar_slot(slot_idx: int) -> void:
 	var player: Node = get_tree().get_first_node_in_group("player")

@@ -13,6 +13,7 @@ extends CharacterBody2D
 var current_tile: Vector2i = Vector2i.ZERO
 var facing_direction: Vector2 = Vector2.DOWN
 var is_dead: bool = false
+var active_hotbar_index: int = 0
 var _attack_cooldown: float = 0.0
 var _swing_timer: float = 0.0
 var _swing_duration: float = 0.26
@@ -47,13 +48,14 @@ func _grant_starter_kit() -> void:
 		inventory.add_item("stone_pickaxe", 1)
 		inventory.add_item("iron_sword", 1)
 		inventory.add_item("hunting_bow", 1)
-		inventory.add_item("arrow", 20)
 		inventory.add_item("cooked_food", 5)
 		inventory.add_item("bandage", 4)
 		inventory.add_item("wood", 14)
 		inventory.add_item("stone", 12)
+		inventory.add_item("arrow", 20)
 		inventory.add_item("cloth", 8)
 		inventory.add_gold(35)
+		active_hotbar_index = 0
 		equipment.equip("stone_axe")
 		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 
@@ -248,8 +250,13 @@ func perform_interact() -> void:
 				return
 
 func use_slot_item(slot_index: int) -> void:
+	if slot_index >= 0 and slot_index < 8:
+		active_hotbar_index = slot_index
 	var slot: Dictionary = inventory.get_slot(slot_index)
 	if slot.is_empty():
+		if slot_index >= 0 and slot_index < 8:
+			equipment.unequip("weapon")
+			queue_redraw()
 		return
 	var item_id: String = str(slot.get("item_id", ""))
 	var dur: int = int(slot.get("durability", -1))
@@ -258,7 +265,13 @@ func use_slot_item(slot_index: int) -> void:
 		return
 
 	var item_type: String = str(def.get("type", ""))
-	if item_type == "consumable" or item_type == "food" or item_type == "medical":
+	if item_type == "weapon" or item_type == "tool":
+		# Keep weapon/tool in its exact hotbar slot (Minecraft-style) and hold it in hand
+		equipment.equip(item_id, dur)
+		SignalBus.notification_posted.emit("Selected %s." % str(def.get("name", item_id)))
+		SignalBus.inventory_changed.emit(self, inventory.snapshot())
+		queue_redraw()
+	elif item_type == "consumable" or item_type == "food" or item_type == "medical":
 		var effects: Dictionary = def.get("stats", def.get("effects", {}))
 		var heal_amt: float = float(effects.get("heal", effects.get("health", def.get("restore_health", 0.0))))
 		var hunger_amt: float = float(effects.get("nutrition", effects.get("hunger", def.get("restore_hunger", 0.0))))
@@ -278,14 +291,25 @@ func use_slot_item(slot_index: int) -> void:
 		inventory.remove_at_index(slot_index, 1)
 		SignalBus.notification_posted.emit("Used %s." % str(def.get("name", item_id)))
 	elif equipment.can_equip(item_id):
-		inventory.remove_at_index(slot_index, 1)
+		# Armor equip: swap in-place so hotbar slots do not shift
 		var prev: Dictionary = equipment.equip(item_id, dur)
 		var prev_id: String = str(prev.get("item_id", ""))
 		if not prev_id.is_empty():
-			inventory.add_item(prev_id, 1, int(prev.get("durability", -1)))
+			inventory.slots[slot_index] = {
+				"item_id": prev_id,
+				"count": 1,
+				"durability": int(prev.get("durability", -1))
+			}
+			inventory.contents_changed.emit()
+		else:
+			inventory.remove_at_index(slot_index, 1)
 		stats.defense = equipment.get_defense()
 		SignalBus.notification_posted.emit("Equipped %s." % str(def.get("name", item_id)))
 		queue_redraw()
+	else:
+		# Resource/material selected in hotbar (e.g. Wood, Stone)
+		SignalBus.notification_posted.emit("Selected %s (x%d)." % [str(def.get("name", item_id)), int(slot.get("count", 1))])
+		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 
 func is_alive() -> bool:
 	return not is_dead and stats.is_alive()
