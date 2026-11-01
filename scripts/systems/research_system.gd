@@ -28,6 +28,10 @@ func get_all_techs() -> Dictionary:
 	return _techs
 
 
+func get_tech(tech_id: String) -> Dictionary:
+	return _techs.get(tech_id, {})
+
+
 func get_researched_techs() -> Array[String]:
 	return _researched
 

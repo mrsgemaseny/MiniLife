@@ -3,6 +3,7 @@ extends Resource
 
 signal slot_changed(slot: String, item_id: String)
 signal item_broken(slot: String, item_id: String)
+signal weapon_durability_changed(new_dur: int)
 
 const SLOTS: Array[String] = ["head", "chest", "legs", "weapon", "offhand"]
 const UNARMED_STATS: Dictionary = {
@@ -119,6 +120,7 @@ func damage_weapon(wear: int = 1) -> bool:
 		return true
 	entry["durability"] = dur
 	_equipped["weapon"] = entry
+	weapon_durability_changed.emit(dur)
 	return false
 
 

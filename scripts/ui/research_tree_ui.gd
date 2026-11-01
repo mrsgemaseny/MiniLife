@@ -532,4 +532,3 @@ func _on_research_button_pressed() -> void:
 	var success: bool = ResearchSys.instance.research_tech(_selected_tech_id, player)
 	if success:
 		refresh()
-

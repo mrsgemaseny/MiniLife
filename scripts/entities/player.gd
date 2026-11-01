@@ -66,14 +66,13 @@ func _grant_starter_kit() -> void:
 		inventory.add_item("war_hammer", 1)
 		inventory.add_item("iron_dagger", 1)
 		inventory.add_item("heavy_crossbow", 1)
-		inventory.add_item("wooden_shield", 1)
 		inventory.add_item("torch", 1)
 		inventory.add_item("arrow", 20)
 		inventory.add_item("cloth", 8)
 		inventory.add_gold(35)
 		active_hotbar_index = 0
-		equipment.equip("stone_axe")
 		equipment.equip("wooden_shield")
+		sync_weapon_from_active_slot()
 		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 
 func _physics_process(delta: float) -> void:
@@ -428,9 +427,29 @@ func perform_interact() -> void:
 	if best_node != null and best_node.has_method("interact"):
 		best_node.call("interact", self)
 
+func sync_weapon_from_active_slot() -> void:
+	if inventory == null or equipment == null:
+		return
+	var slot: Dictionary = inventory.get_slot(active_hotbar_index)
+	if slot.is_empty():
+		equipment.unequip("weapon")
+		queue_redraw()
+		return
+	var item_id: String = str(slot.get("item_id", ""))
+	var dur: int = int(slot.get("durability", -1))
+	var def: Dictionary = DataRegistry.get_item(item_id)
+	var item_type: String = str(def.get("type", ""))
+	if item_type == "weapon" or item_type == "tool" or item_id.find("pickaxe") != -1 or item_id.find("axe") != -1 or item_id.find("sword") != -1 or item_id.find("bow") != -1 or item_id.find("spear") != -1 or item_id.find("hammer") != -1 or item_id.find("dagger") != -1 or item_id == "torch":
+		equipment.equip(item_id, dur)
+	else:
+		equipment.unequip("weapon")
+	queue_redraw()
+
+
 func use_slot_item(slot_index: int) -> void:
 	if slot_index >= 0 and slot_index < 8:
 		active_hotbar_index = slot_index
+		sync_weapon_from_active_slot()
 	var slot: Dictionary = inventory.get_slot(slot_index)
 	if slot.is_empty():
 		if slot_index >= 0 and slot_index < 8:
@@ -445,8 +464,7 @@ func use_slot_item(slot_index: int) -> void:
 
 	var item_type: String = str(def.get("type", ""))
 	if item_type == "weapon" or item_type == "tool":
-		# Keep weapon/tool in its exact hotbar slot (Minecraft-style) and hold it in hand
-		equipment.equip(item_id, dur)
+		sync_weapon_from_active_slot()
 		SignalBus.notification_posted.emit("Selected %s." % str(def.get("name", item_id)))
 		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 		queue_redraw()
@@ -593,10 +611,23 @@ func _connect_component_signals() -> void:
 		SignalBus.notification_posted.emit("Skill Up! %s reached Lv %d." % [skill.capitalize(), new_level])
 	)
 	inventory.contents_changed.connect(func() -> void:
+		sync_weapon_from_active_slot()
 		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 	)
 	inventory.gold_changed.connect(func(g: int) -> void:
 		SignalBus.player_gold_changed.emit(g)
+	)
+	equipment.weapon_durability_changed.connect(func(new_dur: int) -> void:
+		var slot: Dictionary = inventory.get_slot(active_hotbar_index)
+		if not slot.is_empty():
+			slot["durability"] = new_dur
+			SignalBus.inventory_changed.emit(self, inventory.snapshot())
+	)
+	equipment.item_broken.connect(func(slot_key: String, item_id: String) -> void:
+		if slot_key == "weapon":
+			inventory.set_slot(active_hotbar_index, {})
+			SignalBus.notification_posted.emit("%s broke!" % item_id.capitalize().replace("_", " "))
+			queue_redraw()
 	)
 	equipment.slot_changed.connect(func(slot: String, item_id: String) -> void:
 		stats.defense = equipment.get_defense()

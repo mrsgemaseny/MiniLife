@@ -392,12 +392,17 @@ func refresh() -> void:
 
 	# Refresh armor / equipped gear slots
 	if eq != null:
+		var active_idx: int = int(player.get("active_hotbar_index")) if "active_hotbar_index" in player else 0
 		for k in _armor_slots:
-			var it_id: String = eq.get_item_id(k)
-			if it_id != "":
-				_armor_slots[k].set_item({"item_id": it_id, "count": 1, "durability": eq.get_durability(k)})
+			if k == "weapon":
+				var active_slot: Dictionary = inv.get_slot(active_idx)
+				_armor_slots[k].set_item(active_slot)
 			else:
-				_armor_slots[k].set_item({})
+				var it_id: String = eq.get_item_id(k)
+				if it_id != "":
+					_armor_slots[k].set_item({"item_id": it_id, "count": 1, "durability": eq.get_durability(k)})
+				else:
+					_armor_slots[k].set_item({})
 
 	# Refresh header vitals
 	if _weight_label != null:
@@ -510,10 +515,21 @@ func _on_slot_clicked(slot_index: int, mouse_button: int, is_shift: bool) -> voi
 	_on_slot_hovered(slot_index)
 
 
-func _on_armor_slot_clicked(slot_key: String, mouse_button: int, _shift: bool) -> void:
+func _on_armor_slot_clicked(slot_key: String, mouse_button: int, shift: bool) -> void:
 	var player: Node = get_tree().get_first_node_in_group("player")
 	if player == null:
 		return
+
+	# Hand slot strictly mirrors and manipulates the active hotbar slot
+	if slot_key == "weapon":
+		var active_idx: int = int(player.get("active_hotbar_index")) if "active_hotbar_index" in player else 0
+		_on_slot_clicked(active_idx, mouse_button, shift)
+		if player.has_method("sync_weapon_from_active_slot"):
+			player.call("sync_weapon_from_active_slot")
+		refresh()
+		_on_armor_slot_hovered(slot_key)
+		return
+
 	var eq: EquipmentComponent = player.get("equipment") as EquipmentComponent
 	var inv: InventoryComponent = player.get("inventory") as InventoryComponent
 	if eq == null or inv == null:
@@ -568,6 +584,10 @@ func _on_slot_hovered(slot_index: int) -> void:
 func _on_armor_slot_hovered(slot_key: String) -> void:
 	var player: Node = get_tree().get_first_node_in_group("player")
 	if player == null:
+		return
+	if slot_key == "weapon":
+		var active_idx: int = int(player.get("active_hotbar_index")) if "active_hotbar_index" in player else 0
+		_on_slot_hovered(active_idx)
 		return
 	var eq: EquipmentComponent = player.get("equipment") as EquipmentComponent
 	if eq == null:

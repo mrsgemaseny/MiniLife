@@ -26,6 +26,9 @@ func _run_e2e_smoke_test() -> void:
 	SignalBus.build_requested.emit("campfire", player.current_tile + Vector2i(2, 2), player)
 	for pname in ["inventory", "craft", "build", "quests", "character", "factions", "chronicle", "achievements"]:
 		SignalBus.ui_panel_requested.emit(pname)
+	SignalBus.research_table_opened.emit()
+	SignalBus.furnace_opened.emit("test_furnace", Vector2i(0, 0))
+	SignalBus.storage_container_opened.emit("test_chest", Vector2i(0, 0))
 	SignalBus.ui_close_all_requested.emit()
 	var first_npc: Node = get_tree().get_first_node_in_group("npc")
 	if first_npc != null:
