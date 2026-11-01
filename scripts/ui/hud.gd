@@ -27,6 +27,7 @@ var _location_banner: Label = null
 var _banner_timer: float = 0.0
 var _vignette_overlay: ColorRect = null
 var _exit_hint_label: Label = null
+var _current_weather: String = "clear"
 
 func _ready() -> void:
 	_setup_styled_hud()
@@ -39,6 +40,7 @@ func _ready() -> void:
 	call_deferred("_refresh_hotbar_from_player")
 
 func _process(delta: float) -> void:
+	_refresh_time_display()
 	if _toast_timer > 0.0:
 		_toast_timer -= delta
 		if _toast_timer <= 0.0 and notification_label != null:
@@ -339,6 +341,7 @@ func _connect_signals() -> void:
 	SignalBus.notification_posted.connect(_on_notification_posted)
 	SignalBus.interior_entered.connect(_on_interior_entered)
 	SignalBus.interior_exited.connect(_on_interior_exited)
+	SignalBus.weather_changed.connect(_on_weather_changed)
 
 func _on_interior_entered(_zone_id: String, zone_name: String) -> void:
 	if _location_banner != null:
@@ -449,11 +452,40 @@ func update_gold(amount: int) -> void:
 	if gold_label != null:
 		gold_label.text = "Coins: %dg" % amount
 
-func update_time(hour: int) -> void:
-	if time_label != null:
-		var day: int = GameManager.get_day()
-		var period: String = "Night" if GameManager.is_night() else "Day"
-		time_label.text = "Day %d  |  %02d:00 (%s)" % [day, hour, period]
+func update_time(_hour: int) -> void:
+	_refresh_time_display()
+
+func _on_weather_changed(weather_type: String) -> void:
+	_current_weather = weather_type
+	_refresh_time_display()
+
+func _refresh_time_display() -> void:
+	if time_label == null:
+		return
+	var day: int = GameManager.get_day()
+	var raw_h: float = GameManager.get_hour()
+	var h: int = int(floor(raw_h))
+	var m: int = int(floor((raw_h - float(h)) * 60.0))
+
+	var phase: String = "Night"
+	if raw_h >= 4.5 and raw_h < 6.5:
+		phase = "Dawn"
+	elif raw_h >= 6.5 and raw_h < 11.5:
+		phase = "Morning"
+	elif raw_h >= 11.5 and raw_h < 16.5:
+		phase = "Midday"
+	elif raw_h >= 16.5 and raw_h < 19.5:
+		phase = "Sunset"
+	elif raw_h >= 19.5 and raw_h < 21.5:
+		phase = "Dusk"
+	else:
+		phase = "Night"
+
+	var w_name: String = _current_weather.capitalize()
+	if _current_weather == "storm":
+		w_name = "Thunderstorm"
+
+	time_label.text = "Day %d  |  %02d:%02d (%s)  •  %s" % [day, h, m, phase, w_name]
 
 func _on_player_tile_changed(tile_pos: Vector2i) -> void:
 	_current_tile = tile_pos
