@@ -124,15 +124,22 @@ func _test_phase_3_fog_and_simulation(player: Player) -> void:
 
 
 func _test_phase_4_character_anatomy_and_needs(player: Player) -> void:
-	print("[E2E Phase 4] 6-Limb Anatomy, Hunger/Stamina & Permadeath Invariants...")
+	print("[E2E Phase 4] Unified Health & Armor, Hunger/Stamina & Permadeath Invariants...")
 	assert(player.health_comp != null, "HealthComponent missing")
-	var required_limbs: Array[String] = ["head", "torso", "left_arm", "right_arm", "left_leg", "right_leg"]
-	for limb in required_limbs:
-		assert(player.health_comp.limbs.has(limb), "Missing limb: " + limb)
+	assert(player.health_comp.current == player.health_comp.maximum, "Player must spawn at full health")
+
+	# Test armor damage mitigation
+	var test_health: HealthComponent = HealthComponent.new()
+	test_health.maximum = 100.0
+	test_health.current = 100.0
+	test_health.set_armor(25.0)
+	var taken: float = test_health.take_damage(20.0, "physical", -1.0)
+	assert(taken < 20.0, "Armor must mitigate physical damage")
+	assert(absf(test_health.current - (100.0 - taken)) < 0.01, "Health must decrease by mitigated damage")
 
 	assert(StatusEffectsComponent.EFFECT_RULES.has("hungry"), "Hungry effect missing")
 	assert(StatusEffectsComponent.EFFECT_RULES.has("starving"), "Starving effect missing")
-	print("[E2E Phase 4] OK (6 Limbs, Need Decay, Starving rules verified)")
+	print("[E2E Phase 4] OK (Unified Health & Armor, Need Decay, Starving rules verified)")
 
 
 func _test_phase_5_skills_and_perks(player: Player) -> void:

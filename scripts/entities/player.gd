@@ -167,7 +167,7 @@ func _physics_process(delta: float) -> void:
 		var best_dist: float = Config.MELEE_RANGE
 
 		# 1. Check for player structures under cursor
-		var candidate_struct: StructureEntity = _get_structure_under_cursor()
+		candidate_struct = _get_structure_under_cursor()
 		if candidate_struct != null and not candidate_struct.is_player_built:
 			candidate_struct = null
 
@@ -305,6 +305,27 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 
 	if event.is_action_pressed("attack"):
+		var struct_under_cursor: StructureEntity = _get_structure_under_cursor()
+		if struct_under_cursor != null:
+			if not struct_under_cursor.is_player_built:
+				SignalBus.notification_posted.emit("This ancient structure cannot be dismantled.")
+				get_viewport().set_input_as_handled()
+				return
+			if struct_under_cursor.structure_id == "torch":
+				struct_under_cursor.current_hp = 0.0
+				struct_under_cursor.dismantle(self)
+				_swing_duration = 0.14
+				_swing_timer = _swing_duration
+				_lunge_offset = (struct_under_cursor.global_position - global_position).normalized() * 3.0
+				SignalBus.ui_sound_requested.emit("click")
+				get_viewport().set_input_as_handled()
+				queue_redraw()
+				return
+			else:
+				# Other player structures: channel dismantle will handle it in _physics_process
+				get_viewport().set_input_as_handled()
+				return
+
 		if _is_holding_bow():
 			_start_bow_charge()
 		elif _is_holding_consumable():
@@ -484,12 +505,44 @@ func _get_held_placeable_structure() -> String:
 func _is_holding_placeable_block() -> bool:
 	return _get_held_placeable_structure() != ""
 
+func _get_structure_under_cursor() -> StructureEntity:
+	var mouse_world: Vector2 = get_global_mouse_position()
+	var mouse_tile: Vector2i = Config.iso_to_world(mouse_world)
+	var structures: Array[Node] = get_tree().get_nodes_in_group("structures")
+	var best_struct: StructureEntity = null
+	var best_dist: float = 9999.0
+
+	for node in structures:
+		if node is StructureEntity and (node as StructureEntity).is_visible_in_tree():
+			var se: StructureEntity = node as StructureEntity
+			var dist_to_player: float = se.global_position.distance_to(global_position)
+			if dist_to_player > Config.INTERACT_RANGE:
+				continue
+			var h_px: float = float(se._def.get("height_px", 16.0))
+			var visual_center: Vector2 = se.global_position + Vector2(0.0, -h_px * 0.45)
+			var dist_to_mouse: float = visual_center.distance_to(mouse_world)
+			var is_tile_match: bool = (se.tile_pos == mouse_tile)
+			var is_floor: bool = se.structure_id in ["floor", "stone_floor"]
+			var threshold: float = 24.0 if is_floor else 36.0
+
+			if (is_tile_match or dist_to_mouse <= threshold) and dist_to_mouse < best_dist:
+				if best_struct != null and not (best_struct.structure_id in ["floor", "stone_floor"]) and is_floor:
+					continue
+				best_dist = dist_to_mouse
+				best_struct = se
+	return best_struct
+
 func _has_direct_interactable_under_cursor() -> bool:
 	var mouse_world: Vector2 = get_global_mouse_position()
+	var mouse_tile: Vector2i = Config.iso_to_world(mouse_world)
 	for node in get_tree().get_nodes_in_group("interactable"):
 		if node is Node2D and (node as Node2D).is_visible_in_tree():
 			var n2d: Node2D = node as Node2D
-			if n2d.global_position.distance_to(mouse_world) <= 42.0:
+			if n2d is StructureEntity:
+				var se: StructureEntity = n2d as StructureEntity
+				if se.tile_pos == mouse_tile or se.global_position.distance_to(mouse_world) <= 24.0:
+					return true
+			elif n2d.global_position.distance_to(mouse_world) <= 28.0:
 				return true
 	return false
 
@@ -509,6 +562,8 @@ func _try_place_block_from_hand() -> bool:
 	var placed: bool = bsys.place_block_from_hand(structure_id, target_tile, self)
 	if placed:
 		inventory.remove_at_index(active_hotbar_index, 1)
+		sync_weapon_from_active_slot()
+		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 		var block_world: Vector2 = Config.world_to_iso(target_tile)
 		var dir: Vector2 = (block_world - global_position).normalized()
 		if dir.length_squared() > 0.01:
@@ -516,6 +571,7 @@ func _try_place_block_from_hand() -> bool:
 		_lunge_offset = facing_direction * 4.0
 		_swing_duration = 0.16
 		_swing_timer = _swing_duration
+		SignalBus.ui_sound_requested.emit("place")
 		queue_redraw()
 		return true
 	else:
@@ -723,7 +779,7 @@ func _setup_torch_light() -> void:
 	_torch_light.name = "TorchLight"
 	_torch_light.color = Color(1.0, 0.90, 0.65, 1.0)
 	_torch_light.energy = 1.25
-	_torch_light.texture_scale = 1.35
+	_torch_light.texture_scale = 2.2
 	_torch_light.position = Vector2(0.0, -14.0)
 	var grad: Gradient = Gradient.new()
 	grad.colors = PackedColorArray([
@@ -819,6 +875,8 @@ func _connect_component_signals() -> void:
 	)
 	equipment.slot_changed.connect(func(slot: String, item_id: String) -> void:
 		stats.defense = equipment.get_defense()
+		if health_comp != null:
+			health_comp.set_armor(stats.defense)
 		SignalBus.equipment_changed.emit(slot, item_id)
 		queue_redraw()
 	)
@@ -1009,6 +1067,9 @@ func _draw() -> void:
 			# Bow is held centered in the hand, standing upright facing outward
 			base_angle = deg_to_rad(135.0) * rot_dir
 			anchor_rect = Rect2(-12.0, -12.0, 24.0, 24.0)
+		elif weapon_id == "torch":
+			base_angle = -deg_to_rad(28.0) * rot_dir
+			anchor_rect = Rect2(-8.0, -24.0, 30.0, 30.0)
 		else:
 			# Melee weapon (sword, axe, hammer, spear, dagger) idle angle ~70 deg upright
 			base_angle = -deg_to_rad(28.0) * rot_dir
@@ -1046,10 +1107,10 @@ func _draw() -> void:
 
 		if weapon_id == "torch":
 			var flame_phase: float = sin(Time.get_ticks_msec() * 0.015)
-			var flame_tip: Vector2 = hand_pos + Vector2(cos(final_rot - PI * 0.40 * rot_dir), sin(final_rot - PI * 0.40 * rot_dir)) * 14.0
-			draw_circle(flame_tip, 4.0 + flame_phase * 0.8, Color(1.0, 0.85, 0.30, 0.95))
-			draw_circle(flame_tip + Vector2(0.0, -2.0), 2.5 + flame_phase * 0.5, Color(1.0, 0.45, 0.12, 0.90))
-			draw_circle(flame_tip + Vector2(0.0, -4.0), 1.2, Color(1.0, 0.95, 0.70, 0.95))
+			var flame_tip: Vector2 = hand_pos + Vector2(cos(final_rot - PI * 0.38 * rot_dir), sin(final_rot - PI * 0.38 * rot_dir)) * 18.0
+			draw_circle(flame_tip, 5.5 + flame_phase * 0.9, Color(1.0, 0.85, 0.30, 0.95))
+			draw_circle(flame_tip + Vector2(0.0, -2.5), 3.4 + flame_phase * 0.6, Color(1.0, 0.45, 0.12, 0.90))
+			draw_circle(flame_tip + Vector2(0.0, -4.5), 1.6, Color(1.0, 0.95, 0.70, 0.95))
 
 		if is_bow and _is_charging_bow:
 			var charge_ratio: float = clampf(_bow_charge_time / MAX_BOW_CHARGE_TIME, 0.0, 1.0)

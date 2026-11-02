@@ -169,6 +169,14 @@
   - Selecting slots via `[1-8]`, mouse wheel or HUD clicks exclusively equips the item in hand (`select_hotbar_slot()`) and displays toast name/count without consuming consumables.
   - Pressing LMB with food, bandages, or medicine in active hand consumes the item (`use_held_consumable()`), applying health/hunger/stamina/bleed recovery with recoil animation, sound, and a 0.40s cooldown.
   - Non-weapon items held in hand are visibly rendered in `Player._draw()`.
+- **Unified Health & Armor System (2026-11-02)**:
+  - Transitioned `HealthComponent` from 6-limb anatomy (head, torso, limbs) to clean unified Health (`current`, `maximum`) and Armor (`armor`), with damage reduction formula `reduction = armor / (armor + 50.0)`.
+  - Replaced 6 limb injury cards in `CharacterSheetUI` with structured Survival & Armor vitals (Health, Armor Rating with absorption percentage, Stamina, Hunger, Blood & Regeneration).
+- **Direct Hand Placement (RMB), 1-Click Torch Dismantle (LMB) & Layer Separation (2026-11-02)**:
+  - Separated `_placed_floors` and `_placed_structures` in `BuildingSystem`: walls, doors, and standing torches can be placed on top of wooden or stone floors without tile conflicts.
+  - Holding a torch/wall/floor in active slot: RMB (`interact`) places block on ground/floor, while preserving station interactions when clicking directly on workbenches/chests/doors.
+  - LMB (`attack`): clicking a placed torch instantly dismantles it (1-click pop-off) and returns to inventory; clicking other player-built structures channels dismantle without wasting stamina on empty swings; ancient ruins remain protected.
+  - Enlarged torch sprite (34px) with high-intensity flame and expanded lighting radius (`PointLight2D` texture_scale 2.2).
 - **Weather Particles Canvas Layer Isolation (2026-11-02)**:
   - Fixed rain/fog particles bleeding over UI windows: lowered `WeatherCanvas.layer` from 15 to 2 (`PROCESS_MODE_PAUSABLE`) and explicitly set `UILayer.layer = 20` in `main.tscn`. Rain strictly renders in the world plane underneath interface panels.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.
