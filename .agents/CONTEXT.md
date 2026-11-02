@@ -154,4 +154,8 @@
   - Completely eradicated placeholder wood log (`wood.png`) hardcode in `BuildMenuUI` (`scripts/ui/build_menu_ui.gd`), replaced with direct dynamic `IconFactory.get_icon(sid)` resolution.
   - Centered 80x80 blueprint preview card in Build Inspector and 2-column grid catalog (260x54px buttons).
   - 12-phase automated E2E suite passes cleanly with exit code 0 (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
+- **Separation of In-Hand Selection and LMB Item Use (2026-11-02)**:
+  - Selecting slots via `[1-8]`, mouse wheel or HUD clicks exclusively equips the item in hand (`select_hotbar_slot()`) and displays toast name/count without consuming consumables.
+  - Pressing LMB with food, bandages, or medicine in active hand consumes the item (`use_held_consumable()`), applying health/hunger/stamina/bleed recovery with recoil animation, sound, and a 0.40s cooldown.
+  - Non-weapon items held in hand are visibly rendered in `Player._draw()`.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

@@ -397,8 +397,11 @@ func _show_item_name_toast(text: String) -> void:
 
 func _activate_hotbar_slot(slot_idx: int) -> void:
 	var player: Node = get_tree().get_first_node_in_group("player")
-	if player != null and player.has_method("use_slot_item"):
-		player.call("use_slot_item", slot_idx)
+	if player != null:
+		if player.has_method("select_hotbar_slot"):
+			player.call("select_hotbar_slot", slot_idx)
+		elif player.has_method("use_slot_item"):
+			player.call("use_slot_item", slot_idx)
 		_refresh_hotbar_from_player()
 
 func update_stat(stat_name: String, current: float, maximum: float) -> void:
