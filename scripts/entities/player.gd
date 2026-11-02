@@ -290,9 +290,32 @@ func _physics_process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if is_dead or GameManager.is_paused():
 		return
+
+	# Hotbar selection via numeric keys [1-8]
+	if event is InputEventKey and event.pressed and not event.echo:
+		var k: InputEventKey = event as InputEventKey
+		if k.keycode >= KEY_1 and k.keycode <= KEY_8:
+			select_hotbar_slot(k.keycode - KEY_1)
+			get_viewport().set_input_as_handled()
+			return
+
+	# Hotbar selection via mouse wheel scrolling
+	if event is InputEventMouseButton and event.pressed:
+		var mb: InputEventMouseButton = event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_WHEEL_UP:
+			select_hotbar_slot((active_hotbar_index - 1 + 8) % 8)
+			get_viewport().set_input_as_handled()
+			return
+		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			select_hotbar_slot((active_hotbar_index + 1) % 8)
+			get_viewport().set_input_as_handled()
+			return
+
 	if event.is_action_pressed("attack"):
 		if _is_holding_bow():
 			_start_bow_charge()
+		elif _is_holding_consumable():
+			use_held_consumable()
 		else:
 			perform_attack()
 	elif event.is_action_released("attack"):
@@ -525,15 +548,104 @@ func sync_weapon_from_active_slot() -> void:
 	queue_redraw()
 
 
+func select_hotbar_slot(slot_index: int) -> void:
+	var clamped_idx: int = clampi(slot_index, 0, 7)
+	active_hotbar_index = clamped_idx
+	sync_weapon_from_active_slot()
+	var slot: Dictionary = inventory.get_slot(active_hotbar_index) if inventory != null else {}
+	if not slot.is_empty():
+		var item_id: String = str(slot.get("item_id", ""))
+		var count: int = int(slot.get("count", 1))
+		var def: Dictionary = DataRegistry.get_item(item_id)
+		var sname: String = str(def.get("name", item_id.capitalize().replace("_", " ")))
+		if count > 1:
+			SignalBus.notification_posted.emit("Selected %s (x%d)." % [sname, count])
+		else:
+			SignalBus.notification_posted.emit("Selected %s." % sname)
+	else:
+		SignalBus.notification_posted.emit("Empty Hand.")
+	SignalBus.inventory_changed.emit(self, inventory.snapshot() if inventory != null else {})
+	queue_redraw()
+
+
+func _is_holding_consumable() -> bool:
+	if inventory == null:
+		return false
+	var slot: Dictionary = inventory.get_slot(active_hotbar_index)
+	if slot.is_empty():
+		return false
+	var item_id: String = str(slot.get("item_id", ""))
+	var def: Dictionary = DataRegistry.get_item(item_id)
+	if def.is_empty():
+		return false
+	var itype: String = str(def.get("type", ""))
+	if itype in ["consumable", "food", "medical"]:
+		return true
+	var s_dict: Dictionary = def.get("stats", def.get("effects", {}))
+	return s_dict.has("heal") or s_dict.has("nutrition") or s_dict.has("cure_status") or s_dict.has("restore_health") or s_dict.has("restore_hunger")
+
+
+func use_held_consumable() -> bool:
+	if is_dead or GameManager.is_paused():
+		return false
+	if _attack_cooldown > 0.0:
+		return false
+	if inventory == null:
+		return false
+	var slot: Dictionary = inventory.get_slot(active_hotbar_index)
+	if slot.is_empty():
+		return false
+	var item_id: String = str(slot.get("item_id", ""))
+	var def: Dictionary = DataRegistry.get_item(item_id)
+	if def.is_empty():
+		return false
+
+	var effects: Dictionary = def.get("stats", def.get("effects", {}))
+	var heal_amt: float = float(effects.get("heal", effects.get("health", def.get("restore_health", 0.0))))
+	var hunger_amt: float = float(effects.get("nutrition", effects.get("hunger", def.get("restore_hunger", 0.0))))
+	var stamina_amt: float = float(effects.get("stamina", 20.0 if hunger_amt > 0.0 else 0.0))
+	var status_eff: String = str(effects.get("apply_status", effects.get("status_effect", "")))
+
+	if heal_amt > 0.0:
+		health_comp.heal(heal_amt)
+		stats.modify("health", heal_amt)
+	if hunger_amt > 0.0:
+		stats.modify("hunger", hunger_amt)
+		status_effects.apply("well_fed", 35.0, 1.0)
+	if stamina_amt > 0.0:
+		stats.modify("stamina", stamina_amt)
+	if not status_eff.is_empty():
+		status_effects.apply(status_eff, 30.0, 1.0)
+	if item_id.find("bandage") != -1 or bool(effects.get("stop_bleeding", effects.get("bandage", false))):
+		var bandaged_cnt: int = health_comp.bandage_all_bleeding()
+		if bandaged_cnt > 0:
+			skills.gain_xp("medicine", 12.0)
+	if effects.has("cure_status"):
+		var cure: String = str(effects.get("cure_status"))
+		status_effects.remove(cure)
+
+	inventory.remove_at_index(active_hotbar_index, 1)
+	_attack_cooldown = 0.40
+	_lunge_offset = facing_direction * 2.5
+	_swing_duration = 0.18
+	_swing_timer = _swing_duration
+	SignalBus.ui_sound_requested.emit("click")
+	var item_name: String = str(def.get("name", item_id.capitalize().replace("_", " ")))
+	SignalBus.notification_posted.emit("Used %s." % item_name)
+	sync_weapon_from_active_slot()
+	SignalBus.inventory_changed.emit(self, inventory.snapshot())
+	queue_redraw()
+	return true
+
+
 func use_slot_item(slot_index: int) -> void:
 	if slot_index >= 0 and slot_index < 8:
-		active_hotbar_index = slot_index
-		sync_weapon_from_active_slot()
+		# Selecting a hotbar slot only equips it in hand, DOES NOT consume it automatically
+		select_hotbar_slot(slot_index)
+		return
+
 	var slot: Dictionary = inventory.get_slot(slot_index)
 	if slot.is_empty():
-		if slot_index >= 0 and slot_index < 8:
-			equipment.unequip("weapon")
-			queue_redraw()
 		return
 	var item_id: String = str(slot.get("item_id", ""))
 	var dur: int = int(slot.get("durability", -1))
@@ -543,10 +655,7 @@ func use_slot_item(slot_index: int) -> void:
 
 	var item_type: String = str(def.get("type", ""))
 	if item_type == "weapon" or item_type == "tool":
-		sync_weapon_from_active_slot()
 		SignalBus.notification_posted.emit("Selected %s." % str(def.get("name", item_id)))
-		SignalBus.inventory_changed.emit(self, inventory.snapshot())
-		queue_redraw()
 	elif item_type == "consumable" or item_type == "food" or item_type == "medical":
 		var effects: Dictionary = def.get("stats", def.get("effects", {}))
 		var heal_amt: float = float(effects.get("heal", effects.get("health", def.get("restore_health", 0.0))))
@@ -585,6 +694,7 @@ func use_slot_item(slot_index: int) -> void:
 	else:
 		# Resource/material selected in hotbar (e.g. Wood, Stone)
 		SignalBus.notification_posted.emit("Selected %s (x%d)." % [str(def.get("name", item_id)), int(slot.get("count", 1))])
+		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 
 func is_alive() -> bool:
@@ -999,6 +1109,18 @@ func _draw() -> void:
 			draw_polyline(IsoMath.diamond_polygon(hand_pos + center_tip, reticle_r * 1.5, reticle_r * 0.75), cone_line_col, 1.4, true)
 			if charge_ratio >= 0.98:
 				draw_circle(hand_pos + center_tip, 2.0, Color(1.0, 0.95, 0.55, 0.95))
+	elif inventory != null:
+		var held_slot: Dictionary = inventory.get_slot(active_hotbar_index)
+		if not held_slot.is_empty():
+			var held_id: String = str(held_slot.get("item_id", ""))
+			var held_tex: Texture2D = IconFactory.get_icon(held_id)
+			if held_tex != null:
+				var held_pos: Vector2 = hand_pos + Vector2(0.0, -3.0)
+				var held_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left else Vector2(1.0, 1.0)
+				var held_rot: float = sin(_walk_phase) * deg_to_rad(4.0) * _walk_blend * rot_dir
+				draw_set_transform(held_pos, held_rot, held_scale)
+				draw_texture_rect(held_tex, Rect2(-7.0, -7.0, 14.0, 14.0), false)
+				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# RimWorld-style Smooth Weapon Slash Trail (Melee weapons only)
 	if _swing_timer > 0.0 and not (equipment != null and (equipment.get_item_id("weapon").find("bow") != -1 or equipment.get_item_id("weapon").find("crossbow") != -1)):
