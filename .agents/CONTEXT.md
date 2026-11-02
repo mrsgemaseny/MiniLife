@@ -138,4 +138,9 @@
 - **Torch Light Radius & Main Hand Sync Fix (2026-11-02)**:
   - Fixed bug where holding a torch and pressing LMB shot arrows from a previously equipped bow: changed `torch` definition from `offhand` to `weapon` in `data/items.json`, added `slot_override` to `equipment.equip()`, and updated `sync_weapon_from_active_slot()` to strictly bind hotbar selections to `weapon` slot.
   - Expanded torch light radius from 80px (160x160) to ~345px (512x512 with 1.35 scale), illuminating 7-9 tiles with a warm amber gradient and animated flame at the torch tip.
+- **Direct Block Placement & Structure Deconstruction (2026-11-02)**:
+  - Walls and floors (`wood_wall`, `wood_floor`, `stone_wall`, `stone_floor`, `wood_door`) crafted in `[C]` Crafting Menu and placed directly into the world with Right-Click (RMB) from the active hotbar slot.
+  - `[B]` menu strictly reserved for base stations and infrastructure (`furnace`, `storage`, `research_table`, `workbench`, `campfire`, `bed`).
+  - Continuous Left-Click (LMB) on player-built structures (`is_player_built == true`) channels dismantling (pickaxe/axe 3.5x speed) with a damage overlay bar and returns items to inventory; world-gen and ancient structures remain indestructible.
+  - Phase 10 of automated E2E test suite updated and passing 100%.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

@@ -6,6 +6,7 @@ var tile_pos: Vector2i = Vector2i.ZERO
 var current_hp: float = 100.0
 var max_hp: float = 100.0
 var is_door_open: bool = false
+var is_player_built: bool = true
 var animate_construction: bool = false
 var _def: Dictionary = {}
 var _collision: CollisionShape2D = null
@@ -17,6 +18,7 @@ var _build_particles: Array[Dictionary] = []
 
 func _ready() -> void:
 	y_sort_enabled = true
+	add_to_group("structures")
 	_def = DataRegistry.get_structure(structure_id)
 	max_hp = float(_def.get("hp", 100.0))
 	current_hp = max_hp
@@ -300,6 +302,62 @@ func _draw_construction_overlay() -> void:
 		draw_rect(bg_rect, Color(0.08, 0.09, 0.12, 0.92), true)
 		draw_rect(Rect2(-bar_w * 0.5 + 1.0, bar_y + 1.0, (bar_w - 2.0) * _build_progress, bar_h - 2.0), Color(0.96, 0.80, 0.26, 0.96), true)
 		draw_rect(bg_rect, Color(0.68, 0.55, 0.28, 0.95), false, 1.0)
+
+	if current_hp < max_hp and _build_progress >= 1.0:
+		var bar_w: float = 34.0
+		var bar_h: float = 5.0
+		var bar_y: float = -36.0
+		var hp_pct: float = clampf(current_hp / maxf(1.0, max_hp), 0.0, 1.0)
+		var bg_rect: Rect2 = Rect2(-bar_w * 0.5, bar_y, bar_w, bar_h)
+		draw_rect(bg_rect, Color(0.08, 0.09, 0.12, 0.92), true)
+		draw_rect(Rect2(-bar_w * 0.5 + 1.0, bar_y + 1.0, (bar_w - 2.0) * hp_pct, bar_h - 2.0), Color(0.85, 0.28, 0.22, 0.95), true)
+		draw_rect(bg_rect, Color(0.35, 0.35, 0.35, 0.95), false, 1.0)
+
+
+func cancel_dismantle() -> void:
+	pass
+
+
+func channel_dismantle(breaker: Node, delta: float) -> bool:
+	if not is_player_built:
+		SignalBus.notification_posted.emit("This ancient structure cannot be dismantled.")
+		return false
+
+	var equip_comp: EquipmentComponent = breaker.get("equipment") as EquipmentComponent
+	var w_type: String = equip_comp.get_tool_type() if equip_comp != null else ""
+	var is_stone: bool = structure_id.find("stone") != -1 or structure_id == "wall" or structure_id.find("furnace") != -1 or structure_id.find("forge") != -1
+	var is_wood: bool = structure_id.find("wood") != -1 or structure_id in ["workbench", "chest", "storage", "door", "bed", "floor"]
+
+	var speed_mult: float = 1.0
+	if is_stone:
+		speed_mult = 3.5 if w_type == "pickaxe" else 0.4
+	elif is_wood:
+		speed_mult = 3.5 if w_type == "axe" else 0.7
+
+	current_hp -= 65.0 * speed_mult * delta
+	queue_redraw()
+	if current_hp <= 0.0:
+		dismantle(breaker)
+		return true
+	return false
+
+
+func dismantle(breaker: Node) -> void:
+	var drop_id: String = str(_def.get("drop_item", ""))
+	if drop_id.is_empty():
+		var mats: Array = _def.get("materials", [])
+		if not mats.is_empty() and mats[0] is Dictionary:
+			drop_id = str(mats[0].get("item_id", "wood"))
+		else:
+			drop_id = structure_id
+
+	if breaker != null:
+		var inv: InventoryComponent = breaker.get("inventory") as InventoryComponent
+		if inv != null:
+			inv.add_item(drop_id, 1)
+			SignalBus.notification_posted.emit("Dismantled %s." % str(_def.get("name", structure_id.capitalize())))
+
+	SignalBus.structure_destroyed.emit(structure_id, tile_pos)
 
 
 func get_station_id() -> String:

@@ -156,9 +156,32 @@ func _test_phase_10_building_structures_and_ysort(player: Player) -> void:
 	print("[E2E Phase 10] Building System, Snapping & YSort/Z-Index Invariants...")
 	assert(BuildingSystem.instance != null, "BuildingSystem instance missing")
 	assert(BuildingSystem.instance.y_sort_enabled, "BuildingSystem y_sort_enabled must be true")
+
+	# Test direct in-hand block placement
+	var test_tile: Vector2i = player.current_tile + Vector2i(3, 3)
+	var placed: bool = BuildingSystem.instance.place_block_from_hand("wood_wall", test_tile, player)
+	assert(placed, "Failed to place wood_wall from hand")
+
+	var key: String = Config.vec2i_to_key(test_tile)
+	var struct_node: StructureEntity = BuildingSystem.instance._placed_nodes.get(key) as StructureEntity
+	assert(struct_node != null, "Placed structure node missing from BuildingSystem")
+	assert(struct_node.is_player_built, "Hand-placed structure must have is_player_built == true")
+
+	# Test continuous dismantling on player-built structure
+	var broke: bool = struct_node.channel_dismantle(player, 10.0)
+	assert(broke, "Player-built structure should be dismantled when HP depleted")
+
+	# Test immunity of world-gen/ancient structures
+	var ancient_node: StructureEntity = StructureEntity.new()
+	ancient_node.structure_id = "stone_wall"
+	ancient_node.is_player_built = false
+	var ancient_broke: bool = ancient_node.channel_dismantle(player, 10.0)
+	assert(not ancient_broke, "Ancient structure must not be dismantlable")
+	ancient_node.free()
+
 	SignalBus.build_requested.emit("campfire", player.current_tile + Vector2i(2, 2), player)
 	SignalBus.storage_container_opened.emit("test_chest", Vector2i(0, 0))
-	print("[E2E Phase 10] OK (BuildingSystem & YSort Depth verified)")
+	print("[E2E Phase 10] OK (BuildingSystem, In-Hand Placement & Dismantle verified)")
 
 
 func _test_phase_11_inventory_hotbar_and_dupe_proofing(player: Player) -> void:

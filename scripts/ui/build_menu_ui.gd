@@ -72,7 +72,7 @@ func _setup_styled_build_menu() -> void:
 		var hdr_hbox: HBoxContainer = HBoxContainer.new()
 		if title_label != null:
 			vbox.remove_child(title_label)
-			title_label.text = "Чертежи строительства"
+			title_label.text = "Станции и инфраструктура базы [B]"
 			title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			title_label.add_theme_font_size_override("font_size", 12)
 			title_label.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
@@ -127,6 +127,8 @@ func refresh() -> void:
 	)
 
 	for sid in sorted_sids:
+		if sid in ["floor", "wood_floor", "wall", "wood_wall", "stone_floor", "door"]:
+			continue
 		var def: Dictionary = _structures[sid]
 		var sname: String = str(def.get("name", sid.capitalize()))
 		var mats: Array = def.get("materials", [])

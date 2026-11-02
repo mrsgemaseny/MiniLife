@@ -16,6 +16,7 @@ func _ready() -> void:
 	instance = self
 	y_sort_enabled = true
 	SignalBus.build_mode_changed.connect(_on_build_mode_changed)
+	SignalBus.build_requested.connect(_on_build_requested)
 	SignalBus.structure_placement_validated.connect(_on_structure_placement_validated)
 	SignalBus.structure_restored.connect(_on_structure_restored)
 	SignalBus.structure_destroyed.connect(_on_structure_destroyed)
@@ -117,8 +118,47 @@ func consume_materials(builder: Node, structure_id: String) -> void:
 			inv.remove_item(str(mat.get("item_id", "")), int(mat.get("count", 1)))
 
 
+func can_place_block(structure_id: String, tile_pos: Vector2i) -> bool:
+	var key: String = Config.vec2i_to_key(tile_pos)
+	if _placed_nodes.has(key) and is_instance_valid(_placed_nodes[key]):
+		var existing: StructureEntity = _placed_nodes[key] as StructureEntity
+		if existing != null:
+			var is_existing_floor: bool = existing.structure_id in ["floor", "stone_floor"]
+			var is_new_floor: bool = structure_id in ["floor", "stone_floor"]
+			if is_existing_floor and is_new_floor:
+				return false
+			if not is_existing_floor and not is_new_floor:
+				return false
+	var def: Dictionary = DataRegistry.get_structure(structure_id)
+	var passable: bool = bool(def.get("passable", false))
+	if not passable:
+		var ptile: Vector2i = GameManager.get_player_tile()
+		if ptile == tile_pos:
+			return false
+	return true
+
+
+func place_block_from_hand(structure_id: String, tile_pos: Vector2i, builder: Node) -> bool:
+	if not can_place_block(structure_id, tile_pos):
+		return false
+	_spawn_structure_node(structure_id, tile_pos, true, true)
+	if builder != null:
+		var skills: SkillsComponent = builder.get("skills") as SkillsComponent
+		if skills != null:
+			skills.gain_xp("construction", 8.0)
+	SignalBus.structure_built.emit(structure_id, tile_pos)
+	return true
+
+
 func _on_build_mode_changed(structure_id: String) -> void:
 	set_build_mode(structure_id)
+
+
+func _on_build_requested(structure_id: String, tile_pos: Vector2i, builder: Node) -> void:
+	if can_place_block(structure_id, tile_pos):
+		SignalBus.structure_placement_validated.emit(structure_id, tile_pos, builder)
+	else:
+		SignalBus.structure_placement_rejected.emit(structure_id, tile_pos, "Tile occupied or blocked")
 
 
 func _on_structure_placement_validated(structure_id: String, tile_pos: Vector2i, builder: Node) -> void:
@@ -127,11 +167,11 @@ func _on_structure_placement_validated(structure_id: String, tile_pos: Vector2i,
 		var skills: SkillsComponent = builder.get("skills") as SkillsComponent
 		if skills != null:
 			skills.gain_xp("construction", 14.0)
-	_spawn_structure_node(structure_id, tile_pos, true)
+	_spawn_structure_node(structure_id, tile_pos, true, true)
 
 
 func _on_structure_restored(structure_id: String, tile_pos: Vector2i) -> void:
-	_spawn_structure_node(structure_id, tile_pos, false)
+	_spawn_structure_node(structure_id, tile_pos, false, false)
 
 
 func _on_structure_destroyed(_structure_id: String, tile_pos: Vector2i) -> void:
@@ -145,7 +185,7 @@ func _on_structure_destroyed(_structure_id: String, tile_pos: Vector2i) -> void:
 		_placed_nodes.erase(key)
 
 
-func _spawn_structure_node(structure_id: String, tile_pos: Vector2i, animate_build: bool = false) -> void:
+func _spawn_structure_node(structure_id: String, tile_pos: Vector2i, animate_build: bool = false, is_player_built: bool = true) -> void:
 	var key: String = Config.vec2i_to_key(tile_pos)
 	if _placed_nodes.has(key) and is_instance_valid(_placed_nodes[key]):
 		return
@@ -153,6 +193,7 @@ func _spawn_structure_node(structure_id: String, tile_pos: Vector2i, animate_bui
 	inst.structure_id = structure_id
 	inst.tile_pos = tile_pos
 	inst.animate_construction = animate_build
+	inst.is_player_built = is_player_built
 	inst.global_position = Config.world_to_iso(tile_pos)
 	add_child(inst)
 	_placed_nodes[key] = inst

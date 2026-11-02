@@ -156,28 +156,56 @@ func _physics_process(delta: float) -> void:
 				facing_direction = aim_dir
 			needs_redraw = true
 
-	# Continuous Minecraft-style Resource Harvesting
+	# Continuous Minecraft-style Resource Harvesting & Structure Dismantling
 	var is_mining_channel: bool = false
 	var is_attack_pressed: bool = Input.is_action_pressed("attack") and not _is_holding_bow() and not is_dead and not GameManager.is_paused()
 
 	if is_attack_pressed:
 		var mouse_world: Vector2 = get_global_mouse_position()
 		var candidate_res: ResourceNode = null
+		var candidate_struct: StructureEntity = null
 		var best_dist: float = Config.MELEE_RANGE
 
-		var harvestables: Array[Node] = get_tree().get_nodes_in_group("harvestable")
-		for node in harvestables:
-			if node is ResourceNode and (node as ResourceNode).is_visible_in_tree():
-				var rn: ResourceNode = node as ResourceNode
-				var dist_to_player: float = rn.global_position.distance_to(global_position)
+		# 1. Check for player structures under cursor
+		var structures: Array[Node] = get_tree().get_nodes_in_group("structures")
+		for node in structures:
+			if node is StructureEntity and (node as StructureEntity).is_visible_in_tree():
+				var se: StructureEntity = node as StructureEntity
+				var dist_to_player: float = se.global_position.distance_to(global_position)
 				if dist_to_player <= Config.MELEE_RANGE:
-					var dist_to_mouse: float = rn.global_position.distance_to(mouse_world)
-					# Cursor must be specifically pointed at the resource node
-					if dist_to_mouse <= 42.0 and dist_to_player < best_dist:
+					var dist_to_mouse: float = se.global_position.distance_to(mouse_world)
+					if dist_to_mouse <= 38.0 and dist_to_player < best_dist:
 						best_dist = dist_to_player
-						candidate_res = rn
+						candidate_struct = se
 
-		if candidate_res != null:
+		# 2. Check for resource nodes under cursor if no structure targeted
+		if candidate_struct == null:
+			var harvestables: Array[Node] = get_tree().get_nodes_in_group("harvestable")
+			for node in harvestables:
+				if node is ResourceNode and (node as ResourceNode).is_visible_in_tree():
+					var rn: ResourceNode = node as ResourceNode
+					var dist_to_player: float = rn.global_position.distance_to(global_position)
+					if dist_to_player <= Config.MELEE_RANGE:
+						var dist_to_mouse: float = rn.global_position.distance_to(mouse_world)
+						if dist_to_mouse <= 42.0 and dist_to_player < best_dist:
+							best_dist = dist_to_player
+							candidate_res = rn
+
+		if candidate_struct != null:
+			if _current_mining_target != null and is_instance_valid(_current_mining_target):
+				_current_mining_target.cancel_harvest()
+			_current_mining_target = null
+			is_mining_channel = true
+			facing_direction = (candidate_struct.global_position - global_position).normalized()
+			var broke: bool = candidate_struct.channel_dismantle(self, delta)
+			_harvest_swing_timer -= delta
+			if _harvest_swing_timer <= 0.0:
+				_harvest_swing_timer = 0.28
+				_swing_timer = 0.22
+				_lunge_offset = facing_direction * 3.5
+				stats.modify("stamina", -0.75)
+			needs_redraw = true
+		elif candidate_res != null:
 			if _current_mining_target != null and _current_mining_target != candidate_res and is_instance_valid(_current_mining_target):
 				_current_mining_target.cancel_harvest()
 			_current_mining_target = candidate_res
@@ -271,7 +299,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _is_charging_bow:
 			_release_bow_shot()
 	elif event.is_action_pressed("interact") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT):
-		perform_interact()
+		if _has_direct_interactable_under_cursor():
+			perform_interact()
+		elif _is_holding_placeable_block():
+			if not _try_place_block_from_hand():
+				perform_interact()
+		else:
+			perform_interact()
 
 func _read_movement_input() -> Vector2:
 	var dir: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -420,6 +454,57 @@ func perform_interact() -> void:
 
 	if best_node != null and best_node.has_method("interact"):
 		best_node.call("interact", self)
+
+func _get_held_placeable_structure() -> String:
+	if inventory == null:
+		return ""
+	var slot: Dictionary = inventory.get_slot(active_hotbar_index)
+	if slot.is_empty():
+		return ""
+	var item_id: String = str(slot.get("item_id", ""))
+	var def: Dictionary = DataRegistry.get_item(item_id)
+	return str(def.get("placeable_structure", ""))
+
+func _is_holding_placeable_block() -> bool:
+	return _get_held_placeable_structure() != ""
+
+func _has_direct_interactable_under_cursor() -> bool:
+	var mouse_world: Vector2 = get_global_mouse_position()
+	for node in get_tree().get_nodes_in_group("interactable"):
+		if node is Node2D and (node as Node2D).is_visible_in_tree():
+			var n2d: Node2D = node as Node2D
+			if n2d.global_position.distance_to(mouse_world) <= 42.0:
+				return true
+	return false
+
+func _try_place_block_from_hand() -> bool:
+	var structure_id: String = _get_held_placeable_structure()
+	if structure_id.is_empty():
+		return false
+	var mouse_world: Vector2 = get_global_mouse_position()
+	var target_tile: Vector2i = Config.iso_to_world(mouse_world)
+	var player_tile: Vector2i = Config.iso_to_world(global_position)
+	if Config.tile_distance(player_tile, target_tile) > 5:
+		SignalBus.notification_posted.emit("Too far to place block.")
+		return false
+	var bsys: BuildingSystem = BuildingSystem.instance
+	if bsys == null:
+		return false
+	var placed: bool = bsys.place_block_from_hand(structure_id, target_tile, self)
+	if placed:
+		inventory.remove_at_index(active_hotbar_index, 1)
+		var block_world: Vector2 = Config.world_to_iso(target_tile)
+		var dir: Vector2 = (block_world - global_position).normalized()
+		if dir.length_squared() > 0.01:
+			facing_direction = dir
+		_lunge_offset = facing_direction * 4.0
+		_swing_duration = 0.16
+		_swing_timer = _swing_duration
+		queue_redraw()
+		return true
+	else:
+		SignalBus.notification_posted.emit("Cannot place block here.")
+		return false
 
 func sync_weapon_from_active_slot() -> void:
 	if inventory == null or equipment == null:

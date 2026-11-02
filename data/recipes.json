@@ -369,5 +369,60 @@
 		"output": { "item_id": "steel_sword", "count": 1 },
 		"skill_required": { "smithing": 30 },
 		"xp_reward": { "smithing": 55 }
+	},
+	{
+		"id": "craft_wood_wall",
+		"station": "",
+		"tech_required": "",
+		"inputs": [
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "wood_wall", "count": 1 },
+		"skill_required": { "construction": 0 },
+		"xp_reward": { "construction": 6 }
+	},
+	{
+		"id": "craft_wood_floor",
+		"station": "",
+		"tech_required": "",
+		"inputs": [
+			{ "item_id": "wood", "count": 1 }
+		],
+		"output": { "item_id": "wood_floor", "count": 2 },
+		"skill_required": { "construction": 0 },
+		"xp_reward": { "construction": 4 }
+	},
+	{
+		"id": "craft_stone_wall",
+		"station": "",
+		"tech_required": "stone_masonry",
+		"inputs": [
+			{ "item_id": "stone", "count": 2 }
+		],
+		"output": { "item_id": "stone_wall", "count": 1 },
+		"skill_required": { "construction": 5 },
+		"xp_reward": { "construction": 10 }
+	},
+	{
+		"id": "craft_stone_floor",
+		"station": "",
+		"tech_required": "stone_masonry",
+		"inputs": [
+			{ "item_id": "stone", "count": 1 }
+		],
+		"output": { "item_id": "stone_floor", "count": 2 },
+		"skill_required": { "construction": 5 },
+		"xp_reward": { "construction": 8 }
+	},
+	{
+		"id": "craft_wood_door",
+		"station": "",
+		"tech_required": "woodworking",
+		"inputs": [
+			{ "item_id": "wood", "count": 3 }
+		],
+		"output": { "item_id": "wood_door", "count": 1 },
+		"skill_required": { "construction": 5 },
+		"xp_reward": { "construction": 12 }
 	}
 ]
