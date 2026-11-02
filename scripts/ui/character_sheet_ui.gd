@@ -59,6 +59,19 @@ func _make_card_sb(bg: Color, border: Color, bw: int = 1) -> StyleBoxFlat:
 	return sb
 
 
+func _make_mc_btn_style(hover: bool = false) -> StyleBoxFlat:
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.68, 0.68, 0.68, 1.0) if hover else Color(0.58, 0.58, 0.58, 1.0)
+	sb.border_color = Color(0.22, 0.22, 0.22, 1.0)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(0)
+	sb.content_margin_left = 8
+	sb.content_margin_right = 8
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
+	return sb
+
+
 func _setup_styled_character_sheet() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	offset_left = 0
@@ -67,53 +80,48 @@ func _setup_styled_character_sheet() -> void:
 	offset_bottom = 0
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
-	# 1. Full-screen authentic dark medieval background canvas
-	_bg_texture = TextureRect.new()
-	_bg_texture.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_bg_texture.offset_left = 0
-	_bg_texture.offset_top = 0
-	_bg_texture.offset_right = 0
-	_bg_texture.offset_bottom = 0
-	_bg_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_bg_texture.stretch_mode = TextureRect.STRETCH_SCALE
-	var bg_img_path: String = "res://assets/sprites/ui/dark_medieval_ui_bg.jpg"
-	if ResourceLoader.exists(bg_img_path) or FileAccess.file_exists(ProjectSettings.globalize_path(bg_img_path)):
-		_bg_texture.texture = load(bg_img_path) as Texture2D
-	_bg_texture.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_bg_texture)
-	move_child(_bg_texture, 0)
+	# 1. Dark World Dimmer (Minecraft authentic - NO BLUE, NO TEXTURE)
+	var dimmer: ColorRect = ColorRect.new()
+	dimmer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dimmer.color = Color(0.0, 0.0, 0.0, 0.65)
+	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(dimmer)
+	move_child(dimmer, 0)
 
-	# 2. Full-Page Container with Margins
+	# 2. Centered 100% OPAQUE Minecraft Window (#c6c6c6)
 	if panel_container != null:
-		panel_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-		panel_container.offset_left = 36.0
-		panel_container.offset_top = 28.0
-		panel_container.offset_right = -36.0
-		panel_container.offset_bottom = -28.0
+		panel_container.set_anchors_preset(Control.PRESET_CENTER)
+		panel_container.offset_left = -440.0
+		panel_container.offset_top = -275.0
+		panel_container.offset_right = 440.0
+		panel_container.offset_bottom = 275.0
+		panel_container.custom_minimum_size = Vector2(880.0, 550.0)
 		var frame_sb: StyleBoxFlat = StyleBoxFlat.new()
-		frame_sb.bg_color = Color(0.06, 0.07, 0.09, 0.75) # Translucent dark slate overlay
-		frame_sb.border_color = Color(0.24, 0.27, 0.32, 0.90) # Weathered dark iron
-		frame_sb.set_border_width_all(1)
-		frame_sb.set_corner_radius_all(6)
-		frame_sb.set_content_margin_all(18)
+		frame_sb.bg_color = Color(0.776, 0.776, 0.776, 1.0) # Solid neutral grey
+		frame_sb.border_color = Color(0.22, 0.22, 0.22, 1.0) # Dark pixel border
+		frame_sb.set_border_width_all(3)
+		frame_sb.set_corner_radius_all(0)
+		frame_sb.set_content_margin_all(14)
 		panel_container.add_theme_stylebox_override("panel", frame_sb)
 
 	if vbox != null:
-		vbox.add_theme_constant_override("separation", 10)
+		vbox.add_theme_constant_override("separation", 8)
 
 		# Top Header Bar
 		var hdr_hbox: HBoxContainer = HBoxContainer.new()
 		var hdr_lbl: Label = Label.new()
-		hdr_lbl.text = "HERO CODEX: ANATOMY & PROFICIENCIES"
+		hdr_lbl.text = "Анатомия и навыки героя"
 		hdr_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		hdr_lbl.add_theme_font_size_override("font_size", 16)
-		hdr_lbl.modulate = Color("#dcd6cb") # Antique ivory parchment
+		hdr_lbl.add_theme_font_size_override("font_size", 14)
+		hdr_lbl.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
 		hdr_hbox.add_child(hdr_lbl)
 
 		var close_btn: Button = Button.new()
-		close_btn.text = " [ ESC / CLOSE ] "
+		close_btn.text = " ✕ "
 		close_btn.add_theme_font_size_override("font_size", 11)
-		close_btn.add_theme_stylebox_override("normal", _make_card_sb(Color(0.18, 0.10, 0.12, 0.90), Color(0.48, 0.22, 0.26, 0.90)))
+		close_btn.add_theme_color_override("font_color", Color(0.24, 0.24, 0.24, 1.0))
+		close_btn.add_theme_stylebox_override("normal", _make_mc_btn_style(false))
+		close_btn.add_theme_stylebox_override("hover", _make_mc_btn_style(true))
 		close_btn.pressed.connect(close_panel)
 		hdr_hbox.add_child(close_btn)
 		vbox.add_child(hdr_hbox)
@@ -121,55 +129,55 @@ func _setup_styled_character_sheet() -> void:
 
 	if class_label != null:
 		class_label.add_theme_font_size_override("font_size", 11)
-		class_label.modulate = Color(0.68, 0.72, 0.78) # Muted iron slate
+		class_label.modulate = Color(0.35, 0.35, 0.35, 1.0) # Dark charcoal
 
 	if traits_label != null:
 		traits_label.visible = false
 	if stats_label != null:
 		stats_label.visible = false
 
-	# 3. Two-Column Full-Page Body Layout
+	# 3. Two-Column Body Layout
 	if vbox != null:
 		_content_box = HBoxContainer.new()
 		_content_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		_content_box.add_theme_constant_override("separation", 24)
+		_content_box.add_theme_constant_override("separation", 18)
 		vbox.add_child(_content_box)
 
-		# LEFT COLUMN (360px): Anatomy & Limbs
+		# LEFT COLUMN (340px): Anatomy & Limbs
 		var left_col: VBoxContainer = VBoxContainer.new()
-		left_col.custom_minimum_size = Vector2(360, 0)
-		left_col.add_theme_constant_override("separation", 10)
+		left_col.custom_minimum_size = Vector2(340, 0)
+		left_col.add_theme_constant_override("separation", 8)
 		_content_box.add_child(left_col)
 
 		var limb_sec_title: Label = Label.new()
-		limb_sec_title.text = "ANATOMY & LIMB INTEGRITY"
-		limb_sec_title.add_theme_font_size_override("font_size", 12)
-		limb_sec_title.modulate = Color("#beb6a7")
+		limb_sec_title.text = "Состояние тела и ранения"
+		limb_sec_title.add_theme_font_size_override("font_size", 11)
+		limb_sec_title.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text
 		left_col.add_child(limb_sec_title)
 
 		_limbs_grid = GridContainer.new()
 		_limbs_grid.columns = 2
-		_limbs_grid.add_theme_constant_override("h_separation", 8)
-		_limbs_grid.add_theme_constant_override("v_separation", 8)
+		_limbs_grid.add_theme_constant_override("h_separation", 6)
+		_limbs_grid.add_theme_constant_override("v_separation", 6)
 		left_col.add_child(_limbs_grid)
 
 		# RIGHT COLUMN: 18 Skill Disciplines
 		var right_col: VBoxContainer = VBoxContainer.new()
 		right_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		right_col.add_theme_constant_override("separation", 10)
+		right_col.add_theme_constant_override("separation", 8)
 		_content_box.add_child(right_col)
 
 		var skill_sec_title: Label = Label.new()
-		skill_sec_title.text = "PROFICIENCIES & SKILL DISCIPLINES"
-		skill_sec_title.add_theme_font_size_override("font_size", 12)
-		skill_sec_title.modulate = Color("#beb6a7")
+		skill_sec_title.text = "Навыки и мастерство"
+		skill_sec_title.add_theme_font_size_override("font_size", 11)
+		skill_sec_title.modulate = Color(0.24, 0.24, 0.24, 1.0)
 		right_col.add_child(skill_sec_title)
 
 		_skills_grid = GridContainer.new()
 		_skills_grid.columns = 3
 		_skills_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_skills_grid.add_theme_constant_override("h_separation", 10)
-		_skills_grid.add_theme_constant_override("v_separation", 8)
+		_skills_grid.add_theme_constant_override("h_separation", 8)
+		_skills_grid.add_theme_constant_override("v_separation", 6)
 		right_col.add_child(_skills_grid)
 
 
@@ -231,15 +239,15 @@ func refresh() -> void:
 			var lcard: PanelContainer = PanelContainer.new()
 			lcard.custom_minimum_size = Vector2(165, 48)
 
-			var bcol: Color = Color(0.24, 0.28, 0.35, 0.90) # Healthy dark slate-iron
-			var bgcol: Color = Color(0.10, 0.12, 0.15, 0.88)
+			var bcol: Color = Color(0.32, 0.32, 0.32, 1.0) # Solid neutral Minecraft card border
+			var bgcol: Color = Color(0.16, 0.16, 0.16, 1.0) # #292929 opaque solid
 			if is_bleed or is_frac or ratio < 0.35:
-				bcol = Color(0.68, 0.18, 0.22, 0.95) # Deep crimson injury
-				bgcol = Color(0.18, 0.08, 0.10, 0.90)
+				bcol = Color(0.65, 0.20, 0.22, 1.0) # Deep crimson injury
+				bgcol = Color(0.24, 0.10, 0.12, 1.0)
 			elif ratio < 0.70:
-				bcol = Color(0.48, 0.44, 0.38, 0.90) # Weathered worn
+				bcol = Color(0.48, 0.44, 0.38, 1.0)
 
-			lcard.add_theme_stylebox_override("panel", _make_card_sb(bgcol, bcol))
+			lcard.add_theme_stylebox_override("panel", _make_card_sb(bgcol, bcol, 2))
 
 			var llbl: Label = Label.new()
 			var tag: String = " [BLEEDING]" if is_bleed else (" [FRACTURED]" if is_frac else "")
@@ -247,7 +255,7 @@ func refresh() -> void:
 			llbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			llbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			llbl.add_theme_font_size_override("font_size", 11)
-			llbl.modulate = Color("#dcd6cb") if (not is_bleed and not is_frac) else Color(0.92, 0.45, 0.45)
+			llbl.modulate = Color(0.95, 0.95, 0.95, 1.0) if (not is_bleed and not is_frac) else Color(0.95, 0.45, 0.45, 1.0)
 			lcard.add_child(llbl)
 			_limbs_grid.add_child(lcard)
 
@@ -264,8 +272,8 @@ func refresh() -> void:
 
 			var scard: PanelContainer = PanelContainer.new()
 			scard.custom_minimum_size = Vector2(230, 44)
-			var sborder: Color = Color(0.32, 0.36, 0.44, 0.90) if lvl > 0 else Color(0.18, 0.20, 0.26, 0.70)
-			scard.add_theme_stylebox_override("panel", _make_card_sb(Color(0.09, 0.10, 0.13, 0.88), sborder))
+			var sborder: Color = Color(0.35, 0.35, 0.35, 1.0) if lvl > 0 else Color(0.25, 0.25, 0.25, 1.0)
+			scard.add_theme_stylebox_override("panel", _make_card_sb(Color(0.16, 0.16, 0.16, 1.0), sborder, 2))
 
 			var svbox: VBoxContainer = VBoxContainer.new()
 			svbox.add_theme_constant_override("separation", 3)
@@ -274,7 +282,7 @@ func refresh() -> void:
 			var slbl: Label = Label.new()
 			slbl.text = "%s  —  Lv %d" % [skill_name.capitalize(), lvl]
 			slbl.add_theme_font_size_override("font_size", 11)
-			slbl.modulate = Color("#dcd6cb") if lvl > 0 else Color(0.65, 0.68, 0.74)
+			slbl.modulate = Color(0.95, 0.95, 0.95, 1.0) if lvl > 0 else Color(0.65, 0.65, 0.65, 1.0)
 			svbox.add_child(slbl)
 
 			var pbar: ProgressBar = ProgressBar.new()
@@ -282,9 +290,9 @@ func refresh() -> void:
 			pbar.max_value = req_xp
 			pbar.value = cur_xp
 			pbar.show_percentage = false
-			# Dark iron trough + cold steel fill (ZERO yellow, ZERO neon green, ZERO blue!)
-			pbar.add_theme_stylebox_override("background", _make_card_sb(Color(0.05, 0.06, 0.08, 0.95), Color(0.16, 0.18, 0.22, 0.80)))
-			pbar.add_theme_stylebox_override("fill", _make_card_sb(Color(0.38, 0.44, 0.54, 0.92), Color(0.55, 0.60, 0.70, 0.85)))
+			# Minecraft solid trough + neutral steel / XP fill (ZERO blue)
+			pbar.add_theme_stylebox_override("background", _make_card_sb(Color(0.08, 0.08, 0.08, 1.0), Color(0.20, 0.20, 0.20, 1.0)))
+			pbar.add_theme_stylebox_override("fill", _make_card_sb(Color(0.55, 0.55, 0.55, 1.0), Color(0.70, 0.70, 0.70, 1.0)))
 
 			var xplbl: Label = Label.new()
 			xplbl.text = "%d / %d XP" % [int(cur_xp), int(req_xp)]
@@ -292,7 +300,7 @@ func refresh() -> void:
 			xplbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			xplbl.set_anchors_preset(Control.PRESET_FULL_RECT)
 			xplbl.add_theme_font_size_override("font_size", 8)
-			xplbl.modulate = Color(0.85, 0.87, 0.92)
+			xplbl.modulate = Color(0.95, 0.95, 0.95, 1.0)
 			pbar.add_child(xplbl)
 			svbox.add_child(pbar)
 

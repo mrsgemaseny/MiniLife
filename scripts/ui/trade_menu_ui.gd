@@ -21,6 +21,19 @@ func _ready() -> void:
 			_refresh_lists()
 	)
 
+func _make_mc_btn_style(hover: bool = false) -> StyleBoxFlat:
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.68, 0.68, 0.68, 1.0) if hover else Color(0.58, 0.58, 0.58, 1.0)
+	sb.border_color = Color(0.22, 0.22, 0.22, 1.0)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(0)
+	sb.content_margin_left = 8
+	sb.content_margin_right = 8
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
+	return sb
+
+
 func _build_ui() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	offset_left = 0
@@ -29,60 +42,56 @@ func _build_ui() -> void:
 	offset_bottom = 0
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
-	# 1. Full-screen dark medieval background texture
-	var bg_tex: TextureRect = TextureRect.new()
-	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg_tex.offset_left = 0
-	bg_tex.offset_top = 0
-	bg_tex.offset_right = 0
-	bg_tex.offset_bottom = 0
-	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
-	var bg_img_path: String = "res://assets/sprites/ui/dark_medieval_ui_bg.jpg"
-	if ResourceLoader.exists(bg_img_path) or FileAccess.file_exists(ProjectSettings.globalize_path(bg_img_path)):
-		bg_tex.texture = load(bg_img_path) as Texture2D
-	bg_tex.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(bg_tex)
-	move_child(bg_tex, 0)
+	# 1. Dark World Dimmer (Minecraft authentic - NO BLUE, NO TEXTURE)
+	var dimmer: ColorRect = ColorRect.new()
+	dimmer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dimmer.color = Color(0.0, 0.0, 0.0, 0.65)
+	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(dimmer)
+	move_child(dimmer, 0)
 
 	var panel: PanelContainer = PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	panel.offset_left = 36.0
-	panel.offset_top = 28.0
-	panel.offset_right = -36.0
-	panel.offset_bottom = -28.0
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.offset_left = -360.0
+	panel.offset_top = -250.0
+	panel.offset_right = 360.0
+	panel.offset_bottom = 250.0
+	panel.custom_minimum_size = Vector2(720.0, 500.0)
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
-	sb.bg_color = Color(0.06, 0.07, 0.09, 0.82)
-	sb.border_color = Color(0.25, 0.28, 0.34, 0.90)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(6)
-	sb.set_content_margin_all(16)
+	sb.bg_color = Color(0.776, 0.776, 0.776, 1.0) # Solid neutral grey
+	sb.border_color = Color(0.22, 0.22, 0.22, 1.0) # Dark pixel border
+	sb.set_border_width_all(3)
+	sb.set_corner_radius_all(0)
+	sb.set_content_margin_all(14)
 	panel.add_theme_stylebox_override("panel", sb)
 	add_child(panel)
 
 	var vbox: VBoxContainer = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 10)
+	vbox.add_theme_constant_override("separation", 8)
 	panel.add_child(vbox)
 
 	var hdr_row: HBoxContainer = HBoxContainer.new()
 	var title: Label = Label.new()
-	title.text = "MERCHANT CARAVAN BARTER & TRADE"
+	title.text = "Торговля и обмен каравана"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 14)
-	title.modulate = Color(0.88, 0.86, 0.82)
+	title.add_theme_font_size_override("font_size", 12)
+	title.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
 	hdr_row.add_child(title)
 
 	var close_btn_top: Button = Button.new()
-	close_btn_top.text = " [X] Close "
+	close_btn_top.text = " ✕ "
 	close_btn_top.add_theme_font_size_override("font_size", 11)
+	close_btn_top.add_theme_color_override("font_color", Color(0.24, 0.24, 0.24, 1.0))
+	close_btn_top.add_theme_stylebox_override("normal", _make_mc_btn_style(false))
+	close_btn_top.add_theme_stylebox_override("hover", _make_mc_btn_style(true))
 	close_btn_top.pressed.connect(close_trade)
 	hdr_row.add_child(close_btn_top)
 	vbox.add_child(hdr_row)
 
 	_info_label = Label.new()
-	_info_label.text = "Select an item to buy or barter from your inventory."
-	_info_label.add_theme_font_size_override("font_size", 11)
-	_info_label.modulate = Color(0.70, 0.74, 0.80)
+	_info_label.text = "Выберите предмет для покупки или продажи."
+	_info_label.add_theme_font_size_override("font_size", 10)
+	_info_label.modulate = Color(0.35, 0.35, 0.35, 1.0)
 	vbox.add_child(_info_label)
 
 	var hbox: HBoxContainer = HBoxContainer.new()

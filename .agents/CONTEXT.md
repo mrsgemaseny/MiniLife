@@ -2,7 +2,7 @@
 
 ## Current Operational Focus
 - **Current Operational Focus**: Full Modular Monolith Architecture (Phases 1–15 of `PRODUCTION_ROADMAP.md` Complete).
-- **Master Specification**: `PROJECT_MiniLife.md` & `PRODUCTION_ROADMAP.md`.
+- **Master Specification**: `PROJECT_MiniLife.md`, `PROGRESSION_SYSTEM.md` & `PRODUCTION_ROADMAP.md`.
 - **Repository**: `https://github.com/mrsgemaseny/MiniLife`
 
 ## Recent Accomplishments
@@ -131,4 +131,8 @@
   - **Research Table Crash Fix (`ResearchSystem`)**: Added missing `get_tech(tech_id: String) -> Dictionary` method to `ResearchSystem`, fixing runtime crash when inspecting tech nodes.
   - **Stone & Slate Codex Overhaul (`ResearchTreeUI`, `data/tech_tree.json`, `ItemIconFactory`)**: Completely stripped all sci-fi blue/cyan tones from the tech tree codex. Window frame, headers, and backgrounds transitioned to chiseled granite, slate, and weathered bronze. Replaced blue connection lines with polished stone silver and bronze progression flows. Enforced strict left-to-right progression rule (`if pgx >= gx: continue`), completely eliminating backward cuts through node text and off-screen pointing arrowheads. Added dedicated pixel-art icons for kiln/furnace, anthracite coal, and chainmail armor.
   - **Procedural Ambient Music & Tactile SFX Engine (`AudioDirector`, `SignalBus`, `Player`, `ResourceNode`, `ProjectileEntity`, `MinecraftSlot`)**: Integrated procedural C418 / Minecraft-style calm ambient music (6 peaceful piano/kalimba phrases with 20-35s nature rests) and 17 procedural organic sound effects (warm wood chopping, crisp stone pick clinks, crystalline ore rings, foliage rustling, resource shattering, footsteps, bow draw/release, arrow hits, weapon swooshes, crafting chimes, building thuds, tech research arpeggios, item pickup pops, tactile UI clicks). All audio is isolated through `SignalBus` with 8 polyphonic voice channels and subtle pitch variance.
+- **100% Opaque Minecraft GUI Overhaul (2026-11-02)**:
+  - Eliminated all blue tints, slate overlays, and transparency across all survival menus (`InventoryUI`, `CraftMenuUI`, `BuildMenuUI`, `CharacterSheetUI`, `FurnaceUI`, `QuestLogUI`, `TradeMenuUI`, `ResearchTreeUI`).
+  - Implemented authentic vanilla Minecraft GUI styling matching user reference photo: solid neutral grey `#c6c6c6` (`Color(0.776, 0.776, 0.776, 1.0)`), 3D beveled borders (`#222222`), dark pixel text `#3f3f3f` (`Color(0.24, 0.24, 0.24, 1.0)`), recessed grey slots `#8b8b8b` with shadow `#373737` and highlight, and solid dark status cards (`#292929`, border `#525252`).
+  - Background world dimmer set to clean semi-transparent black `Color(0.0, 0.0, 0.0, 0.65)` (authentic Minecraft pause/inventory dimmer) without any JPG texture wallpapers.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

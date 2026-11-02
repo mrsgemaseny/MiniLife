@@ -106,70 +106,71 @@ func _build_ui() -> void:
 	offset_bottom = 0
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
-	# 1. Full-screen dark medieval background texture
-	var bg_tex: TextureRect = TextureRect.new()
-	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg_tex.offset_left = 0
-	bg_tex.offset_top = 0
-	bg_tex.offset_right = 0
-	bg_tex.offset_bottom = 0
-	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
-	var bg_img_path: String = "res://assets/sprites/ui/dark_medieval_ui_bg.jpg"
-	if ResourceLoader.exists(bg_img_path) or FileAccess.file_exists(ProjectSettings.globalize_path(bg_img_path)):
-		bg_tex.texture = load(bg_img_path) as Texture2D
-	bg_tex.mouse_filter = Control.MOUSE_FILTER_STOP
-	bg_tex.gui_input.connect(func(ev: InputEvent) -> void:
+	# 1. Dark World Dimmer (Minecraft authentic - NO BLUE, NO TEXTURE)
+	var dimmer: ColorRect = ColorRect.new()
+	dimmer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dimmer.color = Color(0.0, 0.0, 0.0, 0.65)
+	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
+	dimmer.gui_input.connect(func(ev: InputEvent) -> void:
 		if ev is InputEventMouseButton and ev.pressed and not _cursor_stack.is_empty():
 			_drop_cursor_item()
 	)
-	add_child(bg_tex)
-	move_child(bg_tex, 0)
+	add_child(dimmer)
 
+	# 2. Centered Minecraft Furnace Window (#c6c6c6 100% OPAQUE)
 	_panel = PanelContainer.new()
-	_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_panel.offset_left = 36.0
-	_panel.offset_top = 28.0
-	_panel.offset_right = -36.0
-	_panel.offset_bottom = -28.0
+	_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_panel.offset_left = -210.0
+	_panel.offset_top = -220.0
+	_panel.offset_right = 210.0
+	_panel.offset_bottom = 220.0
+	_panel.custom_minimum_size = Vector2(420.0, 440.0)
 
 	var bg_box: StyleBoxFlat = StyleBoxFlat.new()
-	bg_box.bg_color = Color(0.06, 0.07, 0.09, 0.82)
-	bg_box.border_color = Color(0.25, 0.28, 0.34, 0.90)
-	bg_box.set_border_width_all(1)
-	bg_box.set_corner_radius_all(6)
-	bg_box.set_content_margin_all(16)
+	bg_box.bg_color = Color(0.776, 0.776, 0.776, 1.0) # Solid neutral grey
+	bg_box.border_color = Color(0.22, 0.22, 0.22, 1.0)
+	bg_box.set_border_width_all(3)
+	bg_box.set_corner_radius_all(0)
+	bg_box.set_content_margin_all(12)
 	_panel.add_theme_stylebox_override("panel", bg_box)
 	add_child(_panel)
 
 	var main_vbox: VBoxContainer = VBoxContainer.new()
-	main_vbox.add_theme_constant_override("separation", 10)
+	main_vbox.add_theme_constant_override("separation", 8)
 	_panel.add_child(main_vbox)
 
 	# 1. Header Bar
 	var hdr: HBoxContainer = HBoxContainer.new()
 	var title: Label = Label.new()
-	title.text = "SMELTING FORGE & CRUCIBLE FURNACE"
+	title.text = "Плавильная печь"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 14)
-	title.modulate = Color(0.88, 0.86, 0.82) # Antique ivory (NO YELLOW)
+	title.add_theme_font_size_override("font_size", 12)
+	title.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
 	hdr.add_child(title)
 
 	var close_btn: Button = Button.new()
-	close_btn.text = " [X] Close "
+	close_btn.text = " ✕ "
 	close_btn.add_theme_font_size_override("font_size", 11)
+	close_btn.add_theme_color_override("font_color", Color(0.24, 0.24, 0.24, 1.0))
+	var cb_sb: StyleBoxFlat = StyleBoxFlat.new()
+	cb_sb.bg_color = Color(0.58, 0.58, 0.58, 1.0)
+	cb_sb.border_color = Color(0.22, 0.22, 0.22, 1.0)
+	cb_sb.set_border_width_all(2)
+	cb_sb.set_corner_radius_all(0)
+	cb_sb.set_content_margin_all(4)
+	close_btn.add_theme_stylebox_override("normal", cb_sb)
 	close_btn.pressed.connect(close_furnace)
 	hdr.add_child(close_btn)
 	main_vbox.add_child(hdr)
 
-	# 2. Machine Smelting Chamber
+	# 2. Machine Smelting Chamber (Solid Minecraft sub-panel)
 	var machine_box: PanelContainer = PanelContainer.new()
 	var m_sb: StyleBoxFlat = StyleBoxFlat.new()
-	m_sb.bg_color = Color(0.08, 0.08, 0.10, 0.90)
-	m_sb.border_color = Color(0.24, 0.25, 0.30, 0.85)
-	m_sb.set_border_width_all(1)
-	m_sb.set_corner_radius_all(6)
-	m_sb.set_content_margin_all(12)
+	m_sb.bg_color = Color(0.68, 0.68, 0.68, 1.0)
+	m_sb.border_color = Color(0.22, 0.22, 0.22, 1.0)
+	m_sb.set_border_width_all(2)
+	m_sb.set_corner_radius_all(0)
+	m_sb.set_content_margin_all(10)
 	machine_box.add_theme_stylebox_override("panel", m_sb)
 	main_vbox.add_child(machine_box)
 
@@ -232,9 +233,9 @@ func _build_ui() -> void:
 
 	# 4. Player Inventory Section
 	var inv_hdr: Label = Label.new()
-	inv_hdr.text = "PLAYER INVENTORY"
+	inv_hdr.text = "Инвентарь игрока"
 	inv_hdr.add_theme_font_size_override("font_size", 10)
-	inv_hdr.modulate = Color(0.68, 0.74, 0.82)
+	inv_hdr.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
 	main_vbox.add_child(inv_hdr)
 
 	# 3x8 Backpack Grid (indices 8 to 31)

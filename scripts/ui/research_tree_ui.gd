@@ -73,10 +73,10 @@ func _build_ui() -> void:
 	anchor_bottom = 1.0
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
-	# Full-screen dark vignette backdrop (freezes focus, blocks world interaction)
+	# Full-screen dark dimmer (Minecraft authentic - NO BLUE, NO TEXTURE)
 	var backdrop: ColorRect = ColorRect.new()
 	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0.03, 0.04, 0.06, 0.82)
+	backdrop.color = Color(0.0, 0.0, 0.0, 0.65)
 	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(backdrop)
 
@@ -91,11 +91,11 @@ func _build_ui() -> void:
 	_panel.offset_bottom = 285.0
 
 	var bg_box: StyleBoxFlat = StyleBoxFlat.new()
-	bg_box.bg_color = Color(0.08, 0.09, 0.10, 0.98)
-	bg_box.border_color = Color(0.44, 0.46, 0.50, 0.95)
-	bg_box.set_border_width_all(2)
-	bg_box.set_corner_radius_all(6)
-	bg_box.set_content_margin_all(12)
+	bg_box.bg_color = Color(0.776, 0.776, 0.776, 1.0) # Solid neutral grey
+	bg_box.border_color = Color(0.22, 0.22, 0.22, 1.0) # Dark pixel border
+	bg_box.set_border_width_all(3)
+	bg_box.set_corner_radius_all(0)
+	bg_box.set_content_margin_all(14)
 	_panel.add_theme_stylebox_override("panel", bg_box)
 	add_child(_panel)
 
@@ -103,7 +103,7 @@ func _build_ui() -> void:
 	main_vbox.add_theme_constant_override("separation", 6)
 	_panel.add_child(main_vbox)
 
-	# 1. Medieval Codex Header Bar
+	# 1. Header Bar
 	var hdr: HBoxContainer = HBoxContainer.new()
 	hdr.alignment = BoxContainer.ALIGNMENT_CENTER
 	main_vbox.add_child(hdr)
@@ -114,20 +114,28 @@ func _build_ui() -> void:
 	hdr.add_child(title_vbox)
 
 	var title: Label = Label.new()
-	title.text = "SCHOLAR'S RESEARCH CODEX"
-	title.add_theme_font_size_override("font_size", 14)
-	title.modulate = Color(0.88, 0.82, 0.68)
+	title.text = "Древо технологий и исследований"
+	title.add_theme_font_size_override("font_size", 12)
+	title.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
 	title_vbox.add_child(title)
 
 	var subtitle: Label = Label.new()
-	subtitle.text = "[ Technologies unlocked through observation, trials, and materials ]"
+	subtitle.text = "[ Технологии, открываемые через эксперименты и ресурсы ]"
 	subtitle.add_theme_font_size_override("font_size", 9)
-	subtitle.modulate = Color(0.60, 0.62, 0.66, 0.80)
+	subtitle.modulate = Color(0.35, 0.35, 0.35, 1.0)
 	title_vbox.add_child(subtitle)
 
 	var close_btn: Button = Button.new()
-	close_btn.text = " [X] Close "
+	close_btn.text = " ✕ "
 	close_btn.add_theme_font_size_override("font_size", 11)
+	close_btn.add_theme_color_override("font_color", Color(0.24, 0.24, 0.24, 1.0))
+	var cb_sb: StyleBoxFlat = StyleBoxFlat.new()
+	cb_sb.bg_color = Color(0.58, 0.58, 0.58, 1.0)
+	cb_sb.border_color = Color(0.22, 0.22, 0.22, 1.0)
+	cb_sb.set_border_width_all(2)
+	cb_sb.set_corner_radius_all(0)
+	cb_sb.set_content_margin_all(6)
+	close_btn.add_theme_stylebox_override("normal", cb_sb)
 	close_btn.pressed.connect(close_tree)
 	hdr.add_child(close_btn)
 

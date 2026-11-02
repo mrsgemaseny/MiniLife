@@ -91,31 +91,32 @@ func refresh() -> void:
 
 func _draw() -> void:
 	var sz: Vector2 = size
-	# 1. Outer dark frame
-	draw_rect(Rect2(Vector2.ZERO, sz), Color(0.10, 0.11, 0.14, 0.96), true)
+	# 1. 100% OPAQUE Minecraft Slot (Zero transparency, Zero blue - pure neutral grey)
+	# Outer border
+	draw_rect(Rect2(Vector2.ZERO, sz), Color(0.22, 0.22, 0.22, 1.0), true)
 
-	# 2. Recessed slot well
+	# 2. Recessed slot well (#8b8b8b)
 	var well_rect: Rect2 = Rect2(1.0, 1.0, sz.x - 2.0, sz.y - 2.0)
-	var well_col: Color = Color(0.18, 0.20, 0.25, 0.94)
+	var well_col: Color = Color(0.545, 0.545, 0.545, 1.0) # Authentic Minecraft slot grey
 	if is_hovered:
-		well_col = Color(0.26, 0.29, 0.36, 0.96)
+		well_col = Color(0.64, 0.64, 0.64, 1.0) # Hover highlight
 	draw_rect(well_rect, well_col, true)
 
-	# 3. Inner shadow bevel (Minecraft-style inset: top/left dark, bottom/right highlight)
-	draw_line(Vector2(1.0, 1.0), Vector2(sz.x - 1.0, 1.0), Color(0.08, 0.09, 0.11, 0.90), 1.5)
-	draw_line(Vector2(1.0, 1.0), Vector2(1.0, sz.y - 1.0), Color(0.08, 0.09, 0.11, 0.90), 1.5)
-	draw_line(Vector2(1.0, sz.y - 1.5), Vector2(sz.x - 1.0, sz.y - 1.5), Color(0.38, 0.42, 0.50, 0.70), 1.0)
-	draw_line(Vector2(sz.x - 1.5, 1.0), Vector2(sz.x - 1.5, sz.y - 1.0), Color(0.38, 0.42, 0.50, 0.70), 1.0)
+	# 3. Inner shadow bevel (Minecraft-style 3D inset: top/left dark shadow, bottom/right white highlight)
+	draw_line(Vector2(1.0, 1.0), Vector2(sz.x - 1.0, 1.0), Color(0.22, 0.22, 0.22, 1.0), 2.0)
+	draw_line(Vector2(1.0, 1.0), Vector2(1.0, sz.y - 1.0), Color(0.22, 0.22, 0.22, 1.0), 2.0)
+	draw_line(Vector2(1.0, sz.y - 1.0), Vector2(sz.x - 1.0, sz.y - 1.0), Color(1.0, 1.0, 1.0, 0.90), 1.5)
+	draw_line(Vector2(sz.x - 1.0, 1.0), Vector2(sz.x - 1.0, sz.y - 1.0), Color(1.0, 1.0, 1.0, 0.90), 1.5)
 
 	# 4. Placeholder text for empty armor/shield slots
 	if item_data.is_empty() and placeholder_text != "":
 		var font: Font = ThemeDB.fallback_font
-		draw_string(font, Vector2(5.0, sz.y * 0.5 + 4.0), placeholder_text, HORIZONTAL_ALIGNMENT_CENTER, sz.x - 10.0, 9, Color(0.42, 0.46, 0.52, 0.55))
+		draw_string(font, Vector2(4.0, sz.y * 0.5 + 4.0), placeholder_text, HORIZONTAL_ALIGNMENT_CENTER, sz.x - 8.0, 9, Color(0.32, 0.32, 0.32, 0.85))
 
-	# 5. Active selection highlight frame (Authentic weathered steel frame - NO YELLOW)
+	# 5. Active selection highlight frame (Authentic Minecraft white frame)
 	if is_active:
 		var sel_rect: Rect2 = Rect2(-1.0, -1.0, sz.x + 2.0, sz.y + 2.0)
-		draw_rect(sel_rect, Color(0.90, 0.92, 0.96, 0.95), false, 2.0)
+		draw_rect(sel_rect, Color(1.0, 1.0, 1.0, 1.0), false, 2.0)
 
 	# 6. Minecraft Durability Bar (Muted steel & oxidized iron tones - NO BRIGHT GREEN/YELLOW)
 	if not item_data.is_empty() and item_data.has("durability"):
@@ -129,13 +130,13 @@ func _draw() -> void:
 			var bar_x: float = 4.0
 			var bar_y: float = sz.y - 5.0
 			# Backing
-			draw_rect(Rect2(bar_x, bar_y, bar_w, 2.0), Color(0.04, 0.05, 0.06, 0.95), true)
+			draw_rect(Rect2(bar_x, bar_y, bar_w, 2.0), Color(0.04, 0.04, 0.04, 1.0), true)
 			# Fill (Cold Steel -> Dull Bronze -> Crimson Wear)
-			var fill_col: Color = Color(0.75, 0.78, 0.84) # Cold iron
+			var fill_col: Color = Color(0.80, 0.80, 0.80, 1.0) # Steel
 			if ratio < 0.25:
-				fill_col = Color(0.75, 0.22, 0.22) # Crimson danger
+				fill_col = Color(0.80, 0.20, 0.20, 1.0) # Crimson danger
 			elif ratio < 0.60:
-				fill_col = Color(0.65, 0.55, 0.45) # Dull oxidized iron
+				fill_col = Color(0.65, 0.55, 0.40, 1.0) # Worn bronze
 			draw_rect(Rect2(bar_x, bar_y, bar_w * ratio, 2.0), fill_col, true)
 
 

@@ -107,6 +107,45 @@ func close_panel() -> void:
 	SignalBus.ui_panel_toggled.emit(PANEL_ID, false, true)
 
 
+func _make_mc_window_style() -> StyleBoxFlat:
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.776, 0.776, 0.776, 1.0) # #c6c6c6 - 100% OPAQUE SOLID MINECRAFT GREY
+	sb.border_color = Color(0.22, 0.22, 0.22, 1.0) # Outer dark pixel border
+	sb.set_border_width_all(3)
+	sb.set_corner_radius_all(0) # Strictly sharp corners
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 12
+	return sb
+
+
+func _make_mc_btn_style(hover: bool = false) -> StyleBoxFlat:
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.68, 0.68, 0.68, 1.0) if hover else Color(0.58, 0.58, 0.58, 1.0)
+	sb.border_color = Color(0.22, 0.22, 0.22, 1.0)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(0)
+	sb.content_margin_left = 8
+	sb.content_margin_right = 8
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
+	return sb
+
+
+func _make_mc_effect_style() -> StyleBoxFlat:
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.18, 0.18, 0.18, 1.0) # #2e2e2e solid
+	sb.border_color = Color(0.35, 0.35, 0.35, 1.0)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(6)
+	sb.content_margin_left = 10
+	sb.content_margin_right = 10
+	sb.content_margin_top = 6
+	sb.content_margin_bottom = 6
+	return sb
+
+
 func _build_minecraft_inventory_ui() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	offset_left = 0
@@ -115,59 +154,50 @@ func _build_minecraft_inventory_ui() -> void:
 	offset_bottom = 0
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
-	# 1. Full-screen dark medieval background texture (handcrafted, NO AI glossy look)
-	var bg_tex: TextureRect = TextureRect.new()
-	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg_tex.offset_left = 0
-	bg_tex.offset_top = 0
-	bg_tex.offset_right = 0
-	bg_tex.offset_bottom = 0
-	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
-	var bg_img_path: String = "res://assets/sprites/ui/dark_medieval_ui_bg.jpg"
-	if ResourceLoader.exists(bg_img_path) or FileAccess.file_exists(ProjectSettings.globalize_path(bg_img_path)):
-		bg_tex.texture = load(bg_img_path) as Texture2D
-	bg_tex.mouse_filter = Control.MOUSE_FILTER_STOP
-	bg_tex.gui_input.connect(func(ev: InputEvent) -> void:
+	# 1. Dark World Dimmer (Minecraft authentic pause dimmer - NO BLUE, NO TEXTURE)
+	var dimmer: ColorRect = ColorRect.new()
+	dimmer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dimmer.color = Color(0.0, 0.0, 0.0, 0.65)
+	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
+	dimmer.gui_input.connect(func(ev: InputEvent) -> void:
 		if ev is InputEventMouseButton and ev.pressed and not _cursor_stack.is_empty():
 			_drop_hovered_or_cursor_item(false)
 	)
-	add_child(bg_tex)
-	move_child(bg_tex, 0)
+	add_child(dimmer)
 
-	# 2. Full-page content container inside iron-riveted frame
+	# 2. Centered Layout Root (Main Minecraft GUI Box + Right Effects Column)
+	var center_root: HBoxContainer = HBoxContainer.new()
+	center_root.set_anchors_preset(Control.PRESET_CENTER)
+	center_root.alignment = BoxContainer.ALIGNMENT_CENTER
+	center_root.add_theme_constant_override("separation", 14)
+	add_child(center_root)
+
+	# 3. Authentic Minecraft Inventory Window (#c6c6c6 OPAQUE)
 	_panel = PanelContainer.new()
-	_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_panel.offset_left = 36.0
-	_panel.offset_top = 28.0
-	_panel.offset_right = -36.0
-	_panel.offset_bottom = -28.0
-
-	var frame_sb: StyleBoxFlat = StyleBoxFlat.new()
-	frame_sb.bg_color = Color(0.06, 0.07, 0.09, 0.82) # Dark translucent slate
-	frame_sb.border_color = Color(0.25, 0.28, 0.34, 0.90) # Weathered dark iron
-	frame_sb.set_border_width_all(1)
-	frame_sb.set_corner_radius_all(6)
-	frame_sb.set_content_margin_all(16)
-	_panel.add_theme_stylebox_override("panel", frame_sb)
-	add_child(_panel)
+	_panel.add_theme_stylebox_override("panel", _make_mc_window_style())
+	_panel.custom_minimum_size = Vector2(410.0, 430.0)
+	center_root.add_child(_panel)
 
 	var main_vbox: VBoxContainer = VBoxContainer.new()
-	main_vbox.add_theme_constant_override("separation", 10)
+	main_vbox.add_theme_constant_override("separation", 6)
 	_panel.add_child(main_vbox)
 
-	# Header Bar (Title + Sort & Merge + Close)
+	# Header Row (Dark Minecraft Title + Buttons)
 	var hdr: HBoxContainer = HBoxContainer.new()
+	hdr.alignment = BoxContainer.ALIGNMENT_CENTER
 	var title: Label = Label.new()
-	title.text = "SURVIVAL INVENTORY & EQUIPMENT"
+	title.text = "Создание / Инвентарь"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 14)
-	title.modulate = Color(0.88, 0.86, 0.82) # Antique ivory (NO YELLOW)
+	title.add_theme_font_size_override("font_size", 12)
+	title.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
 	hdr.add_child(title)
 
 	var sort_btn: Button = Button.new()
-	sort_btn.text = " [ ⇵ Sort & Consolidate ] "
-	sort_btn.add_theme_font_size_override("font_size", 11)
+	sort_btn.text = " ⇵ Сортировка "
+	sort_btn.add_theme_font_size_override("font_size", 10)
+	sort_btn.add_theme_color_override("font_color", Color(0.24, 0.24, 0.24, 1.0))
+	sort_btn.add_theme_stylebox_override("normal", _make_mc_btn_style(false))
+	sort_btn.add_theme_stylebox_override("hover", _make_mc_btn_style(true))
 	sort_btn.pressed.connect(func() -> void:
 		var player: Node = get_tree().get_first_node_in_group("player")
 		var inv: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
@@ -179,42 +209,31 @@ func _build_minecraft_inventory_ui() -> void:
 	hdr.add_child(sort_btn)
 
 	var close_btn: Button = Button.new()
-	close_btn.text = " [X] Close "
-	close_btn.add_theme_font_size_override("font_size", 11)
+	close_btn.text = " ✕ "
+	close_btn.add_theme_font_size_override("font_size", 10)
+	close_btn.add_theme_color_override("font_color", Color(0.24, 0.24, 0.24, 1.0))
+	close_btn.add_theme_stylebox_override("normal", _make_mc_btn_style(false))
+	close_btn.add_theme_stylebox_override("hover", _make_mc_btn_style(true))
 	close_btn.pressed.connect(close_panel)
 	hdr.add_child(close_btn)
 	main_vbox.add_child(hdr)
 
-	# Full-page 2-Column Split Layout
-	var body_hbox: HBoxContainer = HBoxContainer.new()
-	body_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body_hbox.add_theme_constant_override("separation", 24)
-	main_vbox.add_child(body_hbox)
+	# Top Section (Armor Column + Character Viewport Well + 2x2 Crafting Grid like Minecraft photo 4)
+	var top_hbox: HBoxContainer = HBoxContainer.new()
+	top_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	top_hbox.add_theme_constant_override("separation", 10)
+	main_vbox.add_child(top_hbox)
 
-	# Left Column: Equipment & Vitals (280px)
-	var left_vbox: VBoxContainer = VBoxContainer.new()
-	left_vbox.custom_minimum_size = Vector2(280.0, 0.0)
-	left_vbox.add_theme_constant_override("separation", 12)
-	body_hbox.add_child(left_vbox)
-
-	var eq_hdr: Label = Label.new()
-	eq_hdr.text = "EQUIPPED ARMOR & ARMS"
-	eq_hdr.add_theme_font_size_override("font_size", 11)
-	eq_hdr.modulate = Color(0.72, 0.76, 0.82)
-	left_vbox.add_child(eq_hdr)
-
-	var eq_grid: GridContainer = GridContainer.new()
-	eq_grid.columns = 3
-	eq_grid.add_theme_constant_override("h_separation", 6)
-	eq_grid.add_theme_constant_override("v_separation", 6)
-	left_vbox.add_child(eq_grid)
+	# Left Column: 4 Armor slots vertical (Helm, Chest, Legs, Hand)
+	var armor_col: VBoxContainer = VBoxContainer.new()
+	armor_col.add_theme_constant_override("separation", 3)
+	top_hbox.add_child(armor_col)
 
 	var armor_keys: Array[Dictionary] = [
 		{"key": "head", "placeholder": "Helm"},
 		{"key": "chest", "placeholder": "Chest"},
-		{"key": "legs", "placeholder": "Greaves"},
-		{"key": "weapon", "placeholder": "Main Hand"},
-		{"key": "offhand", "placeholder": "Offhand"}
+		{"key": "legs", "placeholder": "Legs"},
+		{"key": "weapon", "placeholder": "Hand"}
 	]
 	for ak in armor_keys:
 		var k: String = str(ak.get("key"))
@@ -226,64 +245,110 @@ func _build_minecraft_inventory_ui() -> void:
 		s.slot_hovered.connect(func(_idx): _on_armor_slot_hovered(k))
 		s.slot_unhovered.connect(func(_idx): _hide_tooltip())
 		_armor_slots[k] = s
-		eq_grid.add_child(s)
+		armor_col.add_child(s)
 
-	# Character vitals summary panel
-	var vitals_panel: PanelContainer = PanelContainer.new()
-	var vsb: StyleBoxFlat = StyleBoxFlat.new()
-	vsb.bg_color = Color(0.08, 0.09, 0.12, 0.70)
-	vsb.border_color = Color(0.22, 0.25, 0.30, 0.75)
-	vsb.set_border_width_all(1)
-	vsb.set_corner_radius_all(4)
-	vsb.set_content_margin_all(10)
-	vitals_panel.add_theme_stylebox_override("panel", vsb)
-	left_vbox.add_child(vitals_panel)
+	# Center: Character Figure Well (Minecraft Inset Well #1e1e1e)
+	var char_well: PanelContainer = PanelContainer.new()
+	char_well.custom_minimum_size = Vector2(96.0, 140.0)
+	var cw_sb: StyleBoxFlat = StyleBoxFlat.new()
+	cw_sb.bg_color = Color(0.12, 0.12, 0.12, 1.0) # Solid black/dark well
+	cw_sb.border_color = Color(0.25, 0.25, 0.25, 1.0)
+	cw_sb.set_border_width_all(2)
+	cw_sb.set_corner_radius_all(0)
+	char_well.add_theme_stylebox_override("panel", cw_sb)
+	top_hbox.add_child(char_well)
 
-	var vitals_vbox: VBoxContainer = VBoxContainer.new()
-	vitals_vbox.add_theme_constant_override("separation", 6)
-	vitals_panel.add_child(vitals_vbox)
+	var char_vbox: VBoxContainer = VBoxContainer.new()
+	char_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	char_well.add_child(char_vbox)
 
-	var vitals_title: Label = Label.new()
-	vitals_title.text = "SURVIVOR STATUS"
-	vitals_title.add_theme_font_size_override("font_size", 10)
-	vitals_title.modulate = Color(0.70, 0.74, 0.80)
-	vitals_vbox.add_child(vitals_title)
+	var char_icon: TextureRect = TextureRect.new()
+	char_icon.custom_minimum_size = Vector2(64.0, 64.0)
+	char_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	char_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	var hatchet_tex: Texture2D = IconFactory.get_icon("stone_axe")
+	if hatchet_tex != null:
+		char_icon.texture = hatchet_tex
+	char_vbox.add_child(char_icon)
 
-	_defense_label = Label.new()
-	_defense_label.text = "Armor Rating: 0"
-	_defense_label.add_theme_font_size_override("font_size", 11)
-	_defense_label.modulate = Color(0.85, 0.88, 0.92) # Cold steel (NO BLUE)
-	vitals_vbox.add_child(_defense_label)
+	var char_lbl: Label = Label.new()
+	char_lbl.text = "Wanderer"
+	char_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	char_lbl.add_theme_font_size_override("font_size", 10)
+	char_lbl.modulate = Color(0.80, 0.80, 0.80, 1.0)
+	char_vbox.add_child(char_lbl)
 
-	_weight_label = Label.new()
-	_weight_label.text = "Backpack Load: 0.0 / 100 kg"
-	_weight_label.add_theme_font_size_override("font_size", 11)
-	_weight_label.modulate = Color(0.85, 0.88, 0.92)
-	vitals_vbox.add_child(_weight_label)
+	# Right Column: Shield slot + 2x2 Crafting Grid like Minecraft Photo 4
+	var craft_col: VBoxContainer = VBoxContainer.new()
+	craft_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	craft_col.add_theme_constant_override("separation", 4)
+	top_hbox.add_child(craft_col)
 
-	_gold_label = Label.new()
-	_gold_label.text = "Purse: 0 coins"
-	_gold_label.add_theme_font_size_override("font_size", 11)
-	_gold_label.modulate = Color(0.88, 0.86, 0.82) # Silver/ivory (NO YELLOW)
-	vitals_vbox.add_child(_gold_label)
+	var craft_title: Label = Label.new()
+	craft_title.text = "Создание"
+	craft_title.add_theme_font_size_override("font_size", 10)
+	craft_title.modulate = Color(0.24, 0.24, 0.24, 1.0)
+	craft_col.add_child(craft_title)
 
-	# Right Column: Main Backpack (24 slots) + Hotbar (8 slots)
-	var right_vbox: VBoxContainer = VBoxContainer.new()
-	right_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	right_vbox.add_theme_constant_override("separation", 10)
-	body_hbox.add_child(right_vbox)
+	var craft_row: HBoxContainer = HBoxContainer.new()
+	craft_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	craft_row.add_theme_constant_override("separation", 6)
+	craft_col.add_child(craft_row)
 
+	# 2x2 grid
+	var craft_grid: GridContainer = GridContainer.new()
+	craft_grid.columns = 2
+	craft_grid.add_theme_constant_override("h_separation", 2)
+	craft_grid.add_theme_constant_override("v_separation", 2)
+	craft_row.add_child(craft_grid)
+
+	for ci in range(4):
+		var cs: Control = MCSlot.new()
+		cs.slot_group = "craft_input"
+		cs.placeholder_text = ""
+		craft_grid.add_child(cs)
+
+	var arrow_lbl: Label = Label.new()
+	arrow_lbl.text = " ➔ "
+	arrow_lbl.add_theme_font_size_override("font_size", 14)
+	arrow_lbl.modulate = Color(0.35, 0.35, 0.35, 1.0)
+	craft_row.add_child(arrow_lbl)
+
+	# Craft result slot
+	var res_slot: Control = MCSlot.new()
+	res_slot.slot_group = "craft_output"
+	craft_row.add_child(res_slot)
+
+	# Offhand / Shield Slot
+	var offhand_hbox: HBoxContainer = HBoxContainer.new()
+	craft_col.add_child(offhand_hbox)
+	var off_lbl: Label = Label.new()
+	off_lbl.text = "Щит: "
+	off_lbl.add_theme_font_size_override("font_size", 9)
+	off_lbl.modulate = Color(0.30, 0.30, 0.30, 1.0)
+	offhand_hbox.add_child(off_lbl)
+
+	var s_off: Control = MCSlot.new()
+	s_off.slot_group = "armor"
+	s_off.placeholder_text = "Shield"
+	s_off.slot_clicked.connect(func(_idx, btn, shift): _on_armor_slot_clicked("offhand", btn, shift))
+	s_off.slot_hovered.connect(func(_idx): _on_armor_slot_hovered("offhand"))
+	s_off.slot_unhovered.connect(func(_idx): _hide_tooltip())
+	_armor_slots["offhand"] = s_off
+	offhand_hbox.add_child(s_off)
+
+	# Middle Section: Main Backpack Storage (24 Slots = 3 Rows x 8 Columns)
 	var inv_title: Label = Label.new()
-	inv_title.text = "BACKPACK STORAGE (24 SLOTS)"
-	inv_title.add_theme_font_size_override("font_size", 11)
-	inv_title.modulate = Color(0.72, 0.76, 0.82)
-	right_vbox.add_child(inv_title)
+	inv_title.text = "Инвентарь"
+	inv_title.add_theme_font_size_override("font_size", 10)
+	inv_title.modulate = Color(0.24, 0.24, 0.24, 1.0)
+	main_vbox.add_child(inv_title)
 
 	var inv_grid: GridContainer = GridContainer.new()
 	inv_grid.columns = 8
-	inv_grid.add_theme_constant_override("h_separation", 5)
-	inv_grid.add_theme_constant_override("v_separation", 5)
-	right_vbox.add_child(inv_grid)
+	inv_grid.add_theme_constant_override("h_separation", 3)
+	inv_grid.add_theme_constant_override("v_separation", 3)
+	main_vbox.add_child(inv_grid)
 
 	_inv_slots.clear()
 	for i in range(8, 32):
@@ -303,17 +368,17 @@ func _build_minecraft_inventory_ui() -> void:
 		_inv_slots.append(s)
 		inv_grid.add_child(s)
 
-	var hotbar_title: Label = Label.new()
-	hotbar_title.text = "EQUIPPED BELT & HOTBAR (8 SLOTS)"
-	hotbar_title.add_theme_font_size_override("font_size", 11)
-	hotbar_title.modulate = Color(0.72, 0.76, 0.82)
-	right_vbox.add_child(hotbar_title)
+	# Spacer between backpack and hotbar (like Minecraft)
+	var spacer: Control = Control.new()
+	spacer.custom_minimum_size = Vector2(0.0, 4.0)
+	main_vbox.add_child(spacer)
 
+	# Bottom Section: Hotbar (8 Slots = 1 Row)
 	var hotbar_grid: GridContainer = GridContainer.new()
 	hotbar_grid.columns = 8
-	hotbar_grid.add_theme_constant_override("h_separation", 5)
-	hotbar_grid.add_theme_constant_override("v_separation", 5)
-	right_vbox.add_child(hotbar_grid)
+	hotbar_grid.add_theme_constant_override("h_separation", 3)
+	hotbar_grid.add_theme_constant_override("v_separation", 3)
+	main_vbox.add_child(hotbar_grid)
 
 	_hotbar_slots.clear()
 	for i in range(8):
@@ -333,12 +398,116 @@ func _build_minecraft_inventory_ui() -> void:
 		_hotbar_slots.append(s)
 		hotbar_grid.add_child(s)
 
-	# Controls Hint footer
+	# Controls Hint footer (Neutral dark text)
 	var hint_lbl: Label = Label.new()
-	hint_lbl.text = "LMB: Pick / Place / Swap   |   RMB: Split Stack   |   Shift+LMB: Quick Move   |   Q: Drop Item"
-	hint_lbl.add_theme_font_size_override("font_size", 10)
-	hint_lbl.modulate = Color(0.62, 0.66, 0.72)
-	right_vbox.add_child(hint_lbl)
+	hint_lbl.text = "ЛКМ: Взять/Сложить  |  ПКМ: Разделить  |  Shift+ЛКМ: Быстро  |  Q: Бросить"
+	hint_lbl.add_theme_font_size_override("font_size", 9)
+	hint_lbl.modulate = Color(0.35, 0.35, 0.35, 1.0)
+	main_vbox.add_child(hint_lbl)
+
+	# 4. Right Column: Effects & Survivor Status (Like Minecraft Photo 4)
+	var effects_col: VBoxContainer = VBoxContainer.new()
+	effects_col.add_theme_constant_override("separation", 8)
+	center_root.add_child(effects_col)
+
+	# Effect 1: Armor Defense (Icon Shield like photo 4)
+	var eff1: PanelContainer = PanelContainer.new()
+	eff1.add_theme_stylebox_override("panel", _make_mc_effect_style())
+	eff1.custom_minimum_size = Vector2(170.0, 46.0)
+	effects_col.add_child(eff1)
+
+	var eff1_hbox: HBoxContainer = HBoxContainer.new()
+	eff1_hbox.add_theme_constant_override("separation", 8)
+	eff1.add_child(eff1_hbox)
+
+	var eff1_icon: TextureRect = TextureRect.new()
+	eff1_icon.custom_minimum_size = Vector2(30.0, 30.0)
+	eff1_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	eff1_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	eff1_icon.texture = IconFactory.get_icon("wooden_shield")
+	eff1_hbox.add_child(eff1_icon)
+
+	var eff1_vbox: VBoxContainer = VBoxContainer.new()
+	eff1_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	eff1_hbox.add_child(eff1_vbox)
+
+	_defense_label = Label.new()
+	_defense_label.text = "Защита IV"
+	_defense_label.add_theme_font_size_override("font_size", 11)
+	_defense_label.modulate = Color(0.95, 0.95, 0.95, 1.0)
+	eff1_vbox.add_child(_defense_label)
+
+	var def_sub: Label = Label.new()
+	def_sub.text = "Броня экипировки"
+	def_sub.add_theme_font_size_override("font_size", 9)
+	def_sub.modulate = Color(0.65, 0.65, 0.65, 1.0)
+	eff1_vbox.add_child(def_sub)
+
+	# Effect 2: Backpack Load (Weight)
+	var eff2: PanelContainer = PanelContainer.new()
+	eff2.add_theme_stylebox_override("panel", _make_mc_effect_style())
+	eff2.custom_minimum_size = Vector2(170.0, 46.0)
+	effects_col.add_child(eff2)
+
+	var eff2_hbox: HBoxContainer = HBoxContainer.new()
+	eff2_hbox.add_theme_constant_override("separation", 8)
+	eff2.add_child(eff2_hbox)
+
+	var eff2_icon: TextureRect = TextureRect.new()
+	eff2_icon.custom_minimum_size = Vector2(30.0, 30.0)
+	eff2_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	eff2_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	eff2_icon.texture = IconFactory.get_icon("leather_hide")
+	eff2_hbox.add_child(eff2_icon)
+
+	var eff2_vbox: VBoxContainer = VBoxContainer.new()
+	eff2_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	eff2_hbox.add_child(eff2_vbox)
+
+	_weight_label = Label.new()
+	_weight_label.text = "Нагрузка"
+	_weight_label.add_theme_font_size_override("font_size", 11)
+	_weight_label.modulate = Color(0.95, 0.95, 0.95, 1.0)
+	eff2_vbox.add_child(_weight_label)
+
+	var w_sub: Label = Label.new()
+	w_sub.text = "Лимит рюкзака"
+	w_sub.add_theme_font_size_override("font_size", 9)
+	w_sub.modulate = Color(0.65, 0.65, 0.65, 1.0)
+	eff2_vbox.add_child(w_sub)
+
+	# Effect 3: Purse Coins
+	var eff3: PanelContainer = PanelContainer.new()
+	eff3.add_theme_stylebox_override("panel", _make_mc_effect_style())
+	eff3.custom_minimum_size = Vector2(170.0, 46.0)
+	effects_col.add_child(eff3)
+
+	var eff3_hbox: HBoxContainer = HBoxContainer.new()
+	eff3_hbox.add_theme_constant_override("separation", 8)
+	eff3.add_child(eff3_hbox)
+
+	var eff3_icon: TextureRect = TextureRect.new()
+	eff3_icon.custom_minimum_size = Vector2(30.0, 30.0)
+	eff3_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	eff3_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	eff3_icon.texture = IconFactory.get_icon("bronze_ingot")
+	eff3_hbox.add_child(eff3_icon)
+
+	var eff3_vbox: VBoxContainer = VBoxContainer.new()
+	eff3_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	eff3_hbox.add_child(eff3_vbox)
+
+	_gold_label = Label.new()
+	_gold_label.text = "Кошелек: 35g"
+	_gold_label.add_theme_font_size_override("font_size", 11)
+	_gold_label.modulate = Color(0.95, 0.95, 0.95, 1.0)
+	eff3_vbox.add_child(_gold_label)
+
+	var g_sub: Label = Label.new()
+	g_sub.text = "Монеты караванов"
+	g_sub.add_theme_font_size_override("font_size", 9)
+	g_sub.modulate = Color(0.65, 0.65, 0.65, 1.0)
+	eff3_vbox.add_child(g_sub)
 
 	# Floating Cursor Item View
 	_cursor_display = Control.new()
@@ -367,7 +536,7 @@ func _build_minecraft_inventory_ui() -> void:
 	_cursor_display.add_child(_cursor_count_lbl)
 	add_child(_cursor_display)
 
-	# 7. Minecraft Floating Tooltip
+	# Floating Tooltip
 	_build_floating_tooltip()
 
 
