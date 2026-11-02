@@ -48,7 +48,10 @@ func _test_phase_1_core_and_audio() -> void:
 	var roundtrip: Vector2i = Config.iso_to_world(Config.world_to_iso(Vector2i(14, 28)))
 	assert(roundtrip == Vector2i(14, 28), "Isometric math roundtrip failed")
 
-	assert(AudioDirectorClass.instance != null, "AudioDirector instance missing")
+	var audio_mgr: Node = AudioDirectorClass.instance
+	if audio_mgr == null:
+		audio_mgr = get_tree().get_first_node_in_group("audio_director")
+	assert(audio_mgr != null, "AudioDirector instance missing")
 	var sfx_list: Array[String] = [
 		"wood_chop", "stone_pick", "ore_hit", "flesh_hit", "foliage_rustle",
 		"footstep", "weapon_swung", "bow_draw", "bow_shoot", "arrow_hit",
@@ -56,7 +59,7 @@ func _test_phase_1_core_and_audio() -> void:
 		"ui_click", "ui_open", "ui_close"
 	]
 	for sfx in sfx_list:
-		AudioDirectorClass.instance.play_sfx(sfx, -40.0)
+		audio_mgr.call("play_sfx", sfx, -40.0)
 	print("[E2E Phase 1] OK (Seed, Iso Math, 17 SFX verified)")
 
 

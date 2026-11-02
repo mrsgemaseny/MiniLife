@@ -3,7 +3,7 @@ extends Node
 # Procedural Ambient Music & Organic Tactile SFX Engine
 # Minecraft / RimWorld / C418-style ambient meditation & tactile game sounds
 
-static var instance: AudioDirector = null
+static var instance: Node = null
 
 const SAMPLE_RATE: int = 22050
 const SFX_POOL_SIZE: int = 8
@@ -22,6 +22,7 @@ var _last_footstep_msec: int = 0
 
 func _ready() -> void:
 	instance = self
+	add_to_group("audio_director")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 	# 1. Polyphonic SFX Player Pool
