@@ -56,6 +56,10 @@
   - Replaced procedural polygons in `WorldSystem._draw()` with cached `draw_texture_rect` tile sprites (`tile_grass`, `tile_dirt`, `tile_sand`, `tile_swamp`, `tile_mountain`, `tile_water`) with fog modulation.
   - Replaced procedural structure boxes in `StructureEntity._draw()` with Kenney voxel blocks (`voxelTile_18` workbench, `voxelTile_17` forge with flame glow, `voxelTile_28` storage, `voxelTile_19` wall, `voxelTile_14` wood/door).
   - Wired `ResourceNode._draw()` with robust fallback loading to display oak, pine, boulders, berry bushes, mushrooms, and small trees.
+- **RimWorld x Minecraft 16 Core Material Sprites Pack (2026-11-02)**:
+  - Generated single-pass 4x4 matrix spritesheet (`assets/sprites/inventory_materials_sheet_4x4.jpg`) via `image-generator` subagent in authentic RimWorld x Minecraft hybrid style (thick dark charcoal outlines, cel-shaded bevels, clean solid backgrounds).
+  - Sliced into 16 uniform 160x160 transparent PNG icons in `assets/sprites/items/`: `iron_ore.png`, `copper_ore.png`, `coal.png`, `gold_ore.png`, `iron_ingot.png`, `bronze_ingot.png`, `stone.png`, `flint.png`, `wood.png`, `plank.png`, `leather_hide.png`, `cloth.png`, `resin.png`, `cooked_meat.png` (alias `cooked_food.png`), `raw_meat.png` (alias `food_raw.png`), `herb.png`.
+  - Wired direct sprite matching and aliases in `ItemIconFactory._resolve_sprite_path()`, completely replacing procedural geometric placeholder circles/squares in FurnaceUI, InventoryUI, and CraftMenuUI.
 - **Custom RPG Cursor, Bow Stance & Hover Inspect Tooltips (2026-11-01)**:
   - Custom dark-steel and gold medieval RPG mouse cursor configured in `project.godot` and `GameManager`.
   - Fixed bow grip anchor and rotation angle (135 deg forward stave arc) in `Player._draw()`.
