@@ -75,7 +75,7 @@
 		"grid_y": 1,
 		"prerequisites": ["stone_masonry"],
 		"costs": { "copper_ore": 4, "stone": 4 },
-		"unlocks": ["smelt_bronze_ingot", "craft_bronze_spear"]
+		"unlocks": ["smelt_bronze_ingot", "craft_bronze_spear", "forge_bronze_pickaxe", "forge_bronze_axe"]
 	},
 	{
 		"id": "archery",
@@ -89,6 +89,19 @@
 		"prerequisites": ["woodworking"],
 		"costs": { "wood": 6, "cloth": 2 },
 		"unlocks": ["craft_hunting_bow", "craft_arrows"]
+	},
+	{
+		"id": "defense_tactics",
+		"name": "Shields & Fortifications",
+		"tier": 2,
+		"tier_label": "TIER II",
+		"icon": "wooden_shield",
+		"description": "Heft reinforced wooden shields and craft sturdy defensive palisades.",
+		"grid_x": 1,
+		"grid_y": 3,
+		"prerequisites": ["woodworking"],
+		"costs": { "wood": 6, "stone": 4 },
+		"unlocks": ["craft_wooden_shield", "wooden_palisade"]
 	},
 	{
 		"id": "iron_smelting",
@@ -114,7 +127,7 @@
 		"grid_y": 1,
 		"prerequisites": ["iron_smelting"],
 		"costs": { "iron_ingot": 3, "wood": 2 },
-		"unlocks": ["forge_iron_sword", "forge_iron_dagger", "spike_trap"]
+		"unlocks": ["forge_iron_sword", "forge_iron_dagger", "forge_iron_shield", "spike_trap"]
 	},
 	{
 		"id": "crossbows",
@@ -128,6 +141,19 @@
 		"prerequisites": ["archery", "iron_smelting"],
 		"costs": { "iron_ingot": 2, "wood": 4, "cloth": 2 },
 		"unlocks": ["forge_heavy_crossbow"]
+	},
+	{
+		"id": "quarry_engineering",
+		"name": "Quarrying & Masonry",
+		"tier": 3,
+		"tier_label": "TIER III",
+		"icon": "stone",
+		"description": "Cut heavy stone into reinforced foundations, watchtowers and deep vaults.",
+		"grid_x": 2,
+		"grid_y": 3,
+		"prerequisites": ["pyrology_coal"],
+		"costs": { "stone": 8, "coal": 2 },
+		"unlocks": ["stone_wall", "chest"]
 	},
 	{
 		"id": "chainmail_armor",
@@ -154,5 +180,31 @@
 		"prerequisites": ["iron_forging"],
 		"costs": { "iron_ingot": 5, "wood": 4 },
 		"unlocks": ["forge_war_hammer", "iron_vault"]
+	},
+	{
+		"id": "iron_mastery",
+		"name": "Reinforced Iron Castings",
+		"tier": 4,
+		"tier_label": "TIER IV",
+		"icon": "iron_pickaxe",
+		"description": "Master high-temperature smelting for reinforced iron tools and shields.",
+		"grid_x": 3,
+		"grid_y": 2,
+		"prerequisites": ["iron_forging"],
+		"costs": { "iron_ingot": 6, "coal": 4 },
+		"unlocks": ["forge_iron_shield", "reinforced_vault"]
+	},
+	{
+		"id": "alchemical_elixirs",
+		"name": "Alchemical Distillation",
+		"tier": 4,
+		"tier_label": "TIER IV",
+		"icon": "medicine",
+		"description": "Extract concentrated essences to distill potent restorative draughts.",
+		"grid_x": 3,
+		"grid_y": 3,
+		"prerequisites": ["herbalism_medicine"],
+		"costs": { "herb": 8, "cloth": 3 },
+		"unlocks": ["craft_medicine", "craft_poison"]
 	}
 ]
