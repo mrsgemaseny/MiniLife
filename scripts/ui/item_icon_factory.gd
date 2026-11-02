@@ -8,6 +8,47 @@ static var _world_sprite_cache: Dictionary = {}
 
 
 static func _resolve_sprite_path(id: String) -> String:
+	# 1. Direct match in assets/sprites/items/
+	var direct_path: String = "res://assets/sprites/items/" + id + ".png"
+	var abs_direct: String = ProjectSettings.globalize_path(direct_path)
+	if FileAccess.file_exists(abs_direct) or ResourceLoader.exists(direct_path):
+		return direct_path
+
+	# 2. Common material and food aliases
+	if id == "cooked_food" or id.find("cooked") != -1:
+		return "res://assets/sprites/items/cooked_meat.png"
+	if id == "food_raw" or id.find("meat") != -1 or id == "raw_meat":
+		return "res://assets/sprites/items/raw_meat.png"
+	if id == "herb" or id.find("herbs") != -1:
+		return "res://assets/sprites/items/herb.png"
+	if id == "cloth" or id.find("fabric") != -1:
+		return "res://assets/sprites/items/cloth.png"
+	if id == "leather" or id == "leather_hide":
+		return "res://assets/sprites/items/leather_hide.png"
+	if id == "wood" or id == "wood_log" or id == "log":
+		return "res://assets/sprites/items/wood.png"
+	if id == "plank" or id == "wood_plank":
+		return "res://assets/sprites/items/plank.png"
+	if id == "coal" or id == "charcoal":
+		return "res://assets/sprites/items/coal.png"
+	if id == "iron_ore":
+		return "res://assets/sprites/items/iron_ore.png"
+	if id == "copper_ore":
+		return "res://assets/sprites/items/copper_ore.png"
+	if id == "gold_ore":
+		return "res://assets/sprites/items/gold_ore.png"
+	if id == "iron_ingot":
+		return "res://assets/sprites/items/iron_ingot.png"
+	if id == "bronze_ingot":
+		return "res://assets/sprites/items/bronze_ingot.png"
+	if id == "stone" or id == "rough_stone":
+		return "res://assets/sprites/items/stone.png"
+	if id == "flint":
+		return "res://assets/sprites/items/flint.png"
+	if id == "resin" or id == "pine_resin":
+		return "res://assets/sprites/items/resin.png"
+
+	# 3. Weapons and tools keywords
 	if id.find("pick") != -1:
 		return "res://assets/sprites/items/stone_pickaxe.png"
 	if id.find("axe") != -1:
