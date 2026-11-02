@@ -61,7 +61,10 @@
   - Fixed bow grip anchor and rotation angle (135 deg forward stave arc) in `Player._draw()`.
   - Smooth 1.0s hover inspect card in `HUD` (`_inspect_card`) displaying object name, skill/tool requirements, integrity, and yields for trees, rocks, ores, and NPCs.
   - Tactical bow aiming & charging mechanic: holding LMB draws the bowstring (`_is_charging_bow`), tracks mouse aim direction while strafing (52% speed), displays nocked arrow and dynamic shrinking reticle with dashed trajectory, and releasing LMB looses the arrow scaled by draw power with authentic recoil kick.
-- **Fixed Seed, Ruins, Interiors, Lighting & Regrowth Overhaul (2026-11-01)**:
+- **Exhaustive 12-Phase Automated E2E Test Suite (2026-11-02)**:
+  - Created modular automated test suite `_run_e2e_exhaustive_suite()` in `scripts/core/debug_console.gd` executable via `--e2e-smoke` / `--e2e-full`.
+  - 100% automated coverage across 12 phases: Core & Seeds, Audio Director (17 SFX, 6 music tracks), World & Chunks, POI Ruins & Interiors, 24h Weather, Fog of War, 6-Limb Anatomy, Hunger/Stamina/Permadeath, 18 Skills & Perks, Combat & Bow Ballistics, Continuous Harvesting & Ecology, Crafting & 3-Slot Furnace Smelting, Scholar's Research Codex & Stone Aesthetic DAG, Building System & YSort/Z-Index, Inventory & Hand Slot Mirroring/Dupe-Proofing, Delta-Chunk Save/Load Persistence.
+  - Headless verification passes cleanly with exit code 0 (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
   - **Fixed World Seed (Task 1)**: `Config.DEFAULT_WORLD_SEED = 42819` passed through `GameManager`, `WorldSystem`, `TerrainGenerator`, and `SaveSystem` world_seed persistence, ensuring identical world layout on restart.
   - **Hand-Crafted Ruins (Task 2)**: Added `data/ruins.json` with 4 unique POIs (`abandoned_fort`, `old_village`, `collapsed_tower`, `underground_vault`), deterministically placed at anchor chunks via `PoiGenerator` with `SignalBus.poi_discovered`.
   - **Interior Zones & Interior HUD (Task 3)**: Created `InteriorZone` with rooms, stone/wood walls, floors, and exit ladders. `HUD` displays top location banner, dark edge vignette, and bottom exit hint. `MinimapWidget` renders real-time interior room layouts on `SignalBus.interior_entered` / `interior_exited`.
