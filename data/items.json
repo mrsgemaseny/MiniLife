@@ -364,6 +364,88 @@
 		"skill_required": {}
 	},
 	{
+		"id": "bronze_pickaxe",
+		"name": "Bronze Pickaxe",
+		"type": "tool",
+		"equip_slot": "weapon",
+		"weight": 3.0,
+		"value": 52,
+		"stackable": false,
+		"durability": 95,
+		"stats": {
+			"damage": 12,
+			"damage_type": "physical",
+			"attack_speed": 1.0,
+			"range": "melee",
+			"tool_type": "pickaxe",
+			"mining_power": 1
+		},
+		"visual": { "sprite": "items/stone_pickaxe.png", "color": "#cd7f32" },
+		"craft_requirements": { "bronze_ingot": 2, "wood": 2 },
+		"craft_station": "forge",
+		"skill_required": { "smithing": 8 }
+	},
+	{
+		"id": "bronze_axe",
+		"name": "Bronze Hatchet",
+		"type": "tool",
+		"equip_slot": "weapon",
+		"weight": 2.8,
+		"value": 48,
+		"stackable": false,
+		"durability": 95,
+		"stats": {
+			"damage": 14,
+			"damage_type": "physical",
+			"attack_speed": 1.05,
+			"range": "melee",
+			"tool_type": "axe"
+		},
+		"visual": { "sprite": "items/iron_axe.png", "color": "#cd7f32" },
+		"craft_requirements": { "bronze_ingot": 2, "wood": 2 },
+		"craft_station": "forge",
+		"skill_required": { "smithing": 8 }
+	},
+	{
+		"id": "iron_pickaxe",
+		"name": "Iron Pickaxe",
+		"type": "tool",
+		"equip_slot": "weapon",
+		"weight": 3.4,
+		"value": 85,
+		"stackable": false,
+		"durability": 160,
+		"stats": {
+			"damage": 16,
+			"damage_type": "physical",
+			"attack_speed": 1.05,
+			"range": "melee",
+			"tool_type": "pickaxe",
+			"mining_power": 2
+		},
+		"visual": { "sprite": "items/stone_pickaxe.png", "color": "#b8c2cc" },
+		"craft_requirements": { "iron_ingot": 3, "wood": 2 },
+		"craft_station": "forge",
+		"skill_required": { "smithing": 15 }
+	},
+	{
+		"id": "iron_shield",
+		"name": "Reinforced Iron Shield",
+		"type": "armor",
+		"equip_slot": "offhand",
+		"weight": 5.2,
+		"value": 90,
+		"stackable": false,
+		"durability": 175,
+		"stats": {
+			"defense": 22
+		},
+		"visual": { "sprite": "items/wooden_shield.png", "color": "#7c858e" },
+		"craft_requirements": { "iron_ingot": 4, "wood": 2 },
+		"craft_station": "forge",
+		"skill_required": { "smithing": 18 }
+	},
+	{
 		"id": "iron_axe",
 		"name": "Iron War Axe",
 		"type": "weapon",
