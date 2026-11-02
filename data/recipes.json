@@ -134,7 +134,7 @@
 	{
 		"id": "forge_bronze_spear",
 		"station": "forge",
-		"tech_required": "pyrology_coal",
+		"tech_required": "bronze_metallurgy",
 		"inputs": [
 			{ "item_id": "bronze_ingot", "count": 2 },
 			{ "item_id": "wood", "count": 2 }
@@ -142,6 +142,30 @@
 		"output": { "item_id": "bronze_spear", "count": 1 },
 		"skill_required": { "smithing": 8 },
 		"xp_reward": { "smithing": 26 }
+	},
+	{
+		"id": "forge_bronze_pickaxe",
+		"station": "forge",
+		"tech_required": "bronze_metallurgy",
+		"inputs": [
+			{ "item_id": "bronze_ingot", "count": 2 },
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "bronze_pickaxe", "count": 1 },
+		"skill_required": { "smithing": 8 },
+		"xp_reward": { "smithing": 24 }
+	},
+	{
+		"id": "forge_bronze_axe",
+		"station": "forge",
+		"tech_required": "bronze_metallurgy",
+		"inputs": [
+			{ "item_id": "bronze_ingot", "count": 2 },
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "bronze_axe", "count": 1 },
+		"skill_required": { "smithing": 8 },
+		"xp_reward": { "smithing": 24 }
 	},
 	{
 		"id": "forge_iron_axe",
@@ -156,6 +180,18 @@
 		"xp_reward": { "smithing": 32 }
 	},
 	{
+		"id": "forge_iron_pickaxe",
+		"station": "forge",
+		"tech_required": "iron_smelting",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 3 },
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "iron_pickaxe", "count": 1 },
+		"skill_required": { "smithing": 15 },
+		"xp_reward": { "smithing": 34 }
+	},
+	{
 		"id": "forge_iron_sword",
 		"station": "forge",
 		"tech_required": "iron_forging",
@@ -166,6 +202,54 @@
 		"output": { "item_id": "iron_sword", "count": 1 },
 		"skill_required": { "smithing": 20 },
 		"xp_reward": { "smithing": 38 }
+	},
+	{
+		"id": "forge_iron_dagger",
+		"station": "forge",
+		"tech_required": "iron_forging",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 1 },
+			{ "item_id": "wood", "count": 1 }
+		],
+		"output": { "item_id": "iron_dagger", "count": 1 },
+		"skill_required": { "smithing": 10 },
+		"xp_reward": { "smithing": 22 }
+	},
+	{
+		"id": "forge_iron_shield",
+		"station": "forge",
+		"tech_required": "iron_forging",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 4 },
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "iron_shield", "count": 1 },
+		"skill_required": { "smithing": 18 },
+		"xp_reward": { "smithing": 35 }
+	},
+	{
+		"id": "craft_wooden_shield",
+		"station": "workbench",
+		"tech_required": "woodworking",
+		"inputs": [
+			{ "item_id": "wood", "count": 3 },
+			{ "item_id": "iron_ingot", "count": 1 }
+		],
+		"output": { "item_id": "wooden_shield", "count": 1 },
+		"skill_required": { "construction": 5 },
+		"xp_reward": { "construction": 18 }
+	},
+	{
+		"id": "forge_war_hammer",
+		"station": "forge",
+		"tech_required": "war_machinery",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 4 },
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "war_hammer", "count": 1 },
+		"skill_required": { "smithing": 22 },
+		"xp_reward": { "smithing": 44 }
 	},
 	{
 		"id": "forge_heavy_crossbow",
