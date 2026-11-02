@@ -316,9 +316,10 @@ func _on_chest_slot_clicked(slot_index: int, mouse_button: int, _shift: bool) ->
 
 	var take_count: int = 1 if mouse_button == MOUSE_BUTTON_RIGHT else count
 	if player_inv.can_fit_item(item_id, take_count):
-		chest_inv.remove_at_index(slot_index, take_count)
-		player_inv.add_item(item_id, take_count, dur)
-		_refresh_display()
+		var added: int = player_inv.add_item(item_id, take_count, dur)
+		if added > 0:
+			chest_inv.remove_at_index(slot_index, added)
+			_refresh_display()
 
 
 func _on_player_slot_clicked(slot_index: int, mouse_button: int, _shift: bool) -> void:
@@ -341,9 +342,10 @@ func _on_player_slot_clicked(slot_index: int, mouse_button: int, _shift: bool) -
 
 	var take_count: int = 1 if mouse_button == MOUSE_BUTTON_RIGHT else count
 	if chest_inv.can_fit_item(item_id, take_count):
-		player_inv.remove_at_index(slot_index, take_count)
-		chest_inv.add_item(item_id, take_count, dur)
-		_refresh_display()
+		var added: int = chest_inv.add_item(item_id, take_count, dur)
+		if added > 0:
+			player_inv.remove_at_index(slot_index, added)
+			_refresh_display()
 
 
 func _on_item_hovered(item: Dictionary) -> void:
@@ -410,9 +412,10 @@ func _on_take_all_pressed() -> void:
 		var count: int = int(slot.get("count", 1))
 		var dur: int = int(slot.get("durability", -1))
 		if player_inv.can_fit_item(item_id, count):
-			chest_inv.remove_at_index(i, count)
-			player_inv.add_item(item_id, count, dur)
-			taken_count += count
+			var added: int = player_inv.add_item(item_id, count, dur)
+			if added > 0:
+				chest_inv.remove_at_index(i, added)
+				taken_count += added
 
 	SignalBus.notification_posted.emit("Looted %d items and %d gold from chest." % [taken_count, gold])
 	_refresh_display()

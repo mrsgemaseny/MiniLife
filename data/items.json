@@ -126,6 +126,20 @@
 		"skill_required": {}
 	},
 	{
+		"id": "tin_ore",
+		"name": "Tin Ore",
+		"type": "material",
+		"weight": 1.7,
+		"value": 10,
+		"stackable": true,
+		"durability": -1,
+		"stats": {},
+		"visual": { "sprite": "items/tin_ore.png", "color": "#7a8f9e" },
+		"craft_requirements": {},
+		"craft_station": "",
+		"skill_required": {}
+	},
+	{
 		"id": "iron_ingot",
 		"name": "Iron Ingot",
 		"type": "material",
@@ -149,7 +163,7 @@
 		"durability": -1,
 		"stats": {},
 		"visual": { "sprite": "items/bronze_ingot.png", "color": "#cd7f32" },
-		"craft_requirements": { "copper_ore": 2 },
+		"craft_requirements": { "copper_ore": 1, "tin_ore": 1 },
 		"craft_station": "forge",
 		"skill_required": { "smithing": 0 }
 	},

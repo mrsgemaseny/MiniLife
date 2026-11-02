@@ -152,6 +152,14 @@ func _draw() -> void:
 			draw_texture_rect(gold_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false)
 		else:
 			_draw_procedural_rock(ofs, outline_col, radius)
+	elif node_def_id.find("tin") != -1:
+		var tin_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/ore_silver_galena.png")
+		if tin_tex == null:
+			tin_tex = _get_tex("res://assets/sprites/world/resources/boulder_limestone.png")
+		if tin_tex != null:
+			draw_texture_rect(tin_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false, Color(0.85, 0.90, 0.95))
+		else:
+			_draw_procedural_rock(ofs, outline_col, radius)
 	elif node_def_id.find("silver") != -1:
 		var silver_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/ore_silver_galena.png")
 		if silver_tex != null:
@@ -233,7 +241,7 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 	var is_axe: bool = held_weapon.find("axe") != -1
 	var is_iron: bool = held_weapon.find("iron") != -1
 
-	var is_rock: bool = (node_def_id.find("stone") != -1 or node_def_id.find("rock") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("ore") != -1 or node_def_id.find("deposit") != -1)
+	var is_rock: bool = (node_def_id.find("stone") != -1 or node_def_id.find("rock") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("ore") != -1 or node_def_id.find("deposit") != -1 or node_def_id.find("vein") != -1)
 	var is_tree: bool = (node_def_id.find("tree") != -1 or node_def_id.find("oak") != -1 or node_def_id.find("pine") != -1 or growth_stage == "small_tree")
 	var is_bush: bool = (node_def_id.find("bush") != -1 or node_def_id.find("berry") != -1 or node_def_id.find("herb") != -1 or node_def_id.find("mushroom") != -1)
 

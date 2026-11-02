@@ -114,7 +114,8 @@
 		"station": "forge",
 		"tech_required": "pyrology_coal",
 		"inputs": [
-			{ "item_id": "copper_ore", "count": 2 }
+			{ "item_id": "copper_ore", "count": 1 },
+			{ "item_id": "tin_ore", "count": 1 }
 		],
 		"output": { "item_id": "bronze_ingot", "count": 1 },
 		"skill_required": {},

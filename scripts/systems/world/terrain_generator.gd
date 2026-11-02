@@ -163,72 +163,82 @@ func get_resource_node_at(pos: Vector2i) -> String:
 
 	var elev: float = get_elevation_at(pos)
 	var dist_river: float = get_distance_to_river_at(pos)
+	var w_size: float = float(Config.WORLD_SIZE_TILES)
+	var lake_se_center: Vector2 = Vector2(w_size * 0.74, w_size * 0.76)
+	var dist_lake_se: float = Vector2(float(pos.x), float(pos.y)).distance_to(lake_se_center)
 
-	# 1. GOLD ORE: strictly in mountains near river or mountain streams
-	if elev > 0.38 and dist_river < 14.0:
+	# 1. TIN ORE (Alluvial riverbank and lake shore deposits — sparse gravel beds near water)
+	var is_water_shore: bool = (dist_river >= 2.4 and dist_river <= 6.5) or (dist_lake_se >= w_size * 0.055 and dist_lake_se <= w_size * 0.055 + 5.0)
+	if is_water_shore and biome_id != "water":
+		var tin_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 909)
+		if tin_rng.randf() < 0.020:
+			return "tin_vein"
+		return ""
+
+	# 2. GOLD ORE: strictly in high mountains near river or mountain streams
+	if elev > 0.40 and dist_river < 12.0:
 		var gold_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 808)
-		if gold_rng.randf() < 0.035:
+		if gold_rng.randf() < 0.025:
 			return "gold_quartz_vein"
 
-	# 2. MOUNTAINS (Green Foothills vs Harsh High Cliffs)
+	# 3. MOUNTAINS (Rocky Foothills vs High Cliffs)
+	# Copper spawns strictly in rocky places / mountain slopes
 	if biome_id == "mountains":
 		var mtn_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 202)
 		var mtn_roll: float = mtn_rng.randf()
 		if elev < 0.52:
-			# Green foothills: trees, stone boulders, scarce iron
-			if mtn_roll < 0.080:
+			# Rocky foothills: Copper deposits around stone outcrops, pines, sparse boulders, no iron
+			if mtn_roll < 0.028:
+				return "copper_vein"
+			elif mtn_roll < 0.090:
 				return "forest_pine"
-			elif mtn_roll < 0.120:
+			elif mtn_roll < 0.115:
 				return "stone_boulder"
-			elif mtn_roll < 0.132:
-				return "iron_vein"
-			elif mtn_roll < 0.145:
+			elif mtn_roll < 0.130:
 				return "wild_berry_bush"
 		else:
-			# High rocky cliffs: extreme barren deficit, iron veins, coal deposits, boulders, zero trees
-			if mtn_roll < 0.045:
+			# High rocky cliffs: rare Iron (hard to find, not spam), Coal, minimal Boulders, zero trees
+			if mtn_roll < 0.012:
 				return "iron_vein"
-			elif mtn_roll < 0.075:
+			elif mtn_roll < 0.038:
 				return "coal_deposit"
-			elif mtn_roll < 0.135:
+			elif mtn_roll < 0.073:
 				return "stone_boulder"
 		return ""
 
-	# 3. SNOW PEAKS
+	# 4. SNOW PEAKS (High frozen ridges: very rare iron, sparse boulders)
 	if biome_id == "snow":
 		var snow_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 303)
 		var snow_roll: float = snow_rng.randf()
-		if snow_roll < 0.040:
-			return "stone_boulder"
-		elif snow_roll < 0.060:
+		if snow_roll < 0.006:
 			return "iron_vein"
+		elif snow_roll < 0.025:
+			return "stone_boulder"
 		return ""
 
-	# 4. DESERT (No trees, almost no stone, rich in copper and coal, sparse desert shrubs)
+	# 5. DESERT (Pure barren sand and dunes — ZERO copper, ZERO coal, ZERO trees)
 	if biome_id == "desert":
 		var des_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 404)
 		var des_roll: float = des_rng.randf()
-		if des_roll < 0.038:
-			return "copper_vein"
-		elif des_roll < 0.056:
-			return "coal_deposit"
-		elif des_roll < 0.072:
+		if des_roll < 0.010:
 			return "wild_berry_bush"
-		elif des_roll < 0.075:
+		elif des_roll < 0.011:
 			return "stone_boulder"
 		return ""
 
-	# 5. SWAMP (Bog herbs, sparse gnarled oaks)
+	# 6. SWAMP (Bog herbs, sparse gnarled oaks, occasional alluvial tin in mud)
 	if biome_id == "swamp":
 		var sw_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 505)
 		var sw_roll: float = sw_rng.randf()
-		if sw_roll < 0.065:
+		if sw_roll < 0.014:
+			return "tin_vein"
+		elif sw_roll < 0.075:
 			return "swamp_herb_patch"
-		elif sw_roll < 0.090:
+		elif sw_roll < 0.095:
 			return "oak_tree"
 		return ""
 
-	# 6. FOREST (Dense pine and oak trees, berries, minimal stone)
+	# 7. FOREST (Dense pine and oak trees, berries, minimal stone)
 	if biome_id == "forest":
 		var for_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 606)
 		var for_roll: float = for_rng.randf()
@@ -238,30 +248,28 @@ func get_resource_node_at(pos: Vector2i) -> String:
 			return "oak_tree"
 		elif for_roll < 0.145:
 			return "wild_berry_bush"
-		elif for_roll < 0.155:
+		elif for_roll < 0.148:
 			return "stone_boulder"
 		return ""
 
-	# 7. PLAINS (Stone boulders in compact 1x5/6x6 clusters of 0-2 stones; oak groves and berries)
+	# 8. PLAINS (Sweeping open grass: tree density reduced 3x to 0.011; rare compact stone clusters; berries)
 	if biome_id == "plains":
-		# Check compact stone outcrop clusters
+		# Rare compact stone clusters (strictly 1 boulder per cluster)
 		var cluster_x: int = pos.x / 6
 		var cluster_y: int = pos.y / 6
 		var c_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, Vector2i(cluster_x, cluster_y), 707)
-		if c_rng.randf() < 0.28:
-			var stone_count: int = c_rng.randi_range(1, 2)
-			for i in range(stone_count):
-				var ox: int = c_rng.randi_range(1, 4)
-				var oy: int = c_rng.randi_range(1, 4)
-				if (pos.x % 6 == ox) and (pos.y % 6 == oy):
-					return "stone_boulder"
+		if c_rng.randf() < 0.08:
+			var ox: int = c_rng.randi_range(1, 4)
+			var oy: int = c_rng.randi_range(1, 4)
+			if (pos.x % 6 == ox) and (pos.y % 6 == oy):
+				return "stone_boulder"
 
-		# Normal vegetative rolls on plains
+		# Normal vegetative rolls on plains: trees reduced 3x (from 0.035 to 0.011)
 		var pl_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 101)
 		var pl_roll: float = pl_rng.randf()
-		if pl_roll < 0.035:
+		if pl_roll < 0.011:
 			return "oak_tree"
-		elif pl_roll < 0.055:
+		elif pl_roll < 0.035:
 			return "wild_berry_bush"
 
 	return ""

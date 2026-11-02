@@ -94,6 +94,25 @@
 		]
 	},
 	{
+		"id": "tin_vein",
+		"name": "Tin Deposit",
+		"biome": "water",
+		"hits": 5,
+		"required_tool": "pickaxe",
+		"preferred_tool": "pickaxe",
+		"skill": "mining",
+		"xp": 20.0,
+		"regrows": false,
+		"regrow_days": 0,
+		"color": "#7a8f9e",
+		"trunk_color": "#4d5b66",
+		"radius": 16.0,
+		"drops": [
+			{ "item_id": "tin_ore", "min": 2, "max": 4 },
+			{ "item_id": "stone", "min": 1, "max": 2 }
+		]
+	},
+	{
 		"id": "coal_deposit",
 		"name": "Anthracite Coal Deposit",
 		"biome": "mountains",

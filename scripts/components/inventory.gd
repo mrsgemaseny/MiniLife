@@ -249,6 +249,9 @@ func can_fit_item(item_id: String, count: int = 1) -> bool:
 		for slot in slots:
 			if str(slot.get("item_id", "")) == item_id:
 				return true
+	for slot in slots:
+		if slot.is_empty() or str(slot.get("item_id", "")).is_empty():
+			return true
 	return slots.size() < max_slots
 
 

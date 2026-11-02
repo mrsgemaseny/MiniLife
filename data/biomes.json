@@ -6,9 +6,9 @@
 		"alt_color": "#589649",
 		"tile_ids": ["grass", "dirt", "flower"],
 		"resource_nodes": {
-			"oak_tree": 0.035,
-			"stone_boulder": 0.022,
-			"wild_berry_bush": 0.018
+			"oak_tree": 0.011,
+			"stone_boulder": 0.010,
+			"wild_berry_bush": 0.020
 		},
 		"resources": {
 			"wood": [1, 3],
@@ -71,10 +71,8 @@
 		"alt_color": "#cca55c",
 		"tile_ids": ["sand", "dune"],
 		"resource_nodes": {
-			"copper_vein": 0.038,
-			"coal_deposit": 0.018,
-			"wild_berry_bush": 0.015,
-			"stone_boulder": 0.003
+			"wild_berry_bush": 0.010,
+			"stone_boulder": 0.001
 		},
 		"resources": {
 			"iron_ore": [1, 3],
