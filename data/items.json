@@ -650,15 +650,18 @@
 		"id": "torch",
 		"name": "Pine Pitch Torch",
 		"type": "tool",
-		"equip_slot": "offhand",
+		"equip_slot": "weapon",
 		"weight": 0.8,
 		"value": 15,
 		"stackable": false,
 		"durability": 300,
 		"stats": {
-			"light_radius": 80.0,
+			"light_radius": 280.0,
 			"burn_time_sec": 300.0,
-			"damage": 6
+			"damage": 8,
+			"damage_type": "fire",
+			"attack_speed": 1.1,
+			"range": "melee"
 		},
 		"visual": { "sprite": "items/torch.png", "color": "#f59e0b" },
 		"craft_requirements": { "wood": 1, "resin": 1, "cloth": 1 },

@@ -31,9 +31,9 @@ func can_equip(item_id: String) -> bool:
 	return slot != "" and SLOTS.has(slot)
 
 
-func equip(item_id: String, durability: int = -1) -> Dictionary:
+func equip(item_id: String, durability: int = -1, slot_override: String = "") -> Dictionary:
 	var def: Dictionary = _get_item_def(item_id)
-	var slot: String = _resolve_slot(def)
+	var slot: String = slot_override if not slot_override.is_empty() else _resolve_slot(def)
 	if slot == "" or not SLOTS.has(slot):
 		return {}
 	var prev: Dictionary = _equipped.get(slot, {"item_id": "", "durability": -1}).duplicate()

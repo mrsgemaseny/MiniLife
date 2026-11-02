@@ -283,6 +283,8 @@ func _is_holding_bow() -> bool:
 	if equipment == null:
 		return false
 	var weapon_id: String = equipment.get_item_id("weapon")
+	if weapon_id.is_empty() or weapon_id == "torch":
+		return false
 	var w_stats: Dictionary = equipment.get_weapon_stats()
 	return weapon_id.find("bow") != -1 or weapon_id.find("crossbow") != -1 or str(w_stats.get("range", "melee")) == "ranged"
 
@@ -432,7 +434,7 @@ func sync_weapon_from_active_slot() -> void:
 	var def: Dictionary = DataRegistry.get_item(item_id)
 	var item_type: String = str(def.get("type", ""))
 	if item_type == "weapon" or item_type == "tool" or item_id.find("pickaxe") != -1 or item_id.find("axe") != -1 or item_id.find("sword") != -1 or item_id.find("bow") != -1 or item_id.find("spear") != -1 or item_id.find("hammer") != -1 or item_id.find("dagger") != -1 or item_id == "torch":
-		equipment.equip(item_id, dur)
+		equipment.equip(item_id, dur, "weapon")
 	else:
 		equipment.unequip("weapon")
 	queue_redraw()
@@ -531,19 +533,25 @@ func die() -> void:
 func _setup_torch_light() -> void:
 	_torch_light = PointLight2D.new()
 	_torch_light.name = "TorchLight"
-	_torch_light.color = Color(1.0, 0.88, 0.58, 1.0)
-	_torch_light.energy = 1.15
-	_torch_light.texture_scale = 1.0
+	_torch_light.color = Color(1.0, 0.90, 0.65, 1.0)
+	_torch_light.energy = 1.25
+	_torch_light.texture_scale = 1.35
+	_torch_light.position = Vector2(0.0, -14.0)
 	var grad: Gradient = Gradient.new()
-	grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 0.88, 0.55, 0.72), Color(1, 0.75, 0.35, 0.0)])
-	grad.offsets = PackedFloat32Array([0.0, 0.42, 1.0])
+	grad.colors = PackedColorArray([
+		Color(1.0, 0.98, 0.85, 1.0),
+		Color(1.0, 0.82, 0.45, 0.85),
+		Color(0.96, 0.54, 0.18, 0.35),
+		Color(0.85, 0.35, 0.10, 0.0)
+	])
+	grad.offsets = PackedFloat32Array([0.0, 0.25, 0.65, 1.0])
 	var gtex: GradientTexture2D = GradientTexture2D.new()
 	gtex.gradient = grad
 	gtex.fill = GradientTexture2D.FILL_RADIAL
 	gtex.fill_from = Vector2(0.5, 0.5)
 	gtex.fill_to = Vector2(1.0, 0.5)
-	gtex.width = 160
-	gtex.height = 160
+	gtex.width = 512
+	gtex.height = 512
 	_torch_light.texture = gtex
 	_torch_light.enabled = false
 	add_child(_torch_light)
@@ -847,6 +855,13 @@ func _draw() -> void:
 			var tip_local: Vector2 = Vector2(cos(final_rot), sin(final_rot)) * 19.0
 			var weapon_tip: Vector2 = hand_pos + Vector2(tip_local.x * weapon_scale.x, tip_local.y)
 			draw_line(hand_pos, weapon_tip, Color(0.84, 0.88, 0.92), 2.8)
+
+		if weapon_id == "torch":
+			var flame_phase: float = sin(Time.get_ticks_msec() * 0.015)
+			var flame_tip: Vector2 = hand_pos + Vector2(cos(final_rot - PI * 0.40 * rot_dir), sin(final_rot - PI * 0.40 * rot_dir)) * 14.0
+			draw_circle(flame_tip, 4.0 + flame_phase * 0.8, Color(1.0, 0.85, 0.30, 0.95))
+			draw_circle(flame_tip + Vector2(0.0, -2.0), 2.5 + flame_phase * 0.5, Color(1.0, 0.45, 0.12, 0.90))
+			draw_circle(flame_tip + Vector2(0.0, -4.0), 1.2, Color(1.0, 0.95, 0.70, 0.95))
 
 		if is_bow and _is_charging_bow:
 			var charge_ratio: float = clampf(_bow_charge_time / MAX_BOW_CHARGE_TIME, 0.0, 1.0)

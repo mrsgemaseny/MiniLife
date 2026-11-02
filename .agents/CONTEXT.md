@@ -135,4 +135,7 @@
   - Eliminated all blue tints, slate overlays, and transparency across all survival menus (`InventoryUI`, `CraftMenuUI`, `BuildMenuUI`, `CharacterSheetUI`, `FurnaceUI`, `QuestLogUI`, `TradeMenuUI`, `ResearchTreeUI`).
   - Implemented authentic vanilla Minecraft GUI styling matching user reference photo: solid neutral grey `#c6c6c6` (`Color(0.776, 0.776, 0.776, 1.0)`), 3D beveled borders (`#222222`), dark pixel text `#3f3f3f` (`Color(0.24, 0.24, 0.24, 1.0)`), recessed grey slots `#8b8b8b` with shadow `#373737` and highlight, and solid dark status cards (`#292929`, border `#525252`).
   - Background world dimmer set to clean semi-transparent black `Color(0.0, 0.0, 0.0, 0.65)` (authentic Minecraft pause/inventory dimmer) without any JPG texture wallpapers.
+- **Torch Light Radius & Main Hand Sync Fix (2026-11-02)**:
+  - Fixed bug where holding a torch and pressing LMB shot arrows from a previously equipped bow: changed `torch` definition from `offhand` to `weapon` in `data/items.json`, added `slot_override` to `equipment.equip()`, and updated `sync_weapon_from_active_slot()` to strictly bind hotbar selections to `weapon` slot.
+  - Expanded torch light radius from 80px (160x160) to ~345px (512x512 with 1.35 scale), illuminating 7-9 tiles with a warm amber gradient and animated flame at the torch tip.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.
