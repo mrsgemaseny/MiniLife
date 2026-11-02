@@ -149,4 +149,9 @@
   - Strict palette enforcement: complete elimination of blue, yellow, and bright green. Typography uses antique ivory (`#eae6dc`) and cold silver (`#9ea2ad`) on dark slate surfaces (`#101114` to `#1a1d22`), completely eliminating white-on-white and black-on-black text contrast issues.
   - Balanced multi-column layouts: 3-column inventory with active item inspector; 2-column craft & build menus with blueprints/catalog on the left and dedicated workshops/inspectors on the right.
   - 12-phase automated E2E test suite passing 100% cleanly (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
+- **32 Canonical Station & Survival Icons Overhaul (2026-11-02)**:
+  - Generated and sliced 32 dedicated 160x160 RGBA8 sprites across `assets/sprites/structures/` (16 stations/structures: workbench, research table, campfire, chest, bed, furnace, forge, pit trap, spike trap, walls, doors, floors, water collector, iron vault) and `assets/sprites/items/` (16 gear & survival items: armor, chainmail, weapons, meds, poison, coins, food).
+  - Completely eradicated placeholder wood log (`wood.png`) hardcode in `BuildMenuUI` (`scripts/ui/build_menu_ui.gd`), replaced with direct dynamic `IconFactory.get_icon(sid)` resolution.
+  - Centered 80x80 blueprint preview card in Build Inspector and 2-column grid catalog (260x54px buttons).
+  - 12-phase automated E2E suite passes cleanly with exit code 0 (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

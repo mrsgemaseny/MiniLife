@@ -14,7 +14,79 @@ static func _resolve_sprite_path(id: String) -> String:
 	if FileAccess.file_exists(abs_direct) or ResourceLoader.exists(direct_path):
 		return direct_path
 
-	# 2. Common material and food aliases
+	# 2. Direct match in assets/sprites/structures/
+	var struct_path: String = "res://assets/sprites/structures/" + id + ".png"
+	var abs_struct: String = ProjectSettings.globalize_path(struct_path)
+	if FileAccess.file_exists(abs_struct) or ResourceLoader.exists(struct_path):
+		return struct_path
+
+	# 3. Structure aliases
+	if id == "workbench":
+		return "res://assets/sprites/structures/workbench.png"
+	if id == "research_table":
+		return "res://assets/sprites/structures/research_table.png"
+	if id == "campfire":
+		return "res://assets/sprites/structures/campfire.png"
+	if id == "storage" or id == "chest" or id.find("chest") != -1:
+		return "res://assets/sprites/structures/storage.png"
+	if id == "bed" or id.find("bed") != -1:
+		return "res://assets/sprites/structures/bed.png"
+	if id == "furnace" or id.find("furnace") != -1:
+		return "res://assets/sprites/structures/furnace.png"
+	if id == "forge" or id.find("forge") != -1:
+		return "res://assets/sprites/structures/forge.png"
+	if id == "pit_trap" or id.find("pit") != -1:
+		return "res://assets/sprites/structures/pit_trap.png"
+	if id == "spike_trap" or id.find("spike") != -1:
+		return "res://assets/sprites/structures/spike_trap.png"
+	if id == "wall" or id == "stone_wall":
+		return "res://assets/sprites/structures/stone_wall.png"
+	if id == "wood_wall":
+		return "res://assets/sprites/structures/wood_wall.png"
+	if id == "door" or id == "wood_door":
+		return "res://assets/sprites/structures/door.png"
+	if id == "floor" or id == "wood_floor":
+		return "res://assets/sprites/structures/floor.png"
+	if id == "stone_floor":
+		return "res://assets/sprites/structures/stone_floor.png"
+	if id == "water_collector" or id.find("water") != -1 or id.find("well") != -1:
+		return "res://assets/sprites/structures/water_collector.png"
+	if id == "iron_vault" or id.find("vault") != -1:
+		return "res://assets/sprites/structures/iron_vault.png"
+
+	# 4. Consumable and medicine aliases
+	if id == "berries" or id.find("berries") != -1:
+		return "res://assets/sprites/items/berries.png"
+	if id == "bread" or id.find("bread") != -1:
+		return "res://assets/sprites/items/bread.png"
+	if id == "hunters_stew" or id.find("stew") != -1:
+		return "res://assets/sprites/items/hunters_stew.png"
+	if id == "bandage" or id.find("bandage") != -1:
+		return "res://assets/sprites/items/bandage.png"
+	if id == "medicine" or id.find("poultice") != -1:
+		return "res://assets/sprites/items/medicine.png"
+	if id == "poison" or id.find("venom") != -1:
+		return "res://assets/sprites/items/poison.png"
+	if id == "torch" or id.find("torch") != -1:
+		return "res://assets/sprites/items/torch.png"
+	if id == "arrow" or id.find("arrow") != -1:
+		return "res://assets/sprites/items/arrow.png"
+	if id == "coins" or id == "coin" or id.find("gold") != -1 and id.find("ore") == -1:
+		return "res://assets/sprites/items/coins.png"
+
+	# 5. Armor & Protection aliases
+	if id == "leather_armor" or id == "tunic" or id.find("tunic") != -1 or id.find("leather_armor") != -1:
+		return "res://assets/sprites/items/leather_armor.png"
+	if id == "chainmail_coif" or id.find("coif") != -1:
+		return "res://assets/sprites/items/chainmail_coif.png"
+	if id == "iron_chainmail" or id.find("chainmail") != -1 and id.find("coif") == -1 and id.find("legging") == -1:
+		return "res://assets/sprites/items/iron_chainmail.png"
+	if id == "chainmail_leggings" or id.find("chausses") != -1 or id.find("legging") != -1:
+		return "res://assets/sprites/items/chainmail_leggings.png"
+	if id.find("shield") != -1:
+		return "res://assets/sprites/items/iron_shield.png"
+
+	# 6. Common material and food aliases
 	if id == "cooked_food" or id.find("cooked") != -1:
 		return "res://assets/sprites/items/cooked_meat.png"
 	if id == "food_raw" or id.find("meat") != -1 or id == "raw_meat":

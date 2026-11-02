@@ -8,7 +8,7 @@ const ResearchSys = preload("res://scripts/systems/research_system.gd")
 @onready var panel_container: PanelContainer = $PanelContainer
 @onready var vbox: VBoxContainer = $PanelContainer/VBoxContainer
 @onready var title_label: Label = $PanelContainer/VBoxContainer/TitleLabel
-@onready var structure_list: VBoxContainer = $PanelContainer/VBoxContainer/StructureList
+@onready var structure_list: Control = $PanelContainer/VBoxContainer/StructureList
 
 var _structures: Dictionary = {}
 
@@ -144,10 +144,13 @@ func _setup_styled_build_menu() -> void:
 		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		body_hbox.add_child(scroll)
 
-		structure_list = VBoxContainer.new()
-		structure_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		structure_list.add_theme_constant_override("separation", 6)
-		scroll.add_child(structure_list)
+		var grid: GridContainer = GridContainer.new()
+		grid.columns = 2
+		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.add_theme_constant_override("h_separation", 8)
+		grid.add_theme_constant_override("v_separation", 8)
+		scroll.add_child(grid)
+		structure_list = grid
 
 		# Right Pane: Blueprint Inspector Card
 		var right_panel: PanelContainer = PanelContainer.new()
@@ -174,17 +177,22 @@ func _setup_styled_build_menu() -> void:
 		r_hdr.modulate = Color(0.75, 0.78, 0.84)
 		r_vbox.add_child(r_hdr)
 
+		var icon_center: HBoxContainer = HBoxContainer.new()
+		icon_center.alignment = BoxContainer.ALIGNMENT_CENTER
+		r_vbox.add_child(icon_center)
+
 		var icon_frame: PanelContainer = PanelContainer.new()
-		icon_frame.custom_minimum_size = Vector2(64, 64)
+		icon_frame.custom_minimum_size = Vector2(80, 80)
 		var if_sb: StyleBoxFlat = StyleBoxFlat.new()
 		if_sb.bg_color = Color(0.14, 0.15, 0.18, 0.98)
 		if_sb.border_color = Color(0.35, 0.38, 0.44, 0.85)
 		if_sb.set_border_width_all(1)
 		if_sb.set_corner_radius_all(4)
 		icon_frame.add_theme_stylebox_override("panel", if_sb)
-		r_vbox.add_child(icon_frame)
+		icon_center.add_child(icon_frame)
 
 		_detail_icon = TextureRect.new()
+		_detail_icon.set_anchors_preset(Control.PRESET_FULL_RECT)
 		_detail_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		_detail_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon_frame.add_child(_detail_icon)
@@ -289,11 +297,10 @@ func refresh() -> void:
 		var is_sel: bool = (sid == _selected_structure_id)
 
 		var btn: Button = Button.new()
-		btn.custom_minimum_size = Vector2(0, 48)
+		btn.custom_minimum_size = Vector2(260, 54)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-		var icon_key: String = "campfire" if str(sid).find("campfire") != -1 or str(sid).find("furnace") != -1 else ("stone" if str(sid).find("stone") != -1 or str(sid).find("wall") != -1 else "wood")
-		btn.icon = IconFactory.get_icon(icon_key)
+		btn.icon = IconFactory.get_icon(sid)
 		btn.expand_icon = true
 		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		btn.add_theme_font_size_override("font_size", 11)
@@ -363,8 +370,7 @@ func _update_detail_panel(player: Node) -> void:
 	var can_build: bool = is_tech_unlocked and _has_materials(player, mats)
 
 	if _detail_icon != null:
-		var icon_key: String = "campfire" if str(_selected_structure_id).find("campfire") != -1 or str(_selected_structure_id).find("furnace") != -1 else ("stone" if str(_selected_structure_id).find("stone") != -1 or str(_selected_structure_id).find("wall") != -1 else "wood")
-		_detail_icon.texture = IconFactory.get_icon(icon_key)
+		_detail_icon.texture = IconFactory.get_icon(_selected_structure_id)
 	if _detail_title != null:
 		_detail_title.text = sname
 	if _detail_category != null:
