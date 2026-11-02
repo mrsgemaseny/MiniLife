@@ -460,31 +460,6 @@ func _on_canvas_draw() -> void:
 				_canvas.draw_line(to_pt + Vector2(-5.0, -3.5), to_pt, line_col, line_w)
 				_canvas.draw_line(to_pt + Vector2(-5.0, 3.5), to_pt, line_col, line_w)
 
-				# Strict progression rule: strictly left-to-right columns only (no backward/same-column cuts)
-				if pgx >= gx:
-					continue
-
-				var from_pt: Vector2 = Vector2(col_x_coords[pgx] + 186.0, row_y_coords[pgy] + 24.0)
-
-				var is_pre_done: bool = ResearchSys.instance.is_researched(pre_str)
-				var is_target_done: bool = ResearchSys.instance.is_researched(tid)
-				var line_col: Color = Color(0.85, 0.72, 0.35, 0.95) if is_target_done else (Color(0.68, 0.70, 0.76, 0.85) if is_pre_done else Color(0.28, 0.30, 0.34, 0.50))
-				var line_w: float = 2.4 if is_target_done else (1.8 if is_pre_done else 1.2)
-
-				if absf(from_pt.y - to_pt.y) < 2.0:
-					# Clean straight horizontal connection
-					_canvas.draw_line(from_pt, to_pt, line_col, line_w)
-				else:
-					# Smooth orthogonal S-pipe (horizontal -> vertical mid -> horizontal)
-					var mid_x: float = (from_pt.x + to_pt.x) * 0.5
-					_canvas.draw_line(from_pt, Vector2(mid_x, from_pt.y), line_col, line_w)
-					_canvas.draw_line(Vector2(mid_x, from_pt.y), Vector2(mid_x, to_pt.y), line_col, line_w)
-					_canvas.draw_line(Vector2(mid_x, to_pt.y), to_pt, line_col, line_w)
-
-				# Arrowhead entering target left side
-				_canvas.draw_line(to_pt + Vector2(-5.0, -3.5), to_pt, line_col, line_w)
-				_canvas.draw_line(to_pt + Vector2(-5.0, 3.5), to_pt, line_col, line_w)
-
 
 func _update_inspector_display(player: Node) -> void:
 	if ResearchSys.instance == null:

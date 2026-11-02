@@ -29,6 +29,14 @@ var _weight_label: Label = null
 var _gold_label: Label = null
 var _defense_label: Label = null
 
+# Right-hand Item Inspector
+var _insp_panel_icon: TextureRect = null
+var _insp_panel_name: Label = null
+var _insp_panel_type: Label = null
+var _insp_panel_stats: Label = null
+var _insp_panel_weight: Label = null
+var _insp_panel_desc: Label = null
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -152,50 +160,65 @@ func _build_minecraft_inventory_ui() -> void:
 	offset_top = 0
 	offset_right = 0
 	offset_bottom = 0
-	mouse_filter = Control.MOUSE_FILTER_PASS
+	mouse_filter = Control.MOUSE_FILTER_STOP
 
-	# 1. Dark World Dimmer (Minecraft authentic pause dimmer - NO BLUE, NO TEXTURE)
-	var dimmer: ColorRect = ColorRect.new()
-	dimmer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dimmer.color = Color(0.0, 0.0, 0.0, 0.65)
-	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
-	dimmer.gui_input.connect(func(ev: InputEvent) -> void:
-		if ev is InputEventMouseButton and ev.pressed and not _cursor_stack.is_empty():
-			_drop_hovered_or_cursor_item(false)
-	)
-	add_child(dimmer)
+	# 1. Fullscreen Survival Texture Backdrop
+	var bg_tex: TextureRect = TextureRect.new()
+	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
+	if ResourceLoader.exists("res://assets/sprites/ui/fullscreen_survival_bg.jpg"):
+		bg_tex.texture = load("res://assets/sprites/ui/fullscreen_survival_bg.jpg")
+	add_child(bg_tex)
 
-	# 2. Centered Layout Root (Main Minecraft GUI Box + Right Effects Column)
-	var center_root: HBoxContainer = HBoxContainer.new()
-	center_root.set_anchors_preset(Control.PRESET_CENTER)
-	center_root.alignment = BoxContainer.ALIGNMENT_CENTER
-	center_root.add_theme_constant_override("separation", 14)
-	add_child(center_root)
-
-	# 3. Authentic Minecraft Inventory Window (#c6c6c6 OPAQUE)
+	# 2. Main Full-Screen Layout Panel
 	_panel = PanelContainer.new()
-	_panel.add_theme_stylebox_override("panel", _make_mc_window_style())
-	_panel.custom_minimum_size = Vector2(410.0, 430.0)
-	center_root.add_child(_panel)
+	_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_panel.offset_left = 0
+	_panel.offset_top = 0
+	_panel.offset_right = 0
+	_panel.offset_bottom = 0
+
+	var win_sb: StyleBoxFlat = StyleBoxFlat.new()
+	win_sb.bg_color = Color(0.06, 0.07, 0.08, 0.40) # Tint over texture
+	win_sb.border_color = Color(0.20, 0.22, 0.26, 0.85)
+	win_sb.set_border_width_all(2)
+	win_sb.set_corner_radius_all(0)
+	win_sb.content_margin_left = 32
+	win_sb.content_margin_right = 32
+	win_sb.content_margin_top = 20
+	win_sb.content_margin_bottom = 24
+	_panel.add_theme_stylebox_override("panel", win_sb)
+	add_child(_panel)
 
 	var main_vbox: VBoxContainer = VBoxContainer.new()
-	main_vbox.add_theme_constant_override("separation", 6)
+	main_vbox.add_theme_constant_override("separation", 10)
 	_panel.add_child(main_vbox)
 
-	# Header Row (Dark Minecraft Title + Buttons)
+	# Header Row
 	var hdr: HBoxContainer = HBoxContainer.new()
 	hdr.alignment = BoxContainer.ALIGNMENT_CENTER
+	var title_vbox: VBoxContainer = VBoxContainer.new()
+	title_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_vbox.add_theme_constant_override("separation", 2)
+	hdr.add_child(title_vbox)
+
 	var title: Label = Label.new()
-	title.text = "Создание / Инвентарь"
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 12)
-	title.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
-	hdr.add_child(title)
+	title.text = "ИНВЕНТАРЬ И ЭКИПИРОВКА ВЫЖИВАНИЯ [I]"
+	title.add_theme_font_size_override("font_size", 14)
+	title.modulate = Color(0.92, 0.90, 0.86, 1.0)
+	title_vbox.add_child(title)
+
+	var sub_lbl: Label = Label.new()
+	sub_lbl.text = "Управление снаряжением, полевой крафт и перенос грузов [ESC / I]"
+	sub_lbl.add_theme_font_size_override("font_size", 10)
+	sub_lbl.modulate = Color(0.55, 0.58, 0.64, 1.0)
+	title_vbox.add_child(sub_lbl)
 
 	var sort_btn: Button = Button.new()
-	sort_btn.text = " ⇵ Сортировка "
-	sort_btn.add_theme_font_size_override("font_size", 10)
-	sort_btn.add_theme_color_override("font_color", Color(0.24, 0.24, 0.24, 1.0))
+	sort_btn.text = " ⇵ СОРТИРОВКА "
+	sort_btn.add_theme_font_size_override("font_size", 11)
+	sort_btn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.88, 1.0))
 	sort_btn.add_theme_stylebox_override("normal", _make_mc_btn_style(false))
 	sort_btn.add_theme_stylebox_override("hover", _make_mc_btn_style(true))
 	sort_btn.pressed.connect(func() -> void:
@@ -209,25 +232,49 @@ func _build_minecraft_inventory_ui() -> void:
 	hdr.add_child(sort_btn)
 
 	var close_btn: Button = Button.new()
-	close_btn.text = " ✕ "
-	close_btn.add_theme_font_size_override("font_size", 10)
-	close_btn.add_theme_color_override("font_color", Color(0.24, 0.24, 0.24, 1.0))
+	close_btn.text = " ✕ ЗАКРЫТЬ [ESC] "
+	close_btn.add_theme_font_size_override("font_size", 11)
+	close_btn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.88, 1.0))
 	close_btn.add_theme_stylebox_override("normal", _make_mc_btn_style(false))
 	close_btn.add_theme_stylebox_override("hover", _make_mc_btn_style(true))
 	close_btn.pressed.connect(close_panel)
 	hdr.add_child(close_btn)
 	main_vbox.add_child(hdr)
 
-	# Top Section (Armor Column + Character Viewport Well + 2x2 Crafting Grid like Minecraft photo 4)
-	var top_hbox: HBoxContainer = HBoxContainer.new()
-	top_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	top_hbox.add_theme_constant_override("separation", 10)
-	main_vbox.add_child(top_hbox)
+	# Separator
+	var sep: HSeparator = HSeparator.new()
+	var sep_sb: StyleBoxLine = StyleBoxLine.new()
+	sep_sb.color = Color(0.20, 0.22, 0.26, 0.90)
+	sep_sb.thickness = 1
+	sep.add_theme_stylebox_override("separator", sep_sb)
+	main_vbox.add_child(sep)
 
-	# Left Column: 4 Armor slots vertical (Helm, Chest, Legs, Hand)
+	# 3-Column Main Body Layout
+	var body_hbox: HBoxContainer = HBoxContainer.new()
+	body_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body_hbox.add_theme_constant_override("separation", 20)
+	main_vbox.add_child(body_hbox)
+
+	# LEFT COLUMN: Equipment & Integrated Status Cards (280px)
+	var left_col: VBoxContainer = VBoxContainer.new()
+	left_col.custom_minimum_size = Vector2(280, 0)
+	left_col.add_theme_constant_override("separation", 10)
+	body_hbox.add_child(left_col)
+
+	var left_title: Label = Label.new()
+	left_title.text = "СНАРЯЖЕНИЕ И ПАРАМЕТРЫ"
+	left_title.add_theme_font_size_override("font_size", 11)
+	left_title.modulate = Color(0.75, 0.78, 0.84)
+	left_col.add_child(left_title)
+
+	var eq_hbox: HBoxContainer = HBoxContainer.new()
+	eq_hbox.add_theme_constant_override("separation", 10)
+	left_col.add_child(eq_hbox)
+
 	var armor_col: VBoxContainer = VBoxContainer.new()
-	armor_col.add_theme_constant_override("separation", 3)
-	top_hbox.add_child(armor_col)
+	armor_col.add_theme_constant_override("separation", 4)
+	eq_hbox.add_child(armor_col)
 
 	var armor_keys: Array[Dictionary] = [
 		{"key": "head", "placeholder": "Helm"},
@@ -247,16 +294,17 @@ func _build_minecraft_inventory_ui() -> void:
 		_armor_slots[k] = s
 		armor_col.add_child(s)
 
-	# Center: Character Figure Well (Minecraft Inset Well #1e1e1e)
+	# Character Preview Well
 	var char_well: PanelContainer = PanelContainer.new()
-	char_well.custom_minimum_size = Vector2(96.0, 140.0)
+	char_well.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	char_well.custom_minimum_size = Vector2(100.0, 180.0)
 	var cw_sb: StyleBoxFlat = StyleBoxFlat.new()
-	cw_sb.bg_color = Color(0.12, 0.12, 0.12, 1.0) # Solid black/dark well
-	cw_sb.border_color = Color(0.25, 0.25, 0.25, 1.0)
-	cw_sb.set_border_width_all(2)
-	cw_sb.set_corner_radius_all(0)
+	cw_sb.bg_color = Color(0.10, 0.11, 0.13, 0.95)
+	cw_sb.border_color = Color(0.24, 0.26, 0.30, 0.85)
+	cw_sb.set_border_width_all(1)
+	cw_sb.set_corner_radius_all(3)
 	char_well.add_theme_stylebox_override("panel", cw_sb)
-	top_hbox.add_child(char_well)
+	eq_hbox.add_child(char_well)
 
 	var char_vbox: VBoxContainer = VBoxContainer.new()
 	char_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -272,62 +320,13 @@ func _build_minecraft_inventory_ui() -> void:
 	char_vbox.add_child(char_icon)
 
 	var char_lbl: Label = Label.new()
-	char_lbl.text = "Wanderer"
+	char_lbl.text = "Странник"
 	char_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	char_lbl.add_theme_font_size_override("font_size", 10)
 	char_lbl.modulate = Color(0.80, 0.80, 0.80, 1.0)
 	char_vbox.add_child(char_lbl)
 
-	# Right Column: Shield slot + 2x2 Crafting Grid like Minecraft Photo 4
-	var craft_col: VBoxContainer = VBoxContainer.new()
-	craft_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	craft_col.add_theme_constant_override("separation", 4)
-	top_hbox.add_child(craft_col)
-
-	var craft_title: Label = Label.new()
-	craft_title.text = "Создание"
-	craft_title.add_theme_font_size_override("font_size", 10)
-	craft_title.modulate = Color(0.24, 0.24, 0.24, 1.0)
-	craft_col.add_child(craft_title)
-
-	var craft_row: HBoxContainer = HBoxContainer.new()
-	craft_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	craft_row.add_theme_constant_override("separation", 6)
-	craft_col.add_child(craft_row)
-
-	# 2x2 grid
-	var craft_grid: GridContainer = GridContainer.new()
-	craft_grid.columns = 2
-	craft_grid.add_theme_constant_override("h_separation", 2)
-	craft_grid.add_theme_constant_override("v_separation", 2)
-	craft_row.add_child(craft_grid)
-
-	for ci in range(4):
-		var cs: Control = MCSlot.new()
-		cs.slot_group = "craft_input"
-		cs.placeholder_text = ""
-		craft_grid.add_child(cs)
-
-	var arrow_lbl: Label = Label.new()
-	arrow_lbl.text = " ➔ "
-	arrow_lbl.add_theme_font_size_override("font_size", 14)
-	arrow_lbl.modulate = Color(0.35, 0.35, 0.35, 1.0)
-	craft_row.add_child(arrow_lbl)
-
-	# Craft result slot
-	var res_slot: Control = MCSlot.new()
-	res_slot.slot_group = "craft_output"
-	craft_row.add_child(res_slot)
-
 	# Offhand / Shield Slot
-	var offhand_hbox: HBoxContainer = HBoxContainer.new()
-	craft_col.add_child(offhand_hbox)
-	var off_lbl: Label = Label.new()
-	off_lbl.text = "Щит: "
-	off_lbl.add_theme_font_size_override("font_size", 9)
-	off_lbl.modulate = Color(0.30, 0.30, 0.30, 1.0)
-	offhand_hbox.add_child(off_lbl)
-
 	var s_off: Control = MCSlot.new()
 	s_off.slot_group = "armor"
 	s_off.placeholder_text = "Shield"
@@ -335,20 +334,151 @@ func _build_minecraft_inventory_ui() -> void:
 	s_off.slot_hovered.connect(func(_idx): _on_armor_slot_hovered("offhand"))
 	s_off.slot_unhovered.connect(func(_idx): _hide_tooltip())
 	_armor_slots["offhand"] = s_off
-	offhand_hbox.add_child(s_off)
+	char_vbox.add_child(s_off)
 
-	# Middle Section: Main Backpack Storage (24 Slots = 3 Rows x 8 Columns)
+	# Integrated Status Cards
+	var eff1: PanelContainer = PanelContainer.new()
+	eff1.add_theme_stylebox_override("panel", _make_mc_effect_style())
+	eff1.custom_minimum_size = Vector2(0, 42.0)
+	left_col.add_child(eff1)
+
+	var eff1_hbox: HBoxContainer = HBoxContainer.new()
+	eff1_hbox.add_theme_constant_override("separation", 8)
+	eff1.add_child(eff1_hbox)
+
+	var eff1_icon: TextureRect = TextureRect.new()
+	eff1_icon.custom_minimum_size = Vector2(26.0, 26.0)
+	eff1_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	eff1_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	eff1_icon.texture = IconFactory.get_icon("wooden_shield")
+	eff1_hbox.add_child(eff1_icon)
+
+	var eff1_vbox: VBoxContainer = VBoxContainer.new()
+	eff1_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	eff1_hbox.add_child(eff1_vbox)
+
+	_defense_label = Label.new()
+	_defense_label.text = "Защита: 10"
+	_defense_label.add_theme_font_size_override("font_size", 11)
+	_defense_label.modulate = Color(0.92, 0.90, 0.86, 1.0)
+	eff1_vbox.add_child(_defense_label)
+
+	var eff2: PanelContainer = PanelContainer.new()
+	eff2.add_theme_stylebox_override("panel", _make_mc_effect_style())
+	eff2.custom_minimum_size = Vector2(0, 42.0)
+	left_col.add_child(eff2)
+
+	var eff2_hbox: HBoxContainer = HBoxContainer.new()
+	eff2_hbox.add_theme_constant_override("separation", 8)
+	eff2.add_child(eff2_hbox)
+
+	var eff2_icon: TextureRect = TextureRect.new()
+	eff2_icon.custom_minimum_size = Vector2(26.0, 26.0)
+	eff2_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	eff2_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	eff2_icon.texture = IconFactory.get_icon("leather_hide")
+	eff2_hbox.add_child(eff2_icon)
+
+	var eff2_vbox: VBoxContainer = VBoxContainer.new()
+	eff2_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	eff2_hbox.add_child(eff2_vbox)
+
+	_weight_label = Label.new()
+	_weight_label.text = "Вес: 0.0 / 100.0 kg"
+	_weight_label.add_theme_font_size_override("font_size", 11)
+	_weight_label.modulate = Color(0.92, 0.90, 0.86, 1.0)
+	eff2_vbox.add_child(_weight_label)
+
+	var eff3: PanelContainer = PanelContainer.new()
+	eff3.add_theme_stylebox_override("panel", _make_mc_effect_style())
+	eff3.custom_minimum_size = Vector2(0, 42.0)
+	left_col.add_child(eff3)
+
+	var eff3_hbox: HBoxContainer = HBoxContainer.new()
+	eff3_hbox.add_theme_constant_override("separation", 8)
+	eff3.add_child(eff3_hbox)
+
+	var eff3_icon: TextureRect = TextureRect.new()
+	eff3_icon.custom_minimum_size = Vector2(26.0, 26.0)
+	eff3_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	eff3_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	eff3_icon.texture = IconFactory.get_icon("bronze_ingot")
+	eff3_hbox.add_child(eff3_icon)
+
+	var eff3_vbox: VBoxContainer = VBoxContainer.new()
+	eff3_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	eff3_hbox.add_child(eff3_vbox)
+
+	_gold_label = Label.new()
+	_gold_label.text = "Казна: 35 монет"
+	_gold_label.add_theme_font_size_override("font_size", 11)
+	_gold_label.modulate = Color(0.92, 0.90, 0.86, 1.0)
+	eff3_vbox.add_child(_gold_label)
+
+	# CENTER COLUMN: Crafting 2x2 + Backpack (24) + Hotbar (8)
+	var center_col: VBoxContainer = VBoxContainer.new()
+	center_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center_col.add_theme_constant_override("separation", 10)
+	body_hbox.add_child(center_col)
+
+	var craft_card: PanelContainer = PanelContainer.new()
+	var c_sb: StyleBoxFlat = StyleBoxFlat.new()
+	c_sb.bg_color = Color(0.10, 0.11, 0.13, 0.95)
+	c_sb.border_color = Color(0.24, 0.26, 0.30, 0.85)
+	c_sb.set_border_width_all(1)
+	c_sb.set_corner_radius_all(3)
+	c_sb.set_content_margin_all(8)
+	craft_card.add_theme_stylebox_override("panel", c_sb)
+	center_col.add_child(craft_card)
+
+	var craft_vbox: VBoxContainer = VBoxContainer.new()
+	craft_vbox.add_theme_constant_override("separation", 6)
+	craft_card.add_child(craft_vbox)
+
+	var craft_title: Label = Label.new()
+	craft_title.text = "БЫСТРЫЙ КРАФТ ВЫЖИВАНИЯ (2x2)"
+	craft_title.add_theme_font_size_override("font_size", 10)
+	craft_title.modulate = Color(0.75, 0.78, 0.84)
+	craft_vbox.add_child(craft_title)
+
+	var craft_row: HBoxContainer = HBoxContainer.new()
+	craft_row.add_theme_constant_override("separation", 10)
+	craft_vbox.add_child(craft_row)
+
+	var craft_grid: GridContainer = GridContainer.new()
+	craft_grid.columns = 2
+	craft_grid.add_theme_constant_override("h_separation", 3)
+	craft_grid.add_theme_constant_override("v_separation", 3)
+	craft_row.add_child(craft_grid)
+
+	for ci in range(4):
+		var cs: Control = MCSlot.new()
+		cs.slot_group = "craft_input"
+		craft_grid.add_child(cs)
+
+	var arrow_lbl: Label = Label.new()
+	arrow_lbl.text = " ➔ "
+	arrow_lbl.add_theme_font_size_override("font_size", 16)
+	arrow_lbl.modulate = Color(0.65, 0.68, 0.74, 1.0)
+	arrow_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	craft_row.add_child(arrow_lbl)
+
+	var res_slot: Control = MCSlot.new()
+	res_slot.slot_group = "craft_output"
+	craft_row.add_child(res_slot)
+
+	# Main Backpack Section (24 slots)
 	var inv_title: Label = Label.new()
-	inv_title.text = "Инвентарь"
-	inv_title.add_theme_font_size_override("font_size", 10)
-	inv_title.modulate = Color(0.24, 0.24, 0.24, 1.0)
-	main_vbox.add_child(inv_title)
+	inv_title.text = "РЮКЗАК ХРАНЕНИЯ (24 СЛОТА)"
+	inv_title.add_theme_font_size_override("font_size", 11)
+	inv_title.modulate = Color(0.75, 0.78, 0.84)
+	center_col.add_child(inv_title)
 
 	var inv_grid: GridContainer = GridContainer.new()
 	inv_grid.columns = 8
-	inv_grid.add_theme_constant_override("h_separation", 3)
-	inv_grid.add_theme_constant_override("v_separation", 3)
-	main_vbox.add_child(inv_grid)
+	inv_grid.add_theme_constant_override("h_separation", 4)
+	inv_grid.add_theme_constant_override("v_separation", 4)
+	center_col.add_child(inv_grid)
 
 	_inv_slots.clear()
 	for i in range(8, 32):
@@ -368,17 +498,18 @@ func _build_minecraft_inventory_ui() -> void:
 		_inv_slots.append(s)
 		inv_grid.add_child(s)
 
-	# Spacer between backpack and hotbar (like Minecraft)
-	var spacer: Control = Control.new()
-	spacer.custom_minimum_size = Vector2(0.0, 4.0)
-	main_vbox.add_child(spacer)
+	# Hotbar Section (8 slots)
+	var hotbar_title: Label = Label.new()
+	hotbar_title.text = "ПОЯС БЫСТРОГО ДОСТУПА [1-8]"
+	hotbar_title.add_theme_font_size_override("font_size", 11)
+	hotbar_title.modulate = Color(0.75, 0.78, 0.84)
+	center_col.add_child(hotbar_title)
 
-	# Bottom Section: Hotbar (8 Slots = 1 Row)
 	var hotbar_grid: GridContainer = GridContainer.new()
 	hotbar_grid.columns = 8
-	hotbar_grid.add_theme_constant_override("h_separation", 3)
-	hotbar_grid.add_theme_constant_override("v_separation", 3)
-	main_vbox.add_child(hotbar_grid)
+	hotbar_grid.add_theme_constant_override("h_separation", 4)
+	hotbar_grid.add_theme_constant_override("v_separation", 4)
+	center_col.add_child(hotbar_grid)
 
 	_hotbar_slots.clear()
 	for i in range(8):
@@ -398,116 +529,80 @@ func _build_minecraft_inventory_ui() -> void:
 		_hotbar_slots.append(s)
 		hotbar_grid.add_child(s)
 
-	# Controls Hint footer (Neutral dark text)
 	var hint_lbl: Label = Label.new()
-	hint_lbl.text = "ЛКМ: Взять/Сложить  |  ПКМ: Разделить  |  Shift+ЛКМ: Быстро  |  Q: Бросить"
-	hint_lbl.add_theme_font_size_override("font_size", 9)
-	hint_lbl.modulate = Color(0.35, 0.35, 0.35, 1.0)
-	main_vbox.add_child(hint_lbl)
+	hint_lbl.text = "ЛКМ: Взять/Сложить  |  ПКМ: Разделить 1  |  Shift+ЛКМ: Быстро переместить  |  Q: Выбросить"
+	hint_lbl.add_theme_font_size_override("font_size", 10)
+	hint_lbl.modulate = Color(0.55, 0.58, 0.64, 1.0)
+	center_col.add_child(hint_lbl)
 
-	# 4. Right Column: Effects & Survivor Status (Like Minecraft Photo 4)
-	var effects_col: VBoxContainer = VBoxContainer.new()
-	effects_col.add_theme_constant_override("separation", 8)
-	center_root.add_child(effects_col)
+	# RIGHT COLUMN: Item Inspector (Full Sidebar)
+	var right_insp: PanelContainer = PanelContainer.new()
+	right_insp.custom_minimum_size = Vector2(280, 0)
+	var ri_sb: StyleBoxFlat = StyleBoxFlat.new()
+	ri_sb.bg_color = Color(0.10, 0.11, 0.13, 0.95)
+	ri_sb.border_color = Color(0.24, 0.26, 0.30, 0.85)
+	ri_sb.set_border_width_all(1)
+	ri_sb.set_corner_radius_all(4)
+	ri_sb.set_content_margin_all(16)
+	right_insp.add_theme_stylebox_override("panel", ri_sb)
+	body_hbox.add_child(right_insp)
 
-	# Effect 1: Armor Defense (Icon Shield like photo 4)
-	var eff1: PanelContainer = PanelContainer.new()
-	eff1.add_theme_stylebox_override("panel", _make_mc_effect_style())
-	eff1.custom_minimum_size = Vector2(170.0, 46.0)
-	effects_col.add_child(eff1)
+	var r_vbox: VBoxContainer = VBoxContainer.new()
+	r_vbox.add_theme_constant_override("separation", 10)
+	right_insp.add_child(r_vbox)
 
-	var eff1_hbox: HBoxContainer = HBoxContainer.new()
-	eff1_hbox.add_theme_constant_override("separation", 8)
-	eff1.add_child(eff1_hbox)
+	var r_title: Label = Label.new()
+	r_title.text = "ИНСПЕКТОР ПРЕДМЕТА"
+	r_title.add_theme_font_size_override("font_size", 11)
+	r_title.modulate = Color(0.75, 0.78, 0.84)
+	r_vbox.add_child(r_title)
 
-	var eff1_icon: TextureRect = TextureRect.new()
-	eff1_icon.custom_minimum_size = Vector2(30.0, 30.0)
-	eff1_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	eff1_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	eff1_icon.texture = IconFactory.get_icon("wooden_shield")
-	eff1_hbox.add_child(eff1_icon)
+	var icon_box: PanelContainer = PanelContainer.new()
+	icon_box.custom_minimum_size = Vector2(60, 60)
+	var ib_sb: StyleBoxFlat = StyleBoxFlat.new()
+	ib_sb.bg_color = Color(0.14, 0.15, 0.18, 0.98)
+	ib_sb.border_color = Color(0.35, 0.38, 0.44, 0.85)
+	ib_sb.set_border_width_all(1)
+	ib_sb.set_corner_radius_all(4)
+	icon_box.add_theme_stylebox_override("panel", ib_sb)
+	r_vbox.add_child(icon_box)
 
-	var eff1_vbox: VBoxContainer = VBoxContainer.new()
-	eff1_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	eff1_hbox.add_child(eff1_vbox)
+	_insp_panel_icon = TextureRect.new()
+	_insp_panel_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_insp_panel_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_box.add_child(_insp_panel_icon)
 
-	_defense_label = Label.new()
-	_defense_label.text = "Защита IV"
-	_defense_label.add_theme_font_size_override("font_size", 11)
-	_defense_label.modulate = Color(0.95, 0.95, 0.95, 1.0)
-	eff1_vbox.add_child(_defense_label)
+	_insp_panel_name = Label.new()
+	_insp_panel_name.add_theme_font_size_override("font_size", 13)
+	_insp_panel_name.modulate = Color(0.92, 0.90, 0.86)
+	_insp_panel_name.text = "Выберите предмет"
+	r_vbox.add_child(_insp_panel_name)
 
-	var def_sub: Label = Label.new()
-	def_sub.text = "Броня экипировки"
-	def_sub.add_theme_font_size_override("font_size", 9)
-	def_sub.modulate = Color(0.65, 0.65, 0.65, 1.0)
-	eff1_vbox.add_child(def_sub)
+	_insp_panel_type = Label.new()
+	_insp_panel_type.add_theme_font_size_override("font_size", 10)
+	_insp_panel_type.modulate = Color(0.60, 0.63, 0.68)
+	r_vbox.add_child(_insp_panel_type)
 
-	# Effect 2: Backpack Load (Weight)
-	var eff2: PanelContainer = PanelContainer.new()
-	eff2.add_theme_stylebox_override("panel", _make_mc_effect_style())
-	eff2.custom_minimum_size = Vector2(170.0, 46.0)
-	effects_col.add_child(eff2)
+	var div_r: HSeparator = HSeparator.new()
+	div_r.add_theme_stylebox_override("separator", sep_sb)
+	r_vbox.add_child(div_r)
 
-	var eff2_hbox: HBoxContainer = HBoxContainer.new()
-	eff2_hbox.add_theme_constant_override("separation", 8)
-	eff2.add_child(eff2_hbox)
+	_insp_panel_stats = Label.new()
+	_insp_panel_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_insp_panel_stats.add_theme_font_size_override("font_size", 10)
+	_insp_panel_stats.modulate = Color(0.85, 0.86, 0.90)
+	r_vbox.add_child(_insp_panel_stats)
 
-	var eff2_icon: TextureRect = TextureRect.new()
-	eff2_icon.custom_minimum_size = Vector2(30.0, 30.0)
-	eff2_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	eff2_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	eff2_icon.texture = IconFactory.get_icon("leather_hide")
-	eff2_hbox.add_child(eff2_icon)
+	_insp_panel_weight = Label.new()
+	_insp_panel_weight.add_theme_font_size_override("font_size", 10)
+	_insp_panel_weight.modulate = Color(0.70, 0.72, 0.76)
+	r_vbox.add_child(_insp_panel_weight)
 
-	var eff2_vbox: VBoxContainer = VBoxContainer.new()
-	eff2_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	eff2_hbox.add_child(eff2_vbox)
-
-	_weight_label = Label.new()
-	_weight_label.text = "Нагрузка"
-	_weight_label.add_theme_font_size_override("font_size", 11)
-	_weight_label.modulate = Color(0.95, 0.95, 0.95, 1.0)
-	eff2_vbox.add_child(_weight_label)
-
-	var w_sub: Label = Label.new()
-	w_sub.text = "Лимит рюкзака"
-	w_sub.add_theme_font_size_override("font_size", 9)
-	w_sub.modulate = Color(0.65, 0.65, 0.65, 1.0)
-	eff2_vbox.add_child(w_sub)
-
-	# Effect 3: Purse Coins
-	var eff3: PanelContainer = PanelContainer.new()
-	eff3.add_theme_stylebox_override("panel", _make_mc_effect_style())
-	eff3.custom_minimum_size = Vector2(170.0, 46.0)
-	effects_col.add_child(eff3)
-
-	var eff3_hbox: HBoxContainer = HBoxContainer.new()
-	eff3_hbox.add_theme_constant_override("separation", 8)
-	eff3.add_child(eff3_hbox)
-
-	var eff3_icon: TextureRect = TextureRect.new()
-	eff3_icon.custom_minimum_size = Vector2(30.0, 30.0)
-	eff3_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	eff3_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	eff3_icon.texture = IconFactory.get_icon("bronze_ingot")
-	eff3_hbox.add_child(eff3_icon)
-
-	var eff3_vbox: VBoxContainer = VBoxContainer.new()
-	eff3_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	eff3_hbox.add_child(eff3_vbox)
-
-	_gold_label = Label.new()
-	_gold_label.text = "Кошелек: 35g"
-	_gold_label.add_theme_font_size_override("font_size", 11)
-	_gold_label.modulate = Color(0.95, 0.95, 0.95, 1.0)
-	eff3_vbox.add_child(_gold_label)
-
-	var g_sub: Label = Label.new()
-	g_sub.text = "Монеты караванов"
-	g_sub.add_theme_font_size_override("font_size", 9)
-	g_sub.modulate = Color(0.65, 0.65, 0.65, 1.0)
-	eff3_vbox.add_child(g_sub)
+	_insp_panel_desc = Label.new()
+	_insp_panel_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_insp_panel_desc.add_theme_font_size_override("font_size", 10)
+	_insp_panel_desc.modulate = Color(0.65, 0.68, 0.74)
+	r_vbox.add_child(_insp_panel_desc)
 
 	# Floating Cursor Item View
 	_cursor_display = Control.new()
@@ -815,6 +910,7 @@ func _on_armor_slot_hovered(slot_key: String) -> void:
 
 
 func _show_item_tooltip(item: Dictionary) -> void:
+	_update_side_inspector(item)
 	if item.is_empty() or str(item.get("item_id", "")).is_empty():
 		_hide_tooltip()
 		return
@@ -846,6 +942,47 @@ func _show_item_tooltip(item: Dictionary) -> void:
 
 	_tt_stats.text = "\n".join(stats_list)
 	_tooltip_panel.visible = true
+
+
+func _update_side_inspector(item: Dictionary) -> void:
+	if _insp_panel_name == null:
+		return
+	if item.is_empty() or str(item.get("item_id", "")).is_empty():
+		return
+	var item_id: String = str(item.get("item_id", ""))
+	var count: int = int(item.get("count", 1))
+	var dur: int = int(item.get("durability", -1))
+	var def: Dictionary = DataRegistry.get_item(item_id)
+	var title: String = str(def.get("name", item_id.capitalize().replace("_", " ")))
+	var itype: String = str(def.get("type", "material")).capitalize()
+
+	if _insp_panel_icon != null:
+		_insp_panel_icon.texture = IconFactory.get_icon(item_id)
+	_insp_panel_name.text = "%s (x%d)" % [title, count] if count > 1 else title
+	if _insp_panel_type != null:
+		_insp_panel_type.text = "[ %s ]" % itype
+
+	var stats_lines: Array[String] = []
+	if def.has("damage"):
+		stats_lines.append("Урон атаки: +%d" % int(def["damage"]))
+	if def.has("defense"):
+		stats_lines.append("Защита брони: +%d" % int(def["defense"]))
+	if def.has("effect"):
+		var eff: Dictionary = def["effect"]
+		if eff.has("hunger"):
+			stats_lines.append("Сытность: +%d" % int(eff["hunger"]))
+		if eff.has("health"):
+			stats_lines.append("Лечение: +%d" % int(eff["health"]))
+	if dur >= 0:
+		stats_lines.append("Прочность: %d" % dur)
+
+	if _insp_panel_stats != null:
+		_insp_panel_stats.text = "\n".join(stats_lines) if not stats_lines.is_empty() else "Базовый ресурс"
+	if _insp_panel_weight != null:
+		_insp_panel_weight.text = "Вес единицы: %.1f kg" % float(def.get("weight", 1.0))
+	if _insp_panel_desc != null:
+		var desc: String = str(def.get("description", ""))
+		_insp_panel_desc.text = desc if desc != "" else "Предмет готов к использованию или обработке."
 
 
 func _hide_tooltip() -> void:

@@ -12,6 +12,7 @@ var _recipes: Dictionary = {}
 var _current_category: String = "all"
 var _category_buttons: Dictionary = {}
 var _selected_recipe_id: String = ""
+var _bg_tex: TextureRect = null
 
 # Dual-Pane UI Elements
 var _station_label: Label = null
