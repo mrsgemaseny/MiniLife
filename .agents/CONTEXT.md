@@ -65,6 +65,17 @@
   - Fixed bow grip anchor and rotation angle (135 deg forward stave arc) in `Player._draw()`.
   - Smooth 1.0s hover inspect card in `HUD` (`_inspect_card`) displaying object name, skill/tool requirements, integrity, and yields for trees, rocks, ores, and NPCs.
   - Tactical bow aiming & charging mechanic: holding LMB draws the bowstring (`_is_charging_bow`), tracks mouse aim direction while strafing (52% speed), displays nocked arrow and dynamic shrinking reticle with dashed trajectory, and releasing LMB looses the arrow scaled by draw power with authentic recoil kick.
+- **Minecraft Vitals & Hunger UI Overhaul (2026-11-02)**:
+  - Created `MinecraftVitalsWidget` (`scripts/ui/minecraft_vitals_widget.gd`) replacing the previous rounded progress bars above the hotbar with authentic Minecraft GUI elements:
+    - 10 Hearts on left (Health) with half-heart precision, damage flash, and low-HP jitter when <= 20%.
+    - 10 Roasted Drumsticks on right (Hunger) filling right-to-left with low-hunger jitter when <= 30%.
+    - Authentic segmented Experience/Stamina bar spanning the bottom between vitals and the 8-slot hotbar.
+  - Fully integrated into `HUD` (`scripts/ui/hud.gd`) with tooltip health/hunger metrics and zero regression on existing stat signals.
+- **Crafting & Technology Expansion & Dual-Pane Workshop Overhaul (2026-11-02)**:
+  - Resized Crafting Menu to spacious `960x600` with dual-pane layout: 560px scrollable recipe catalog with category tabs + 350px Workshop Anvil inspector with large 56x56 icon, complete combat/mining stats, and dynamic green/red ingredient checklist (`[FORGE x1]` / `[FORGE x5]`).
+  - Added `iron_pickaxe` (Damage 16, Mining Power 2, Durability 160), `bronze_pickaxe`, `bronze_axe`, `iron_shield`, `iron_dagger`, `war_hammer` items and recipes.
+  - Expanded `data/tech_tree.json` to 16 technologies (full 4x4 matrix across Tier I–IV) without violating lore (no steel).
+  - Enforced strict SignalBus isolation: decoupled `Player` from `MeleeResolver` via `SignalBus.melee_attack_requested` and `SignalBus.melee_hit_landed` handled by `CombatSystem`. Removed 8 empty 1-line subfolder stubs.
 - **Exhaustive 12-Phase Automated E2E Test Suite (2026-11-02)**:
   - Created modular automated test suite `_run_e2e_exhaustive_suite()` in `scripts/core/debug_console.gd` executable via `--e2e-smoke` / `--e2e-full`.
   - 100% automated coverage across 12 phases: Core & Seeds, Audio Director (17 SFX, 6 music tracks), World & Chunks, POI Ruins & Interiors, 24h Weather, Fog of War, 6-Limb Anatomy, Hunger/Stamina/Permadeath, 18 Skills & Perks, Combat & Bow Ballistics, Continuous Harvesting & Ecology, Crafting & 3-Slot Furnace Smelting, Scholar's Research Codex & Stone Aesthetic DAG, Building System & YSort/Z-Index, Inventory & Hand Slot Mirroring/Dupe-Proofing, Delta-Chunk Save/Load Persistence.

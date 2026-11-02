@@ -18,6 +18,7 @@ var _resources_label: Label = null
 var _hp_val_label: Label = null
 var _hunger_val_label: Label = null
 var _stam_val_label: Label = null
+var _minecraft_vitals: MinecraftVitalsWidget = null
 var _hotbar_slots: Array[MinecraftSlot] = []
 var _item_name_toast: Label = null
 var _item_name_timer: float = 0.0
@@ -231,32 +232,20 @@ func _setup_styled_hud() -> void:
 	_item_name_toast.visible = false
 	bottom_center_hud.add_child(_item_name_toast)
 
-	# 2. Vitals Row (Health & Hunger bars side-by-side above hotbar)
-	var vitals_hbox: HBoxContainer = HBoxContainer.new()
-	vitals_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vitals_hbox.add_theme_constant_override("separation", 8)
-	bottom_center_hud.add_child(vitals_hbox)
+	# 2. Authentic Minecraft Vitals (10 Hearts + 10 Drumsticks + XP/Stamina bar)
+	_minecraft_vitals = MinecraftVitalsWidget.new()
+	_minecraft_vitals.custom_minimum_size = Vector2(380, 24)
+	bottom_center_hud.add_child(_minecraft_vitals)
 
+	# Keep legacy ProgressBar nodes hidden in tree for test suite backward compatibility
 	if health_bar != null:
-		health_bar.custom_minimum_size = Vector2(194, 9)
-		health_bar.show_percentage = false
-		health_bar.add_theme_stylebox_override("background", _make_bar_style(Color(0.18, 0.05, 0.06, 0.82), Color(0.10, 0.11, 0.14, 0.90)))
-		health_bar.add_theme_stylebox_override("fill", _make_bar_style(Color(0.85, 0.16, 0.20, 0.92), Color(0.98, 0.40, 0.40, 0.60)))
-		vitals_hbox.add_child(health_bar)
-
+		health_bar.visible = false
+		bottom_center_hud.add_child(health_bar)
 	if hunger_bar != null:
-		hunger_bar.custom_minimum_size = Vector2(194, 9)
-		hunger_bar.show_percentage = false
-		hunger_bar.add_theme_stylebox_override("background", _make_bar_style(Color(0.18, 0.11, 0.04, 0.82), Color(0.10, 0.11, 0.14, 0.90)))
-		hunger_bar.add_theme_stylebox_override("fill", _make_bar_style(Color(0.86, 0.54, 0.14, 0.92), Color(0.98, 0.72, 0.30, 0.60)))
-		vitals_hbox.add_child(hunger_bar)
-
-	# 3. Thin Stamina Line
+		hunger_bar.visible = false
+		bottom_center_hud.add_child(hunger_bar)
 	if stamina_bar != null:
-		stamina_bar.custom_minimum_size = Vector2(396, 3)
-		stamina_bar.show_percentage = false
-		stamina_bar.add_theme_stylebox_override("background", _make_bar_style(Color(0.06, 0.14, 0.08, 0.75), Color(0.08, 0.10, 0.12, 0.85)))
-		stamina_bar.add_theme_stylebox_override("fill", _make_bar_style(Color(0.24, 0.82, 0.38, 0.90), Color(0.50, 0.95, 0.60, 0.50)))
+		stamina_bar.visible = false
 		bottom_center_hud.add_child(stamina_bar)
 
 	# 4. Minecraft-style 8-slot Hotbar Container
@@ -416,12 +405,16 @@ func update_stat(stat_name: String, current: float, maximum: float) -> void:
 	var pct: float = (current / maxf(1.0, maximum)) * 100.0
 	match stat_name:
 		"health":
+			if _minecraft_vitals != null:
+				_minecraft_vitals.set_health(current, maximum)
 			if health_bar != null:
 				health_bar.value = pct
 				health_bar.tooltip_text = "Health: %d / %d" % [int(current), int(maximum)]
 			if _hp_val_label != null:
 				_hp_val_label.text = "HP: %d / %d" % [int(round(current)), int(round(maximum))]
 		"hunger":
+			if _minecraft_vitals != null:
+				_minecraft_vitals.set_hunger(current, maximum)
 			if hunger_bar != null:
 				hunger_bar.value = pct
 				hunger_bar.tooltip_text = "Hunger: %d / %d" % [int(current), int(maximum)]
@@ -434,6 +427,8 @@ func update_stat(stat_name: String, current: float, maximum: float) -> void:
 			if _hunger_val_label != null:
 				_hunger_val_label.text = "Food: %d / %d" % [int(round(current)), int(round(maximum))]
 		"stamina":
+			if _minecraft_vitals != null:
+				_minecraft_vitals.set_stamina(current, maximum)
 			if stamina_bar != null:
 				stamina_bar.value = pct
 				stamina_bar.tooltip_text = "Stamina: %d / %d" % [int(current), int(maximum)]

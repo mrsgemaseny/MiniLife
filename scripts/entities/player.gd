@@ -393,20 +393,8 @@ func perform_attack() -> void:
 		equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
 		return
 
-	# Check nearby enemies/combatants first
-	var hit_target: bool = false
-	for node in get_tree().get_nodes_in_group("combatant"):
-		if node == self or not (node is Node2D):
-			continue
-		var target_2d: Node2D = node as Node2D
-		if MeleeResolver.is_target_in_melee_arc(global_position, facing_direction, target_2d.global_position):
-			var raw_dmg: float = MeleeResolver.compute_raw_melee_damage(self, w_stats)
-			var dtype: String = str(w_stats.get("damage_type", "physical"))
-			SignalBus.damage_requested.emit(target_2d, raw_dmg, dtype, self)
-			skills.gain_xp("melee", Config.XP_PER_MELEE_HIT)
-			equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
-			hit_target = true
-			break
+	# SignalBus Melee Combat Dispatch (Decoupled from MeleeResolver)
+	SignalBus.melee_attack_requested.emit(self, global_position, facing_direction, w_stats)
 
 func perform_interact() -> void:
 	var player_tile: Vector2i = Config.iso_to_world(global_position)
@@ -676,6 +664,11 @@ func _connect_bus_signals() -> void:
 		_swing_duration = 0.28
 		_swing_timer = _swing_duration
 		queue_redraw()
+	)
+	SignalBus.melee_hit_landed.connect(func(attacker: Node2D, _target: Node2D, _dmg: float) -> void:
+		if attacker == self:
+			skills.gain_xp("melee", Config.XP_PER_MELEE_HIT)
+			equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
 	)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
