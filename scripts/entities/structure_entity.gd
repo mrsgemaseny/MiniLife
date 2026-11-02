@@ -164,7 +164,7 @@ func _draw() -> void:
 		elif structure_id == "water_collector":
 			target_w = 48.0
 		elif structure_id == "torch":
-			target_w = 24.0
+			target_w = 34.0
 		
 		var scale_f: float = target_w / tw
 		var target_h: float = th * scale_f
@@ -174,10 +174,10 @@ func _draw() -> void:
 		draw_texture_rect(stex, Rect2(rx, ry, target_w, target_h), false, mod_col)
 		if structure_id == "torch":
 			var flame_phase: float = sin(Time.get_ticks_msec() * 0.015)
-			var flame_pt: Vector2 = Vector2(0.0, ry + 4.0)
-			draw_circle(flame_pt, 4.5 + flame_phase * 0.8, Color(1.0, 0.85, 0.30, 0.95))
-			draw_circle(flame_pt + Vector2(0.0, -2.0), 2.8 + flame_phase * 0.5, Color(1.0, 0.45, 0.12, 0.90))
-			draw_circle(flame_pt + Vector2(0.0, -4.0), 1.4, Color(1.0, 0.95, 0.70, 0.95))
+			var flame_pt: Vector2 = Vector2(0.0, ry + 6.0)
+			draw_circle(flame_pt, 5.5 + flame_phase * 0.9, Color(1.0, 0.85, 0.30, 0.95))
+			draw_circle(flame_pt + Vector2(0.0, -2.5), 3.4 + flame_phase * 0.6, Color(1.0, 0.45, 0.12, 0.90))
+			draw_circle(flame_pt + Vector2(0.0, -4.5), 1.6, Color(1.0, 0.95, 0.70, 0.95))
 		_draw_construction_overlay()
 		return
 

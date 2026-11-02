@@ -48,14 +48,7 @@ static func get_fixed_ruin_for_chunk(world_seed: int, chunk_pos: Vector2i) -> Di
 
 
 static func get_chunk_poi(world_seed: int, chunk_pos: Vector2i, biome_id: String) -> Dictionary:
-	var center_chunk: Vector2i = Vector2i(Config.WORLD_SIZE_CHUNKS / 2, Config.WORLD_SIZE_CHUNKS / 2)
-	if chunk_pos == center_chunk:
-		return {
-			"poi_id": "merchant_outpost",
-			"tile_pos": Config.chunk_origin(chunk_pos) + Vector2i(10, 6),
-			"is_ruin": false
-		}
-
+	# Pure wilderness start: no forced merchant outpost or artificial starter camp at center
 	# Check hand-crafted fixed ruins first
 	var ruin_info: Dictionary = get_fixed_ruin_for_chunk(world_seed, chunk_pos)
 	if not ruin_info.is_empty():

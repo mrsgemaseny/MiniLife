@@ -25,6 +25,17 @@
 - **View**: 2D Isometric (`y_sort_enabled = true` on all world, chunk, structure, and entity nodes).
 - **Decoupling**: Zero cross-system imports; all inter-system communication strictly through `SignalBus`.
 - **Verification**: Validated via `Godot_v4.7-stable_win64_console.exe --headless --path . res://scenes/main.tscn -- --e2e-smoke` (`E2E_ALL_SYSTEMS_VERIFIED_OK`) with zero parse or runtime errors.
+- **In-Game World Generation Rewrite (2026-11-02 — BIOME_REFERENCE_1000x1000 Standard)**:
+  - Rewrote runtime procedural terrain generation (`TerrainGenerator`, `WorldSystem`, `PoiGenerator`, `data/biomes.json`) to accurately generate the macro layout from the golden reference:
+    - Northwest snow peaks (`snow`) and rocky mountain slopes (`mountains`) tapering into green foothills (`forest`).
+    - Diagonal meandering river (`water`) with sand riverbanks (`desert`). Water tiles are impassable.
+    - Eastern arid desert (`desert`) with dunes, zero trees, minimal stone boulders (0.003), copper & coal.
+    - Southwest wetland swamp (`swamp`) with bog herbs and gnarled oaks.
+    - Southeast scenic lake (`water`) with sandy beach.
+    - Central and southern vast rolling plains (`plains`) with organic woodland clumps (`forest`).
+    - Stone boulders on plains spawn in compact 1x5/6x6 clusters (0–2 stones) rather than uniform carpets.
+    - Gold quartz strictly spawns near mountains in proximity to rivers/mountain water streams.
+    - Pure untouched wilderness start: removed automatic starter camp (campfire, workbench, bed, chest) and central merchant outpost.
 - **Performance & Visual Design Overhaul (2026-10-31)**:
   - Generated reference art & isometric sprite atlas (`assets/sprites/ui_world_design_reference.jpg`, `assets/sprites/iso_world_atlas.jpg`) via `image-generator` subagent.
   - Eliminated rendering lag: added `_biome_cache` and `get_biome_color_fast()` in `WorldSystem`, restricted `WorldSystem._draw()` to camera-visible explored tiles (`[-18..18]`), and converted `MinimapWidget` to a single-draw-call cached `ImageTexture`.

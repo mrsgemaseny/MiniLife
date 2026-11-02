@@ -71,9 +71,10 @@
 		"alt_color": "#cca55c",
 		"tile_ids": ["sand", "dune"],
 		"resource_nodes": {
-			"copper_vein": 0.040,
-			"coal_deposit": 0.015,
-			"stone_boulder": 0.025
+			"copper_vein": 0.038,
+			"coal_deposit": 0.018,
+			"wild_berry_bush": 0.015,
+			"stone_boulder": 0.003
 		},
 		"resources": {
 			"iron_ore": [1, 3],

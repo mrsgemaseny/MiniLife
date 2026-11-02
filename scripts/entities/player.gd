@@ -167,16 +167,9 @@ func _physics_process(delta: float) -> void:
 		var best_dist: float = Config.MELEE_RANGE
 
 		# 1. Check for player structures under cursor
-		var structures: Array[Node] = get_tree().get_nodes_in_group("structures")
-		for node in structures:
-			if node is StructureEntity and (node as StructureEntity).is_visible_in_tree():
-				var se: StructureEntity = node as StructureEntity
-				var dist_to_player: float = se.global_position.distance_to(global_position)
-				if dist_to_player <= Config.MELEE_RANGE:
-					var dist_to_mouse: float = se.global_position.distance_to(mouse_world)
-					if dist_to_mouse <= 38.0 and dist_to_player < best_dist:
-						best_dist = dist_to_player
-						candidate_struct = se
+		var candidate_struct: StructureEntity = _get_structure_under_cursor()
+		if candidate_struct != null and not candidate_struct.is_player_built:
+			candidate_struct = null
 
 		# 2. Check for resource nodes under cursor if no structure targeted
 		if candidate_struct == null:

@@ -4,6 +4,8 @@ extends Node2D
 static var instance: BuildingSystem = null
 
 var _placed_nodes: Dictionary = {}
+var _placed_floors: Dictionary = {}
+var _placed_structures: Dictionary = {}
 var _storage_mgr: StorageManager = StorageManager.new()
 var _defense_net: DefenseNetwork = DefenseNetwork.new()
 var _active_build_id: String = ""
@@ -20,6 +22,7 @@ func _ready() -> void:
 	SignalBus.structure_placement_validated.connect(_on_structure_placement_validated)
 	SignalBus.structure_restored.connect(_on_structure_restored)
 	SignalBus.structure_destroyed.connect(_on_structure_destroyed)
+	SignalBus.structure_removal_requested.connect(_on_structure_removal_requested)
 	SignalBus.trap_triggered.connect(_on_trap_triggered)
 
 
@@ -120,21 +123,25 @@ func consume_materials(builder: Node, structure_id: String) -> void:
 
 func can_place_block(structure_id: String, tile_pos: Vector2i) -> bool:
 	var key: String = Config.vec2i_to_key(tile_pos)
-	if _placed_nodes.has(key) and is_instance_valid(_placed_nodes[key]):
-		var existing: StructureEntity = _placed_nodes[key] as StructureEntity
-		if existing != null:
-			var is_existing_floor: bool = existing.structure_id in ["floor", "stone_floor"]
-			var is_new_floor: bool = structure_id in ["floor", "stone_floor"]
-			if is_existing_floor and is_new_floor:
-				return false
-			if not is_existing_floor and not is_new_floor:
-				return false
+	var is_floor: bool = structure_id in ["floor", "stone_floor"]
+
+	if is_floor:
+		if _placed_floors.has(key) and is_instance_valid(_placed_floors[key]):
+			return false
+	else:
+		if _placed_structures.has(key) and is_instance_valid(_placed_structures[key]):
+			return false
+
 	var def: Dictionary = DataRegistry.get_structure(structure_id)
 	var passable: bool = bool(def.get("passable", false))
 	if not passable:
 		var ptile: Vector2i = GameManager.get_player_tile()
 		if ptile == tile_pos:
 			return false
+		var harvestables: Array[Node] = get_tree().get_nodes_in_group("harvestable")
+		for h in harvestables:
+			if h is ResourceNode and (h as ResourceNode).tile_pos == tile_pos and (h as ResourceNode).is_visible_in_tree():
+				return false
 	return true
 
 
@@ -174,21 +181,58 @@ func _on_structure_restored(structure_id: String, tile_pos: Vector2i) -> void:
 	_spawn_structure_node(structure_id, tile_pos, false, false)
 
 
-func _on_structure_destroyed(_structure_id: String, tile_pos: Vector2i) -> void:
+func _on_structure_removal_requested(tile_pos: Vector2i, breaker: Node) -> void:
+	var key: String = Config.vec2i_to_key(tile_pos)
+	if _placed_structures.has(key) and is_instance_valid(_placed_structures[key]):
+		var s: StructureEntity = _placed_structures[key] as StructureEntity
+		if s != null and s.is_player_built:
+			s.dismantle(breaker)
+			return
+	if _placed_floors.has(key) and is_instance_valid(_placed_floors[key]):
+		var f: StructureEntity = _placed_floors[key] as StructureEntity
+		if f != null and f.is_player_built:
+			f.dismantle(breaker)
+			return
+
+
+func _on_structure_destroyed(structure_id: String, tile_pos: Vector2i) -> void:
 	var key: String = Config.vec2i_to_key(tile_pos)
 	_defense_net.unregister_tile(tile_pos)
 	_storage_mgr.remove_container(tile_pos)
-	if _placed_nodes.has(key):
-		var node: Node = _placed_nodes[key]
-		if is_instance_valid(node):
-			node.queue_free()
-		_placed_nodes.erase(key)
+
+	var is_floor: bool = structure_id in ["floor", "stone_floor"]
+	if is_floor:
+		if _placed_floors.has(key):
+			var fnode: Node = _placed_floors[key]
+			if is_instance_valid(fnode):
+				fnode.queue_free()
+			_placed_floors.erase(key)
+			if _placed_nodes.get(key) == fnode:
+				_placed_nodes.erase(key)
+	else:
+		if _placed_structures.has(key):
+			var snode: Node = _placed_structures[key]
+			if is_instance_valid(snode):
+				snode.queue_free()
+			_placed_structures.erase(key)
+			if _placed_nodes.get(key) == snode:
+				if _placed_floors.has(key) and is_instance_valid(_placed_floors[key]):
+					_placed_nodes[key] = _placed_floors[key]
+				else:
+					_placed_nodes.erase(key)
 
 
 func _spawn_structure_node(structure_id: String, tile_pos: Vector2i, animate_build: bool = false, is_player_built: bool = true) -> void:
 	var key: String = Config.vec2i_to_key(tile_pos)
-	if _placed_nodes.has(key) and is_instance_valid(_placed_nodes[key]):
-		return
+	var is_floor: bool = structure_id in ["floor", "stone_floor"]
+
+	if is_floor:
+		if _placed_floors.has(key) and is_instance_valid(_placed_floors[key]):
+			return
+	else:
+		if _placed_structures.has(key) and is_instance_valid(_placed_structures[key]):
+			return
+
 	var inst: StructureEntity = StructureEntity.new()
 	inst.structure_id = structure_id
 	inst.tile_pos = tile_pos
@@ -196,8 +240,15 @@ func _spawn_structure_node(structure_id: String, tile_pos: Vector2i, animate_bui
 	inst.is_player_built = is_player_built
 	inst.global_position = Config.world_to_iso(tile_pos)
 	add_child(inst)
-	_placed_nodes[key] = inst
-	_defense_net.register_structure(structure_id, tile_pos)
+
+	if is_floor:
+		_placed_floors[key] = inst
+		if not _placed_nodes.has(key) or not is_instance_valid(_placed_nodes[key]):
+			_placed_nodes[key] = inst
+	else:
+		_placed_structures[key] = inst
+		_placed_nodes[key] = inst
+		_defense_net.register_structure(structure_id, tile_pos)
 
 
 func _on_trap_triggered(trap_id: String, tile_pos: Vector2i, target: Node) -> void:

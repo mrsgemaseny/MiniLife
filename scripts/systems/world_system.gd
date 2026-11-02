@@ -128,22 +128,14 @@ func _draw() -> void:
 			var biome_id: String = get_biome_cached(tpos)
 			var hash_val: int = absi((tpos.x * 73856093) ^ (tpos.y * 19349663))
 
-			# Warm dirt clearing/path around the starter settlement camp
-			var dist_center: int = Config.tile_distance(tpos, world_center)
-			var is_camp_dirt: bool = (dist_center <= 3) or (tpos.y == world_center.y and abs(tpos.x - world_center.x) <= 6)
-
 			var col: Color = ProceduralTileset.BIOME_PALETTE.get(biome_id, Color(0.34, 0.56, 0.25))
-			if is_camp_dirt and biome_id != "mountains":
-				col = Color(0.52, 0.39, 0.25)
 			var variation: float = float(hash_val % 9 - 4) * 0.014
 			col = col.lightened(variation) if variation > 0.0 else col.darkened(-variation)
 			if fstate == int(FogState.VISITED):
 				col = col.darkened(0.48)
 
 			var tile_tex_name: String = "tile_grass"
-			if is_camp_dirt:
-				tile_tex_name = "tile_dirt"
-			elif biome_id == "desert":
+			if biome_id == "desert":
 				tile_tex_name = "tile_sand"
 			elif biome_id == "swamp":
 				tile_tex_name = "tile_swamp"
@@ -159,6 +151,8 @@ func _draw() -> void:
 			var tile_tex: Texture2D = _get_tile_tex(tile_tex_name)
 			if tile_tex != null:
 				var modulate_col: Color = Color(0.46, 0.46, 0.52, 1.0) if fstate == int(FogState.VISITED) else Color.WHITE
+				if biome_id == "forest" and fstate != int(FogState.VISITED):
+					modulate_col = Color(0.72, 0.88, 0.68, 1.0)
 				draw_texture_rect(tile_tex, Rect2(center.x - 32.0, center.y - 16.0, 64.0, 37.0), false, modulate_col)
 			else:
 				var top_pt: Vector2 = center + Vector2(0.0, -hh)
@@ -185,10 +179,7 @@ func _draw() -> void:
 
 				# Procedural surface detail fallback only when texture is missing
 				if fstate == int(FogState.VISIBLE):
-					if is_camp_dirt:
-						if (hash_val % 3) == 0:
-							draw_circle(center + Vector2(float(hash_val % 11 - 5), float((hash_val >> 3) % 7 - 3)), 1.6, col.darkened(0.20))
-					elif biome_id == "plains" or biome_id == "forest":
+					if biome_id == "plains" or biome_id == "forest":
 						var tuft_col: Color = col.lightened(0.20)
 						if (hash_val % 3) == 0:
 							var ox: float = float((hash_val % 13) - 6)
@@ -373,7 +364,7 @@ func _on_game_started(world_seed: int, _slot: String, is_new: bool) -> void:
 		var spawn_world: Vector2 = Config.world_to_iso(spawn_tile)
 		SignalBus.player_teleport_requested.emit(spawn_world)
 		_on_player_tile_changed(spawn_tile)
-		_ensure_starter_camp(spawn_tile)
+		# Wilderness start: no pre-placed starter camp
 		# Immediately commit world seed to save system
 		SignalBus.save_requested.emit(_slot)
 	else:
