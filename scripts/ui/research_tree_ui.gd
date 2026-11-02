@@ -69,38 +69,44 @@ func _pick_default_tech() -> void:
 
 
 func _build_ui() -> void:
-	anchor_right = 1.0
-	anchor_bottom = 1.0
-	mouse_filter = Control.MOUSE_FILTER_PASS
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	offset_left = 0
+	offset_top = 0
+	offset_right = 0
+	offset_bottom = 0
+	mouse_filter = Control.MOUSE_FILTER_STOP
 
-	# Full-screen dark dimmer (Minecraft authentic - NO BLUE, NO TEXTURE)
-	var backdrop: ColorRect = ColorRect.new()
-	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0.0, 0.0, 0.0, 0.65)
-	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(backdrop)
+	# 1. Full-Screen Backdrop Texture (Dark Slate & Iron Rim)
+	var bg_tex: TextureRect = TextureRect.new()
+	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
+	if ResourceLoader.exists("res://assets/sprites/ui/fullscreen_codex_bg.jpg"):
+		bg_tex.texture = load("res://assets/sprites/ui/fullscreen_codex_bg.jpg")
+	add_child(bg_tex)
 
+	# 2. Main Full-Screen Layout Panel
 	_panel = PanelContainer.new()
-	_panel.anchor_left = 0.5
-	_panel.anchor_top = 0.5
-	_panel.anchor_right = 0.5
-	_panel.anchor_bottom = 0.5
-	_panel.offset_left = -480.0
-	_panel.offset_top = -285.0
-	_panel.offset_right = 480.0
-	_panel.offset_bottom = 285.0
+	_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_panel.offset_left = 0
+	_panel.offset_top = 0
+	_panel.offset_right = 0
+	_panel.offset_bottom = 0
 
 	var bg_box: StyleBoxFlat = StyleBoxFlat.new()
-	bg_box.bg_color = Color(0.776, 0.776, 0.776, 1.0) # Solid neutral grey
-	bg_box.border_color = Color(0.22, 0.22, 0.22, 1.0) # Dark pixel border
-	bg_box.set_border_width_all(3)
+	bg_box.bg_color = Color(0.06, 0.07, 0.08, 0.35) # Subtle dark tint over slate texture
+	bg_box.border_color = Color(0.20, 0.22, 0.26, 0.80)
+	bg_box.set_border_width_all(2)
 	bg_box.set_corner_radius_all(0)
-	bg_box.set_content_margin_all(14)
+	bg_box.content_margin_left = 32
+	bg_box.content_margin_right = 32
+	bg_box.content_margin_top = 20
+	bg_box.content_margin_bottom = 24
 	_panel.add_theme_stylebox_override("panel", bg_box)
 	add_child(_panel)
 
 	var main_vbox: VBoxContainer = VBoxContainer.new()
-	main_vbox.add_theme_constant_override("separation", 6)
+	main_vbox.add_theme_constant_override("separation", 8)
 	_panel.add_child(main_vbox)
 
 	# 1. Header Bar
@@ -110,30 +116,30 @@ func _build_ui() -> void:
 
 	var title_vbox: VBoxContainer = VBoxContainer.new()
 	title_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title_vbox.add_theme_constant_override("separation", 1)
+	title_vbox.add_theme_constant_override("separation", 2)
 	hdr.add_child(title_vbox)
 
 	var title: Label = Label.new()
-	title.text = "Древо технологий и исследований"
-	title.add_theme_font_size_override("font_size", 12)
-	title.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
+	title.text = "ДРЕВО ТЕХНОЛОГИЙ И ИССЛЕДОВАНИЙ"
+	title.add_theme_font_size_override("font_size", 14)
+	title.modulate = Color(0.92, 0.90, 0.86, 1.0) # Antique ivory
 	title_vbox.add_child(title)
 
 	var subtitle: Label = Label.new()
-	subtitle.text = "[ Технологии, открываемые через эксперименты и ресурсы ]"
-	subtitle.add_theme_font_size_override("font_size", 9)
-	subtitle.modulate = Color(0.35, 0.35, 0.35, 1.0)
+	subtitle.text = "Открытие новых знаний, строительных чертежей и рецептов ковки [ESC / R чтобы закрыть]"
+	subtitle.add_theme_font_size_override("font_size", 10)
+	subtitle.modulate = Color(0.55, 0.58, 0.64, 1.0) # Muted silver
 	title_vbox.add_child(subtitle)
 
 	var close_btn: Button = Button.new()
-	close_btn.text = " ✕ "
+	close_btn.text = " ✕ ЗАКРЫТЬ [ESC] "
 	close_btn.add_theme_font_size_override("font_size", 11)
-	close_btn.add_theme_color_override("font_color", Color(0.24, 0.24, 0.24, 1.0))
+	close_btn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.88, 1.0))
 	var cb_sb: StyleBoxFlat = StyleBoxFlat.new()
-	cb_sb.bg_color = Color(0.58, 0.58, 0.58, 1.0)
-	cb_sb.border_color = Color(0.22, 0.22, 0.22, 1.0)
-	cb_sb.set_border_width_all(2)
-	cb_sb.set_corner_radius_all(0)
+	cb_sb.bg_color = Color(0.18, 0.20, 0.24, 1.0)
+	cb_sb.border_color = Color(0.35, 0.38, 0.44, 1.0)
+	cb_sb.set_border_width_all(1)
+	cb_sb.set_corner_radius_all(3)
 	cb_sb.set_content_margin_all(6)
 	close_btn.add_theme_stylebox_override("normal", cb_sb)
 	close_btn.pressed.connect(close_tree)
@@ -142,7 +148,7 @@ func _build_ui() -> void:
 	# Separator line
 	var sep: HSeparator = HSeparator.new()
 	var sep_sb: StyleBoxLine = StyleBoxLine.new()
-	sep_sb.color = Color(0.28, 0.30, 0.34, 0.80)
+	sep_sb.color = Color(0.20, 0.22, 0.26, 0.90)
 	sep_sb.thickness = 1
 	sep.add_theme_stylebox_override("separator", sep_sb)
 	main_vbox.add_child(sep)
@@ -263,33 +269,35 @@ func refresh() -> void:
 	var all_techs: Dictionary = ResearchSys.instance.get_all_techs()
 	var player: Node = get_tree().get_first_node_in_group("player")
 
-	var col_x_coords: Array[float] = [28.0, 258.0, 488.0, 718.0]
+	var canvas_w: float = _canvas.size.x if _canvas.size.x > 800.0 else 960.0
+	var start_x: float = maxf(24.0, (canvas_w - 960.0) * 0.5)
+	var col_x_coords: Array[float] = [start_x, start_x + 242.0, start_x + 484.0, start_x + 726.0]
 	var row_y_coords: Array[float] = [46.0, 126.0, 206.0, 286.0]
 
 	# Column Tier Banners at top of canvas
 	var tier_titles: Array[String] = [
-		"TIER I • PRIMITIVE",
-		"TIER II • ADVANCED",
-		"TIER III • IRON AGE",
-		"TIER IV • MASTERY"
+		"TIER I • НАЧАЛО",
+		"TIER II • РЕМЕСЛО",
+		"TIER III • ОБРАБОТКА",
+		"TIER IV • МАСТЕРСТВО"
 	]
 	var tier_colors: Array[Color] = [
-		Color(0.72, 0.75, 0.78),
-		Color(0.84, 0.74, 0.54),
-		Color(0.82, 0.62, 0.44),
-		Color(0.88, 0.85, 0.78)
+		Color(0.78, 0.80, 0.84),
+		Color(0.74, 0.76, 0.80),
+		Color(0.82, 0.84, 0.88),
+		Color(0.88, 0.89, 0.92)
 	]
 
 	for i in range(4):
 		var thdr: PanelContainer = PanelContainer.new()
-		thdr.custom_minimum_size = Vector2(190.0, 26.0)
+		thdr.custom_minimum_size = Vector2(210.0, 26.0)
 		thdr.position = Vector2(col_x_coords[i], 10.0)
 
 		var tbox: StyleBoxFlat = StyleBoxFlat.new()
-		tbox.bg_color = Color(0.11, 0.12, 0.14, 0.95)
-		tbox.border_color = Color(0.35, 0.37, 0.40, 0.90)
+		tbox.bg_color = Color(0.12, 0.13, 0.15, 0.95)
+		tbox.border_color = Color(0.28, 0.30, 0.34, 0.90)
 		tbox.set_border_width_all(1)
-		tbox.set_corner_radius_all(4)
+		tbox.set_corner_radius_all(3)
 		thdr.add_theme_stylebox_override("panel", tbox)
 
 		var tlbl: Label = Label.new()
@@ -301,7 +309,7 @@ func refresh() -> void:
 		thdr.add_child(tlbl)
 		_canvas.add_child(thdr)
 
-	# Build compact, distinct Tech Node Badges
+	# Build compact, distinct Tech Node Badges (Solid card buttons - NO DESLOP)
 	for tid in all_techs:
 		var tech: Dictionary = all_techs[tid]
 		var gx: int = clampi(int(tech.get("grid_x", 0)), 0, 3)
@@ -323,104 +331,100 @@ func _build_compact_tech_node(tech: Dictionary, player: Node) -> Control:
 	var can_do: bool = bool(check.get("ok", false))
 	var is_selected: bool = (tid == _selected_tech_id)
 
-	var node_root: Control = Control.new()
-	node_root.custom_minimum_size = Vector2(190.0, 68.0)
-	node_root.mouse_filter = Control.MOUSE_FILTER_PASS
+	var card: Button = Button.new()
+	card.custom_minimum_size = Vector2(210.0, 58.0)
+	card.flat = false
+
+	var csb: StyleBoxFlat = StyleBoxFlat.new()
+	csb.set_corner_radius_all(3)
+	csb.set_content_margin_all(6)
+
+	if is_selected:
+		csb.bg_color = Color(0.18, 0.20, 0.24, 1.0)
+		csb.border_color = Color(0.88, 0.89, 0.94, 1.0)
+		csb.set_border_width_all(2)
+	elif is_done:
+		csb.bg_color = Color(0.13, 0.14, 0.16, 0.98)
+		csb.border_color = Color(0.38, 0.42, 0.48, 0.85)
+		csb.set_border_width_all(1)
+	elif can_do:
+		csb.bg_color = Color(0.14, 0.15, 0.18, 0.98)
+		csb.border_color = Color(0.55, 0.58, 0.65, 0.90)
+		csb.set_border_width_all(1)
+	else:
+		csb.bg_color = Color(0.09, 0.09, 0.11, 0.95)
+		csb.border_color = Color(0.20, 0.22, 0.25, 0.60)
+		csb.set_border_width_all(1)
+
+	card.add_theme_stylebox_override("normal", csb)
+	card.add_theme_stylebox_override("hover", csb)
+	card.add_theme_stylebox_override("pressed", csb)
+	card.add_theme_stylebox_override("focus", csb)
 
 	var hbox: HBoxContainer = HBoxContainer.new()
 	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_theme_constant_override("separation", 8)
-	node_root.add_child(hbox)
+	card.add_child(hbox)
 
-	# 1. Authentic 48x48 Icon Badge Medallion
-	var badge_btn: Button = Button.new()
-	badge_btn.custom_minimum_size = Vector2(48.0, 48.0)
-	badge_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	badge_btn.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
-	badge_btn.expand_icon = true
+	# Icon in small beveled frame
+	var icon_rect: TextureRect = TextureRect.new()
+	icon_rect.custom_minimum_size = Vector2(40.0, 40.0)
+	icon_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_rect.texture = IconFactory.get_icon(str(tech.get("icon", "stone_axe")))
+	if not is_done and not can_do:
+		icon_rect.modulate = Color(0.45, 0.47, 0.52, 0.55)
+	hbox.add_child(icon_rect)
 
-	var icon_name: String = str(tech.get("icon", "stone_axe"))
-	badge_btn.icon = IconFactory.get_icon(icon_name)
-
-	var bsb: StyleBoxFlat = StyleBoxFlat.new()
-	if is_done:
-		bsb.bg_color = Color(0.12, 0.15, 0.12, 0.95)
-		bsb.border_color = Color(0.95, 0.82, 0.35, 1.0) if is_selected else Color(0.78, 0.66, 0.28, 0.90)
-		bsb.set_border_width_all(2 if is_selected else 2)
-	elif can_do:
-		bsb.bg_color = Color(0.14, 0.15, 0.18, 0.95)
-		bsb.border_color = Color(0.95, 0.85, 0.50, 1.0) if is_selected else Color(0.72, 0.76, 0.82, 0.95)
-		bsb.set_border_width_all(2 if is_selected else 1)
-	else:
-		bsb.bg_color = Color(0.08, 0.08, 0.09, 0.85)
-		bsb.border_color = Color(0.90, 0.80, 0.50, 0.90) if is_selected else Color(0.26, 0.28, 0.32, 0.60)
-		bsb.set_border_width_all(2 if is_selected else 1)
-		badge_btn.modulate = Color(0.52, 0.54, 0.58, 0.55)
-
-	bsb.set_corner_radius_all(6)
-	badge_btn.add_theme_stylebox_override("normal", bsb)
-	badge_btn.add_theme_stylebox_override("hover", bsb)
-	badge_btn.add_theme_stylebox_override("pressed", bsb)
-	badge_btn.add_theme_stylebox_override("focus", bsb)
-
-	var target_tid: String = tid
-	badge_btn.pressed.connect(func() -> void:
-		_selected_tech_id = target_tid
-		refresh()
-	)
-	hbox.add_child(badge_btn)
-
-	# 2. Right Text Column: Title & Status
+	# Text Column
 	var text_vbox: VBoxContainer = VBoxContainer.new()
 	text_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	text_vbox.add_theme_constant_override("separation", 1)
+	text_vbox.add_theme_constant_override("separation", 2)
 	hbox.add_child(text_vbox)
 
-	var name_btn: Button = Button.new()
-	name_btn.flat = true
-	name_btn.text = str(tech.get("name", tid))
-	name_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	name_btn.add_theme_font_size_override("font_size", 10)
-	if is_done:
-		name_btn.modulate = Color(0.92, 0.88, 0.72)
-	elif can_do:
-		name_btn.modulate = Color(0.92, 0.93, 0.96)
-	else:
-		name_btn.modulate = Color(0.52, 0.54, 0.58)
-	name_btn.pressed.connect(func() -> void:
-		_selected_tech_id = target_tid
-		refresh()
-	)
-	text_vbox.add_child(name_btn)
+	var name_lbl: Label = Label.new()
+	name_lbl.text = str(tech.get("name", tid))
+	name_lbl.add_theme_font_size_override("font_size", 11)
+	name_lbl.modulate = Color(0.92, 0.90, 0.86) if (is_done or can_do) else Color(0.50, 0.52, 0.56)
+	text_vbox.add_child(name_lbl)
 
 	var status_lbl: Label = Label.new()
 	status_lbl.add_theme_font_size_override("font_size", 9)
 	if is_done:
-		status_lbl.text = "Mastered"
-		status_lbl.modulate = Color(0.55, 0.85, 0.55)
+		status_lbl.text = "[ ИЗУЧЕНО ]"
+		status_lbl.modulate = Color(0.70, 0.74, 0.82)
 	elif can_do:
-		status_lbl.text = "Available"
-		status_lbl.modulate = Color(0.88, 0.78, 0.55)
+		status_lbl.text = "[ ДОСТУПНО ]"
+		status_lbl.modulate = Color(0.88, 0.89, 0.94)
 	else:
-		status_lbl.text = "Locked"
-		status_lbl.modulate = Color(0.48, 0.50, 0.54)
+		status_lbl.text = "[ ЗАКРЫТО ]"
+		status_lbl.modulate = Color(0.42, 0.44, 0.48)
 	text_vbox.add_child(status_lbl)
 
-	return node_root
+	var target_tid: String = tid
+	card.pressed.connect(func() -> void:
+		_selected_tech_id = target_tid
+		refresh()
+	)
+	return card
 
 
 func _on_canvas_draw() -> void:
 	if ResearchSys.instance == null:
 		return
 	var all_techs: Dictionary = ResearchSys.instance.get_all_techs()
-	var col_x_coords: Array[float] = [28.0, 258.0, 488.0, 718.0]
+	var canvas_w: float = _canvas.size.x if _canvas.size.x > 800.0 else 960.0
+	var start_x: float = maxf(24.0, (canvas_w - 960.0) * 0.5)
+	var col_x_coords: Array[float] = [start_x, start_x + 242.0, start_x + 484.0, start_x + 726.0]
 	var row_y_coords: Array[float] = [46.0, 126.0, 206.0, 286.0]
 
 	# Dotted Vertical Tier Divider Lines
 	for i in range(1, 4):
-		var div_x: float = col_x_coords[i] - 20.0
-		_canvas.draw_dashed_line(Vector2(div_x, 10.0), Vector2(div_x, 355.0), Color(0.26, 0.28, 0.32, 0.40), 1.0, 5.0)
+		var div_x: float = col_x_coords[i] - 16.0
+		_canvas.draw_dashed_line(Vector2(div_x, 10.0), Vector2(div_x, 355.0), Color(0.20, 0.22, 0.26, 0.60), 1.0, 5.0)
 
 	# Clean orthogonal branch lines (source right -> target left)
 	for tid in all_techs:
@@ -428,7 +432,7 @@ func _on_canvas_draw() -> void:
 		var prereqs: Array = tech.get("prerequisites", [])
 		var gx: int = clampi(int(tech.get("grid_x", 0)), 0, 3)
 		var gy: int = clampi(int(tech.get("grid_y", 0)), 0, 3)
-		var to_pt: Vector2 = Vector2(col_x_coords[gx] - 4.0, row_y_coords[gy] + 24.0)
+		var to_pt: Vector2 = Vector2(col_x_coords[gx], row_y_coords[gy] + 29.0)
 
 		for pre in prereqs:
 			var pre_str: String = str(pre)
@@ -436,6 +440,25 @@ func _on_canvas_draw() -> void:
 				var ptech: Dictionary = all_techs[pre_str]
 				var pgx: int = clampi(int(ptech.get("grid_x", 0)), 0, 3)
 				var pgy: int = clampi(int(ptech.get("grid_y", 0)), 0, 3)
+				if pgx >= gx:
+					continue
+				var from_pt: Vector2 = Vector2(col_x_coords[pgx] + 210.0, row_y_coords[pgy] + 29.0)
+
+				var is_conn_active: bool = ResearchSys.instance.is_researched(pre_str)
+				var line_col: Color = Color(0.68, 0.72, 0.78, 0.85) if is_conn_active else Color(0.25, 0.27, 0.32, 0.60)
+				var line_w: float = 1.8 if is_conn_active else 1.2
+
+				if absf(from_pt.y - to_pt.y) < 2.0:
+					_canvas.draw_line(from_pt, to_pt, line_col, line_w)
+				else:
+					var mid_x: float = (from_pt.x + to_pt.x) * 0.5
+					_canvas.draw_line(from_pt, Vector2(mid_x, from_pt.y), line_col, line_w)
+					_canvas.draw_line(Vector2(mid_x, from_pt.y), Vector2(mid_x, to_pt.y), line_col, line_w)
+					_canvas.draw_line(Vector2(mid_x, to_pt.y), to_pt, line_col, line_w)
+
+				# Arrowhead entering target left side
+				_canvas.draw_line(to_pt + Vector2(-5.0, -3.5), to_pt, line_col, line_w)
+				_canvas.draw_line(to_pt + Vector2(-5.0, 3.5), to_pt, line_col, line_w)
 
 				# Strict progression rule: strictly left-to-right columns only (no backward/same-column cuts)
 				if pgx >= gx:
@@ -495,19 +518,20 @@ func _update_inspector_display(player: Node) -> void:
 			for u in unlocks:
 				var s: String = str(u).replace("craft_", "").replace("forge_", "").replace("smelt_", "").replace("_", " ").capitalize()
 				names.append(s)
-			_insp_unlocks_lbl.text = "Unlocks: " + ", ".join(names)
+			_insp_unlocks_lbl.text = "Открывает: " + ", ".join(names)
 		else:
-			_insp_unlocks_lbl.text = "Unlocks: Essential knowledge"
+			_insp_unlocks_lbl.text = "Открывает: Базовые знания"
+		_insp_unlocks_lbl.modulate = Color(0.75, 0.78, 0.84)
 
 	# Update Costs
 	var costs: Dictionary = tech.get("costs", {})
 	if _insp_cost_lbl != null:
 		if is_done:
-			_insp_cost_lbl.text = "Status: Fully Mastered"
-			_insp_cost_lbl.modulate = Color(0.55, 0.85, 0.55)
+			_insp_cost_lbl.text = "Статус: Полностью изучено"
+			_insp_cost_lbl.modulate = Color(0.72, 0.78, 0.86)
 		elif costs.is_empty():
-			_insp_cost_lbl.text = "Cost: Free (Starter Knowledge)"
-			_insp_cost_lbl.modulate = Color(0.84, 0.86, 0.90)
+			_insp_cost_lbl.text = "Стоимость: Бесплатно (Начальные знания)"
+			_insp_cost_lbl.modulate = Color(0.85, 0.86, 0.90)
 		else:
 			var cost_strs: Array[String] = []
 			var inv: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
@@ -518,22 +542,22 @@ func _update_inspector_display(player: Node) -> void:
 				if cur_cnt < req_cnt:
 					all_met = false
 				cost_strs.append("%s: %d/%d" % [str(mat_id).capitalize().replace("_", " "), cur_cnt, req_cnt])
-			_insp_cost_lbl.text = "Materials: " + "  |  ".join(cost_strs)
-			_insp_cost_lbl.modulate = Color(0.88, 0.78, 0.55) if all_met else Color(0.90, 0.58, 0.40)
+			_insp_cost_lbl.text = "Требуемые ресурсы: " + "  |  ".join(cost_strs)
+			_insp_cost_lbl.modulate = Color(0.88, 0.89, 0.92) if all_met else Color(0.82, 0.48, 0.45)
 
 	# Update Action Button
 	if _insp_research_btn != null:
+		_insp_research_btn.modulate = Color.WHITE
 		if is_done:
-			_insp_research_btn.text = "MASTERED"
+			_insp_research_btn.text = "ТЕХНОЛОГИЯ ИЗУЧЕНА"
 			_insp_research_btn.disabled = true
-			_insp_research_btn.modulate = Color(0.55, 0.85, 0.55)
 		elif can_do:
-			_insp_research_btn.text = "RESEARCH TECHNOLOGY"
+			_insp_research_btn.text = "ИССЛЕДОВАТЬ ТЕХНОЛОГИЮ"
 			_insp_research_btn.disabled = false
-			_insp_research_btn.modulate = Color(0.92, 0.82, 0.50)
 		else:
-			var reason: String = str(check.get("reason", "Locked"))
+			var reason: String = str(check.get("reason", "Заблокировано"))
 			_insp_research_btn.text = reason.to_upper()
+			_insp_research_btn.disabled = true
 			_insp_research_btn.disabled = true
 			_insp_research_btn.modulate = Color(0.55, 0.56, 0.60)
 

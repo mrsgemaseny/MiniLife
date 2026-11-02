@@ -78,50 +78,65 @@ func _setup_styled_character_sheet() -> void:
 	offset_top = 0
 	offset_right = 0
 	offset_bottom = 0
-	mouse_filter = Control.MOUSE_FILTER_PASS
+	mouse_filter = Control.MOUSE_FILTER_STOP
 
-	# 1. Dark World Dimmer (Minecraft authentic - NO BLUE, NO TEXTURE)
-	var dimmer: ColorRect = ColorRect.new()
-	dimmer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dimmer.color = Color(0.0, 0.0, 0.0, 0.65)
-	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(dimmer)
-	move_child(dimmer, 0)
+	# 1. Fullscreen Survival Texture Backdrop
+	if _bg_texture == null:
+		_bg_texture = TextureRect.new()
+		_bg_texture.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_bg_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_bg_texture.stretch_mode = TextureRect.STRETCH_SCALE
+		if ResourceLoader.exists("res://assets/sprites/ui/fullscreen_survival_bg.jpg"):
+			_bg_texture.texture = load("res://assets/sprites/ui/fullscreen_survival_bg.jpg")
+		add_child(_bg_texture)
+		move_child(_bg_texture, 0)
 
-	# 2. Centered 100% OPAQUE Minecraft Window (#c6c6c6)
+	# 2. Main Full-Screen Layout Panel
 	if panel_container != null:
-		panel_container.set_anchors_preset(Control.PRESET_CENTER)
-		panel_container.offset_left = -440.0
-		panel_container.offset_top = -275.0
-		panel_container.offset_right = 440.0
-		panel_container.offset_bottom = 275.0
-		panel_container.custom_minimum_size = Vector2(880.0, 550.0)
+		panel_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel_container.offset_left = 0
+		panel_container.offset_top = 0
+		panel_container.offset_right = 0
+		panel_container.offset_bottom = 0
+
 		var frame_sb: StyleBoxFlat = StyleBoxFlat.new()
-		frame_sb.bg_color = Color(0.776, 0.776, 0.776, 1.0) # Solid neutral grey
-		frame_sb.border_color = Color(0.22, 0.22, 0.22, 1.0) # Dark pixel border
-		frame_sb.set_border_width_all(3)
+		frame_sb.bg_color = Color(0.06, 0.07, 0.08, 0.40)
+		frame_sb.border_color = Color(0.22, 0.24, 0.28, 0.85)
+		frame_sb.set_border_width_all(2)
 		frame_sb.set_corner_radius_all(0)
-		frame_sb.set_content_margin_all(14)
+		frame_sb.content_margin_left = 32
+		frame_sb.content_margin_right = 32
+		frame_sb.content_margin_top = 20
+		frame_sb.content_margin_bottom = 24
 		panel_container.add_theme_stylebox_override("panel", frame_sb)
 
 	if vbox != null:
-		vbox.add_theme_constant_override("separation", 8)
+		vbox.add_theme_constant_override("separation", 10)
 
 		# Top Header Bar
 		var hdr_hbox: HBoxContainer = HBoxContainer.new()
+		var title_vbox: VBoxContainer = VBoxContainer.new()
+		title_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		title_vbox.add_theme_constant_override("separation", 2)
+		hdr_hbox.add_child(title_vbox)
+
 		var hdr_lbl: Label = Label.new()
-		hdr_lbl.text = "Анатомия и навыки героя"
-		hdr_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hdr_lbl.text = "АНАТОМИЯ И НАВЫКИ ГЕРОЯ [K]"
 		hdr_lbl.add_theme_font_size_override("font_size", 14)
-		hdr_lbl.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
-		hdr_hbox.add_child(hdr_lbl)
+		hdr_lbl.modulate = Color(0.92, 0.90, 0.86, 1.0)
+		title_vbox.add_child(hdr_lbl)
 
 		var close_btn: Button = Button.new()
-		close_btn.text = " ✕ "
+		close_btn.text = " ✕ ЗАКРЫТЬ [ESC] "
 		close_btn.add_theme_font_size_override("font_size", 11)
-		close_btn.add_theme_color_override("font_color", Color(0.24, 0.24, 0.24, 1.0))
-		close_btn.add_theme_stylebox_override("normal", _make_mc_btn_style(false))
-		close_btn.add_theme_stylebox_override("hover", _make_mc_btn_style(true))
+		close_btn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.88, 1.0))
+		var cb_sb: StyleBoxFlat = StyleBoxFlat.new()
+		cb_sb.bg_color = Color(0.18, 0.20, 0.24, 1.0)
+		cb_sb.border_color = Color(0.35, 0.38, 0.44, 1.0)
+		cb_sb.set_border_width_all(1)
+		cb_sb.set_corner_radius_all(3)
+		cb_sb.set_content_margin_all(6)
+		close_btn.add_theme_stylebox_override("normal", cb_sb)
 		close_btn.pressed.connect(close_panel)
 		hdr_hbox.add_child(close_btn)
 		vbox.add_child(hdr_hbox)
@@ -129,7 +144,7 @@ func _setup_styled_character_sheet() -> void:
 
 	if class_label != null:
 		class_label.add_theme_font_size_override("font_size", 11)
-		class_label.modulate = Color(0.35, 0.35, 0.35, 1.0) # Dark charcoal
+		class_label.modulate = Color(0.75, 0.78, 0.84, 1.0) # Light steel silver
 
 	if traits_label != null:
 		traits_label.visible = false
@@ -140,25 +155,25 @@ func _setup_styled_character_sheet() -> void:
 	if vbox != null:
 		_content_box = HBoxContainer.new()
 		_content_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		_content_box.add_theme_constant_override("separation", 18)
+		_content_box.add_theme_constant_override("separation", 24)
 		vbox.add_child(_content_box)
 
-		# LEFT COLUMN (340px): Anatomy & Limbs
+		# LEFT COLUMN (360px): Anatomy & Limbs
 		var left_col: VBoxContainer = VBoxContainer.new()
-		left_col.custom_minimum_size = Vector2(340, 0)
+		left_col.custom_minimum_size = Vector2(360, 0)
 		left_col.add_theme_constant_override("separation", 8)
 		_content_box.add_child(left_col)
 
 		var limb_sec_title: Label = Label.new()
-		limb_sec_title.text = "Состояние тела и ранения"
+		limb_sec_title.text = "СОСТОЯНИЕ ТЕЛА И РАНЕНИЯ"
 		limb_sec_title.add_theme_font_size_override("font_size", 11)
-		limb_sec_title.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text
+		limb_sec_title.modulate = Color(0.75, 0.78, 0.84, 1.0)
 		left_col.add_child(limb_sec_title)
 
 		_limbs_grid = GridContainer.new()
 		_limbs_grid.columns = 2
-		_limbs_grid.add_theme_constant_override("h_separation", 6)
-		_limbs_grid.add_theme_constant_override("v_separation", 6)
+		_limbs_grid.add_theme_constant_override("h_separation", 8)
+		_limbs_grid.add_theme_constant_override("v_separation", 8)
 		left_col.add_child(_limbs_grid)
 
 		# RIGHT COLUMN: 18 Skill Disciplines
@@ -168,16 +183,16 @@ func _setup_styled_character_sheet() -> void:
 		_content_box.add_child(right_col)
 
 		var skill_sec_title: Label = Label.new()
-		skill_sec_title.text = "Навыки и мастерство"
+		skill_sec_title.text = "НАВЫКИ И МАСТЕРСТВО (18 ДИСЦИПЛИН)"
 		skill_sec_title.add_theme_font_size_override("font_size", 11)
-		skill_sec_title.modulate = Color(0.24, 0.24, 0.24, 1.0)
+		skill_sec_title.modulate = Color(0.75, 0.78, 0.84, 1.0)
 		right_col.add_child(skill_sec_title)
 
 		_skills_grid = GridContainer.new()
 		_skills_grid.columns = 3
 		_skills_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_skills_grid.add_theme_constant_override("h_separation", 8)
-		_skills_grid.add_theme_constant_override("v_separation", 6)
+		_skills_grid.add_theme_constant_override("h_separation", 10)
+		_skills_grid.add_theme_constant_override("v_separation", 8)
 		right_col.add_child(_skills_grid)
 
 
