@@ -40,7 +40,8 @@ func _setup_canvas_modulate() -> void:
 func _setup_weather_particles() -> void:
 	var canvas: CanvasLayer = CanvasLayer.new()
 	canvas.name = "WeatherCanvas"
-	canvas.layer = 15
+	canvas.layer = 2
+	canvas.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(canvas)
 
 	# Rain particles

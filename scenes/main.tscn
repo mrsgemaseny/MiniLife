@@ -172,6 +172,7 @@ script = ExtResource("28_weather")
 
 [node name="UILayer" type="CanvasLayer" parent="."]
 process_mode = 3
+layer = 20
 
 [node name="HUD" parent="UILayer" instance=ExtResource("10_hud")]
 
