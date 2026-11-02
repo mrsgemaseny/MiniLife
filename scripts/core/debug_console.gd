@@ -253,6 +253,7 @@ func _test_phase_10_building_structures_and_ysort(player: Player) -> void:
 func _test_phase_11_inventory_hotbar_and_dupe_proofing(player: Player) -> void:
 	print("[E2E Phase 11] Inventory, Hotbar Mirroring & Duplication Prevention...")
 	assert(player.inventory != null, "InventoryComponent missing")
+	assert(player.equipment != null, "EquipmentComponent missing")
 	var initial_gold: int = player.inventory.gold
 	var initial_weight: float = player.inventory.get_total_weight()
 
@@ -260,6 +261,30 @@ func _test_phase_11_inventory_hotbar_and_dupe_proofing(player: Player) -> void:
 	player.inventory.swap_slots(1, 0)
 	assert(player.inventory.gold == initial_gold, "Gold mutated during inventory swap")
 	assert(abs(player.inventory.get_total_weight() - initial_weight) < 0.001, "Weight conservation violated")
+
+	# Shield & Offhand Equipment Isolation Test
+	player.equipment.equip("wooden_shield", 110, "offhand")
+	assert(player.equipment.get_item_id("offhand") == "wooden_shield", "Shield must be equipped in offhand")
+	assert(player.equipment.get_item_id("weapon") != "wooden_shield", "Shield must NOT overwrite weapon slot")
+
+	# InventoryUI armor slot isolation verification
+	var inv_ui: Node = get_tree().get_first_node_in_group("inventory_ui")
+	if inv_ui == null:
+		# Search in main scene tree
+		for child in get_tree().root.get_children():
+			var found: Node = child.find_child("InventoryUI", true, false)
+			if found != null:
+				inv_ui = found
+				break
+	if inv_ui != null and inv_ui.has_method("_on_armor_slot_clicked"):
+		# Test unequipping and re-equipping offhand without duplicating weapon
+		var w_before: String = player.equipment.get_item_id("weapon")
+		inv_ui.call("_on_armor_slot_clicked", "offhand", MOUSE_BUTTON_LEFT, false)
+		assert(player.equipment.get_item_id("offhand") == "", "Offhand must be unequipped to cursor")
+		assert(player.equipment.get_item_id("weapon") == w_before, "Weapon in hand must not be affected by offhand unequip")
+		inv_ui.call("_on_armor_slot_clicked", "offhand", MOUSE_BUTTON_LEFT, false)
+		assert(player.equipment.get_item_id("offhand") == "wooden_shield", "Shield must re-equip to offhand")
+		assert(player.equipment.get_item_id("weapon") == w_before, "Weapon in hand must remain intact")
 
 	for pname in ["inventory", "craft", "build", "quests", "character", "factions", "chronicle", "achievements"]:
 		SignalBus.ui_panel_requested.emit(pname)

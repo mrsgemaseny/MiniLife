@@ -41,7 +41,7 @@ const BASE_VISION_RADIUS: int = 9
 const INTERACT_RANGE: float = 96.0
 const CRAFT_STATION_RANGE: float = 128.0
 const MAX_INVENTORY_WEIGHT: float = 999999.0
-const MAX_INVENTORY_SLOTS: int = 30
+const MAX_INVENTORY_SLOTS: int = 32
 
 # Combat & Projectiles
 const BASE_ATTACK_COOLDOWN: float = 0.75

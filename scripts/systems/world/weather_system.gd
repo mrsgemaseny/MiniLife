@@ -13,6 +13,7 @@ var _is_interior: bool = false
 var _particles: GPUParticles2D = null
 var _fog_particles: GPUParticles2D = null
 var _canvas_modulate: CanvasModulate = null
+var _weather_canvas: CanvasLayer = null
 var _current_ambient: Color = Color(1.0, 1.0, 1.0)
 var _lightning_timer: float = 14.0
 var _lightning_flash: float = 0.0
@@ -25,6 +26,14 @@ func _ready() -> void:
 	SignalBus.hour_passed.connect(_on_hour_passed)
 	SignalBus.interior_entered.connect(_on_interior_entered)
 	SignalBus.interior_exited.connect(_on_interior_exited)
+	SignalBus.ui_panel_toggled.connect(func(_pid: String, is_open: bool, blocks: bool) -> void:
+		if blocks and _weather_canvas != null:
+			_weather_canvas.visible = not is_open
+	)
+	SignalBus.game_paused.connect(func(is_paused: bool) -> void:
+		if _weather_canvas != null:
+			_weather_canvas.visible = not is_paused
+	)
 	_current_ambient = _compute_target_ambient(GameManager.get_hour())
 	if _canvas_modulate != null:
 		_canvas_modulate.color = _current_ambient
@@ -38,11 +47,12 @@ func _setup_canvas_modulate() -> void:
 
 
 func _setup_weather_particles() -> void:
-	var canvas: CanvasLayer = CanvasLayer.new()
-	canvas.name = "WeatherCanvas"
-	canvas.layer = 2
-	canvas.process_mode = Node.PROCESS_MODE_PAUSABLE
-	add_child(canvas)
+	_weather_canvas = CanvasLayer.new()
+	_weather_canvas.name = "WeatherCanvas"
+	_weather_canvas.layer = 2
+	_weather_canvas.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(_weather_canvas)
+	var canvas: CanvasLayer = _weather_canvas
 
 	# Rain particles
 	_particles = GPUParticles2D.new()

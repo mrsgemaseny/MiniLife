@@ -14,9 +14,15 @@ static func _get_item_def(item_id: String) -> Dictionary:
 	return DataRegistry.get_item(item_id)
 
 
+func ensure_slots_capacity() -> void:
+	while slots.size() < max_slots:
+		slots.append({})
+
+
 func add_item(item_id: String, count: int = 1, durability: int = -1) -> int:
 	if count <= 0 or item_id.is_empty():
 		return 0
+	ensure_slots_capacity()
 	var def: Dictionary = _get_item_def(item_id)
 	var unit_weight: float = float(def.get("weight", 1.0))
 	var stackable: bool = bool(def.get("stackable", true))
@@ -79,7 +85,7 @@ func remove_item(item_id: String, count: int = 1) -> int:
 		cur -= take
 		to_remove -= take
 		if cur <= 0:
-			slots.remove_at(i)
+			slots[i] = {}
 		else:
 			slot["count"] = cur
 	var removed: int = count - to_remove
