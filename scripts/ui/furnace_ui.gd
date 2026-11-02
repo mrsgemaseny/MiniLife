@@ -4,6 +4,7 @@ extends Control
 const PANEL_ID: String = "furnace"
 const FurnaceSys = preload("res://scripts/systems/crafting/furnace_system.gd")
 const MCSlot = preload("res://scripts/ui/minecraft_slot.gd")
+const IconFactory = preload("res://scripts/ui/item_icon_factory.gd")
 
 var _active_furnace_id: String = ""
 var _tile_pos: Vector2i = Vector2i.ZERO
@@ -104,80 +105,119 @@ func _build_ui() -> void:
 	offset_top = 0
 	offset_right = 0
 	offset_bottom = 0
-	mouse_filter = Control.MOUSE_FILTER_PASS
+	mouse_filter = Control.MOUSE_FILTER_STOP
 
-	# 1. Dark World Dimmer (Minecraft authentic - NO BLUE, NO TEXTURE)
-	var dimmer: ColorRect = ColorRect.new()
-	dimmer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dimmer.color = Color(0.0, 0.0, 0.0, 0.65)
-	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
-	dimmer.gui_input.connect(func(ev: InputEvent) -> void:
-		if ev is InputEventMouseButton and ev.pressed and not _cursor_stack.is_empty():
-			_drop_cursor_item()
-	)
-	add_child(dimmer)
+	# 1. Fullscreen Survival Texture Backdrop
+	var bg_tex: TextureRect = TextureRect.new()
+	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
+	if ResourceLoader.exists("res://assets/sprites/ui/fullscreen_survival_bg.jpg"):
+		bg_tex.texture = load("res://assets/sprites/ui/fullscreen_survival_bg.jpg")
+	add_child(bg_tex)
 
-	# 2. Centered Minecraft Furnace Window (#c6c6c6 100% OPAQUE)
+	# 2. Main Fullscreen Layout Panel
 	_panel = PanelContainer.new()
-	_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_panel.offset_left = -210.0
-	_panel.offset_top = -220.0
-	_panel.offset_right = 210.0
-	_panel.offset_bottom = 220.0
-	_panel.custom_minimum_size = Vector2(420.0, 440.0)
+	_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_panel.offset_left = 0
+	_panel.offset_top = 0
+	_panel.offset_right = 0
+	_panel.offset_bottom = 0
 
 	var bg_box: StyleBoxFlat = StyleBoxFlat.new()
-	bg_box.bg_color = Color(0.776, 0.776, 0.776, 1.0) # Solid neutral grey
-	bg_box.border_color = Color(0.22, 0.22, 0.22, 1.0)
-	bg_box.set_border_width_all(3)
+	bg_box.bg_color = Color(0.06, 0.07, 0.08, 0.40) # Tint over texture
+	bg_box.border_color = Color(0.20, 0.22, 0.26, 0.85)
+	bg_box.set_border_width_all(2)
 	bg_box.set_corner_radius_all(0)
-	bg_box.set_content_margin_all(12)
+	bg_box.content_margin_left = 32
+	bg_box.content_margin_right = 32
+	bg_box.content_margin_top = 20
+	bg_box.content_margin_bottom = 24
 	_panel.add_theme_stylebox_override("panel", bg_box)
 	add_child(_panel)
 
 	var main_vbox: VBoxContainer = VBoxContainer.new()
-	main_vbox.add_theme_constant_override("separation", 8)
+	main_vbox.add_theme_constant_override("separation", 12)
 	_panel.add_child(main_vbox)
 
 	# 1. Header Bar
 	var hdr: HBoxContainer = HBoxContainer.new()
+	var title_vbox: VBoxContainer = VBoxContainer.new()
+	title_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_vbox.add_theme_constant_override("separation", 2)
+	hdr.add_child(title_vbox)
+
 	var title: Label = Label.new()
-	title.text = "Плавильная печь"
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 12)
-	title.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
-	hdr.add_child(title)
+	title.text = "ТЕРМИЧЕСКАЯ ПЕЧЬ И ПЛАВИЛЬНЯ"
+	title.add_theme_font_size_override("font_size", 14)
+	title.modulate = Color(0.92, 0.90, 0.86, 1.0)
+	title_vbox.add_child(title)
+
+	var sublbl: Label = Label.new()
+	sublbl.text = "Выплавка слитков из руды, пережиг древесного угля и термическая обработка [ESC]"
+	sublbl.add_theme_font_size_override("font_size", 10)
+	sublbl.modulate = Color(0.55, 0.58, 0.64, 1.0)
+	title_vbox.add_child(sublbl)
 
 	var close_btn: Button = Button.new()
-	close_btn.text = " ✕ "
+	close_btn.text = " ✕ ЗАКРЫТЬ [ESC] "
 	close_btn.add_theme_font_size_override("font_size", 11)
-	close_btn.add_theme_color_override("font_color", Color(0.24, 0.24, 0.24, 1.0))
+	close_btn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.88, 1.0))
 	var cb_sb: StyleBoxFlat = StyleBoxFlat.new()
-	cb_sb.bg_color = Color(0.58, 0.58, 0.58, 1.0)
-	cb_sb.border_color = Color(0.22, 0.22, 0.22, 1.0)
-	cb_sb.set_border_width_all(2)
-	cb_sb.set_corner_radius_all(0)
-	cb_sb.set_content_margin_all(4)
+	cb_sb.bg_color = Color(0.18, 0.20, 0.24, 1.0)
+	cb_sb.border_color = Color(0.35, 0.38, 0.44, 1.0)
+	cb_sb.set_border_width_all(1)
+	cb_sb.set_corner_radius_all(3)
+	cb_sb.set_content_margin_all(6)
 	close_btn.add_theme_stylebox_override("normal", cb_sb)
 	close_btn.pressed.connect(close_furnace)
 	hdr.add_child(close_btn)
 	main_vbox.add_child(hdr)
 
-	# 2. Machine Smelting Chamber (Solid Minecraft sub-panel)
+	var sep_top: HSeparator = HSeparator.new()
+	var sep_sb: StyleBoxLine = StyleBoxLine.new()
+	sep_sb.color = Color(0.20, 0.22, 0.26, 0.90)
+	sep_sb.thickness = 1
+	sep_top.add_theme_stylebox_override("separator", sep_sb)
+	main_vbox.add_child(sep_top)
+
+	# 2. Dual Pane Body: Smelting Core (Left) + Smelting Handbook (Right)
+	var body_hbox: HBoxContainer = HBoxContainer.new()
+	body_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body_hbox.add_theme_constant_override("separation", 24)
+	main_vbox.add_child(body_hbox)
+
+	var left_col: VBoxContainer = VBoxContainer.new()
+	left_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left_col.size_flags_stretch_ratio = 1.3
+	left_col.add_theme_constant_override("separation", 14)
+	body_hbox.add_child(left_col)
+
+	# Machine Smelting Chamber Card
 	var machine_box: PanelContainer = PanelContainer.new()
 	var m_sb: StyleBoxFlat = StyleBoxFlat.new()
-	m_sb.bg_color = Color(0.68, 0.68, 0.68, 1.0)
-	m_sb.border_color = Color(0.22, 0.22, 0.22, 1.0)
-	m_sb.set_border_width_all(2)
-	m_sb.set_corner_radius_all(0)
-	m_sb.set_content_margin_all(10)
+	m_sb.bg_color = Color(0.10, 0.11, 0.13, 0.95)
+	m_sb.border_color = Color(0.24, 0.26, 0.30, 0.85)
+	m_sb.set_border_width_all(1)
+	m_sb.set_corner_radius_all(4)
+	m_sb.set_content_margin_all(16)
 	machine_box.add_theme_stylebox_override("panel", m_sb)
-	main_vbox.add_child(machine_box)
+	left_col.add_child(machine_box)
+
+	var m_vbox: VBoxContainer = VBoxContainer.new()
+	m_vbox.add_theme_constant_override("separation", 10)
+	machine_box.add_child(m_vbox)
+
+	var m_title: Label = Label.new()
+	m_title.text = "ГОРНИЛО И РЕАКЦИОННАЯ КАМЕРА"
+	m_title.add_theme_font_size_override("font_size", 11)
+	m_title.modulate = Color(0.75, 0.78, 0.84)
+	m_vbox.add_child(m_title)
 
 	var machine_hbox: HBoxContainer = HBoxContainer.new()
 	machine_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	machine_hbox.add_theme_constant_override("separation", 24)
-	machine_box.add_child(machine_hbox)
+	machine_hbox.add_theme_constant_override("separation", 28)
+	m_vbox.add_child(machine_hbox)
 
 	# Left Stack: Input Slot + Fire Flame + Fuel Slot
 	var left_stack: VBoxContainer = VBoxContainer.new()
@@ -227,23 +267,19 @@ func _build_ui() -> void:
 	_output_slot.slot_unhovered.connect(func(_idx): _hide_tooltip())
 	right_stack.add_child(_output_slot)
 
-	# 3. Separator
-	var sep: HSeparator = HSeparator.new()
-	main_vbox.add_child(sep)
-
-	# 4. Player Inventory Section
+	# 3. Player Inventory Section (Inside left column)
 	var inv_hdr: Label = Label.new()
-	inv_hdr.text = "Инвентарь игрока"
-	inv_hdr.add_theme_font_size_override("font_size", 10)
-	inv_hdr.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
-	main_vbox.add_child(inv_hdr)
+	inv_hdr.text = "ИНВЕНТАРЬ И СЫРЬЕ ВЫЖИВАНИЯ"
+	inv_hdr.add_theme_font_size_override("font_size", 11)
+	inv_hdr.modulate = Color(0.75, 0.78, 0.84, 1.0)
+	left_col.add_child(inv_hdr)
 
 	# 3x8 Backpack Grid (indices 8 to 31)
 	var inv_grid: GridContainer = GridContainer.new()
 	inv_grid.columns = 8
 	inv_grid.add_theme_constant_override("h_separation", 4)
 	inv_grid.add_theme_constant_override("v_separation", 4)
-	main_vbox.add_child(inv_grid)
+	left_col.add_child(inv_grid)
 
 	_inv_slots.clear()
 	for i in range(8, 32):
@@ -256,12 +292,18 @@ func _build_ui() -> void:
 		_inv_slots.append(s)
 		inv_grid.add_child(s)
 
+	var hot_hdr: Label = Label.new()
+	hot_hdr.text = "ПОЯС БЫСТРОГО ДОСТУПА [1-8]"
+	hot_hdr.add_theme_font_size_override("font_size", 10)
+	hot_hdr.modulate = Color(0.55, 0.58, 0.64, 1.0)
+	left_col.add_child(hot_hdr)
+
 	# 1x8 Hotbar Grid (indices 0 to 7)
 	var hotbar_grid: GridContainer = GridContainer.new()
 	hotbar_grid.columns = 8
 	hotbar_grid.add_theme_constant_override("h_separation", 4)
 	hotbar_grid.add_theme_constant_override("v_separation", 4)
-	main_vbox.add_child(hotbar_grid)
+	left_col.add_child(hotbar_grid)
 
 	_hotbar_slots.clear()
 	for i in range(8):
@@ -274,6 +316,84 @@ func _build_ui() -> void:
 		s.slot_unhovered.connect(func(_idx): _hide_tooltip())
 		_hotbar_slots.append(s)
 		hotbar_grid.add_child(s)
+
+	# Right Column: Smelting Ledger & Handbook
+	var right_col: PanelContainer = PanelContainer.new()
+	right_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_col.size_flags_stretch_ratio = 1.0
+	var rc_sb: StyleBoxFlat = StyleBoxFlat.new()
+	rc_sb.bg_color = Color(0.10, 0.11, 0.13, 0.95)
+	rc_sb.border_color = Color(0.24, 0.26, 0.30, 0.85)
+	rc_sb.set_border_width_all(1)
+	rc_sb.set_corner_radius_all(4)
+	rc_sb.set_content_margin_all(16)
+	right_col.add_theme_stylebox_override("panel", rc_sb)
+	body_hbox.add_child(right_col)
+
+	var r_vbox: VBoxContainer = VBoxContainer.new()
+	r_vbox.add_theme_constant_override("separation", 10)
+	right_col.add_child(r_vbox)
+
+	var r_title: Label = Label.new()
+	r_title.text = "СПРАВОЧНИК МЕТАЛЛУРГИИ"
+	r_title.add_theme_font_size_override("font_size", 12)
+	r_title.modulate = Color(0.85, 0.86, 0.90)
+	r_vbox.add_child(r_title)
+
+	var r_desc: Label = Label.new()
+	r_desc.text = "Поместите руду в верхний отсек, а топливо (уголь или древесину) — в нижний. Печь плавит сырье автоматически."
+	r_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	r_desc.add_theme_font_size_override("font_size", 10)
+	r_desc.modulate = Color(0.60, 0.63, 0.68)
+	r_vbox.add_child(r_desc)
+
+	var recipes_list: Array[Dictionary] = [
+		{"in": "iron_ore", "out": "iron_ingot", "time": "20 сек", "fuel": "Уголь / Дерево"},
+		{"in": "copper_ore", "out": "bronze_ingot", "time": "16 сек", "fuel": "Уголь / Дерево"},
+		{"in": "wood", "out": "coal", "time": "12 сек", "fuel": "Дерево (пиролиз)"},
+		{"in": "raw_meat", "out": "cooked_meat", "time": "8 сек", "fuel": "Любое топливо"}
+	]
+	for r in recipes_list:
+		var r_card: PanelContainer = PanelContainer.new()
+		var card_sb: StyleBoxFlat = StyleBoxFlat.new()
+		card_sb.bg_color = Color(0.14, 0.15, 0.18, 0.95)
+		card_sb.border_color = Color(0.24, 0.26, 0.30, 0.85)
+		card_sb.set_border_width_all(1)
+		card_sb.set_corner_radius_all(3)
+		card_sb.set_content_margin_all(8)
+		r_card.add_theme_stylebox_override("panel", card_sb)
+		r_vbox.add_child(r_card)
+
+		var r_row: HBoxContainer = HBoxContainer.new()
+		r_row.add_theme_constant_override("separation", 8)
+		r_card.add_child(r_row)
+
+		var in_icon: TextureRect = TextureRect.new()
+		in_icon.custom_minimum_size = Vector2(24, 24)
+		in_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		in_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		in_icon.texture = IconFactory.get_icon(r["in"])
+		r_row.add_child(in_icon)
+
+		var arr_lbl: Label = Label.new()
+		arr_lbl.text = "➔"
+		arr_lbl.modulate = Color(0.55, 0.58, 0.64)
+		r_row.add_child(arr_lbl)
+
+		var out_icon: TextureRect = TextureRect.new()
+		out_icon.custom_minimum_size = Vector2(24, 24)
+		out_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		out_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		out_icon.texture = IconFactory.get_icon(r["out"])
+		r_row.add_child(out_icon)
+
+		var meta_lbl: Label = Label.new()
+		meta_lbl.text = "%s  •  %s" % [r["time"], r["fuel"]]
+		meta_lbl.add_theme_font_size_override("font_size", 9)
+		meta_lbl.modulate = Color(0.65, 0.68, 0.74)
+		meta_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		meta_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		r_row.add_child(meta_lbl)
 
 	# Floating cursor display
 	_cursor_display = Control.new()

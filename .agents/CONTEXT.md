@@ -143,4 +143,10 @@
   - `[B]` menu strictly reserved for base stations and infrastructure (`furnace`, `storage`, `research_table`, `workbench`, `campfire`, `bed`).
   - Continuous Left-Click (LMB) on player-built structures (`is_player_built == true`) channels dismantling (pickaxe/axe 3.5x speed) with a damage overlay bar and returns items to inventory; world-gen and ancient structures remain indestructible.
   - Phase 10 of automated E2E test suite updated and passing 100%.
+- **Full-Screen Anti-Deslop UI Overhaul (2026-11-02)**:
+  - Fixed GDScript Parse Errors in `inventory_ui.gd` (cleaned merge artifact) and `research_tree_ui.gd` (removed redeclared `from_pt`). Added missing `IconFactory` in `furnace_ui.gd`.
+  - Converted all survival menus (`InventoryUI`, `BuildMenuUI`, `CraftMenuUI`, `ResearchTreeUI`, `FurnaceUI`, `QuestLogUI`, `CharacterSheetUI`) to 100% full-screen pages (`PRESET_FULL_RECT`) with generated atmospheric slate & iron textures (`fullscreen_survival_bg.jpg`, `fullscreen_codex_bg.jpg`).
+  - Strict palette enforcement: complete elimination of blue, yellow, and bright green. Typography uses antique ivory (`#eae6dc`) and cold silver (`#9ea2ad`) on dark slate surfaces (`#101114` to `#1a1d22`), completely eliminating white-on-white and black-on-black text contrast issues.
+  - Balanced multi-column layouts: 3-column inventory with active item inspector; 2-column craft & build menus with blueprints/catalog on the left and dedicated workshops/inspectors on the right.
+  - 12-phase automated E2E test suite passing 100% cleanly (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.
