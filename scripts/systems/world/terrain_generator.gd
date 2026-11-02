@@ -6,6 +6,7 @@ var _elevation_noise: FastNoiseLite = FastNoiseLite.new()
 var _moisture_noise: FastNoiseLite = FastNoiseLite.new()
 var _forest_noise: FastNoiseLite = FastNoiseLite.new()
 var _river_noise: FastNoiseLite = FastNoiseLite.new()
+var _warp_noise: FastNoiseLite = FastNoiseLite.new()
 
 
 func _init(world_seed: int = 1337) -> void:
@@ -39,6 +40,12 @@ func setup(world_seed: int) -> void:
 	_river_noise.fractal_octaves = 3
 	_river_noise.frequency = 0.014
 
+	# Domain warp noise: distorts all coordinate lookups by +/-18 tiles to destroy straight borders
+	_warp_noise.seed = world_seed ^ 0x51A82C3D
+	_warp_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	_warp_noise.fractal_octaves = 2
+	_warp_noise.frequency = 0.014
+
 
 func is_in_world(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.y >= 0 and pos.x < Config.WORLD_SIZE_TILES and pos.y < Config.WORLD_SIZE_TILES
@@ -48,6 +55,12 @@ func is_border_mountain(pos: Vector2i) -> bool:
 	var b: int = Config.BORDER_MOUNTAIN_THICKNESS
 	var limit: int = Config.WORLD_SIZE_TILES - b
 	return pos.x < b or pos.y < b or pos.x >= limit or pos.y >= limit
+
+
+func get_warped_pos(pos: Vector2i) -> Vector2:
+	var wx: float = _warp_noise.get_noise_2d(float(pos.x) * 1.6, float(pos.y) * 1.6) * 20.0
+	var wy: float = _warp_noise.get_noise_2d(float(pos.x) * 1.6 + 600.0, float(pos.y) * 1.6 + 600.0) * 20.0
+	return Vector2(float(pos.x) + wx, float(pos.y) + wy)
 
 
 func get_river_center_x(ny: float) -> float:
@@ -71,14 +84,12 @@ func get_distance_to_river_at(pos: Vector2i) -> float:
 
 func get_elevation_at(pos: Vector2i) -> float:
 	var w_size: float = float(Config.WORLD_SIZE_TILES)
-	var nx: float = float(pos.x) / w_size
-	var ny: float = float(pos.y) / w_size
-
-	# Northwest mountain ridge gradient
-	var ridge_coord: float = (nx * 0.72 + ny * 0.68)
-	var mtn_influence: float = clampf(1.0 - (ridge_coord / 0.46), 0.0, 1.0)
-	var elev_raw: float = _elevation_noise.get_noise_2d(float(pos.x), float(pos.y)) * 0.5 + 0.5
-	return mtn_influence * 0.72 + elev_raw * 0.28
+	var warped: Vector2 = get_warped_pos(pos)
+	var mtn_center: Vector2 = Vector2(w_size * 0.24, w_size * 0.12)
+	var dist_mtn: float = warped.distance_to(mtn_center)
+	var mtn_radial: float = 1.0 - clampf(dist_mtn / (w_size * 0.38), 0.0, 1.0)
+	var elev_noise: float = _elevation_noise.get_noise_2d(warped.x * 1.2, warped.y * 1.2) * 0.5 + 0.5
+	return mtn_radial * 0.70 + elev_noise * 0.30
 
 
 func get_biome_at(pos: Vector2i) -> String:
@@ -86,55 +97,64 @@ func get_biome_at(pos: Vector2i) -> String:
 		return "mountains"
 
 	var w_size: float = float(Config.WORLD_SIZE_TILES)
-	var nx: float = float(pos.x) / w_size
+	var warped: Vector2 = get_warped_pos(pos)
 	var ny: float = float(pos.y) / w_size
 
-	# 1. MEANDERING RIVER (Cuts diagonally from Northeast to West/Southwest)
-	if ny >= 0.02 and ny <= 0.74:
+	# 1. MEANDERING RIVER (Organic meandering curve with varying shoreline)
+	if ny >= 0.02 and ny <= 0.76:
 		var dist_to_river_tiles: float = get_distance_to_river_at(pos)
-		# Core water stream (width ~ 2.4 tiles)
-		if dist_to_river_tiles < 2.4:
+		var bank_var: float = _river_noise.get_noise_2d(float(pos.x) * 2.2, float(pos.y) * 2.2)
+		var water_w: float = 2.4 + bank_var * 0.35
+		# Water stream (width ~ 2.2 to 2.8 tiles)
+		if dist_to_river_tiles < water_w:
 			return "water"
-		# Sandy riverbanks & beaches (width ~ 4.8 tiles)
-		elif dist_to_river_tiles < 4.8:
+		# Sandy shores & beaches (width fluctuating organically ~ 3.5 to 5.5 tiles)
+		var beach_w: float = 4.2 + bank_var * 1.3
+		if dist_to_river_tiles < beach_w and bank_var > -0.45:
 			return "desert"
 
-	# 2. SOUTHEAST SCENIC LAKE (With sandy shores)
+	# 2. SOUTHEAST SCENIC LAKE (With natural organic shores)
 	var lake_se_center: Vector2 = Vector2(w_size * 0.74, w_size * 0.76)
-	var dist_lake_se: float = Vector2(float(pos.x), float(pos.y)).distance_to(lake_se_center)
-	var lake_se_radius: float = w_size * 0.055 + _river_noise.get_noise_2d(float(pos.x) * 1.5, float(pos.y) * 1.5) * 6.0
+	var dist_lake_se: float = warped.distance_to(lake_se_center)
+	var lake_noise: float = _river_noise.get_noise_2d(warped.x * 1.8, warped.y * 1.8) * 5.0
+	var lake_se_radius: float = w_size * 0.055 + lake_noise
 	if dist_lake_se < lake_se_radius:
 		return "water"
-	elif dist_lake_se < lake_se_radius + 3.2:
+	elif dist_lake_se < lake_se_radius + 3.2 + (lake_noise * 0.25):
 		return "desert"
 
-	# 3. NORTHWEST NATURAL POND (Nestled near the mountain foothills)
+	# 3. NORTHWEST NATURAL POND (Nestled near mountain foothills)
 	var pond_nw_center: Vector2 = Vector2(w_size * 0.15, w_size * 0.33)
-	var dist_pond_nw: float = Vector2(float(pos.x), float(pos.y)).distance_to(pond_nw_center)
-	var pond_nw_radius: float = w_size * 0.034 + _river_noise.get_noise_2d(float(pos.x) * 2.0, float(pos.y) * 2.0) * 4.0
+	var dist_pond_nw: float = warped.distance_to(pond_nw_center)
+	var pond_noise: float = _river_noise.get_noise_2d(warped.x * 2.0, warped.y * 2.0) * 3.5
+	var pond_nw_radius: float = w_size * 0.034 + pond_noise
 	if dist_pond_nw < pond_nw_radius:
 		return "water"
 	elif dist_pond_nw < pond_nw_radius + 2.2:
 		return "desert"
 
-	# 4. NORTHWEST SNOW & ROCKY MOUNTAINS (Top-left quadrant)
+	# 4. NORTHWEST SNOW & ROCKY MOUNTAINS (Top-left quadrant, organically warped)
 	var elev: float = get_elevation_at(pos)
 	if elev > 0.66:
 		return "snow"
 	elif elev > 0.44:
 		return "mountains"
 
-	# 5. EASTERN ARID DESERT (Dunes on East / Northeast)
-	if nx > 0.70 and ny >= 0.08 and ny <= 0.64:
-		var desert_edge: float = 0.72 + _moisture_noise.get_noise_2d(float(pos.x) * 0.6, float(pos.y) * 0.6) * 0.07
-		if nx > desert_edge:
-			return "desert"
+	# 5. EASTERN ARID DESERT (Organic dunes on East / Northeast — NO straight vertical lines!)
+	var desert_center: Vector2 = Vector2(w_size * 0.88, w_size * 0.35)
+	var dist_desert: float = warped.distance_to(desert_center)
+	var desert_noise: float = _moisture_noise.get_noise_2d(warped.x * 1.6, warped.y * 1.6) * 0.28
+	var desert_radial: float = 1.0 - clampf(dist_desert / (w_size * 0.38), 0.0, 1.0)
+	if (desert_radial + desert_noise) > 0.24 and warped.x > w_size * 0.58:
+		return "desert"
 
-	# 6. SOUTHWEST MARSH & SWAMP (Lowland wetlands)
-	if nx < 0.38 and ny > 0.62:
-		var swamp_moist: float = _moisture_noise.get_noise_2d(float(pos.x), float(pos.y))
-		if swamp_moist > -0.10 and elev < 0.30:
-			return "swamp"
+	# 6. SOUTHWEST MARSH & SWAMP (Lowland wetlands, organically warped)
+	var swamp_center: Vector2 = Vector2(w_size * 0.18, w_size * 0.78)
+	var dist_swamp: float = warped.distance_to(swamp_center)
+	var swamp_radial: float = 1.0 - clampf(dist_swamp / (w_size * 0.30), 0.0, 1.0)
+	var swamp_moist: float = _moisture_noise.get_noise_2d(warped.x * 1.4, warped.y * 1.4) * 0.32
+	if (swamp_radial + swamp_moist) > 0.32 and elev < 0.28:
+		return "swamp"
 
 	# 7. CENTRAL & SOUTHERN PLAINS WITH ORGANIC FORESTS
 	# High foothills near mountains have dense woodland
@@ -142,7 +162,7 @@ func get_biome_at(pos: Vector2i) -> String:
 		return "forest"
 
 	# Organic woodland clumps across the plains
-	var forest_val: float = _forest_noise.get_noise_2d(float(pos.x), float(pos.y))
+	var forest_val: float = _forest_noise.get_noise_2d(warped.x, warped.y)
 	if forest_val > 0.09:
 		return "forest"
 
