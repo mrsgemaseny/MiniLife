@@ -1,4 +1,3 @@
-class_name AudioDirector
 extends Node
 
 # Procedural Ambient Music & Organic Tactile SFX Engine

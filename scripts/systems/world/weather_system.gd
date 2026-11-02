@@ -107,9 +107,8 @@ func _process(delta: float) -> void:
 		if _lightning_timer <= 0.0:
 			_lightning_flash = 0.18
 			_lightning_timer = randf_range(9.0, 22.0)
-			var audio: Node = get_node_or_null("../AudioDirector")
-			if audio != null and audio.has_method("play_tone"):
-				audio.call("play_tone", 55.0, 0.55, -6.0)
+			if AudioDirector.instance != null:
+				AudioDirector.instance.play_sfx("arrow_hit", 4.0, 0.12)
 			SignalBus.notification_posted.emit("Lightning splits the heavens with a deafening roar of thunder!")
 
 	if _lightning_flash > 0.0:

@@ -330,5 +330,44 @@
 		"output": { "item_id": "torch", "count": 1 },
 		"skill_required": {},
 		"xp_reward": { "survival": 8 }
+	},
+	{
+		"id": "forge_steel_pickaxe",
+		"station": "forge",
+		"tech_required": "iron_mastery",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 4 },
+			{ "item_id": "coal", "count": 2 },
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "steel_pickaxe", "count": 1 },
+		"skill_required": { "smithing": 28 },
+		"xp_reward": { "smithing": 48 }
+	},
+	{
+		"id": "forge_steel_axe",
+		"station": "forge",
+		"tech_required": "iron_mastery",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 4 },
+			{ "item_id": "coal", "count": 2 },
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "steel_axe", "count": 1 },
+		"skill_required": { "smithing": 28 },
+		"xp_reward": { "smithing": 48 }
+	},
+	{
+		"id": "forge_steel_sword",
+		"station": "forge",
+		"tech_required": "iron_mastery",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 5 },
+			{ "item_id": "coal", "count": 3 },
+			{ "item_id": "wood", "count": 1 }
+		],
+		"output": { "item_id": "steel_sword", "count": 1 },
+		"skill_required": { "smithing": 30 },
+		"xp_reward": { "smithing": 55 }
 	}
 ]

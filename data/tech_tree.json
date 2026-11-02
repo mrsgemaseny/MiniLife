@@ -192,7 +192,7 @@
 		"grid_y": 2,
 		"prerequisites": ["iron_forging"],
 		"costs": { "iron_ingot": 6, "coal": 4 },
-		"unlocks": ["forge_iron_shield", "reinforced_vault"]
+		"unlocks": ["forge_iron_shield", "forge_steel_pickaxe", "forge_steel_axe", "forge_steel_sword"]
 	},
 	{
 		"id": "alchemical_elixirs",

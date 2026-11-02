@@ -380,7 +380,7 @@
 			"tool_type": "pickaxe",
 			"mining_power": 1
 		},
-		"visual": { "sprite": "items/stone_pickaxe.png", "color": "#cd7f32" },
+		"visual": { "sprite": "items/bronze_pickaxe.png", "color": "#cd7f32" },
 		"craft_requirements": { "bronze_ingot": 2, "wood": 2 },
 		"craft_station": "forge",
 		"skill_required": { "smithing": 8 }
@@ -401,7 +401,7 @@
 			"range": "melee",
 			"tool_type": "axe"
 		},
-		"visual": { "sprite": "items/iron_axe.png", "color": "#cd7f32" },
+		"visual": { "sprite": "items/bronze_axe.png", "color": "#cd7f32" },
 		"craft_requirements": { "bronze_ingot": 2, "wood": 2 },
 		"craft_station": "forge",
 		"skill_required": { "smithing": 8 }
@@ -423,7 +423,7 @@
 			"tool_type": "pickaxe",
 			"mining_power": 2
 		},
-		"visual": { "sprite": "items/stone_pickaxe.png", "color": "#b8c2cc" },
+		"visual": { "sprite": "items/iron_pickaxe.png", "color": "#b8c2cc" },
 		"craft_requirements": { "iron_ingot": 3, "wood": 2 },
 		"craft_station": "forge",
 		"skill_required": { "smithing": 15 }
@@ -440,7 +440,7 @@
 		"stats": {
 			"defense": 22
 		},
-		"visual": { "sprite": "items/wooden_shield.png", "color": "#7c858e" },
+		"visual": { "sprite": "items/iron_shield.png", "color": "#7c858e" },
 		"craft_requirements": { "iron_ingot": 4, "wood": 2 },
 		"craft_station": "forge",
 		"skill_required": { "smithing": 18 }
@@ -679,5 +679,68 @@
 		"craft_requirements": { "iron_ingot": 3, "cloth": 1 },
 		"craft_station": "forge",
 		"skill_required": { "smithing": 20 }
+	},
+	{
+		"id": "steel_pickaxe",
+		"name": "Polished Steel Pickaxe",
+		"type": "tool",
+		"equip_slot": "weapon",
+		"weight": 3.6,
+		"value": 140,
+		"stackable": false,
+		"durability": 260,
+		"stats": {
+			"damage": 22,
+			"damage_type": "physical",
+			"attack_speed": 1.15,
+			"range": "melee",
+			"tool_type": "pickaxe",
+			"mining_power": 3
+		},
+		"visual": { "sprite": "items/steel_pickaxe.png", "color": "#e0e8f0" },
+		"craft_requirements": { "iron_ingot": 4, "coal": 2, "wood": 2 },
+		"craft_station": "forge",
+		"skill_required": { "smithing": 28 }
+	},
+	{
+		"id": "steel_axe",
+		"name": "Polished Steel Battle Axe",
+		"type": "weapon",
+		"equip_slot": "weapon",
+		"weight": 4.0,
+		"value": 150,
+		"stackable": false,
+		"durability": 240,
+		"stats": {
+			"damage": 28,
+			"damage_type": "physical",
+			"attack_speed": 1.1,
+			"range": "melee",
+			"tool_type": "axe"
+		},
+		"visual": { "sprite": "items/steel_axe.png", "color": "#e0e8f0" },
+		"craft_requirements": { "iron_ingot": 4, "coal": 2, "wood": 2 },
+		"craft_station": "forge",
+		"skill_required": { "smithing": 28 }
+	},
+	{
+		"id": "steel_sword",
+		"name": "Polished Steel Longsword",
+		"type": "weapon",
+		"equip_slot": "weapon",
+		"weight": 3.8,
+		"value": 175,
+		"stackable": false,
+		"durability": 220,
+		"stats": {
+			"damage": 26,
+			"damage_type": "physical",
+			"attack_speed": 1.35,
+			"range": "melee"
+		},
+		"visual": { "sprite": "items/steel_sword.png", "color": "#f0f4f8" },
+		"craft_requirements": { "iron_ingot": 5, "coal": 3, "wood": 1 },
+		"craft_station": "forge",
+		"skill_required": { "smithing": 30 }
 	}
 ]
