@@ -112,12 +112,12 @@ func _draw() -> void:
 		var font: Font = ThemeDB.fallback_font
 		draw_string(font, Vector2(5.0, sz.y * 0.5 + 4.0), placeholder_text, HORIZONTAL_ALIGNMENT_CENTER, sz.x - 10.0, 9, Color(0.42, 0.46, 0.52, 0.55))
 
-	# 5. Active selection highlight frame (Minecraft-style 2px frame)
+	# 5. Active selection highlight frame (Authentic weathered steel frame - NO YELLOW)
 	if is_active:
 		var sel_rect: Rect2 = Rect2(-1.0, -1.0, sz.x + 2.0, sz.y + 2.0)
-		draw_rect(sel_rect, Color(0.98, 0.88, 0.38, 0.95), false, 2.5)
+		draw_rect(sel_rect, Color(0.90, 0.92, 0.96, 0.95), false, 2.0)
 
-	# 6. Minecraft Durability Bar
+	# 6. Minecraft Durability Bar (Muted steel & oxidized iron tones - NO BRIGHT GREEN/YELLOW)
 	if not item_data.is_empty() and item_data.has("durability"):
 		var dur: int = int(item_data.get("durability", -1))
 		var item_id: String = str(item_data.get("item_id", ""))
@@ -129,13 +129,13 @@ func _draw() -> void:
 			var bar_x: float = 4.0
 			var bar_y: float = sz.y - 5.0
 			# Backing
-			draw_rect(Rect2(bar_x, bar_y, bar_w, 2.0), Color(0.0, 0.0, 0.0, 0.90), true)
-			# Fill (Green -> Yellow -> Red)
-			var fill_col: Color = Color(0.22, 0.85, 0.25)
+			draw_rect(Rect2(bar_x, bar_y, bar_w, 2.0), Color(0.04, 0.05, 0.06, 0.95), true)
+			# Fill (Cold Steel -> Dull Bronze -> Crimson Wear)
+			var fill_col: Color = Color(0.75, 0.78, 0.84) # Cold iron
 			if ratio < 0.25:
-				fill_col = Color(0.92, 0.20, 0.20)
+				fill_col = Color(0.75, 0.22, 0.22) # Crimson danger
 			elif ratio < 0.60:
-				fill_col = Color(0.95, 0.80, 0.15)
+				fill_col = Color(0.65, 0.55, 0.45) # Dull oxidized iron
 			draw_rect(Rect2(bar_x, bar_y, bar_w * ratio, 2.0), fill_col, true)
 
 

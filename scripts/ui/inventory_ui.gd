@@ -108,57 +108,66 @@ func close_panel() -> void:
 
 
 func _build_minecraft_inventory_ui() -> void:
-	anchor_right = 1.0
-	anchor_bottom = 1.0
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	offset_left = 0
+	offset_top = 0
+	offset_right = 0
+	offset_bottom = 0
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
-	# Full-screen dark backdrop overlay (freezes focus, blocks world clicks)
-	var backdrop: ColorRect = ColorRect.new()
-	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0.04, 0.05, 0.08, 0.78)
-	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
-	backdrop.gui_input.connect(func(ev: InputEvent) -> void:
+	# 1. Full-screen dark medieval background texture (handcrafted, NO AI glossy look)
+	var bg_tex: TextureRect = TextureRect.new()
+	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_tex.offset_left = 0
+	bg_tex.offset_top = 0
+	bg_tex.offset_right = 0
+	bg_tex.offset_bottom = 0
+	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
+	var bg_img_path: String = "res://assets/sprites/ui/dark_medieval_ui_bg.jpg"
+	if ResourceLoader.exists(bg_img_path) or FileAccess.file_exists(ProjectSettings.globalize_path(bg_img_path)):
+		bg_tex.texture = load(bg_img_path) as Texture2D
+	bg_tex.mouse_filter = Control.MOUSE_FILTER_STOP
+	bg_tex.gui_input.connect(func(ev: InputEvent) -> void:
 		if ev is InputEventMouseButton and ev.pressed and not _cursor_stack.is_empty():
 			_drop_hovered_or_cursor_item(false)
 	)
-	add_child(backdrop)
+	add_child(bg_tex)
+	move_child(bg_tex, 0)
 
-	# Dark glassmorphic backdrop frame
+	# 2. Full-page content container inside iron-riveted frame
 	_panel = PanelContainer.new()
-	_panel.anchor_left = 0.5
-	_panel.anchor_top = 0.5
-	_panel.anchor_right = 0.5
-	_panel.anchor_bottom = 0.5
-	_panel.offset_left = -260.0
-	_panel.offset_top = -260.0
-	_panel.offset_right = 260.0
-	_panel.offset_bottom = 260.0
+	_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_panel.offset_left = 36.0
+	_panel.offset_top = 28.0
+	_panel.offset_right = -36.0
+	_panel.offset_bottom = -28.0
 
 	var frame_sb: StyleBoxFlat = StyleBoxFlat.new()
-	frame_sb.bg_color = Color(0.12, 0.13, 0.16, 0.96)
-	frame_sb.border_color = Color(0.38, 0.42, 0.50, 0.90)
-	frame_sb.set_border_width_all(2)
-	frame_sb.set_corner_radius_all(8)
-	frame_sb.set_content_margin_all(14)
+	frame_sb.bg_color = Color(0.06, 0.07, 0.09, 0.82) # Dark translucent slate
+	frame_sb.border_color = Color(0.25, 0.28, 0.34, 0.90) # Weathered dark iron
+	frame_sb.set_border_width_all(1)
+	frame_sb.set_corner_radius_all(6)
+	frame_sb.set_content_margin_all(16)
 	_panel.add_theme_stylebox_override("panel", frame_sb)
 	add_child(_panel)
 
 	var main_vbox: VBoxContainer = VBoxContainer.new()
-	main_vbox.add_theme_constant_override("separation", 8)
+	main_vbox.add_theme_constant_override("separation", 10)
 	_panel.add_child(main_vbox)
 
-	# 1. Header Bar
+	# Header Bar (Title + Sort & Merge + Close)
 	var hdr: HBoxContainer = HBoxContainer.new()
 	var title: Label = Label.new()
-	title.text = "SURVIVAL INVENTORY"
+	title.text = "SURVIVAL INVENTORY & EQUIPMENT"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 13)
-	title.modulate = Color(0.96, 0.86, 0.45)
+	title.add_theme_font_size_override("font_size", 14)
+	title.modulate = Color(0.88, 0.86, 0.82) # Antique ivory (NO YELLOW)
 	hdr.add_child(title)
 
 	var sort_btn: Button = Button.new()
-	sort_btn.text = " [ ⇵ Sort & Merge ] "
-	sort_btn.add_theme_font_size_override("font_size", 10)
+	sort_btn.text = " [ ⇵ Sort & Consolidate ] "
+	sort_btn.add_theme_font_size_override("font_size", 11)
 	sort_btn.pressed.connect(func() -> void:
 		var player: Node = get_tree().get_first_node_in_group("player")
 		var inv: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
@@ -170,33 +179,42 @@ func _build_minecraft_inventory_ui() -> void:
 	hdr.add_child(sort_btn)
 
 	var close_btn: Button = Button.new()
-	close_btn.text = " [X] "
-	close_btn.add_theme_font_size_override("font_size", 10)
+	close_btn.text = " [X] Close "
+	close_btn.add_theme_font_size_override("font_size", 11)
 	close_btn.pressed.connect(close_panel)
 	hdr.add_child(close_btn)
 	main_vbox.add_child(hdr)
 
-	# 2. Armor & Equipment Row
-	var armor_sec: VBoxContainer = VBoxContainer.new()
-	armor_sec.add_theme_constant_override("separation", 3)
-	main_vbox.add_child(armor_sec)
+	# Full-page 2-Column Split Layout
+	var body_hbox: HBoxContainer = HBoxContainer.new()
+	body_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body_hbox.add_theme_constant_override("separation", 24)
+	main_vbox.add_child(body_hbox)
+
+	# Left Column: Equipment & Vitals (280px)
+	var left_vbox: VBoxContainer = VBoxContainer.new()
+	left_vbox.custom_minimum_size = Vector2(280.0, 0.0)
+	left_vbox.add_theme_constant_override("separation", 12)
+	body_hbox.add_child(left_vbox)
 
 	var eq_hdr: Label = Label.new()
-	eq_hdr.text = "EQUIPMENT & ARMOR"
-	eq_hdr.add_theme_font_size_override("font_size", 10)
-	eq_hdr.modulate = Color(0.68, 0.74, 0.82)
-	armor_sec.add_child(eq_hdr)
+	eq_hdr.text = "EQUIPPED ARMOR & ARMS"
+	eq_hdr.add_theme_font_size_override("font_size", 11)
+	eq_hdr.modulate = Color(0.72, 0.76, 0.82)
+	left_vbox.add_child(eq_hdr)
 
-	var eq_hbox: HBoxContainer = HBoxContainer.new()
-	eq_hbox.add_theme_constant_override("separation", 6)
-	armor_sec.add_child(eq_hbox)
+	var eq_grid: GridContainer = GridContainer.new()
+	eq_grid.columns = 3
+	eq_grid.add_theme_constant_override("h_separation", 6)
+	eq_grid.add_theme_constant_override("v_separation", 6)
+	left_vbox.add_child(eq_grid)
 
 	var armor_keys: Array[Dictionary] = [
 		{"key": "head", "placeholder": "Helm"},
 		{"key": "chest", "placeholder": "Chest"},
-		{"key": "legs", "placeholder": "Legs"},
-		{"key": "weapon", "placeholder": "Hand"},
-		{"key": "offhand", "placeholder": "Shield"}
+		{"key": "legs", "placeholder": "Greaves"},
+		{"key": "weapon", "placeholder": "Main Hand"},
+		{"key": "offhand", "placeholder": "Offhand"}
 	]
 	for ak in armor_keys:
 		var k: String = str(ak.get("key"))
@@ -208,41 +226,64 @@ func _build_minecraft_inventory_ui() -> void:
 		s.slot_hovered.connect(func(_idx): _on_armor_slot_hovered(k))
 		s.slot_unhovered.connect(func(_idx): _hide_tooltip())
 		_armor_slots[k] = s
-		eq_hbox.add_child(s)
+		eq_grid.add_child(s)
 
-	# Equipment Vitals info
+	# Character vitals summary panel
+	var vitals_panel: PanelContainer = PanelContainer.new()
+	var vsb: StyleBoxFlat = StyleBoxFlat.new()
+	vsb.bg_color = Color(0.08, 0.09, 0.12, 0.70)
+	vsb.border_color = Color(0.22, 0.25, 0.30, 0.75)
+	vsb.set_border_width_all(1)
+	vsb.set_corner_radius_all(4)
+	vsb.set_content_margin_all(10)
+	vitals_panel.add_theme_stylebox_override("panel", vsb)
+	left_vbox.add_child(vitals_panel)
+
 	var vitals_vbox: VBoxContainer = VBoxContainer.new()
-	vitals_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vitals_vbox.add_theme_constant_override("separation", 2)
+	vitals_vbox.add_theme_constant_override("separation", 6)
+	vitals_panel.add_child(vitals_vbox)
+
+	var vitals_title: Label = Label.new()
+	vitals_title.text = "SURVIVOR STATUS"
+	vitals_title.add_theme_font_size_override("font_size", 10)
+	vitals_title.modulate = Color(0.70, 0.74, 0.80)
+	vitals_vbox.add_child(vitals_title)
+
 	_defense_label = Label.new()
-	_defense_label.text = "Defense: 0"
-	_defense_label.add_theme_font_size_override("font_size", 10)
-	_defense_label.modulate = Color(0.45, 0.78, 1.0)
+	_defense_label.text = "Armor Rating: 0"
+	_defense_label.add_theme_font_size_override("font_size", 11)
+	_defense_label.modulate = Color(0.85, 0.88, 0.92) # Cold steel (NO BLUE)
 	vitals_vbox.add_child(_defense_label)
 
 	_weight_label = Label.new()
-	_weight_label.text = "Weight: 0.0 / 100 kg"
-	_weight_label.add_theme_font_size_override("font_size", 10)
+	_weight_label.text = "Backpack Load: 0.0 / 100 kg"
+	_weight_label.add_theme_font_size_override("font_size", 11)
 	_weight_label.modulate = Color(0.85, 0.88, 0.92)
 	vitals_vbox.add_child(_weight_label)
 
 	_gold_label = Label.new()
-	_gold_label.text = "Coins: 0g"
-	_gold_label.add_theme_font_size_override("font_size", 10)
-	_gold_label.modulate = Color(0.96, 0.84, 0.35)
+	_gold_label.text = "Purse: 0 coins"
+	_gold_label.add_theme_font_size_override("font_size", 11)
+	_gold_label.modulate = Color(0.88, 0.86, 0.82) # Silver/ivory (NO YELLOW)
 	vitals_vbox.add_child(_gold_label)
-	eq_hbox.add_child(vitals_vbox)
 
-	# 3. Unified Minecraft Inventory Grid (3 rows main + 1 row hotbar = 32 slots total)
-	var inv_sec: VBoxContainer = VBoxContainer.new()
-	inv_sec.add_theme_constant_override("separation", 6)
-	main_vbox.add_child(inv_sec)
+	# Right Column: Main Backpack (24 slots) + Hotbar (8 slots)
+	var right_vbox: VBoxContainer = VBoxContainer.new()
+	right_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_vbox.add_theme_constant_override("separation", 10)
+	body_hbox.add_child(right_vbox)
+
+	var inv_title: Label = Label.new()
+	inv_title.text = "BACKPACK STORAGE (24 SLOTS)"
+	inv_title.add_theme_font_size_override("font_size", 11)
+	inv_title.modulate = Color(0.72, 0.76, 0.82)
+	right_vbox.add_child(inv_title)
 
 	var inv_grid: GridContainer = GridContainer.new()
 	inv_grid.columns = 8
-	inv_grid.add_theme_constant_override("h_separation", 4)
-	inv_grid.add_theme_constant_override("v_separation", 4)
-	inv_sec.add_child(inv_grid)
+	inv_grid.add_theme_constant_override("h_separation", 5)
+	inv_grid.add_theme_constant_override("v_separation", 5)
+	right_vbox.add_child(inv_grid)
 
 	_inv_slots.clear()
 	for i in range(8, 32):
@@ -262,12 +303,17 @@ func _build_minecraft_inventory_ui() -> void:
 		_inv_slots.append(s)
 		inv_grid.add_child(s)
 
-	# Hotbar Row (4th row of inventory, identical slot style with 6px spacing)
+	var hotbar_title: Label = Label.new()
+	hotbar_title.text = "EQUIPPED BELT & HOTBAR (8 SLOTS)"
+	hotbar_title.add_theme_font_size_override("font_size", 11)
+	hotbar_title.modulate = Color(0.72, 0.76, 0.82)
+	right_vbox.add_child(hotbar_title)
+
 	var hotbar_grid: GridContainer = GridContainer.new()
 	hotbar_grid.columns = 8
-	hotbar_grid.add_theme_constant_override("h_separation", 4)
-	hotbar_grid.add_theme_constant_override("v_separation", 4)
-	inv_sec.add_child(hotbar_grid)
+	hotbar_grid.add_theme_constant_override("h_separation", 5)
+	hotbar_grid.add_theme_constant_override("v_separation", 5)
+	right_vbox.add_child(hotbar_grid)
 
 	_hotbar_slots.clear()
 	for i in range(8):
@@ -287,14 +333,14 @@ func _build_minecraft_inventory_ui() -> void:
 		_hotbar_slots.append(s)
 		hotbar_grid.add_child(s)
 
-	# 5. Quick Controls Hint footer
+	# Controls Hint footer
 	var hint_lbl: Label = Label.new()
-	hint_lbl.text = "LMB: Pick up / Place / Swap   |   RMB: Split / Place 1   |   Shift+LMB: Quick Move   |   Q: Drop"
-	hint_lbl.add_theme_font_size_override("font_size", 9)
-	hint_lbl.modulate = Color(0.60, 0.65, 0.72)
-	main_vbox.add_child(hint_lbl)
+	hint_lbl.text = "LMB: Pick / Place / Swap   |   RMB: Split Stack   |   Shift+LMB: Quick Move   |   Q: Drop Item"
+	hint_lbl.add_theme_font_size_override("font_size", 10)
+	hint_lbl.modulate = Color(0.62, 0.66, 0.72)
+	right_vbox.add_child(hint_lbl)
 
-	# 6. Floating Cursor Item View
+	# Floating Cursor Item View
 	_cursor_display = Control.new()
 	_cursor_display.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_cursor_display.visible = false
@@ -332,10 +378,10 @@ func _build_floating_tooltip() -> void:
 	_tooltip_panel.z_index = 130
 
 	var tt_sb: StyleBoxFlat = StyleBoxFlat.new()
-	tt_sb.bg_color = Color(0.08, 0.08, 0.12, 0.96)
-	tt_sb.border_color = Color(0.45, 0.35, 0.75, 0.90)
+	tt_sb.bg_color = Color(0.08, 0.09, 0.12, 0.96)
+	tt_sb.border_color = Color(0.32, 0.35, 0.40, 0.95) # Dark weathered iron (NO PURPLE)
 	tt_sb.set_border_width_all(1)
-	tt_sb.set_corner_radius_all(5)
+	tt_sb.set_corner_radius_all(4)
 	tt_sb.set_content_margin_all(8)
 	_tooltip_panel.add_theme_stylebox_override("panel", tt_sb)
 
@@ -346,13 +392,13 @@ func _build_floating_tooltip() -> void:
 	_tt_title = Label.new()
 	_tt_title.text = "Item"
 	_tt_title.add_theme_font_size_override("font_size", 12)
-	_tt_title.modulate = Color(1.0, 0.88, 0.40)
+	_tt_title.modulate = Color(0.90, 0.88, 0.84) # Antique ivory (NO YELLOW)
 	vb.add_child(_tt_title)
 
 	_tt_type = Label.new()
 	_tt_type.text = "Type"
 	_tt_type.add_theme_font_size_override("font_size", 10)
-	_tt_type.modulate = Color(0.55, 0.78, 0.95)
+	_tt_type.modulate = Color(0.70, 0.74, 0.80) # Cold ash slate (NO BLUE)
 	vb.add_child(_tt_type)
 
 	_tt_stats = Label.new()

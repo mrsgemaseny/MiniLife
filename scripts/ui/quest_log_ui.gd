@@ -36,33 +36,57 @@ func _make_card_sb(bg: Color, border: Color, bw: int = 1) -> StyleBoxFlat:
 
 
 func _setup_styled_quest_log() -> void:
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	offset_left = 0
+	offset_top = 0
+	offset_right = 0
+	offset_bottom = 0
+	mouse_filter = Control.MOUSE_FILTER_PASS
+
+	# 1. Full-screen dark medieval background texture
+	var bg_tex: TextureRect = TextureRect.new()
+	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_tex.offset_left = 0
+	bg_tex.offset_top = 0
+	bg_tex.offset_right = 0
+	bg_tex.offset_bottom = 0
+	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
+	var bg_img_path: String = "res://assets/sprites/ui/dark_medieval_ui_bg.jpg"
+	if ResourceLoader.exists(bg_img_path) or FileAccess.file_exists(ProjectSettings.globalize_path(bg_img_path)):
+		bg_tex.texture = load(bg_img_path) as Texture2D
+	bg_tex.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(bg_tex)
+	move_child(bg_tex, 0)
+
 	if panel_container != null:
-		panel_container.offset_left = -260.0
-		panel_container.offset_top = -190.0
-		panel_container.offset_right = 260.0
-		panel_container.offset_bottom = 190.0
+		panel_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel_container.offset_left = 36.0
+		panel_container.offset_top = 28.0
+		panel_container.offset_right = -36.0
+		panel_container.offset_bottom = -28.0
 		var frame_sb: StyleBoxFlat = StyleBoxFlat.new()
-		frame_sb.bg_color = Color(0.06, 0.08, 0.12, 0.78)
-		frame_sb.border_color = Color(0.78, 0.64, 0.34, 0.85)
-		frame_sb.set_border_width_all(2)
-		frame_sb.set_corner_radius_all(10)
-		frame_sb.set_content_margin_all(14)
+		frame_sb.bg_color = Color(0.06, 0.07, 0.09, 0.82)
+		frame_sb.border_color = Color(0.25, 0.28, 0.34, 0.90)
+		frame_sb.set_border_width_all(1)
+		frame_sb.set_corner_radius_all(6)
+		frame_sb.set_content_margin_all(16)
 		panel_container.add_theme_stylebox_override("panel", frame_sb)
 
 	if vbox != null:
-		vbox.add_theme_constant_override("separation", 8)
+		vbox.add_theme_constant_override("separation", 10)
 		var hdr_hbox: HBoxContainer = HBoxContainer.new()
 		var hdr_lbl: Label = Label.new()
-		hdr_lbl.text = "QUEST JOURNAL & CONTRACTS  [J]"
+		hdr_lbl.text = "QUEST CHRONICLE & CONTRACT JOURNAL  [J]"
 		hdr_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		hdr_lbl.add_theme_font_size_override("font_size", 14)
-		hdr_lbl.modulate = Color(0.96, 0.86, 0.52)
+		hdr_lbl.modulate = Color(0.88, 0.86, 0.82) # Antique ivory (NO YELLOW)
 		hdr_hbox.add_child(hdr_lbl)
 
 		var close_btn: Button = Button.new()
 		close_btn.text = " [X] Close "
 		close_btn.add_theme_font_size_override("font_size", 11)
-		close_btn.add_theme_stylebox_override("normal", _make_card_sb(Color(0.28, 0.10, 0.12, 0.80), Color(0.85, 0.38, 0.38, 0.85)))
+		close_btn.add_theme_stylebox_override("normal", _make_card_sb(Color(0.22, 0.10, 0.12, 0.80), Color(0.70, 0.28, 0.28, 0.85)))
 		close_btn.pressed.connect(close_panel)
 		hdr_hbox.add_child(close_btn)
 		vbox.add_child(hdr_hbox)
@@ -70,10 +94,10 @@ func _setup_styled_quest_log() -> void:
 
 	if active_header != null:
 		active_header.add_theme_font_size_override("font_size", 12)
-		active_header.modulate = Color(0.88, 0.92, 0.98)
+		active_header.modulate = Color(0.88, 0.86, 0.82)
 	if completed_header != null:
 		completed_header.add_theme_font_size_override("font_size", 12)
-		completed_header.modulate = Color(0.72, 0.86, 0.76)
+		completed_header.modulate = Color(0.70, 0.74, 0.80)
 
 
 func open_panel() -> void:

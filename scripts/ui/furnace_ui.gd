@@ -99,37 +99,46 @@ func close_furnace() -> void:
 
 
 func _build_ui() -> void:
-	anchor_right = 1.0
-	anchor_bottom = 1.0
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	offset_left = 0
+	offset_top = 0
+	offset_right = 0
+	offset_bottom = 0
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
-	# Full-screen dark backdrop overlay (freezes focus, blocks world clicks)
-	var backdrop: ColorRect = ColorRect.new()
-	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0.04, 0.05, 0.08, 0.78)
-	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
-	backdrop.gui_input.connect(func(ev: InputEvent) -> void:
+	# 1. Full-screen dark medieval background texture
+	var bg_tex: TextureRect = TextureRect.new()
+	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_tex.offset_left = 0
+	bg_tex.offset_top = 0
+	bg_tex.offset_right = 0
+	bg_tex.offset_bottom = 0
+	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
+	var bg_img_path: String = "res://assets/sprites/ui/dark_medieval_ui_bg.jpg"
+	if ResourceLoader.exists(bg_img_path) or FileAccess.file_exists(ProjectSettings.globalize_path(bg_img_path)):
+		bg_tex.texture = load(bg_img_path) as Texture2D
+	bg_tex.mouse_filter = Control.MOUSE_FILTER_STOP
+	bg_tex.gui_input.connect(func(ev: InputEvent) -> void:
 		if ev is InputEventMouseButton and ev.pressed and not _cursor_stack.is_empty():
 			_drop_cursor_item()
 	)
-	add_child(backdrop)
+	add_child(bg_tex)
+	move_child(bg_tex, 0)
 
 	_panel = PanelContainer.new()
-	_panel.anchor_left = 0.5
-	_panel.anchor_top = 0.5
-	_panel.anchor_right = 0.5
-	_panel.anchor_bottom = 0.5
-	_panel.offset_left = -260.0
-	_panel.offset_top = -250.0
-	_panel.offset_right = 260.0
-	_panel.offset_bottom = 250.0
+	_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_panel.offset_left = 36.0
+	_panel.offset_top = 28.0
+	_panel.offset_right = -36.0
+	_panel.offset_bottom = -28.0
 
 	var bg_box: StyleBoxFlat = StyleBoxFlat.new()
-	bg_box.bg_color = Color(0.12, 0.13, 0.16, 0.96)
-	bg_box.border_color = Color(0.92, 0.48, 0.22, 0.92)
-	bg_box.set_border_width_all(2)
-	bg_box.set_corner_radius_all(8)
-	bg_box.set_content_margin_all(14)
+	bg_box.bg_color = Color(0.06, 0.07, 0.09, 0.82)
+	bg_box.border_color = Color(0.25, 0.28, 0.34, 0.90)
+	bg_box.set_border_width_all(1)
+	bg_box.set_corner_radius_all(6)
+	bg_box.set_content_margin_all(16)
 	_panel.add_theme_stylebox_override("panel", bg_box)
 	add_child(_panel)
 
@@ -140,15 +149,15 @@ func _build_ui() -> void:
 	# 1. Header Bar
 	var hdr: HBoxContainer = HBoxContainer.new()
 	var title: Label = Label.new()
-	title.text = "STONE SMELTING FURNACE"
+	title.text = "SMELTING FORGE & CRUCIBLE FURNACE"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 13)
-	title.modulate = Color(1.0, 0.70, 0.35)
+	title.add_theme_font_size_override("font_size", 14)
+	title.modulate = Color(0.88, 0.86, 0.82) # Antique ivory (NO YELLOW)
 	hdr.add_child(title)
 
 	var close_btn: Button = Button.new()
-	close_btn.text = " [X] "
-	close_btn.add_theme_font_size_override("font_size", 10)
+	close_btn.text = " [X] Close "
+	close_btn.add_theme_font_size_override("font_size", 11)
 	close_btn.pressed.connect(close_furnace)
 	hdr.add_child(close_btn)
 	main_vbox.add_child(hdr)
@@ -354,14 +363,14 @@ func _draw_flame() -> void:
 			Vector2(cx + 6.0, cy + 6.0),
 			Vector2(cx - 6.0, cy + 6.0)
 		]
-		_flame_widget.draw_colored_polygon(flame_pts, Color(1.0, 0.55, 0.15))
+		_flame_widget.draw_colored_polygon(flame_pts, Color(0.82, 0.28, 0.16)) # Crimson ember
 		# Inner hot core
 		var core_pts: PackedVector2Array = [
 			Vector2(cx, cy + 6.0 - (h * 0.6)),
 			Vector2(cx + 3.0, cy + 6.0),
 			Vector2(cx - 3.0, cy + 6.0)
 		]
-		_flame_widget.draw_colored_polygon(core_pts, Color(1.0, 0.95, 0.40))
+		_flame_widget.draw_colored_polygon(core_pts, Color(0.92, 0.90, 0.86)) # White heat
 
 
 func _draw_arrow() -> void:
@@ -385,12 +394,12 @@ func _draw_arrow() -> void:
 	]
 	_arrow_widget.draw_colored_polygon(head_bg, Color(0.16, 0.17, 0.20))
 
-	# Filled progress arrow (gold fill)
+	# Filled progress arrow (Cold steel / White hot forge fill - NO YELLOW)
 	if prog > 0.0:
 		var fill_w: float = 32.0 * prog
 		var shaft_w: float = clampf(fill_w, 0.0, 20.0)
 		if shaft_w > 0.0:
-			_arrow_widget.draw_rect(Rect2(cx - 16.0, cy - 3.0, shaft_w, 6.0), Color(0.96, 0.80, 0.35), true)
+			_arrow_widget.draw_rect(Rect2(cx - 16.0, cy - 3.0, shaft_w, 6.0), Color(0.82, 0.85, 0.90), true)
 		if fill_w > 20.0:
 			var head_ratio: float = (fill_w - 20.0) / 12.0
 			var head_fg: PackedVector2Array = [
@@ -398,7 +407,7 @@ func _draw_arrow() -> void:
 				Vector2(cx + 4.0 + (12.0 * head_ratio), cy),
 				Vector2(cx + 4.0, cy + 8.0 * head_ratio)
 			]
-			_arrow_widget.draw_colored_polygon(head_fg, Color(0.96, 0.80, 0.35))
+			_arrow_widget.draw_colored_polygon(head_fg, Color(0.82, 0.85, 0.90))
 
 
 func _on_furnace_updated(fid: String) -> void:

@@ -35,40 +35,52 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _setup_styled_build_menu() -> void:
-	anchor_right = 1.0
-	anchor_bottom = 1.0
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	offset_left = 0
+	offset_top = 0
+	offset_right = 0
+	offset_bottom = 0
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
-	# Full-screen dark backdrop overlay (freezes focus, blocks world clicks)
-	var backdrop: ColorRect = ColorRect.new()
-	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0.04, 0.05, 0.08, 0.78)
-	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(backdrop)
-	move_child(backdrop, 0)
+	# 1. Full-screen dark medieval background texture
+	var bg_tex: TextureRect = TextureRect.new()
+	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_tex.offset_left = 0
+	bg_tex.offset_top = 0
+	bg_tex.offset_right = 0
+	bg_tex.offset_bottom = 0
+	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
+	var bg_img_path: String = "res://assets/sprites/ui/dark_medieval_ui_bg.jpg"
+	if ResourceLoader.exists(bg_img_path) or FileAccess.file_exists(ProjectSettings.globalize_path(bg_img_path)):
+		bg_tex.texture = load(bg_img_path) as Texture2D
+	bg_tex.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(bg_tex)
+	move_child(bg_tex, 0)
 
 	if panel_container != null:
-		panel_container.offset_left = -280.0
-		panel_container.offset_top = -240.0
-		panel_container.offset_right = 280.0
-		panel_container.offset_bottom = 240.0
+		panel_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel_container.offset_left = 36.0
+		panel_container.offset_top = 28.0
+		panel_container.offset_right = -36.0
+		panel_container.offset_bottom = -28.0
 		var sb: StyleBoxFlat = StyleBoxFlat.new()
-		sb.bg_color = Color(0.12, 0.13, 0.16, 0.96)
-		sb.border_color = Color(0.78, 0.64, 0.34, 0.90)
-		sb.set_border_width_all(2)
-		sb.set_corner_radius_all(8)
-		sb.set_content_margin_all(14)
+		sb.bg_color = Color(0.06, 0.07, 0.09, 0.82)
+		sb.border_color = Color(0.25, 0.28, 0.34, 0.90) # Weathered iron
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(6)
+		sb.set_content_margin_all(16)
 		panel_container.add_theme_stylebox_override("panel", sb)
 
 	if vbox != null:
-		vbox.add_theme_constant_override("separation", 8)
+		vbox.add_theme_constant_override("separation", 10)
 		var hdr_hbox: HBoxContainer = HBoxContainer.new()
 		if title_label != null:
 			vbox.remove_child(title_label)
-			title_label.text = "CONSTRUCTION BLUEPRINTS"
+			title_label.text = "CONSTRUCTION & ARCHITECTURE BLUEPRINTS"
 			title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			title_label.add_theme_font_size_override("font_size", 14)
-			title_label.modulate = Color(0.96, 0.86, 0.52)
+			title_label.modulate = Color(0.88, 0.86, 0.82) # Antique ivory (NO YELLOW)
 			hdr_hbox.add_child(title_label)
 		var close_btn: Button = Button.new()
 		close_btn.text = " [X] Close "
@@ -147,7 +159,7 @@ func refresh() -> void:
 			btn.disabled = not can_build
 			var bsb: StyleBoxFlat = StyleBoxFlat.new()
 			bsb.bg_color = Color(0.12, 0.16, 0.22, 0.76) if can_build else Color(0.08, 0.09, 0.12, 0.48)
-			bsb.border_color = Color(0.45, 0.82, 0.52, 0.85) if can_build else Color(0.32, 0.34, 0.38, 0.45)
+			bsb.border_color = Color(0.70, 0.74, 0.80, 0.85) if can_build else Color(0.32, 0.34, 0.38, 0.45)
 			bsb.set_border_width_all(1)
 			bsb.set_corner_radius_all(6)
 			bsb.content_margin_left = 8

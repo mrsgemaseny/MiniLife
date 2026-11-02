@@ -104,10 +104,10 @@ func _make_bar_style(bg_col: Color, border_col: Color = Color(0.22, 0.25, 0.30, 
 
 func _make_card_style() -> StyleBoxFlat:
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
-	sb.bg_color = Color(0.06, 0.08, 0.11, 0.56)
-	sb.border_color = Color(0.76, 0.62, 0.34, 0.68)
+	sb.bg_color = Color(0.06, 0.08, 0.11, 0.85)
+	sb.border_color = Color(0.28, 0.31, 0.38, 0.85) # Weathered iron (NO GOLD)
 	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(8)
+	sb.set_corner_radius_all(6)
 	sb.set_content_margin_all(8)
 	return sb
 
@@ -140,7 +140,7 @@ func _setup_styled_hud() -> void:
 	_location_banner.custom_minimum_size = Vector2(440, 30)
 	_location_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_location_banner.add_theme_font_size_override("font_size", 16)
-	_location_banner.modulate = Color(0.98, 0.88, 0.52)
+	_location_banner.modulate = Color(0.88, 0.86, 0.82) # Antique ivory (NO YELLOW)
 	_location_banner.visible = false
 	add_child(_location_banner)
 
@@ -151,7 +151,7 @@ func _setup_styled_hud() -> void:
 	_exit_hint_label.custom_minimum_size = Vector2(320, 22)
 	_exit_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_exit_hint_label.add_theme_font_size_override("font_size", 11)
-	_exit_hint_label.modulate = Color(0.96, 0.84, 0.42)
+	_exit_hint_label.modulate = Color(0.82, 0.80, 0.76) # Muted parchment (NO YELLOW)
 	_exit_hint_label.text = "Press [E] near entrance to leave"
 	_exit_hint_label.visible = false
 	add_child(_exit_hint_label)
@@ -170,7 +170,7 @@ func _setup_styled_hud() -> void:
 	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_toast_label.add_theme_font_size_override("font_size", 11)
-	_toast_label.modulate = Color(0.98, 0.88, 0.52)
+	_toast_label.modulate = Color(0.88, 0.86, 0.82)
 	_toast_panel.add_child(_toast_label)
 
 	var margin: MarginContainer = $MarginContainer
@@ -210,7 +210,7 @@ func _setup_styled_hud() -> void:
 		time_label.modulate = Color(0.90, 0.93, 0.98)
 	if gold_label != null:
 		gold_label.add_theme_font_size_override("font_size", 11)
-		gold_label.modulate = Color(0.96, 0.84, 0.42)
+		gold_label.modulate = Color(0.88, 0.86, 0.82) # Silver/ivory (NO YELLOW)
 	if status_label != null:
 		status_label.add_theme_font_size_override("font_size", 10)
 		status_label.visible = false
@@ -228,7 +228,7 @@ func _setup_styled_hud() -> void:
 	_item_name_toast = Label.new()
 	_item_name_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_item_name_toast.add_theme_font_size_override("font_size", 12)
-	_item_name_toast.modulate = Color(0.98, 0.88, 0.52)
+	_item_name_toast.modulate = Color(0.88, 0.86, 0.82) # Antique ivory (NO YELLOW)
 	_item_name_toast.visible = false
 	bottom_center_hud.add_child(_item_name_toast)
 
@@ -282,8 +282,8 @@ func _setup_styled_hud() -> void:
 	# Smooth World Hover Inspect Card (for trees, rocks, ores, NPCs)
 	_inspect_card = PanelContainer.new()
 	var ic_style: StyleBoxFlat = StyleBoxFlat.new()
-	ic_style.bg_color = Color(0.06, 0.08, 0.12, 0.90)
-	ic_style.border_color = Color(0.85, 0.72, 0.38, 0.92)
+	ic_style.bg_color = Color(0.06, 0.08, 0.12, 0.92)
+	ic_style.border_color = Color(0.28, 0.32, 0.38, 0.90) # Weathered iron (NO GOLD)
 	ic_style.set_border_width_all(1)
 	ic_style.set_corner_radius_all(6)
 	ic_style.content_margin_left = 10
@@ -303,13 +303,13 @@ func _setup_styled_hud() -> void:
 	_inspect_title = Label.new()
 	_inspect_title.text = "Oak Tree"
 	_inspect_title.add_theme_font_size_override("font_size", 12)
-	_inspect_title.modulate = Color(0.98, 0.88, 0.52)
+	_inspect_title.modulate = Color(0.88, 0.86, 0.82) # Antique ivory (NO YELLOW)
 	ic_vbox.add_child(_inspect_title)
 
 	_inspect_badge = Label.new()
 	_inspect_badge.text = "[ Woodcutting • Axe ]"
 	_inspect_badge.add_theme_font_size_override("font_size", 10)
-	_inspect_badge.modulate = Color(0.55, 0.82, 0.98)
+	_inspect_badge.modulate = Color(0.70, 0.74, 0.80) # Cold steel ash (NO BLUE)
 	ic_vbox.add_child(_inspect_badge)
 
 	_inspect_details = Label.new()

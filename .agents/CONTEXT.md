@@ -71,7 +71,11 @@
     - 10 Roasted Drumsticks on right (Hunger) filling right-to-left with low-hunger jitter when <= 30%.
     - Authentic segmented Experience/Stamina bar spanning the bottom between vitals and the 8-slot hotbar.
   - Fully integrated into `HUD` (`scripts/ui/hud.gd`) with tooltip health/hunger metrics and zero regression on existing stat signals.
-- **Crafting & Technology Expansion & Dual-Pane Workshop Overhaul (2026-11-02)**:
+- **Full-Screen Survival UI Overhaul & Gritty Atmospheric Backdrop (2026-11-02)**:
+  - Generated dark medieval 16:9 UI background texture (`assets/sprites/ui/dark_medieval_ui_bg.jpg`) via `image-generator` subagent (rugged dark iron/chiseled slate perimeter with rivets, matte low-contrast charcoal stone center).
+  - Converted all survival menus (`CharacterSheetUI`, `InventoryUI`, `CraftMenuUI`, `BuildMenuUI`, `QuestLogUI`, `FurnaceUI`, `TradeMenuUI`) from centered modal boxes to full-screen pages (`PRESET_FULL_RECT`) with 36px/28px margins inside the heavy iron border frame.
+  - Strict palette deslop (zero yellow/gold, zero blue, zero bright green): replaced all gold/yellow text and borders with antique ivory (`#dcd6cb`) and weathered iron (`#383e4a`); hotbar active slot highlight converted to cold steel; durability bars converted to cold iron and crimson wear.
+  - 100% headless test pass via `Godot_v4.7-stable_win64_console.exe --headless --path . res://scenes/main.tscn -- --e2e-smoke` (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
   - Resized Crafting Menu to spacious `960x600` with dual-pane layout: 560px scrollable recipe catalog with category tabs + 350px Workshop Anvil inspector with large 56x56 icon, complete combat/mining stats, and dynamic green/red ingredient checklist (`[FORGE x1]` / `[FORGE x5]`).
   - Added `iron_pickaxe` (Damage 16, Mining Power 2, Durability 160), `bronze_pickaxe`, `bronze_axe`, `iron_shield`, `iron_dagger`, `war_hammer` items and recipes.
   - Expanded `data/tech_tree.json` to 16 technologies (full 4x4 matrix across Tier I–IV) without violating lore (no steel).

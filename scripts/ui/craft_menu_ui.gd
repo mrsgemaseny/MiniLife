@@ -45,30 +45,42 @@ func _ready() -> void:
 
 
 func _setup_styled_craft_menu() -> void:
-	anchor_right = 1.0
-	anchor_bottom = 1.0
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	offset_left = 0
+	offset_top = 0
+	offset_right = 0
+	offset_bottom = 0
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
-	# Full-screen dark backdrop overlay
-	var backdrop: ColorRect = ColorRect.new()
-	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0.04, 0.05, 0.08, 0.78)
-	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(backdrop)
-	move_child(backdrop, 0)
+	# 1. Full-screen dark medieval background texture
+	var bg_tex: TextureRect = TextureRect.new()
+	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_tex.offset_left = 0
+	bg_tex.offset_top = 0
+	bg_tex.offset_right = 0
+	bg_tex.offset_bottom = 0
+	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
+	var bg_img_path: String = "res://assets/sprites/ui/dark_medieval_ui_bg.jpg"
+	if ResourceLoader.exists(bg_img_path) or FileAccess.file_exists(ProjectSettings.globalize_path(bg_img_path)):
+		bg_tex.texture = load(bg_img_path) as Texture2D
+	bg_tex.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(bg_tex)
+	move_child(bg_tex, 0)
 
 	if panel_container != null:
-		# Spacious 960x600 layout
-		panel_container.offset_left = -480.0
-		panel_container.offset_top = -300.0
-		panel_container.offset_right = 480.0
-		panel_container.offset_bottom = 300.0
+		# Full-Page Layout inside iron-riveted frame
+		panel_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel_container.offset_left = 36.0
+		panel_container.offset_top = 28.0
+		panel_container.offset_right = -36.0
+		panel_container.offset_bottom = -28.0
 		var sb: StyleBoxFlat = StyleBoxFlat.new()
-		sb.bg_color = Color(0.09, 0.10, 0.12, 0.98)
-		sb.border_color = Color(0.65, 0.58, 0.44, 0.90)
-		sb.set_border_width_all(2)
+		sb.bg_color = Color(0.06, 0.07, 0.09, 0.82)
+		sb.border_color = Color(0.25, 0.28, 0.34, 0.90)
+		sb.set_border_width_all(1)
 		sb.set_corner_radius_all(6)
-		sb.set_content_margin_all(12)
+		sb.set_content_margin_all(16)
 		panel_container.add_theme_stylebox_override("panel", sb)
 
 		for ch in panel_container.get_children():
@@ -76,7 +88,7 @@ func _setup_styled_craft_menu() -> void:
 			ch.queue_free()
 
 		var main_vbox: VBoxContainer = VBoxContainer.new()
-		main_vbox.add_theme_constant_override("separation", 8)
+		main_vbox.add_theme_constant_override("separation", 10)
 		panel_container.add_child(main_vbox)
 
 		# 1. Header Bar
@@ -85,7 +97,7 @@ func _setup_styled_craft_menu() -> void:
 		_station_label.text = "CRAFTING & FORGE WORKSHOP"
 		_station_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_station_label.add_theme_font_size_override("font_size", 14)
-		_station_label.modulate = Color(0.94, 0.88, 0.72)
+		_station_label.modulate = Color(0.88, 0.86, 0.82) # Antique ivory (NO YELLOW)
 		hdr_hbox.add_child(_station_label)
 
 		var close_btn: Button = Button.new()
@@ -150,13 +162,14 @@ func _setup_styled_craft_menu() -> void:
 
 func _build_inspector_panel(parent: HBoxContainer) -> void:
 	var insp_panel: PanelContainer = PanelContainer.new()
-	insp_panel.custom_minimum_size = Vector2(350.0, 480.0)
+	insp_panel.custom_minimum_size = Vector2(380.0, 0.0)
+	insp_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var isb: StyleBoxFlat = StyleBoxFlat.new()
-	isb.bg_color = Color(0.07, 0.08, 0.09, 0.96)
-	isb.border_color = Color(0.38, 0.40, 0.44, 0.85)
+	isb.bg_color = Color(0.07, 0.08, 0.10, 0.85)
+	isb.border_color = Color(0.28, 0.31, 0.38, 0.85)
 	isb.set_border_width_all(1)
 	isb.set_corner_radius_all(4)
-	isb.set_content_margin_all(12)
+	isb.set_content_margin_all(14)
 	insp_panel.add_theme_stylebox_override("panel", isb)
 	parent.add_child(insp_panel)
 
@@ -167,7 +180,7 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 	var hdr_lbl: Label = Label.new()
 	hdr_lbl.text = "WORKSHOP ANVIL & DETAILS"
 	hdr_lbl.add_theme_font_size_override("font_size", 11)
-	hdr_lbl.modulate = Color(0.78, 0.72, 0.58)
+	hdr_lbl.modulate = Color(0.72, 0.76, 0.82)
 	vb.add_child(hdr_lbl)
 
 	# Top Icon & Title Card
@@ -179,7 +192,7 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 	icon_frame.custom_minimum_size = Vector2(56.0, 56.0)
 	var if_sb: StyleBoxFlat = StyleBoxFlat.new()
 	if_sb.bg_color = Color(0.12, 0.13, 0.16, 0.95)
-	if_sb.border_color = Color(0.65, 0.58, 0.44, 0.90)
+	if_sb.border_color = Color(0.32, 0.36, 0.42, 0.90)
 	if_sb.set_border_width_all(1)
 	if_sb.set_corner_radius_all(6)
 	icon_frame.add_theme_stylebox_override("panel", if_sb)
@@ -198,13 +211,13 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 	_insp_title_lbl = Label.new()
 	_insp_title_lbl.text = "Select Recipe"
 	_insp_title_lbl.add_theme_font_size_override("font_size", 13)
-	_insp_title_lbl.modulate = Color(0.96, 0.92, 0.78)
+	_insp_title_lbl.modulate = Color(0.88, 0.86, 0.82)
 	title_box.add_child(_insp_title_lbl)
 
 	_insp_type_lbl = Label.new()
 	_insp_type_lbl.text = "Item Category"
 	_insp_type_lbl.add_theme_font_size_override("font_size", 9)
-	_insp_type_lbl.modulate = Color(0.60, 0.64, 0.70)
+	_insp_type_lbl.modulate = Color(0.65, 0.68, 0.74)
 	title_box.add_child(_insp_type_lbl)
 
 	_insp_desc_lbl = Label.new()
@@ -217,7 +230,7 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 	_insp_stats_lbl = Label.new()
 	_insp_stats_lbl.text = ""
 	_insp_stats_lbl.add_theme_font_size_override("font_size", 9)
-	_insp_stats_lbl.modulate = Color(0.88, 0.78, 0.54)
+	_insp_stats_lbl.modulate = Color(0.85, 0.88, 0.92)
 	vb.add_child(_insp_stats_lbl)
 
 	var info_sep: HSeparator = HSeparator.new()

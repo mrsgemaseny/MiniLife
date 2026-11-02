@@ -22,22 +22,67 @@ func _ready() -> void:
 	)
 
 func _build_ui() -> void:
-	var panel: Panel = Panel.new()
-	panel.position = Vector2(220, 90)
-	panel.size = Vector2(760, 480)
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	offset_left = 0
+	offset_top = 0
+	offset_right = 0
+	offset_bottom = 0
+	mouse_filter = Control.MOUSE_FILTER_PASS
+
+	# 1. Full-screen dark medieval background texture
+	var bg_tex: TextureRect = TextureRect.new()
+	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_tex.offset_left = 0
+	bg_tex.offset_top = 0
+	bg_tex.offset_right = 0
+	bg_tex.offset_bottom = 0
+	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
+	var bg_img_path: String = "res://assets/sprites/ui/dark_medieval_ui_bg.jpg"
+	if ResourceLoader.exists(bg_img_path) or FileAccess.file_exists(ProjectSettings.globalize_path(bg_img_path)):
+		bg_tex.texture = load(bg_img_path) as Texture2D
+	bg_tex.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(bg_tex)
+	move_child(bg_tex, 0)
+
+	var panel: PanelContainer = PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	panel.offset_left = 36.0
+	panel.offset_top = 28.0
+	panel.offset_right = -36.0
+	panel.offset_bottom = -28.0
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.06, 0.07, 0.09, 0.82)
+	sb.border_color = Color(0.25, 0.28, 0.34, 0.90)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(6)
+	sb.set_content_margin_all(16)
+	panel.add_theme_stylebox_override("panel", sb)
 	add_child(panel)
 
 	var vbox: VBoxContainer = VBoxContainer.new()
-	vbox.position = Vector2(16, 16)
-	vbox.size = Vector2(728, 448)
+	vbox.add_theme_constant_override("separation", 10)
 	panel.add_child(vbox)
 
+	var hdr_row: HBoxContainer = HBoxContainer.new()
 	var title: Label = Label.new()
-	title.text = "Caravan Barter & Trade"
-	vbox.add_child(title)
+	title.text = "MERCHANT CARAVAN BARTER & TRADE"
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.add_theme_font_size_override("font_size", 14)
+	title.modulate = Color(0.88, 0.86, 0.82)
+	hdr_row.add_child(title)
+
+	var close_btn_top: Button = Button.new()
+	close_btn_top.text = " [X] Close "
+	close_btn_top.add_theme_font_size_override("font_size", 11)
+	close_btn_top.pressed.connect(close_trade)
+	hdr_row.add_child(close_btn_top)
+	vbox.add_child(hdr_row)
 
 	_info_label = Label.new()
-	_info_label.text = "Select an item to buy or sell."
+	_info_label.text = "Select an item to buy or barter from your inventory."
+	_info_label.add_theme_font_size_override("font_size", 11)
+	_info_label.modulate = Color(0.70, 0.74, 0.80)
 	vbox.add_child(_info_label)
 
 	var hbox: HBoxContainer = HBoxContainer.new()
