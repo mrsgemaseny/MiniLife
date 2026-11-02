@@ -179,7 +179,30 @@ func _test_phase_7_continuous_harvesting_and_ecology(player: Player) -> void:
 
 func _test_phase_8_crafting_furnace_smelting(player: Player) -> void:
 	print("[E2E Phase 8] Crafting System & 3-Slot Thermal Furnace Smelting...")
-	SignalBus.craft_requested.emit("stone_axe", player, "")
+	var initial_wood: int = player.inventory.get_item_count("wood")
+	var initial_planks: int = player.inventory.get_item_count("plank")
+	
+	# Test via CraftMenuUI directly as user would click
+	var craft_ui: CraftMenuUI = get_tree().get_first_node_in_group("craft_ui") as CraftMenuUI
+	if craft_ui == null:
+		var ui_layer = get_tree().get_root().find_child("UILayer", true, false)
+		if ui_layer != null:
+			craft_ui = ui_layer.get_node_or_null("CraftMenu") as CraftMenuUI
+	
+	print("CraftMenuUI node found: ", craft_ui != null)
+	if craft_ui != null:
+		craft_ui.open_panel("")
+		craft_ui._selected_recipe_id = "craft_plank"
+		craft_ui._execute_craft(1)
+		craft_ui.close_panel()
+	else:
+		SignalBus.craft_requested.emit("craft_plank", player, "")
+
+	var after_wood: int = player.inventory.get_item_count("wood")
+	var after_planks: int = player.inventory.get_item_count("plank")
+	print("Craft Plank Test: wood before=%d after=%d, planks before=%d after=%d" % [initial_wood, after_wood, initial_planks, after_planks])
+	assert(after_wood == initial_wood - 1, "Wood should decrease by 1")
+	assert(after_planks == initial_planks + 2, "Planks should increase by 2")
 	SignalBus.furnace_opened.emit("test_furnace", Vector2i(0, 0))
 	assert(not DataRegistry.get_recipe("craft_stone_pickaxe").is_empty(), "Pickaxe recipe missing")
 	print("[E2E Phase 8] OK (Recipes, Crafting Signal & Furnace Station verified)")

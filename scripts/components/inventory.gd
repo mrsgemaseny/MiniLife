@@ -231,19 +231,13 @@ func get_total_weight() -> float:
 
 
 func get_encumbrance_speed_multiplier() -> float:
-	var ratio: float = get_total_weight() / maxf(max_weight, 1.0)
-	if ratio >= 1.0:
-		return 0.45
-	elif ratio >= 0.8:
-		return 0.78
+	# Weight limit disabled per user instruction: infinite carrying capacity
 	return 1.0
 
 
-func can_fit_item(item_id: String, count: int = 1) -> bool:
+func can_fit_item(item_id: String, _count: int = 1) -> bool:
+	# Weight limit check removed: only slot capacity matters
 	var def: Dictionary = _get_item_def(item_id)
-	var unit_weight: float = float(def.get("weight", 1.0))
-	if get_total_weight() + unit_weight * float(count) > max_weight:
-		return false
 	var stackable: bool = bool(def.get("stackable", true))
 	if stackable:
 		for slot in slots:
@@ -381,9 +375,6 @@ func _get_sort_category(def: Dictionary) -> int:
 	return 4
 
 
-func _max_count_by_weight(unit_weight: float, desired: int) -> int:
-	if unit_weight <= 0.0:
-		return desired
-	var free_weight: float = maxf(max_weight - get_total_weight(), 0.0)
-	var allowed: int = int(floor(free_weight / unit_weight))
-	return clampi(allowed, 0, desired)
+func _max_count_by_weight(_unit_weight: float, desired: int) -> int:
+	# Weight limit disabled: full batch can be picked up
+	return desired

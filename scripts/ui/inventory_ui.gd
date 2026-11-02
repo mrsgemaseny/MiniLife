@@ -28,6 +28,7 @@ var _hovered_item: Dictionary = {}
 var _weight_label: Label = null
 var _gold_label: Label = null
 var _defense_label: Label = null
+var _char_icon: TextureRect = null
 
 # Right-hand Item Inspector
 var _insp_panel_icon: TextureRect = null
@@ -288,8 +289,8 @@ func _build_minecraft_inventory_ui() -> void:
 		var s: Control = MCSlot.new()
 		s.slot_group = "armor"
 		s.placeholder_text = ph
-		s.slot_clicked.connect(func(_idx, btn, shift): _on_armor_slot_clicked(k, btn, shift))
-		s.slot_hovered.connect(func(_idx): _on_armor_slot_hovered(k))
+		s.slot_clicked.connect(func(_idx, btn, shift, slot_name = k): _on_armor_slot_clicked(slot_name, btn, shift))
+		s.slot_hovered.connect(func(_idx, slot_name = k): _on_armor_slot_hovered(slot_name))
 		s.slot_unhovered.connect(func(_idx): _hide_tooltip())
 		_armor_slots[k] = s
 		armor_col.add_child(s)
@@ -310,14 +311,14 @@ func _build_minecraft_inventory_ui() -> void:
 	char_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	char_well.add_child(char_vbox)
 
-	var char_icon: TextureRect = TextureRect.new()
-	char_icon.custom_minimum_size = Vector2(64.0, 64.0)
-	char_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	char_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_char_icon = TextureRect.new()
+	_char_icon.custom_minimum_size = Vector2(64.0, 64.0)
+	_char_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_char_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	var hatchet_tex: Texture2D = IconFactory.get_icon("stone_axe")
 	if hatchet_tex != null:
-		char_icon.texture = hatchet_tex
-	char_vbox.add_child(char_icon)
+		_char_icon.texture = hatchet_tex
+	char_vbox.add_child(_char_icon)
 
 	var char_lbl: Label = Label.new()
 	char_lbl.text = "Странник"
@@ -328,6 +329,8 @@ func _build_minecraft_inventory_ui() -> void:
 
 	# Offhand / Shield Slot
 	var s_off: Control = MCSlot.new()
+	s_off.custom_minimum_size = Vector2(46.0, 46.0)
+	s_off.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	s_off.slot_group = "armor"
 	s_off.placeholder_text = "Shield"
 	s_off.slot_clicked.connect(func(_idx, btn, shift): _on_armor_slot_clicked("offhand", btn, shift))
@@ -716,11 +719,23 @@ func refresh() -> void:
 
 	# Refresh header vitals
 	if _weight_label != null:
-		_weight_label.text = "Weight: %.1f / %.1f kg" % [inv.get_total_weight(), inv.max_weight]
+		_weight_label.text = "Weight: %.1f kg" % inv.get_total_weight()
 	if _gold_label != null:
 		_gold_label.text = "Coins: %dg" % inv.gold
 	if _defense_label != null and eq != null:
 		_defense_label.text = "Armor Rating: %d" % int(eq.get_defense())
+
+	# Refresh dynamic character preview icon
+	if _char_icon != null and eq != null:
+		var held_id: String = eq.get_item_id("weapon")
+		if held_id == "":
+			held_id = eq.get_item_id("offhand")
+		if held_id != "":
+			var w_tex: Texture2D = IconFactory.get_icon(held_id)
+			if w_tex != null:
+				_char_icon.texture = w_tex
+		else:
+			_char_icon.texture = IconFactory.get_icon("stone_axe")
 
 	_update_cursor_display()
 
@@ -769,10 +784,12 @@ func _on_slot_clicked(slot_index: int, mouse_button: int, is_shift: bool) -> voi
 				inv.set_slot(slot_index, _cursor_stack)
 				_cursor_stack = {}
 			elif str(slot_item.get("item_id")) == str(_cursor_stack.get("item_id")):
-				# Merge stacks up to 64
+				var it_id: String = str(slot_item.get("item_id"))
+				var def: Dictionary = DataRegistry.get_item(it_id)
+				var is_stackable: bool = bool(def.get("stackable", true))
+				var max_stk: int = int(def.get("max_stack", 64)) if is_stackable else 1
 				var cur_cnt: int = int(slot_item.get("count", 1))
 				var add_cnt: int = int(_cursor_stack.get("count", 1))
-				var max_stk: int = 64
 				var space: int = max_stk - cur_cnt
 				if space > 0:
 					var transfer: int = mini(space, add_cnt)
@@ -781,6 +798,11 @@ func _on_slot_clicked(slot_index: int, mouse_button: int, is_shift: bool) -> voi
 					if int(_cursor_stack["count"]) <= 0:
 						_cursor_stack = {}
 					inv.set_slot(slot_index, slot_item)
+				else:
+					# Full stack or non-stackable: swap items cleanly
+					var tmp: Dictionary = slot_item.duplicate(true)
+					inv.set_slot(slot_index, _cursor_stack)
+					_cursor_stack = tmp
 			else:
 				# Swap cursor stack with slot item
 				var tmp: Dictionary = slot_item.duplicate(true)
@@ -812,8 +834,12 @@ func _on_slot_clicked(slot_index: int, mouse_button: int, is_shift: bool) -> voi
 				if int(_cursor_stack["count"]) <= 0:
 					_cursor_stack = {}
 			elif str(slot_item.get("item_id")) == str(_cursor_stack.get("item_id")):
+				var it_id: String = str(slot_item.get("item_id"))
+				var def: Dictionary = DataRegistry.get_item(it_id)
+				var is_stackable: bool = bool(def.get("stackable", true))
+				var max_stk: int = int(def.get("max_stack", 64)) if is_stackable else 1
 				var cur_cnt: int = int(slot_item.get("count", 1))
-				if cur_cnt < 64:
+				if cur_cnt < max_stk:
 					slot_item["count"] = cur_cnt + 1
 					inv.set_slot(slot_index, slot_item)
 					_cursor_stack["count"] = int(_cursor_stack["count"]) - 1
@@ -848,6 +874,16 @@ func _on_armor_slot_clicked(slot_key: String, mouse_button: int, shift: bool) ->
 	var current_id: String = eq.get_item_id(slot_key)
 	var current_dur: int = eq.get_durability(slot_key)
 
+	# Shift + Click: Quick unequip to inventory
+	if shift and mouse_button == MOUSE_BUTTON_LEFT:
+		if current_id != "":
+			var added: int = inv.add_item(current_id, 1, current_dur)
+			if added > 0:
+				eq.unequip(slot_key)
+				refresh()
+				_on_armor_slot_hovered(slot_key)
+		return
+
 	if _cursor_stack.is_empty():
 		# Unequip to cursor
 		if current_id != "":
@@ -859,22 +895,35 @@ func _on_armor_slot_clicked(slot_key: String, mouse_button: int, shift: bool) ->
 		var c_dur: int = int(_cursor_stack.get("durability", -1))
 		var def: Dictionary = DataRegistry.get_item(c_id)
 		var it_type: String = str(def.get("type", ""))
+		var def_slot: String = str(def.get("equip_slot", ""))
 		var valid: bool = false
-		if slot_key == "weapon" and (it_type == "weapon" or it_type == "tool"):
-			valid = true
-		elif slot_key == "offhand" and (c_id.find("shield") != -1 or c_id == "torch"):
-			valid = true
-		elif slot_key in ["head", "chest", "legs"] and it_type == "armor":
-			valid = true
+		if slot_key == "offhand":
+			valid = (def_slot == "offhand" or it_type in ["shield", "offhand"] or c_id.find("shield") != -1 or c_id == "torch")
+		elif slot_key == "head":
+			valid = (def_slot == "head" or it_type in ["armor_head", "helmet"] or c_id.find("helm") != -1 or c_id.find("coif") != -1)
+		elif slot_key == "chest":
+			valid = (def_slot == "chest" or it_type in ["armor_chest", "armor"] or c_id.find("chainmail") != -1 or c_id.find("armor") != -1 or c_id.find("tunic") != -1)
+		elif slot_key == "legs":
+			valid = (def_slot == "legs" or it_type in ["armor_legs", "boots"] or c_id.find("leggings") != -1 or c_id.find("greaves") != -1 or c_id.find("chausses") != -1)
 
 		if valid:
-			var prev: Dictionary = eq.equip(c_id, c_dur)
-			if not prev.is_empty() and str(prev.get("item_id", "")) != "":
-				_cursor_stack = {"item_id": str(prev.get("item_id")), "count": 1, "durability": int(prev.get("durability", -1))}
+			if current_id != "":
+				# Slot is occupied: swap only if cursor has exactly 1 item
+				var c_cnt: int = int(_cursor_stack.get("count", 1))
+				if c_cnt == 1:
+					var prev: Dictionary = eq.equip(c_id, c_dur, slot_key)
+					_cursor_stack = {"item_id": str(prev.get("item_id")), "count": 1, "durability": int(prev.get("durability", -1))}
+				else:
+					SignalBus.notification_posted.emit("Cannot equip stack into occupied slot.")
+					return
 			else:
-				_cursor_stack["count"] = int(_cursor_stack["count"]) - 1
-				if int(_cursor_stack["count"]) <= 0:
+				# Slot is empty: equip 1 item into slot
+				eq.equip(c_id, c_dur, slot_key)
+				var c_cnt: int = int(_cursor_stack.get("count", 1)) - 1
+				if c_cnt <= 0:
 					_cursor_stack = {}
+				else:
+					_cursor_stack["count"] = c_cnt
 
 	refresh()
 	_on_armor_slot_hovered(slot_key)

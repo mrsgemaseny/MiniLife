@@ -40,7 +40,7 @@ const STAMINA_COST_HARVEST: float = 5.0
 const BASE_VISION_RADIUS: int = 9
 const INTERACT_RANGE: float = 96.0
 const CRAFT_STATION_RANGE: float = 128.0
-const MAX_INVENTORY_WEIGHT: float = 100.0
+const MAX_INVENTORY_WEIGHT: float = 999999.0
 const MAX_INVENTORY_SLOTS: int = 30
 
 # Combat & Projectiles
