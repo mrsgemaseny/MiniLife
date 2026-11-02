@@ -104,5 +104,40 @@
 		"poi_pool": ["ruins", "dungeon"],
 		"event_weight_modifier": 1.4,
 		"ambient_sound": "swamp_ambient"
+	},
+	{
+		"id": "water",
+		"name": "River & Water",
+		"color": "#2c6396",
+		"alt_color": "#3372ab",
+		"tile_ids": ["water"],
+		"resource_nodes": {},
+		"resources": {
+			"fish": [1, 2]
+		},
+		"enemy_pool": [],
+		"npc_pool": [],
+		"poi_pool": [],
+		"event_weight_modifier": 0.5,
+		"ambient_sound": "river_ambient"
+	},
+	{
+		"id": "snow",
+		"name": "Snowy Peaks",
+		"color": "#e0e7ee",
+		"alt_color": "#d2dce6",
+		"tile_ids": ["snow"],
+		"resource_nodes": {
+			"stone_boulder": 0.04,
+			"iron_vein": 0.02
+		},
+		"resources": {
+			"stone": [2, 4]
+		},
+		"enemy_pool": ["wolf"],
+		"npc_pool": [],
+		"poi_pool": ["cave"],
+		"event_weight_modifier": 1.1,
+		"ambient_sound": "mountain_wind"
 	}
 ]

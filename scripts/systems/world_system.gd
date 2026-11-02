@@ -221,7 +221,7 @@ func get_tile(pos: Vector2i) -> TileState:
 	var state: TileState = TileState.new()
 	state.pos = pos
 	state.biome_id = get_biome_cached(pos)
-	state.passable = not _terrain.is_border_mountain(pos) and state.biome_id != "mountains"
+	state.passable = not _terrain.is_border_mountain(pos) and state.biome_id != "mountains" and state.biome_id != "water"
 	var key: String = Config.vec2i_to_key(pos)
 	if _resource_nodes_by_tile.has(key):
 		var rnode: ResourceNode = _resource_nodes_by_tile[key] as ResourceNode

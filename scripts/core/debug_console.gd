@@ -6,8 +6,44 @@ const AudioDirectorClass = preload("res://autoloads/audio_director.gd")
 
 func _ready() -> void:
 	var args: PackedStringArray = OS.get_cmdline_user_args()
+	if args.has("--render-map"):
+		call_deferred("_render_world_map_to_disk")
+		return
 	if args.has("--e2e-smoke") or args.has("--e2e-full"):
 		call_deferred("_run_e2e_exhaustive_suite")
+
+
+func _render_world_map_to_disk() -> void:
+	await get_tree().process_frame
+	var w_size: int = Config.WORLD_SIZE_TILES # 256 tiles
+	var terrain: TerrainGenerator = TerrainGenerator.new(GameManager.get_world_seed())
+	var img: Image = Image.create(w_size, w_size, false, Image.FORMAT_RGBA8)
+
+	var colors: Dictionary = {
+		"water": Color(0.18, 0.44, 0.76, 1.0),
+		"desert": Color(0.86, 0.75, 0.45, 1.0),
+		"snow": Color(0.92, 0.95, 0.98, 1.0),
+		"mountains": Color(0.48, 0.50, 0.54, 1.0),
+		"plains": Color(0.42, 0.70, 0.28, 1.0),
+		"forest": Color(0.18, 0.42, 0.16, 1.0),
+		"swamp": Color(0.28, 0.40, 0.26, 1.0)
+	}
+
+	for y in range(w_size):
+		for x in range(w_size):
+			var b: String = terrain.get_biome_at(Vector2i(x, y))
+			var col: Color = colors.get(b, Color.BLACK)
+			img.set_pixel(x, y, col)
+
+	var upscaled: Image = Image.create(w_size * 4, w_size * 4, false, Image.FORMAT_RGBA8)
+	for y in range(w_size * 4):
+		for x in range(w_size * 4):
+			upscaled.set_pixel(x, y, img.get_pixel(x / 4, y / 4))
+
+	var out_path: String = "res://assets/sprites/world/generated_seed_map.png"
+	upscaled.save_png(ProjectSettings.globalize_path(out_path))
+	print("[MAP_RENDER_OK] Procedural seed map successfully rendered to: ", out_path)
+	get_tree().quit(0)
 
 
 func _run_e2e_exhaustive_suite() -> void:

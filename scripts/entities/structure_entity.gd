@@ -48,7 +48,7 @@ func _ready() -> void:
 		z_index = -1
 	if _def.has("trap"):
 		_setup_trap_trigger()
-	if structure_id in ["campfire", "forge", "furnace"]:
+	if structure_id in ["campfire", "forge", "furnace", "torch"]:
 		_setup_fire_light()
 	queue_redraw()
 
@@ -79,7 +79,7 @@ func _process(delta: float) -> void:
 			_build_particles[i] = p
 		needs_redraw = true
 
-	if structure_id in ["campfire", "forge", "furnace"]:
+	if structure_id in ["campfire", "forge", "furnace", "torch"]:
 		_flame_phase += delta * 7.5
 		if _fire_light != null:
 			_fire_light.energy = 1.35 + sin(_flame_phase * 2.8) * 0.16 + cos(_flame_phase * 4.4) * 0.09
@@ -105,6 +105,8 @@ static func _get_structure_tex(struct_id: String) -> Texture2D:
 		mapped_name = "furnace"
 	
 	var path: String = "res://assets/sprites/structures/" + mapped_name + ".png"
+	if struct_id == "torch":
+		path = "res://assets/sprites/items/torch.png"
 	var tex: Texture2D = null
 	if ResourceLoader.exists(path):
 		tex = load(path) as Texture2D
@@ -161,6 +163,8 @@ func _draw() -> void:
 			target_w = 58.0
 		elif structure_id == "water_collector":
 			target_w = 48.0
+		elif structure_id == "torch":
+			target_w = 24.0
 		
 		var scale_f: float = target_w / tw
 		var target_h: float = th * scale_f
@@ -168,6 +172,12 @@ func _draw() -> void:
 		var ry: float = 12.0 - target_h
 		
 		draw_texture_rect(stex, Rect2(rx, ry, target_w, target_h), false, mod_col)
+		if structure_id == "torch":
+			var flame_phase: float = sin(Time.get_ticks_msec() * 0.015)
+			var flame_pt: Vector2 = Vector2(0.0, ry + 4.0)
+			draw_circle(flame_pt, 4.5 + flame_phase * 0.8, Color(1.0, 0.85, 0.30, 0.95))
+			draw_circle(flame_pt + Vector2(0.0, -2.0), 2.8 + flame_phase * 0.5, Color(1.0, 0.45, 0.12, 0.90))
+			draw_circle(flame_pt + Vector2(0.0, -4.0), 1.4, Color(1.0, 0.95, 0.70, 0.95))
 		_draw_construction_overlay()
 		return
 

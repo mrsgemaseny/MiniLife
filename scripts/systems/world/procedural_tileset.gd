@@ -7,6 +7,8 @@ const BIOME_PALETTE: Dictionary = {
 	"mountains": Color(0.37, 0.40, 0.44, 1.0),
 	"desert": Color(0.76, 0.61, 0.33, 1.0),
 	"swamp": Color(0.24, 0.36, 0.28, 1.0),
+	"water": Color(0.18, 0.40, 0.68, 1.0),
+	"snow": Color(0.88, 0.92, 0.96, 1.0),
 	"fog_unexplored": Color(0.05, 0.06, 0.08, 0.96),
 	"fog_visited": Color(0.08, 0.10, 0.14, 0.52)
 }
@@ -17,8 +19,10 @@ const BIOME_ATLAS_COORDS: Dictionary = {
 	"mountains": Vector2i(2, 0),
 	"desert": Vector2i(3, 0),
 	"swamp": Vector2i(4, 0),
-	"fog_unexplored": Vector2i(5, 0),
-	"fog_visited": Vector2i(6, 0)
+	"water": Vector2i(5, 0),
+	"snow": Vector2i(6, 0),
+	"fog_unexplored": Vector2i(7, 0),
+	"fog_visited": Vector2i(8, 0)
 }
 
 

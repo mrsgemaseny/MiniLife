@@ -651,9 +651,11 @@
 		"name": "Pine Pitch Torch",
 		"type": "tool",
 		"equip_slot": "weapon",
+		"placeable_structure": "torch",
 		"weight": 0.8,
 		"value": 15,
-		"stackable": false,
+		"stackable": true,
+		"max_stack": 64,
 		"durability": 300,
 		"stats": {
 			"light_radius": 280.0,

@@ -194,5 +194,18 @@
 			"status_duration": 2.5,
 			"single_use": true
 		}
+	},
+	{
+		"id": "torch",
+		"name": "Standing Torch",
+		"hp": 15,
+		"color": "#f59e0b",
+		"height_px": 16.0,
+		"drop_item": "torch",
+		"materials": [
+			{ "item_id": "torch", "count": 1 }
+		],
+		"passable": true,
+		"interactable": false
 	}
 ]
