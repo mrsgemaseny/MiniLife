@@ -253,3 +253,74 @@ func _spawn_structure_node(structure_id: String, tile_pos: Vector2i, animate_bui
 
 func _on_trap_triggered(trap_id: String, tile_pos: Vector2i, target: Node) -> void:
 	TrapResolver.resolve_trap_trigger(trap_id, tile_pos, target, self)
+
+
+func get_save_data() -> Dictionary:
+	var floors_arr: Array = []
+	for key in _placed_floors:
+		var node: Node = _placed_floors[key]
+		if is_instance_valid(node) and node is StructureEntity:
+			var se: StructureEntity = node as StructureEntity
+			floors_arr.append({
+				"id": se.structure_id,
+				"tile": [se.tile_pos.x, se.tile_pos.y],
+				"hp": se.current_hp,
+				"player_built": se.is_player_built
+			})
+	var structs_arr: Array = []
+	for key in _placed_structures:
+		var node: Node = _placed_structures[key]
+		if is_instance_valid(node) and node is StructureEntity:
+			var se: StructureEntity = node as StructureEntity
+			structs_arr.append({
+				"id": se.structure_id,
+				"tile": [se.tile_pos.x, se.tile_pos.y],
+				"hp": se.current_hp,
+				"player_built": se.is_player_built
+			})
+	var containers_data: Dictionary = {}
+	if _storage_mgr != null:
+		containers_data = _storage_mgr.to_dict()
+	return {
+		"floors": floors_arr,
+		"structures": structs_arr,
+		"containers": containers_data
+	}
+
+
+func load_save_data(data: Dictionary) -> void:
+	# Clear currently spawned dynamic structures
+	for key in _placed_structures.keys():
+		var node: Node = _placed_structures[key]
+		if is_instance_valid(node):
+			node.queue_free()
+	_placed_structures.clear()
+	for key in _placed_floors.keys():
+		var node: Node = _placed_floors[key]
+		if is_instance_valid(node):
+			node.queue_free()
+	_placed_floors.clear()
+	_placed_nodes.clear()
+
+	for f in data.get("floors", []):
+		var tile_arr: Array = f.get("tile", [0, 0])
+		var tpos: Vector2i = Vector2i(int(tile_arr[0]), int(tile_arr[1]))
+		var sid: String = str(f.get("id", ""))
+		if sid != "":
+			_spawn_structure_node(sid, tpos, false, bool(f.get("player_built", true)))
+			var s: StructureEntity = _placed_floors.get(Config.vec2i_to_key(tpos), null) as StructureEntity
+			if s != null and f.has("hp"):
+				s.current_hp = float(f["hp"])
+
+	for sdata in data.get("structures", []):
+		var tile_arr: Array = sdata.get("tile", [0, 0])
+		var tpos: Vector2i = Vector2i(int(tile_arr[0]), int(tile_arr[1]))
+		var sid: String = str(sdata.get("id", ""))
+		if sid != "":
+			_spawn_structure_node(sid, tpos, false, bool(sdata.get("player_built", true)))
+			var s: StructureEntity = _placed_structures.get(Config.vec2i_to_key(tpos), null) as StructureEntity
+			if s != null and sdata.has("hp"):
+				s.current_hp = float(sdata["hp"])
+
+	if _storage_mgr != null:
+		_storage_mgr.from_dict(data.get("containers", {}))

@@ -196,33 +196,33 @@ func _draw() -> void:
 		else:
 			_draw_procedural_bush(ofs, outline_col, radius)
 	elif node_def_id == "wild_grass" or node_def_id.find("grass") != -1:
-		var grass_tex: Texture2D = _get_tex("res://assets/sprites/items/wild_grass.png")
+		var grass_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/plant_wild_grass.png")
 		if grass_tex != null:
-			draw_texture_rect(grass_tex, Rect2(-14.0 + ofs.x, -22.0 + ofs.y, 28.0, 28.0), false)
+			draw_texture_rect(grass_tex, Rect2(-17.0 + ofs.x, -38.0 + ofs.y, 34.0, 44.0), false)
 		else:
 			_draw_procedural_bush(ofs, outline_col, radius)
 	elif node_def_id == "healing_herb" or node_def_id.find("healing") != -1:
-		var herb_tex: Texture2D = _get_tex("res://assets/sprites/items/healing_herb.png")
+		var herb_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/plant_healing_herb.png")
 		if herb_tex != null:
-			draw_texture_rect(herb_tex, Rect2(-14.0 + ofs.x, -22.0 + ofs.y, 28.0, 28.0), false)
+			draw_texture_rect(herb_tex, Rect2(-18.0 + ofs.x, -38.0 + ofs.y, 36.0, 44.0), false)
 		else:
 			_draw_procedural_bush(ofs, outline_col, radius)
 	elif node_def_id == "vigor_herb" or node_def_id.find("vigor") != -1:
-		var vigor_tex: Texture2D = _get_tex("res://assets/sprites/items/vigor_herb.png")
+		var vigor_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/plant_vigor_herb.png")
 		if vigor_tex != null:
-			draw_texture_rect(vigor_tex, Rect2(-14.0 + ofs.x, -22.0 + ofs.y, 28.0, 28.0), false)
+			draw_texture_rect(vigor_tex, Rect2(-17.0 + ofs.x, -38.0 + ofs.y, 34.0, 44.0), false)
 		else:
 			_draw_procedural_bush(ofs, outline_col, radius)
 	elif node_def_id == "poison_herb" or node_def_id.find("poison") != -1:
-		var poison_tex: Texture2D = _get_tex("res://assets/sprites/items/poison_herb.png")
+		var poison_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/plant_poison_herb.png")
 		if poison_tex != null:
-			draw_texture_rect(poison_tex, Rect2(-14.0 + ofs.x, -22.0 + ofs.y, 28.0, 28.0), false)
+			draw_texture_rect(poison_tex, Rect2(-18.0 + ofs.x, -38.0 + ofs.y, 36.0, 44.0), false)
 		else:
 			_draw_procedural_bush(ofs, outline_col, radius)
 	elif node_def_id == "fire_herb" or node_def_id.find("fire") != -1:
-		var fire_tex: Texture2D = _get_tex("res://assets/sprites/items/fire_herb.png")
+		var fire_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/plant_fire_herb.png")
 		if fire_tex != null:
-			draw_texture_rect(fire_tex, Rect2(-14.0 + ofs.x, -22.0 + ofs.y, 28.0, 28.0), false)
+			draw_texture_rect(fire_tex, Rect2(-16.0 + ofs.x, -38.0 + ofs.y, 32.0, 44.0), false)
 		else:
 			_draw_procedural_bush(ofs, outline_col, radius)
 	else:
@@ -273,7 +273,8 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 
 	var is_rock: bool = (node_def_id.find("stone") != -1 or node_def_id.find("rock") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("ore") != -1 or node_def_id.find("deposit") != -1 or node_def_id.find("vein") != -1)
 	var is_tree: bool = (node_def_id.find("tree") != -1 or node_def_id.find("oak") != -1 or node_def_id.find("pine") != -1 or growth_stage == "small_tree")
-	var is_bush: bool = (node_def_id.find("bush") != -1 or node_def_id.find("berry") != -1 or node_def_id.find("herb") != -1 or node_def_id.find("mushroom") != -1)
+	var is_plant: bool = (node_def_id.find("grass") != -1 or node_def_id.find("herb") != -1 or node_def_id.find("flower") != -1)
+	var is_bush: bool = (node_def_id.find("bush") != -1 or node_def_id.find("berry") != -1 or node_def_id.find("mushroom") != -1)
 
 	if is_rock and not is_pick:
 		cancel_harvest()
@@ -292,12 +293,14 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 		return false
 
 	var req_time: float = 5.0
-	if is_rock:
+	if is_plant:
+		req_time = 1.0
+	elif is_rock:
 		req_time = 2.4 if is_iron else 5.0
 	elif is_tree:
 		req_time = 2.0 if is_iron else 4.0
 	elif is_bush:
-		req_time = 1.2
+		req_time = 1.0
 
 	var skills: SkillsComponent = harvester.get("skills") as SkillsComponent
 	var skill_type: String = "mining" if is_rock else ("woodcutting" if is_tree else "foraging")

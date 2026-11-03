@@ -813,28 +813,46 @@ func _on_day_passed(day_number: int) -> void:
 		_commit_delta(cpos, delta)
 
 
+func get_save_data() -> Dictionary:
+	return {
+		"world_seed": _seed,
+		"fog": _fog.to_dict() if _fog != null else {},
+		"discovered_pois": _discovered_pois.duplicate(),
+		"chunk_deltas": _chunk_deltas.duplicate(true)
+	}
+
+
+func load_save_data(w: Dictionary) -> void:
+	_chunk_deltas.clear()
+	_seed = int(w.get("world_seed", Config.DEFAULT_WORLD_SEED))
+	_terrain.setup(_seed)
+	_biome_cache.clear()
+	if _fog != null:
+		_fog.from_dict(w.get("fog", {}))
+	_discovered_pois = w.get("discovered_pois", {}).duplicate()
+	var deltas: Dictionary = w.get("chunk_deltas", {})
+	for k in deltas:
+		_chunk_deltas[k] = (deltas[k] as Dictionary).duplicate(true)
+	var explored: Array = []
+	if _fog != null:
+		var fmap: Dictionary = _fog.to_dict()
+		for k in fmap:
+			if int(fmap[k]) != int(FogState.UNEXPLORED):
+				explored.append(Config.key_to_vec2i(str(k)))
+	SignalBus.fog_snapshot_loaded.emit(explored)
+	queue_redraw()
+
+
 func _on_save_data_requested(bundle: Dictionary) -> void:
+	var w_data: Dictionary = get_save_data()
 	var w: Dictionary = bundle.get("world", {})
-	w["world_seed"] = _seed
-	w["fog"] = _fog.to_dict()
-	w["discovered_pois"] = _discovered_pois.duplicate()
+	for k in w_data:
+		w[k] = w_data[k]
 	bundle["world"] = w
 
 
 func _on_save_data_loaded(bundle: Dictionary) -> void:
-	_chunk_deltas.clear()
-	var w: Dictionary = bundle.get("world", {})
-	_seed = int(w.get("world_seed", Config.DEFAULT_WORLD_SEED))
-	_terrain.setup(_seed)
-	_biome_cache.clear()
-	_fog.from_dict(w.get("fog", {}))
-	_discovered_pois = w.get("discovered_pois", {}).duplicate()
-	var explored: Array = []
-	var fmap: Dictionary = _fog.to_dict()
-	for k in fmap:
-		if int(fmap[k]) != int(FogState.UNEXPLORED):
-			explored.append(Config.key_to_vec2i(str(k)))
-	SignalBus.fog_snapshot_loaded.emit(explored)
+	load_save_data(bundle.get("world", {}))
 
 
 func _check_poi_discovery(pos: Vector2i) -> void:

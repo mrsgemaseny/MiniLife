@@ -302,9 +302,37 @@ func _test_phase_12_delta_chunks_and_persistence(player: Player) -> void:
 	SignalBus.weather_changed.emit("rain")
 	SignalBus.weather_changed.emit("clear")
 
-	SignalBus.save_requested.emit("e2e_full_slot")
-	SignalBus.load_requested.emit("e2e_full_slot")
-	SignalBus.world_delete_requested.emit("e2e_full_slot")
+	var save_sys: SaveSystem = get_tree().get_first_node_in_group("save_system") as SaveSystem
+	if save_sys == null:
+		save_sys = get_tree().root.find_child("SaveSystem", true, false) as SaveSystem
+	assert(save_sys != null, "SaveSystem node must exist")
+
+	var bsys: BuildingSystem = BuildingSystem.instance
+	if bsys != null:
+		bsys.place_block_from_hand("torch", Vector2i(77, 88), player)
+
+	player.inventory.gold = 777
+	player.global_position = Vector2(123.0, 456.0)
+
+	var save_ok: bool = save_sys.save_slot("e2e_full_slot")
+	assert(save_ok, "save_slot must return true")
+	assert(SaveSystem.slot_exists("e2e_full_slot"), "slot_exists must return true after saving")
+
+	# Mutate values
+	player.inventory.gold = 10
+	player.global_position = Vector2.ZERO
+
+	var load_ok: bool = save_sys.load_slot("e2e_full_slot")
+	assert(load_ok, "load_slot must return true")
+	assert(player.inventory.gold == 777, "Player gold must be restored from save")
+	assert(player.global_position.distance_to(Vector2(123.0, 456.0)) < 1.0, "Player position must be restored from save")
+
+	if bsys != null:
+		var has_saved_torch: bool = bsys.can_place_block("torch", Vector2i(77, 88)) == false
+		assert(has_saved_torch, "Placed structure must be restored from save")
+
+	save_sys.delete_world_slot("e2e_full_slot")
+	assert(not SaveSystem.slot_exists("e2e_full_slot"), "slot must be removed after deletion")
 	print("[E2E Phase 12] OK (Weather, Delta Chunks & Save/Load verified)")
 
 

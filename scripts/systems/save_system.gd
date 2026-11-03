@@ -8,6 +8,8 @@ var _dirty_chunks: Dictionary = {}
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_to_group("save_system")
 	SignalBus.game_started.connect(_on_game_started)
 	SignalBus.save_requested.connect(_on_save_requested)
 	SignalBus.load_requested.connect(_on_load_requested)
@@ -26,11 +28,39 @@ static func slot_exists(slot: String) -> bool:
 func save_slot(slot: String) -> bool:
 	var target_slot: String = slot if slot != "" else _active_slot
 	_active_slot = target_slot
-	var bundle: Dictionary = {"meta": {}, "player": {}, "world": {}}
+	var bundle: Dictionary = {"meta": {}, "player": {}, "world": {}, "buildings": {}}
 	SignalBus.save_data_requested.emit(bundle)
+
+	# Direct fallback queries in case paused nodes didn't process the signal
+	if bundle["player"].is_empty():
+		var player_node: Node = get_tree().get_first_node_in_group("player")
+		if player_node != null and player_node.has_method("get_save_data"):
+			bundle["player"] = player_node.call("get_save_data")
+
+	var world_node: Node = get_tree().get_first_node_in_group("world")
+	if world_node == null:
+		world_node = get_tree().root.find_child("World", true, false)
+	if world_node != null and world_node.has_method("get_save_data"):
+		var w_direct: Dictionary = world_node.call("get_save_data")
+		for k in w_direct:
+			bundle["world"][k] = w_direct[k]
+
+	var bsys: BuildingSystem = BuildingSystem.instance
+	if bsys == null:
+		bsys = get_tree().root.find_child("BuildingSystem", true, false) as BuildingSystem
+	if bsys != null and bsys.has_method("get_save_data"):
+		bundle["buildings"] = bsys.call("get_save_data")
+
 	var meta: Dictionary = bundle.get("meta", {})
 	meta["schema_version"] = SCHEMA_VERSION
+	if not meta.has("seed"):
+		meta["seed"] = GameManager.get_world_seed()
+	if not meta.has("day"):
+		meta["day"] = GameManager.get_day()
+	if not meta.has("slot"):
+		meta["slot"] = target_slot
 	bundle["meta"] = meta
+
 	var w: Dictionary = bundle.get("world", {})
 	if not w.has("world_seed"):
 		w["world_seed"] = GameManager.get_world_seed()
@@ -43,6 +73,8 @@ func save_slot(slot: String) -> bool:
 	if not _write_json(base_dir + "player.json", bundle["player"]):
 		return false
 	if not _write_json(base_dir + "world.json", bundle["world"]):
+		return false
+	if not _write_json(base_dir + "buildings.json", bundle["buildings"]):
 		return false
 
 	for key in _dirty_chunks:
@@ -62,6 +94,7 @@ func load_slot(slot: String) -> bool:
 		return false
 	var player_data: Dictionary = _read_json(base_dir + "player.json")
 	var world_data: Dictionary = _read_json(base_dir + "world.json")
+	var buildings_data: Dictionary = _read_json(base_dir + "buildings.json")
 	var loaded_seed: int = int(world_data.get("world_seed", Config.DEFAULT_WORLD_SEED))
 	GameManager._world_seed = loaded_seed
 
@@ -70,9 +103,28 @@ func load_slot(slot: String) -> bool:
 	var bundle: Dictionary = {
 		"meta": meta,
 		"player": player_data,
-		"world": world_data
+		"world": world_data,
+		"buildings": buildings_data
 	}
 	SignalBus.save_data_loaded.emit(bundle)
+
+	# Direct fallback calls to ensure state is cleanly restored regardless of tree pause status
+	var player_node: Node = get_tree().get_first_node_in_group("player")
+	if player_node != null and player_node.has_method("load_save_data"):
+		player_node.call("load_save_data", player_data)
+
+	var world_node: Node = get_tree().get_first_node_in_group("world")
+	if world_node == null:
+		world_node = get_tree().root.find_child("World", true, false)
+	if world_node != null and world_node.has_method("load_save_data"):
+		world_node.call("load_save_data", world_data)
+
+	var bsys: BuildingSystem = BuildingSystem.instance
+	if bsys == null:
+		bsys = get_tree().root.find_child("BuildingSystem", true, false) as BuildingSystem
+	if bsys != null and bsys.has_method("load_save_data"):
+		bsys.call("load_save_data", buildings_data)
+
 	GameManager.resume_loaded_game()
 	SignalBus.game_loaded.emit()
 	return true
@@ -130,11 +182,9 @@ func delete_world_slot(slot: String) -> void:
 		DirAccess.remove_absolute(base_dir)
 
 
-func _on_game_started(_seed: int, slot: String, is_new: bool) -> void:
+func _on_game_started(_seed: int, slot: String, _is_new: bool) -> void:
 	_active_slot = slot
 	_dirty_chunks.clear()
-	if is_new:
-		delete_world_slot(slot)
 
 
 func _on_save_requested(slot: String) -> void:

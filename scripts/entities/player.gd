@@ -933,20 +933,19 @@ func _connect_bus_signals() -> void:
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
 
-func _on_save_data_requested(bundle: Dictionary) -> void:
-	bundle["player"] = {
+func get_save_data() -> Dictionary:
+	return {
 		"position": [global_position.x, global_position.y],
-		"stats": stats.to_dict(),
-		"health": health_comp.to_dict(),
-		"skills": skills.to_dict(),
-		"inventory": inventory.to_dict(),
-		"equipment": equipment.to_dict(),
-		"traits": traits.to_dict(),
-		"needs": needs.to_dict()
+		"stats": stats.to_dict() if stats != null else {},
+		"health": health_comp.to_dict() if health_comp != null else {},
+		"skills": skills.to_dict() if skills != null else {},
+		"inventory": inventory.to_dict() if inventory != null else {},
+		"equipment": equipment.to_dict() if equipment != null else {},
+		"traits": traits.to_dict() if traits != null else {},
+		"needs": needs.to_dict() if needs != null else {}
 	}
 
-func _on_save_data_loaded(bundle: Dictionary) -> void:
-	var p: Dictionary = bundle.get("player", {})
+func load_save_data(p: Dictionary) -> void:
 	if p.is_empty():
 		return
 	var pos: Array = p.get("position", [0.0, 0.0])
@@ -954,24 +953,39 @@ func _on_save_data_loaded(bundle: Dictionary) -> void:
 		global_position = Vector2(float(pos[0]), float(pos[1]))
 		current_tile = Config.iso_to_world(global_position)
 		GameManager.set_player_world_pos(global_position)
-	stats.from_dict(p.get("stats", {}))
-	if p.get("health") is Dictionary:
-		health_comp.from_dict(p.get("health", {}))
-	if stats.health <= 0.0:
-		stats.health = stats.max_health
-	if health_comp.current <= 0.0:
-		health_comp.current = health_comp.maximum
+	if stats != null:
+		stats.from_dict(p.get("stats", {}))
+		if stats.health <= 0.0:
+			stats.health = stats.max_health
+	if health_comp != null:
+		if p.get("health") is Dictionary:
+			health_comp.from_dict(p.get("health", {}))
+		if health_comp.current <= 0.0:
+			health_comp.current = health_comp.maximum
 	is_dead = false
-	skills.from_dict(p.get("skills", {}))
-	inventory.from_dict(p.get("inventory", {}))
-	equipment.from_dict(p.get("equipment", {}))
-	traits.from_dict(p.get("traits", {}))
-	needs.from_dict(p.get("needs", {}))
-	SignalBus.player_stat_changed.emit("health", stats.health, stats.max_health)
-	SignalBus.player_stat_changed.emit("hunger", stats.hunger, stats.max_hunger)
-	SignalBus.player_stat_changed.emit("stamina", stats.stamina, stats.max_stamina)
-	SignalBus.player_stat_changed.emit("blood", stats.blood, stats.max_blood)
+	if skills != null:
+		skills.from_dict(p.get("skills", {}))
+	if inventory != null:
+		inventory.from_dict(p.get("inventory", {}))
+	if equipment != null:
+		equipment.from_dict(p.get("equipment", {}))
+	if traits != null:
+		traits.from_dict(p.get("traits", {}))
+	if needs != null:
+		needs.from_dict(p.get("needs", {}))
+	if stats != null:
+		SignalBus.player_stat_changed.emit("health", stats.health, stats.max_health)
+		SignalBus.player_stat_changed.emit("hunger", stats.hunger, stats.max_hunger)
+		SignalBus.player_stat_changed.emit("stamina", stats.stamina, stats.max_stamina)
+		SignalBus.player_stat_changed.emit("blood", stats.blood, stats.max_blood)
+	sync_weapon_from_active_slot()
 	queue_redraw()
+
+func _on_save_data_requested(bundle: Dictionary) -> void:
+	bundle["player"] = get_save_data()
+
+func _on_save_data_loaded(bundle: Dictionary) -> void:
+	load_save_data(bundle.get("player", {}))
 
 func _draw() -> void:
 	# Footstep dust puffs (drawn in local space relative to global_position)

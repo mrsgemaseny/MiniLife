@@ -54,3 +54,32 @@ func populate_chest_loot(tile_pos: Vector2i, title: String, gold: int, items: Di
 		var cnt: int = int(items[item_id])
 		inv.add_item(str(item_id), cnt)
 
+
+func to_dict() -> Dictionary:
+	var out: Dictionary = {}
+	for key in _containers:
+		var inv: InventoryComponent = _containers[key] as InventoryComponent
+		if inv != null:
+			out[key] = {
+				"title": str(_titles_by_container.get(key, "Storage Chest")),
+				"gold": int(_gold_by_container.get(key, 0)),
+				"inventory": inv.to_dict()
+			}
+	return out
+
+
+func from_dict(data: Dictionary) -> void:
+	_containers.clear()
+	_gold_by_container.clear()
+	_titles_by_container.clear()
+	for key in data:
+		var entry: Dictionary = data[key] as Dictionary
+		if entry != null:
+			_titles_by_container[key] = str(entry.get("title", "Storage Chest"))
+			_gold_by_container[key] = int(entry.get("gold", 0))
+			var inv: InventoryComponent = InventoryComponent.new()
+			inv.max_slots = 18
+			inv.max_weight = 250.0
+			inv.from_dict(entry.get("inventory", {}))
+			_containers[key] = inv
+
