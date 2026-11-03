@@ -5,6 +5,7 @@ const AudioDirectorClass = preload("res://autoloads/audio_director.gd")
 const ProgressionSystemClass = preload("res://scripts/systems/progression_system.gd")
 const CaravanSystemClass = preload("res://scripts/systems/economy/caravan_system.gd")
 const AnimalEntityClass = preload("res://scripts/entities/animal_entity.gd")
+const ComprehensiveAuditClass = preload("res://scripts/core/comprehensive_audit.gd")
 
 
 func _ready() -> void:
@@ -52,7 +53,7 @@ func _render_world_map_to_disk() -> void:
 func _run_e2e_exhaustive_suite() -> void:
 	await get_tree().process_frame
 	print("\n=======================================================")
-	print("[E2E_SUITE] STARTING EXHAUSTIVE 12-PHASE INTEGRATION SUITE")
+	print("[E2E_SUITE] STARTING EXHAUSTIVE 13-PHASE INTEGRATION SUITE")
 	print("=======================================================")
 
 	var player: Player = get_tree().get_first_node_in_group("player") as Player
@@ -439,7 +440,21 @@ func _test_phase_12_delta_chunks_and_persistence(player: Player) -> void:
 
 
 func _test_phase_13_master_contracts(player: Player) -> void:
-	print("[E2E Phase 13] Master Specifications: Zero Clutter, Layered Armor, Farming, Progression, Fauna & Arbitrage...")
+	print("[E2E Phase 13] Master Specifications: Comprehensive Audit (All Researches, Crafts, Tiers, Lvl & Systems)...")
+
+	var audit_node = ComprehensiveAuditClass.new()
+	var audit_res: Dictionary = audit_node.run_audit()
+	audit_node.queue_free()
+
+	for w in audit_res.get("warnings", []):
+		print("  [AUDIT WARNING] ", str(w))
+
+	var errs: Array = audit_res.get("errors", [])
+	if errs.size() > 0:
+		for e in errs:
+			push_error("  [AUDIT ERROR] " + str(e))
+		assert(errs.is_empty(), "Comprehensive audit failed with %d errors" % errs.size())
+	print("  [AUDIT PASSED] All %d core subsystem suites cleanly validated." % int(audit_res.get("checks_passed", 0)))
 
 	# 1. Zero Clutter verification
 	var forbidden_items: Array[String] = ["flint", "resin", "copper_coin", "poison", "poison_herb", "potion_antidote"]

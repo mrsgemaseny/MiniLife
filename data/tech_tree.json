@@ -36,7 +36,7 @@
 		"grid_y": 2,
 		"prerequisites": [],
 		"costs": { "wood": 4 },
-		"unlocks": ["wooden_palisade"]
+		"unlocks": ["wood_wall"]
 	},
 	{
 		"id": "herbalism_medicine",
@@ -75,7 +75,7 @@
 		"grid_y": 1,
 		"prerequisites": ["stone_masonry"],
 		"costs": { "copper_ore": 4, "stone": 4 },
-		"unlocks": ["smelt_bronze_ingot", "craft_bronze_spear", "forge_bronze_pickaxe", "forge_bronze_axe"]
+		"unlocks": ["smelt_bronze_ingot", "forge_bronze_spear", "forge_bronze_pickaxe", "forge_bronze_axe"]
 	},
 	{
 		"id": "archery",
@@ -101,7 +101,7 @@
 		"grid_y": 3,
 		"prerequisites": ["woodworking"],
 		"costs": { "wood": 6, "stone": 4 },
-		"unlocks": ["craft_wooden_shield", "wooden_palisade"]
+		"unlocks": ["craft_wooden_shield", "wood_wall"]
 	},
 	{
 		"id": "iron_smelting",
@@ -153,7 +153,7 @@
 		"grid_y": 3,
 		"prerequisites": ["pyrology_coal"],
 		"costs": { "stone": 8, "coal": 2 },
-		"unlocks": ["stone_wall", "chest"]
+		"unlocks": ["stone_wall", "storage"]
 	},
 	{
 		"id": "chainmail_armor",
@@ -179,7 +179,7 @@
 		"grid_y": 1,
 		"prerequisites": ["iron_forging"],
 		"costs": { "iron_ingot": 5, "wood": 4 },
-		"unlocks": ["forge_war_hammer", "iron_vault"]
+		"unlocks": ["forge_war_hammer", "storage"]
 	},
 	{
 		"id": "iron_mastery",

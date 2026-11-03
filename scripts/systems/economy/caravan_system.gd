@@ -44,11 +44,14 @@ func _init_settlements() -> void:
 	settlements[city.id] = city
 
 func get_settlement_for_trader(trader: Node) -> SettlementData:
-	if trader != null and "is_in_city" in trader and bool(trader.get("is_in_city")):
-		return settlements["city_ironford"] as SettlementData
-	# Default checks based on npc_id or location
-	if trader != null and "npc_id" in trader:
-		var nid: String = str(trader.get("npc_id"))
+	if trader != null:
+		if (trader.has_meta("is_in_city") and bool(trader.get_meta("is_in_city"))) or bool(trader.get("is_in_city")):
+			return settlements["city_ironford"] as SettlementData
+		var nid: String = ""
+		if "npc_id" in trader:
+			nid = str(trader.get("npc_id"))
+		elif trader.has_meta("npc_id"):
+			nid = str(trader.get_meta("npc_id"))
 		if nid.find("city") != -1 or nid.find("guild") != -1 or nid.find("noble") != -1:
 			return settlements["city_ironford"] as SettlementData
 	return settlements["village_oakhaven"] as SettlementData

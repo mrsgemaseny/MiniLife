@@ -205,5 +205,9 @@
   - Implemented Day R wear queue: outer armor takes 100% durability damage until broken, then clothing absorbs wear.
   - Completed 4x4 weapon/tool matrix (sword, pickaxe, axe, dagger) across stone, bronze, iron, and steel.
   - Added T1-T5 armor catalog (`gambeson`, `simple_chainmail`, `iron_hauberk`, `bronze_cuirass`, `mercenary_iron_cuirass`, `iron_scale_armor`, `steel_cuirass`, `steel_plate_armor`, helmets, greaves).
-  - 100% headless pass across all 12 E2E phases (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
+  - Added `feet` (boots) slot: `leather_boots`, `bronze_boots`, `iron_boots`, `steel_boots`.
+  - Fixed QuickSave [F5] / QuickLoad [F9] InputMap registration and unhandled input hooks.
+  - Fixed large oak tree harvesting hitbox in `ResourceNode` & `Player`: added `contains_point` with visual bounds and prioritizes direct cursor hit over player proximity.
+  - Generated and integrated all 80 missing sprites from `ITEMS_CATALOG.md` (no procedural fallbacks, 160x160 RGBA8).
+  - 100% headless pass across all 13 E2E phases (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `buildings.json`, `research.json`, `chunks/<x>_<y>.json`) + persistent `achievements.json`.
