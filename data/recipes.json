@@ -425,5 +425,88 @@
 		"output": { "item_id": "wood_door", "count": 1 },
 		"skill_required": { "construction": 5 },
 		"xp_reward": { "construction": 12 }
+	},
+	{
+		"id": "craft_empty_bottle",
+		"station": "furnace",
+		"tech_required": "",
+		"inputs": [
+			{ "item_id": "stone", "count": 2 }
+		],
+		"output": { "item_id": "empty_bottle", "count": 2 },
+		"skill_required": {},
+		"xp_reward": { "crafting": 6 }
+	},
+	{
+		"id": "craft_water_bottle",
+		"station": "",
+		"tech_required": "",
+		"inputs": [
+			{ "item_id": "empty_bottle", "count": 1 }
+		],
+		"output": { "item_id": "water_bottle", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "survival": 4 }
+	},
+	{
+		"id": "brew_potion_healing",
+		"station": "campfire",
+		"tech_required": "herbalism_medicine",
+		"inputs": [
+			{ "item_id": "water_bottle", "count": 1 },
+			{ "item_id": "healing_herb", "count": 2 }
+		],
+		"output": { "item_id": "potion_healing", "count": 1 },
+		"skill_required": { "medicine": 5 },
+		"xp_reward": { "medicine": 16 }
+	},
+	{
+		"id": "brew_potion_stamina",
+		"station": "campfire",
+		"tech_required": "herbalism_medicine",
+		"inputs": [
+			{ "item_id": "water_bottle", "count": 1 },
+			{ "item_id": "vigor_herb", "count": 2 }
+		],
+		"output": { "item_id": "potion_stamina", "count": 1 },
+		"skill_required": { "medicine": 5 },
+		"xp_reward": { "medicine": 16 }
+	},
+	{
+		"id": "brew_potion_antidote",
+		"station": "campfire",
+		"tech_required": "herbalism_medicine",
+		"inputs": [
+			{ "item_id": "water_bottle", "count": 1 },
+			{ "item_id": "poison_herb", "count": 2 }
+		],
+		"output": { "item_id": "potion_antidote", "count": 1 },
+		"skill_required": { "medicine": 8 },
+		"xp_reward": { "medicine": 18 }
+	},
+	{
+		"id": "brew_potion_ironskin",
+		"station": "campfire",
+		"tech_required": "alchemical_elixirs",
+		"inputs": [
+			{ "item_id": "water_bottle", "count": 1 },
+			{ "item_id": "fire_herb", "count": 2 }
+		],
+		"output": { "item_id": "potion_ironskin", "count": 1 },
+		"skill_required": { "medicine": 12 },
+		"xp_reward": { "medicine": 22 }
+	},
+	{
+		"id": "craft_alchemy_station",
+		"station": "workbench",
+		"tech_required": "alchemical_elixirs",
+		"inputs": [
+			{ "item_id": "wood", "count": 4 },
+			{ "item_id": "stone", "count": 2 },
+			{ "item_id": "copper_ore", "count": 1 }
+		],
+		"output": { "item_id": "alchemy_station", "count": 1 },
+		"skill_required": { "construction": 10 },
+		"xp_reward": { "construction": 25 }
 	}
 ]

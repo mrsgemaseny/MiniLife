@@ -2,7 +2,7 @@ class_name PauseMenuUI
 extends Control
 
 # Battle Brothers Style Fullscreen Atmospheric Pause Menu
-# High-contrast typography, chiseled weathered iron borders, and dark slate backing plate.
+# Authentic weathered timber and aged bronze aesthetic. ZERO BLUE. ZERO placeholder cards.
 
 const PANEL_ID: String = "pause"
 
@@ -10,7 +10,6 @@ var _bg_rect: TextureRect = null
 var _banner_rect: TextureRect = null
 var _main_btn_box: VBoxContainer = null
 var _options_box: VBoxContainer = null
-var _card_panel: PanelContainer = null
 var _seed_label: Label = null
 
 # Audio Volume Sliders & Settings
@@ -84,11 +83,11 @@ func _build_battle_brothers_menu() -> void:
 		_bg_rect.texture = load(bg_path)
 	add_child(_bg_rect)
 
-	# 2. Atmospheric Dark Vignette Overlay
+	# 2. Atmospheric Dark Vignette Tint (Deep amber/charcoal, NO BLUE)
 	var dim_panel: Panel = Panel.new()
 	dim_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	var dim_sb: StyleBoxFlat = StyleBoxFlat.new()
-	dim_sb.bg_color = Color(0.04, 0.05, 0.07, 0.45)
+	dim_sb.bg_color = Color(0.04, 0.03, 0.02, 0.40)
 	dim_panel.add_theme_stylebox_override("panel", dim_sb)
 	dim_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dim_panel)
@@ -96,14 +95,14 @@ func _build_battle_brothers_menu() -> void:
 	# 3. Centerpiece Hub
 	var center_hub: Control = Control.new()
 	center_hub.set_anchors_preset(Control.PRESET_CENTER)
-	center_hub.custom_minimum_size = Vector2(460.0, 720.0)
-	center_hub.offset_left = -230.0
+	center_hub.custom_minimum_size = Vector2(440.0, 720.0)
+	center_hub.offset_left = -220.0
 	center_hub.offset_top = -360.0
-	center_hub.offset_right = 230.0
+	center_hub.offset_right = 220.0
 	center_hub.offset_bottom = 360.0
 	add_child(center_hub)
 
-	# 4. Shield & Heraldic Crimson Banner
+	# 4. Shield & Heraldic Crimson Banner (The true backing for the buttons)
 	_banner_rect = TextureRect.new()
 	_banner_rect.set_anchors_preset(Control.PRESET_CENTER)
 	_banner_rect.custom_minimum_size = Vector2(360.0, 680.0)
@@ -116,11 +115,11 @@ func _build_battle_brothers_menu() -> void:
 	_banner_rect.texture = _load_transparent_shield_banner()
 	center_hub.add_child(_banner_rect)
 
-	# 5. Game Title & Subtitle (Positioned clearly above the round shield)
+	# 5. Game Title & Subtitle (High above the round shield)
 	var title_box: VBoxContainer = VBoxContainer.new()
 	title_box.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	title_box.offset_top = 22.0
-	title_box.offset_bottom = 80.0
+	title_box.offset_top = 18.0
+	title_box.offset_bottom = 75.0
 	title_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	title_box.add_theme_constant_override("separation", 2)
 	center_hub.add_child(title_box)
@@ -129,7 +128,7 @@ func _build_battle_brothers_menu() -> void:
 	title_lbl.text = "MINILIFE"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.add_theme_font_size_override("font_size", 26)
-	title_lbl.add_theme_color_override("font_color", Color(0.96, 0.94, 0.88, 1.0)) # Antique Ivory
+	title_lbl.add_theme_color_override("font_color", Color(0.95, 0.92, 0.85, 1.0)) # Antique bone
 	title_lbl.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 1.0))
 	title_lbl.add_theme_constant_override("shadow_offset_x", 2)
 	title_lbl.add_theme_constant_override("shadow_offset_y", 2)
@@ -139,39 +138,22 @@ func _build_battle_brothers_menu() -> void:
 	var sub_title: Label = Label.new()
 	sub_title.text = "SURVIVAL SANDBOX RPG"
 	sub_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub_title.add_theme_font_size_override("font_size", 11)
-	sub_title.add_theme_color_override("font_color", Color(0.85, 0.88, 0.94, 1.0)) # Crisp Silver
+	sub_title.add_theme_font_size_override("font_size", 10)
+	sub_title.add_theme_color_override("font_color", Color(0.80, 0.74, 0.62, 1.0)) # Warm parchment
 	sub_title.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 1.0))
 	sub_title.add_theme_constant_override("shadow_offset_x", 1)
 	sub_title.add_theme_constant_override("shadow_offset_y", 1)
 	sub_title.add_theme_constant_override("shadow_outline_size", 2)
 	title_box.add_child(sub_title)
 
-	# 6. Chiseled Dark Slate Backing Card for Buttons (Eliminates clashes with ragged red cloth)
-	_card_panel = PanelContainer.new()
-	_card_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_card_panel.offset_left = 75.0
-	_card_panel.offset_right = -75.0
-	_card_panel.offset_top = 250.0
-	_card_panel.offset_bottom = 545.0
-
-	var card_sb: StyleBoxFlat = StyleBoxFlat.new()
-	card_sb.bg_color = Color(0.08, 0.09, 0.12, 0.90) # Deep dark slate
-	card_sb.border_color = Color(0.38, 0.42, 0.50, 0.95) # Chiseled weathered iron border
-	card_sb.set_border_width_all(2)
-	card_sb.set_corner_radius_all(4)
-	card_sb.content_margin_left = 16
-	card_sb.content_margin_right = 16
-	card_sb.content_margin_top = 16
-	card_sb.content_margin_bottom = 16
-	_card_panel.add_theme_stylebox_override("panel", card_sb)
-	center_hub.add_child(_card_panel)
-
-	# 7. Main Buttons Box
+	# 6. Main Buttons Box (Mounted directly on the crimson heraldic banner, NO BLUE CARD)
 	_main_btn_box = VBoxContainer.new()
-	_main_btn_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	_main_btn_box.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_main_btn_box.offset_left = 90.0
+	_main_btn_box.offset_right = -90.0
+	_main_btn_box.offset_top = 280.0
 	_main_btn_box.add_theme_constant_override("separation", 9)
-	_card_panel.add_child(_main_btn_box)
+	center_hub.add_child(_main_btn_box)
 
 	var resume_btn: Button = _create_bb_button("ПРОДОЛЖИТЬ  [ESC]")
 	resume_btn.pressed.connect(close_menu)
@@ -179,15 +161,48 @@ func _build_battle_brothers_menu() -> void:
 
 	var save_btn: Button = _create_bb_button("СОХРАНИТЬ ИГРУ  [F5]")
 	save_btn.pressed.connect(func():
-		SignalBus.save_requested.emit(GameManager.get_active_slot())
-		SignalBus.notification_posted.emit("Кампания успешно сохранена.")
+		var slot: String = GameManager.get_active_slot()
+		var ok: bool = false
+		var save_sys: SaveSystem = get_tree().get_first_node_in_group("save_system") as SaveSystem
+		if save_sys == null:
+			for node in get_tree().root.get_children():
+				var found: Node = node.find_child("SaveSystem", true, false)
+				if found != null and found is SaveSystem:
+					save_sys = found as SaveSystem
+					break
+		if save_sys != null:
+			ok = save_sys.save_slot(slot)
+		else:
+			SignalBus.save_requested.emit(slot)
+			ok = true
+		if ok:
+			SignalBus.notification_posted.emit("Кампания успешно сохранена.")
+		else:
+			SignalBus.notification_posted.emit("Ошибка при сохранении игры!")
 	)
 	_main_btn_box.add_child(save_btn)
 
 	var load_btn: Button = _create_bb_button("ЗАГРУЗИТЬ ИГРУ  [F9]")
 	load_btn.pressed.connect(func():
-		SignalBus.load_requested.emit(GameManager.get_active_slot())
-		close_menu()
+		var slot: String = GameManager.get_active_slot()
+		var ok: bool = false
+		var save_sys: SaveSystem = get_tree().get_first_node_in_group("save_system") as SaveSystem
+		if save_sys == null:
+			for node in get_tree().root.get_children():
+				var found: Node = node.find_child("SaveSystem", true, false)
+				if found != null and found is SaveSystem:
+					save_sys = found as SaveSystem
+					break
+		if save_sys != null:
+			ok = save_sys.load_slot(slot)
+		else:
+			SignalBus.load_requested.emit(slot)
+			ok = true
+		if ok:
+			SignalBus.notification_posted.emit("Сохранение успешно загружено.")
+			close_menu()
+		else:
+			SignalBus.notification_posted.emit("Сохранение не найдено или повреждено!")
 	)
 	_main_btn_box.add_child(load_btn)
 
@@ -201,17 +216,17 @@ func _build_battle_brothers_menu() -> void:
 	)
 	_main_btn_box.add_child(quit_btn)
 
-	# 8. Options Sub-Panel (Inside the same backing card)
-	_build_options_panel(_card_panel)
+	# 7. Options Sub-Panel
+	_build_options_panel(center_hub)
 
-	# 9. Map Seed Label (Positioned cleanly under the backing card, on the bottom banner tip)
+	# 8. Map Seed Label (At the bottom tip of the banner, below the buttons)
 	_seed_label = Label.new()
 	_seed_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_seed_label.offset_top = 556.0
-	_seed_label.offset_bottom = 576.0
+	_seed_label.offset_top = 540.0
+	_seed_label.offset_bottom = 560.0
 	_seed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_seed_label.add_theme_font_size_override("font_size", 11)
-	_seed_label.add_theme_color_override("font_color", Color(0.88, 0.86, 0.82, 1.0))
+	_seed_label.add_theme_color_override("font_color", Color(0.84, 0.78, 0.68, 1.0))
 	_seed_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 1.0))
 	_seed_label.add_theme_constant_override("shadow_offset_x", 1)
 	_seed_label.add_theme_constant_override("shadow_offset_y", 1)
@@ -221,7 +236,10 @@ func _build_battle_brothers_menu() -> void:
 
 func _build_options_panel(parent: Control) -> void:
 	_options_box = VBoxContainer.new()
-	_options_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	_options_box.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_options_box.offset_left = 75.0
+	_options_box.offset_right = -75.0
+	_options_box.offset_top = 275.0
 	_options_box.add_theme_constant_override("separation", 10)
 	_options_box.visible = false
 	parent.add_child(_options_box)
@@ -230,7 +248,7 @@ func _build_options_panel(parent: Control) -> void:
 	opt_title.text = "ПАРАМЕТРЫ ИГРЫ"
 	opt_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	opt_title.add_theme_font_size_override("font_size", 13)
-	opt_title.add_theme_color_override("font_color", Color(0.96, 0.94, 0.88, 1.0))
+	opt_title.add_theme_color_override("font_color", Color(0.95, 0.92, 0.85, 1.0))
 	opt_title.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 1.0))
 	opt_title.add_theme_constant_override("shadow_offset_x", 1)
 	opt_title.add_theme_constant_override("shadow_offset_y", 1)
@@ -261,7 +279,7 @@ func _build_options_panel(parent: Control) -> void:
 	fs_lbl.text = "Полный экран [F11]:"
 	fs_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fs_lbl.add_theme_font_size_override("font_size", 11)
-	fs_lbl.add_theme_color_override("font_color", Color(0.88, 0.86, 0.82))
+	fs_lbl.add_theme_color_override("font_color", Color(0.88, 0.84, 0.76))
 	fs_row.add_child(fs_lbl)
 
 	_fullscreen_chk = CheckButton.new()
@@ -290,13 +308,13 @@ func _create_volume_row(label_text: String, default_val: float, callback: Callab
 	lbl.text = label_text
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl.add_theme_font_size_override("font_size", 11)
-	lbl.add_theme_color_override("font_color", Color(0.88, 0.86, 0.82))
+	lbl.add_theme_color_override("font_color", Color(0.88, 0.84, 0.76))
 	hb.add_child(lbl)
 
 	var val_lbl: Label = Label.new()
 	val_lbl.text = "%d%%" % int(default_val)
 	val_lbl.add_theme_font_size_override("font_size", 11)
-	val_lbl.add_theme_color_override("font_color", Color(0.88, 0.86, 0.82))
+	val_lbl.add_theme_color_override("font_color", Color(0.88, 0.84, 0.76))
 	hb.add_child(val_lbl)
 	vb.add_child(hb)
 
@@ -329,52 +347,52 @@ func _show_options() -> void:
 func _create_bb_button(btn_text: String) -> Button:
 	var btn: Button = Button.new()
 	btn.text = btn_text
-	btn.custom_minimum_size = Vector2(0.0, 42.0)
+	btn.custom_minimum_size = Vector2(0.0, 40.0)
 	btn.add_theme_font_size_override("font_size", 12)
-	btn.add_theme_color_override("font_color", Color(0.96, 0.94, 0.88, 1.0)) # Antique Ivory
-	btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0)) # Bright White Glow
-	btn.add_theme_color_override("font_pressed_color", Color(0.80, 0.78, 0.74, 1.0))
+	btn.add_theme_color_override("font_color", Color(0.95, 0.92, 0.85, 1.0)) # Bright bone/ivory
+	btn.add_theme_color_override("font_hover_color", Color(1.0, 0.98, 0.92, 1.0)) # Illuminated ivory
+	btn.add_theme_color_override("font_pressed_color", Color(0.78, 0.74, 0.68, 1.0))
 	btn.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 1.0))
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	btn.add_theme_constant_override("shadow_outline_size", 2)
 
-	# 1. Normal State: Dark Slate with 3D Chiseled Weathered Iron Border
+	# 1. Normal State: Weathered Blackened Timber with Aged Bronze Bevel Trim (ZERO BLUE)
 	var norm_sb: StyleBoxFlat = StyleBoxFlat.new()
-	norm_sb.bg_color = Color(0.12, 0.14, 0.18, 0.96) # Dark charcoal slate
-	norm_sb.border_color = Color(0.40, 0.44, 0.52, 0.95) # Chiseled iron border
+	norm_sb.bg_color = Color(0.10, 0.08, 0.07, 0.95) # Dark blackened timber
+	norm_sb.border_color = Color(0.38, 0.30, 0.22, 0.95) # Aged dark bronze trim
 	norm_sb.set_border_width_all(1)
-	norm_sb.border_width_top = 2 # Subtle 3D top bevel
+	norm_sb.border_width_top = 2 # 3D carved wood top bevel
 	norm_sb.border_width_bottom = 2
-	norm_sb.set_corner_radius_all(3)
+	norm_sb.set_corner_radius_all(2)
 	norm_sb.content_margin_left = 14
 	norm_sb.content_margin_right = 14
-	norm_sb.content_margin_top = 8
-	norm_sb.content_margin_bottom = 8
+	norm_sb.content_margin_top = 7
+	norm_sb.content_margin_bottom = 7
 	btn.add_theme_stylebox_override("normal", norm_sb)
 
-	# 2. Hover State: High-clarity Steel Glow Highlight
+	# 2. Hover State: Rich Amber/Bronze Highlight (ZERO BLUE)
 	var hov_sb: StyleBoxFlat = StyleBoxFlat.new()
-	hov_sb.bg_color = Color(0.20, 0.23, 0.30, 0.98) # Illuminated cold slate
-	hov_sb.border_color = Color(0.82, 0.86, 0.94, 1.0) # Gleaming steel border
+	hov_sb.bg_color = Color(0.18, 0.14, 0.11, 0.98) # Warm illuminated timber
+	hov_sb.border_color = Color(0.78, 0.62, 0.38, 1.0) # Bright polished bronze edge
 	hov_sb.set_border_width_all(2)
-	hov_sb.set_corner_radius_all(3)
+	hov_sb.set_corner_radius_all(2)
 	hov_sb.content_margin_left = 14
 	hov_sb.content_margin_right = 14
-	hov_sb.content_margin_top = 8
-	hov_sb.content_margin_bottom = 8
+	hov_sb.content_margin_top = 7
+	hov_sb.content_margin_bottom = 7
 	btn.add_theme_stylebox_override("hover", hov_sb)
 
-	# 3. Pressed State: Recessed Dark Obsidian
+	# 3. Pressed State: Recessed Dark Timber
 	var pr_sb: StyleBoxFlat = StyleBoxFlat.new()
-	pr_sb.bg_color = Color(0.08, 0.09, 0.12, 1.0)
-	pr_sb.border_color = Color(0.32, 0.36, 0.42, 1.0)
+	pr_sb.bg_color = Color(0.06, 0.05, 0.04, 1.0)
+	pr_sb.border_color = Color(0.28, 0.22, 0.16, 1.0)
 	pr_sb.set_border_width_all(1)
-	pr_sb.set_corner_radius_all(3)
+	pr_sb.set_corner_radius_all(2)
 	pr_sb.content_margin_left = 14
 	pr_sb.content_margin_right = 14
-	pr_sb.content_margin_top = 8
-	pr_sb.content_margin_bottom = 8
+	pr_sb.content_margin_top = 7
+	pr_sb.content_margin_bottom = 7
 	btn.add_theme_stylebox_override("pressed", pr_sb)
 
 	btn.mouse_entered.connect(func():

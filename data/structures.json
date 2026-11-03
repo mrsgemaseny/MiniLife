@@ -119,6 +119,22 @@
 		"interactable": true
 	},
 	{
+		"id": "alchemy_station",
+		"name": "Alchemist Brewing Table",
+		"tech_required": "alchemical_elixirs",
+		"hp": 160,
+		"color": "#4a5d4e",
+		"height_px": 18.0,
+		"drop_item": "wood",
+		"materials": [
+			{ "item_id": "wood", "count": 4 },
+			{ "item_id": "stone", "count": 2 },
+			{ "item_id": "copper_ore", "count": 1 }
+		],
+		"passable": false,
+		"interactable": true
+	},
+	{
 		"id": "campfire",
 		"name": "Campfire",
 		"hp": 50,

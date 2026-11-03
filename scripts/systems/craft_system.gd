@@ -14,8 +14,11 @@ func get_recipes_for_station(station_id: String) -> Array[Dictionary]:
 		var req_station: String = str(recipe.get("station", ""))
 		if station_id == "" and req_station == "":
 			result.append(recipe)
-		elif station_id != "" and (req_station == station_id or req_station == ""):
-			result.append(recipe)
+		elif station_id != "":
+			if req_station == station_id or req_station == "":
+				result.append(recipe)
+			elif (req_station in ["campfire", "alchemy_station"]) and (station_id in ["campfire", "alchemy_station"]):
+				result.append(recipe)
 	return result
 
 
@@ -27,7 +30,8 @@ func can_craft(recipe_id: String, crafter: Node, active_station: String = "") ->
 		return {"ok": false, "reason": "No crafter"}
 	var required_station: String = str(recipe.get("station", ""))
 	if required_station != "" and required_station != active_station:
-		if not _is_near_station(crafter, required_station):
+		var is_brewing_compat: bool = (required_station in ["campfire", "alchemy_station"]) and (active_station in ["campfire", "alchemy_station"])
+		if not is_brewing_compat and not _is_near_station(crafter, required_station):
 			return {"ok": false, "reason": "Requires station: " + required_station}
 
 	var req_tech: String = str(recipe.get("tech_required", ""))

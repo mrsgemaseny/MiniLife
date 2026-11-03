@@ -149,7 +149,7 @@ func _draw() -> void:
 		var tw: float = float(stex.get_width())
 		var th: float = float(stex.get_height())
 		var target_w: float = 64.0
-		if structure_id == "workbench" or structure_id == "research_table":
+		if structure_id == "workbench" or structure_id == "research_table" or structure_id == "alchemy_station":
 			target_w = 76.0
 		elif structure_id == "bed":
 			target_w = 80.0
@@ -371,7 +371,7 @@ func dismantle(breaker: Node) -> void:
 
 
 func get_station_id() -> String:
-	if structure_id in ["workbench", "forge", "campfire", "furnace", "research_table"]:
+	if structure_id in ["workbench", "forge", "campfire", "furnace", "research_table", "alchemy_station"]:
 		return structure_id
 	return ""
 
@@ -383,7 +383,7 @@ func interact(actor: Node) -> void:
 			if _collision != null:
 				_collision.set_deferred("disabled", is_door_open)
 			queue_redraw()
-		"workbench", "forge", "campfire":
+		"workbench", "forge", "campfire", "alchemy_station":
 			SignalBus.craft_station_opened.emit(structure_id)
 		"furnace":
 			SignalBus.furnace_opened.emit("furnace_" + Config.vec2i_to_key(tile_pos), tile_pos)

@@ -186,5 +186,101 @@
 		"drops": [
 			{ "item_id": "herb", "min": 2, "max": 5 }
 		]
+	},
+	{
+		"id": "wild_grass",
+		"name": "Wild Grass",
+		"biome": "plains",
+		"hits": 1,
+		"required_tool": "",
+		"preferred_tool": "",
+		"skill": "foraging",
+		"xp": 4.0,
+		"regrows": true,
+		"regrow_days": 2,
+		"color": "#5a9e32",
+		"trunk_color": "#387020",
+		"radius": 10.0,
+		"has_collision": false,
+		"drops": [
+			{ "item_id": "wheat_seeds", "min": 0, "max": 1 },
+			{ "item_id": "wild_grass", "min": 1, "max": 2 }
+		]
+	},
+	{
+		"id": "healing_herb",
+		"name": "Healing Herb",
+		"biome": "forest",
+		"hits": 2,
+		"required_tool": "",
+		"preferred_tool": "",
+		"skill": "foraging",
+		"xp": 12.0,
+		"regrows": true,
+		"regrow_days": 3,
+		"color": "#43a047",
+		"trunk_color": "#2e7d32",
+		"radius": 10.0,
+		"has_collision": false,
+		"drops": [
+			{ "item_id": "healing_herb", "min": 1, "max": 3 }
+		]
+	},
+	{
+		"id": "vigor_herb",
+		"name": "Alpine Vigor Herb",
+		"biome": "mountains",
+		"hits": 2,
+		"required_tool": "",
+		"preferred_tool": "",
+		"skill": "foraging",
+		"xp": 14.0,
+		"regrows": true,
+		"regrow_days": 3,
+		"color": "#26c6da",
+		"trunk_color": "#0097a7",
+		"radius": 10.0,
+		"has_collision": false,
+		"drops": [
+			{ "item_id": "vigor_herb", "min": 1, "max": 3 }
+		]
+	},
+	{
+		"id": "poison_herb",
+		"name": "Swamp Nightshade",
+		"biome": "swamp",
+		"hits": 2,
+		"required_tool": "",
+		"preferred_tool": "",
+		"skill": "foraging",
+		"xp": 15.0,
+		"regrows": true,
+		"regrow_days": 3,
+		"color": "#ab47bc",
+		"trunk_color": "#7b1fa2",
+		"radius": 10.0,
+		"has_collision": false,
+		"drops": [
+			{ "item_id": "poison_herb", "min": 1, "max": 3 }
+		]
+	},
+	{
+		"id": "fire_herb",
+		"name": "Desert Fireflower",
+		"biome": "desert",
+		"hits": 2,
+		"required_tool": "",
+		"preferred_tool": "",
+		"skill": "foraging",
+		"xp": 16.0,
+		"regrows": true,
+		"regrow_days": 3,
+		"color": "#ff7043",
+		"trunk_color": "#e64a19",
+		"radius": 10.0,
+		"has_collision": false,
+		"drops": [
+			{ "item_id": "fire_herb", "min": 1, "max": 3 }
+		]
 	}
 ]

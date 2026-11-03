@@ -411,7 +411,9 @@ func refresh() -> void:
 		if _active_station == "" and req_station != "":
 			continue
 		if _active_station != "" and req_station != "" and req_station != _active_station:
-			continue
+			var is_brew: bool = (req_station in ["campfire", "alchemy_station"]) and (_active_station in ["campfire", "alchemy_station"])
+			if not is_brew:
+				continue
 
 		var out: Dictionary = recipe.get("output", {})
 		var out_id: String = str(out.get("item_id", rid))
@@ -620,9 +622,9 @@ func _matches_category(item_type: String, item_id: String) -> bool:
 	elif _current_category == "armor":
 		return item_type in ["armor", "shield"] or item_id.find("shield") != -1 or item_id.find("chainmail") != -1 or item_id.find("tunic") != -1
 	elif _current_category == "stations":
-		return item_type in ["station", "building"] or item_id in ["plank", "cloth", "chest", "bed"]
+		return item_type in ["station", "building", "block"] or item_id in ["plank", "cloth", "chest", "bed", "alchemy_station"]
 	elif _current_category == "survival":
-		return item_type in ["consumable", "medicine", "food"] or item_id in ["bandage", "torch", "medicine", "poison"]
+		return item_type in ["consumable", "medicine", "food"] or item_id in ["bandage", "torch", "medicine", "poison", "water_bottle", "empty_bottle"] or item_id.begins_with("potion_")
 	return true
 
 

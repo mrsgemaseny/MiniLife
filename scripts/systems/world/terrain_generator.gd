@@ -216,6 +216,8 @@ func get_resource_node_at(pos: Vector2i) -> String:
 				return "stone_boulder"
 			elif mtn_roll < 0.130:
 				return "wild_berry_bush"
+			elif mtn_roll < 0.148:
+				return "vigor_herb"
 		else:
 			# High rocky cliffs: rare Iron (hard to find, not spam), Coal, minimal Boulders, zero trees
 			if mtn_roll < 0.012:
@@ -224,41 +226,49 @@ func get_resource_node_at(pos: Vector2i) -> String:
 				return "coal_deposit"
 			elif mtn_roll < 0.073:
 				return "stone_boulder"
+			elif mtn_roll < 0.088:
+				return "vigor_herb"
 		return ""
 
-	# 4. SNOW PEAKS (High frozen ridges: very rare iron, sparse boulders)
+	# 4. SNOW PEAKS (High frozen ridges: very rare iron, sparse boulders, alpine vigor herbs)
 	if biome_id == "snow":
 		var snow_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 303)
 		var snow_roll: float = snow_rng.randf()
 		if snow_roll < 0.006:
 			return "iron_vein"
-		elif snow_roll < 0.025:
+		elif snow_roll < 0.020:
+			return "vigor_herb"
+		elif snow_roll < 0.035:
 			return "stone_boulder"
 		return ""
 
-	# 5. DESERT (Pure barren sand and dunes — ZERO copper, ZERO coal, ZERO trees)
+	# 5. DESERT (Pure barren sand and dunes — rare fireflowers, zero copper/coal/trees)
 	if biome_id == "desert":
 		var des_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 404)
 		var des_roll: float = des_rng.randf()
-		if des_roll < 0.010:
+		if des_roll < 0.014:
+			return "fire_herb"
+		elif des_roll < 0.022:
 			return "wild_berry_bush"
-		elif des_roll < 0.011:
+		elif des_roll < 0.025:
 			return "stone_boulder"
 		return ""
 
-	# 6. SWAMP (Bog herbs, sparse gnarled oaks, occasional alluvial tin in mud)
+	# 6. SWAMP (Bog herbs, swamp nightshade, sparse gnarled oaks, occasional alluvial tin in mud)
 	if biome_id == "swamp":
 		var sw_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 505)
 		var sw_roll: float = sw_rng.randf()
 		if sw_roll < 0.014:
 			return "tin_vein"
+		elif sw_roll < 0.050:
+			return "poison_herb"
 		elif sw_roll < 0.075:
 			return "swamp_herb_patch"
 		elif sw_roll < 0.095:
 			return "oak_tree"
 		return ""
 
-	# 7. FOREST (Dense pine and oak trees, berries, minimal stone)
+	# 7. FOREST (Dense pine and oak trees, healing herbs, berries, minimal stone)
 	if biome_id == "forest":
 		var for_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 606)
 		var for_roll: float = for_rng.randf()
@@ -266,13 +276,15 @@ func get_resource_node_at(pos: Vector2i) -> String:
 			return "forest_pine"
 		elif for_roll < 0.120:
 			return "oak_tree"
-		elif for_roll < 0.145:
+		elif for_roll < 0.138:
 			return "wild_berry_bush"
-		elif for_roll < 0.148:
+		elif for_roll < 0.160:
+			return "healing_herb"
+		elif for_roll < 0.168:
 			return "stone_boulder"
 		return ""
 
-	# 8. PLAINS (Sweeping open grass: tree density reduced 3x to 0.011; rare compact stone clusters; berries)
+	# 8. PLAINS (Sweeping open grass: wild grass tufts for wheat seeds, rare healing herbs, trees, berries)
 	if biome_id == "plains":
 		# Rare compact stone clusters (strictly 1 boulder per cluster)
 		var cluster_x: int = pos.x / 6
@@ -289,7 +301,11 @@ func get_resource_node_at(pos: Vector2i) -> String:
 		var pl_roll: float = pl_rng.randf()
 		if pl_roll < 0.011:
 			return "oak_tree"
-		elif pl_roll < 0.035:
+		elif pl_roll < 0.024:
 			return "wild_berry_bush"
+		elif pl_roll < 0.038:
+			return "healing_herb"
+		elif pl_roll < 0.072:
+			return "wild_grass"
 
 	return ""

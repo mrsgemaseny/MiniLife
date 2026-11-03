@@ -195,6 +195,36 @@ func _draw() -> void:
 			draw_texture_rect(bush_tex, Rect2(-20.0 + ofs.x, -24.0 + ofs.y, 40.0, 28.0), false)
 		else:
 			_draw_procedural_bush(ofs, outline_col, radius)
+	elif node_def_id == "wild_grass" or node_def_id.find("grass") != -1:
+		var grass_tex: Texture2D = _get_tex("res://assets/sprites/items/wild_grass.png")
+		if grass_tex != null:
+			draw_texture_rect(grass_tex, Rect2(-14.0 + ofs.x, -22.0 + ofs.y, 28.0, 28.0), false)
+		else:
+			_draw_procedural_bush(ofs, outline_col, radius)
+	elif node_def_id == "healing_herb" or node_def_id.find("healing") != -1:
+		var herb_tex: Texture2D = _get_tex("res://assets/sprites/items/healing_herb.png")
+		if herb_tex != null:
+			draw_texture_rect(herb_tex, Rect2(-14.0 + ofs.x, -22.0 + ofs.y, 28.0, 28.0), false)
+		else:
+			_draw_procedural_bush(ofs, outline_col, radius)
+	elif node_def_id == "vigor_herb" or node_def_id.find("vigor") != -1:
+		var vigor_tex: Texture2D = _get_tex("res://assets/sprites/items/vigor_herb.png")
+		if vigor_tex != null:
+			draw_texture_rect(vigor_tex, Rect2(-14.0 + ofs.x, -22.0 + ofs.y, 28.0, 28.0), false)
+		else:
+			_draw_procedural_bush(ofs, outline_col, radius)
+	elif node_def_id == "poison_herb" or node_def_id.find("poison") != -1:
+		var poison_tex: Texture2D = _get_tex("res://assets/sprites/items/poison_herb.png")
+		if poison_tex != null:
+			draw_texture_rect(poison_tex, Rect2(-14.0 + ofs.x, -22.0 + ofs.y, 28.0, 28.0), false)
+		else:
+			_draw_procedural_bush(ofs, outline_col, radius)
+	elif node_def_id == "fire_herb" or node_def_id.find("fire") != -1:
+		var fire_tex: Texture2D = _get_tex("res://assets/sprites/items/fire_herb.png")
+		if fire_tex != null:
+			draw_texture_rect(fire_tex, Rect2(-14.0 + ofs.x, -22.0 + ofs.y, 28.0, 28.0), false)
+		else:
+			_draw_procedural_bush(ofs, outline_col, radius)
 	else:
 		var def_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/boulder.png")
 		if def_tex != null:

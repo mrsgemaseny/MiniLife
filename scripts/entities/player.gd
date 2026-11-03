@@ -674,13 +674,19 @@ func use_held_consumable() -> bool:
 		status_effects.remove(cure)
 
 	inventory.remove_at_index(active_hotbar_index, 1)
+	if item_id.begins_with("potion_") or item_id == "water_bottle":
+		inventory.add_item("empty_bottle", 1)
+
 	_attack_cooldown = 0.40
 	_lunge_offset = facing_direction * 2.5
 	_swing_duration = 0.18
 	_swing_timer = _swing_duration
-	SignalBus.ui_sound_requested.emit("click")
+	if item_id.begins_with("potion_") or item_id == "water_bottle":
+		SignalBus.ui_sound_requested.emit("click")
+	else:
+		SignalBus.ui_sound_requested.emit("click")
 	var item_name: String = str(def.get("name", item_id.capitalize().replace("_", " ")))
-	SignalBus.notification_posted.emit("Used %s." % item_name)
+	SignalBus.notification_posted.emit("Consumed %s." % item_name)
 	sync_weapon_from_active_slot()
 	SignalBus.inventory_changed.emit(self, inventory.snapshot())
 	queue_redraw()

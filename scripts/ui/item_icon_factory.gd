@@ -21,6 +21,8 @@ static func _resolve_sprite_path(id: String) -> String:
 		return struct_path
 
 	# 3. Structure aliases
+	if id == "alchemy_station" or id.find("alchemy") != -1 or id.find("brewing") != -1:
+		return "res://assets/sprites/structures/alchemy_station.png"
 	if id == "workbench":
 		return "res://assets/sprites/structures/workbench.png"
 	if id == "research_table":
@@ -55,6 +57,20 @@ static func _resolve_sprite_path(id: String) -> String:
 		return "res://assets/sprites/structures/iron_vault.png"
 
 	# 4. Consumable and medicine aliases
+	if id == "water_bottle" or id == "bottle_water" or id == "water_flask":
+		return "res://assets/sprites/items/water_bottle.png"
+	if id == "empty_bottle" or id == "glass_bottle" or id == "empty_flask":
+		return "res://assets/sprites/items/empty_bottle.png"
+	if id == "potion_healing" or id == "health_potion" or id.find("heal_potion") != -1:
+		return "res://assets/sprites/items/potion_healing.png"
+	if id == "potion_stamina" or id == "stamina_potion" or id.find("stamina_potion") != -1:
+		return "res://assets/sprites/items/potion_stamina.png"
+	if id == "potion_antidote" or id == "antidote":
+		return "res://assets/sprites/items/potion_antidote.png"
+	if id == "potion_ironskin" or id == "ironskin_potion":
+		return "res://assets/sprites/items/potion_ironskin.png"
+	if id == "wheat_seeds" or id == "seeds":
+		return "res://assets/sprites/items/wheat_seeds.png"
 	if id == "berries" or id.find("berries") != -1:
 		return "res://assets/sprites/items/berries.png"
 	if id == "bread" or id.find("bread") != -1:
