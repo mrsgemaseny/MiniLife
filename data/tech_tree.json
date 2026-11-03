@@ -1,16 +1,16 @@
 [
 	{
-		"id": "stone_harvesting",
-		"name": "Stone Gathering",
+		"id": "food_roasting",
+		"name": "Roasting & Boiling",
 		"tier": 1,
 		"tier_label": "TIER I",
-		"icon": "stone",
-		"description": "Gathering heavy river stones and chipping sharp flint wedges for hearth construction.",
+		"icon": "cooked_meat",
+		"description": "Thermal cooking of raw meats, drying fish and boiling spring water to prevent sickness.",
 		"grid_x": 0,
 		"grid_y": 0,
-		"prerequisites": ["herbs_gathering"],
-		"costs": { "herb": 4 },
-		"unlocks": []
+		"prerequisites": ["primitive_hearth"],
+		"costs": { "wood": 4, "stone": 2 },
+		"unlocks": ["cook_meat", "cook_fish", "bake_bread", "craft_water_bottle"]
 	},
 	{
 		"id": "primitive_hearth",
@@ -26,17 +26,17 @@
 		"unlocks": ["campfire", "furnace"]
 	},
 	{
-		"id": "food_roasting",
-		"name": "Roasting & Boiling",
+		"id": "stone_harvesting",
+		"name": "Stone Gathering",
 		"tier": 1,
 		"tier_label": "TIER I",
-		"icon": "cooked_meat",
-		"description": "Thermal cooking of raw meats, drying fish and boiling spring water to prevent sickness.",
+		"icon": "stone",
+		"description": "Gathering heavy river stones and chipping sharp flint wedges for hearth construction.",
 		"grid_x": 0,
 		"grid_y": 2,
-		"prerequisites": ["primitive_hearth"],
-		"costs": { "wood": 4, "stone": 2 },
-		"unlocks": ["cook_meat", "cook_fish", "bake_bread", "craft_water_bottle"]
+		"prerequisites": ["herbs_gathering"],
+		"costs": { "herb": 4 },
+		"unlocks": []
 	},
 	{
 		"id": "herbs_gathering",

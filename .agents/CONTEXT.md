@@ -6,15 +6,14 @@
 - **Repository**: `https://github.com/mrsgemaseny/MiniLife`
 
 ## Recent Accomplishments
-- **Tool Tier Mining Restrictions & Starter Kit Overhaul (2026-11-03)**:
-  - **Starter Loadout**: Player starts with `stone_axe` in hotbar slot 0 and `stone_pickaxe` in hotbar slot 1.
-  - **Pickaxe Tier Progression**:
-    - Stone Pickaxe (Tier 1): stone, coal, copper, tin. Blocked from mining iron, gold, and silver.
-    - Bronze Pickaxe (Tier 2): unlocks iron ore (`iron_vein`). Blocked from mining gold and silver.
-    - Iron / Steel Pickaxe (Tier 3+): unlocks precious metals (`gold_quartz_vein`, `silver_vein`).
-  - **Mining Time Scaling**: Dynamically scales with pickaxe tier (4.8s stone -> 3.4s bronze -> 2.2s iron -> 1.5s steel).
-  - **Silver Deposits**: Added `silver_vein` resource node and mountain cliff/snow ridge procedural spawning.
-  - **E2E Smoke Verification**: 100% pass across all 13 phases in headless Godot testing (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
+- **Center-Out Research Tree DAG & Flow Reversal (2026-11-03)**:
+  - **Center Root Architecture**: In TIER I, `herbs_gathering` (Primitive Gathering) sits centrally at `Y=3`.
+  - **Upward Branch**: Stone Gathering (`Y=2`) -> Primitive Hearth & Kiln (`Y=1`) -> Roasting & Boiling (`Y=0`) with arrows directed upwards.
+  - **Downward Branch**: Timber Gathering (`Y=4`) -> Carpentry & Planks (`Y=5`) -> Primitive Archery (`Y=6`) & Woolen Underarmor (`Y=7`) with arrows directed downwards.
+  - **Gutter Routing**: In-column connections skipping intermediate nodes bypass them via the right gutter (`col_x + 236px`).
+  - **Craft Menu Tier Sorting**: Strict T1 -> T2 -> T3 -> T4 -> T5 ordering with ready/unlocked items prioritized.
+  - **OS Watermark Protection**: Added 160px buffer in ResearchTreeUI inspector to prevent desktop watermarks from occluding action buttons.
+  - **E2E Smoke Verification**: 100% pass across all 13 phases in headless Godot (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
 - **Granular Research & Tech Tree Overhaul (2026-11-03)**:
   - **30-Node Granular Tech Tree**: Completely redesigned `data/tech_tree.json` into a 30-node DAG across 5 Tiers (T1 Survival, T2 Crafting, T3 Bronze, T4 Iron, T5 Steel). Follows realistic step-by-step discovery: raw materials -> thermal hearth -> roasting/archery -> stone tools/weapons -> carpentry/masonry -> clay ore smelter -> bronze metallurgy -> iron bloomeries -> steel crucible.
   - **Full Recipe & Structure Integration**: Normalized all recipe prerequisites in `data/recipes.json` and structures in `data/structures.json` to link strictly to granular tech IDs.

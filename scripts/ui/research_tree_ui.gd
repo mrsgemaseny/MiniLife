@@ -264,6 +264,11 @@ func _build_bottom_inspector(parent: VBoxContainer) -> void:
 	_insp_research_btn.pressed.connect(_on_research_button_pressed)
 	right_vbox.add_child(_insp_research_btn)
 
+	# Safety spacer against desktop OS watermarks in the bottom-right corner
+	var win_watermark_spacer: Control = Control.new()
+	win_watermark_spacer.custom_minimum_size = Vector2(160.0, 0.0)
+	hbox.add_child(win_watermark_spacer)
+
 
 func refresh() -> void:
 	if _canvas == null or ResearchSys.instance == null:
@@ -450,11 +455,44 @@ func _on_canvas_draw() -> void:
 
 				if pgx == gx:
 					# Vertical connection within same tier column
-					var from_pt: Vector2 = Vector2(col_x_coords[pgx] + 115.0, row_y_coords[pgy] + 58.0)
-					var to_pt: Vector2 = Vector2(col_x_coords[gx] + 115.0, row_y_coords[gy])
-					_canvas.draw_line(from_pt, to_pt, line_col, line_w)
-					_canvas.draw_line(to_pt + Vector2(-3.5, -4.0), to_pt, line_col, line_w)
-					_canvas.draw_line(to_pt + Vector2(3.5, -4.0), to_pt, line_col, line_w)
+					if pgy > gy:
+						# Branch moves UPWARDS (e.g. from Center Herbs Y=3 UP to Stone Y=2, UP to Hearth Y=1, UP to Roast Y=0)
+						var from_pt: Vector2 = Vector2(col_x_coords[pgx] + 115.0, row_y_coords[pgy])
+						var to_pt: Vector2 = Vector2(col_x_coords[gx] + 115.0, row_y_coords[gy] + 58.0)
+						if abs(pgy - gy) == 1:
+							_canvas.draw_line(from_pt, to_pt, line_col, line_w)
+							# Arrowhead pointing UP into bottom edge of target card
+							_canvas.draw_line(to_pt + Vector2(-4.0, 5.0), to_pt, line_col, line_w)
+							_canvas.draw_line(to_pt + Vector2(4.0, 5.0), to_pt, line_col, line_w)
+						else:
+							# Route around cards through the right gutter
+							var right_x: float = col_x_coords[pgx] + 236.0
+							var p_right: Vector2 = Vector2(col_x_coords[pgx] + 230.0, row_y_coords[pgy] + 29.0)
+							var t_right: Vector2 = Vector2(col_x_coords[gx] + 230.0, row_y_coords[gy] + 29.0)
+							_canvas.draw_line(p_right, Vector2(right_x, p_right.y), line_col, line_w)
+							_canvas.draw_line(Vector2(right_x, p_right.y), Vector2(right_x, t_right.y), line_col, line_w)
+							_canvas.draw_line(Vector2(right_x, t_right.y), t_right, line_col, line_w)
+							_canvas.draw_line(t_right + Vector2(5.0, -3.5), t_right, line_col, line_w)
+							_canvas.draw_line(t_right + Vector2(5.0, 3.5), t_right, line_col, line_w)
+					elif pgy < gy:
+						# Branch moves DOWNWARDS (e.g. from Center Herbs Y=3 DOWN to Timber Y=4, DOWN to Planks Y=5, DOWN to Bows Y=6)
+						var from_pt: Vector2 = Vector2(col_x_coords[pgx] + 115.0, row_y_coords[pgy] + 58.0)
+						var to_pt: Vector2 = Vector2(col_x_coords[gx] + 115.0, row_y_coords[gy])
+						if abs(gy - pgy) == 1:
+							_canvas.draw_line(from_pt, to_pt, line_col, line_w)
+							# Arrowhead pointing DOWN into top edge of target card
+							_canvas.draw_line(to_pt + Vector2(-4.0, -5.0), to_pt, line_col, line_w)
+							_canvas.draw_line(to_pt + Vector2(4.0, -5.0), to_pt, line_col, line_w)
+						else:
+							# Route around cards through the right gutter (e.g. Planks Y=5 to Wool Y=7 skipping Archery Y=6)
+							var right_x: float = col_x_coords[pgx] + 236.0
+							var p_right: Vector2 = Vector2(col_x_coords[pgx] + 230.0, row_y_coords[pgy] + 29.0)
+							var t_right: Vector2 = Vector2(col_x_coords[gx] + 230.0, row_y_coords[gy] + 29.0)
+							_canvas.draw_line(p_right, Vector2(right_x, p_right.y), line_col, line_w)
+							_canvas.draw_line(Vector2(right_x, p_right.y), Vector2(right_x, t_right.y), line_col, line_w)
+							_canvas.draw_line(Vector2(right_x, t_right.y), t_right, line_col, line_w)
+							_canvas.draw_line(t_right + Vector2(5.0, -3.5), t_right, line_col, line_w)
+							_canvas.draw_line(t_right + Vector2(5.0, 3.5), t_right, line_col, line_w)
 				elif pgx < gx:
 					# Orthogonal line across tier columns
 					var from_pt: Vector2 = Vector2(col_x_coords[pgx] + 230.0, row_y_coords[pgy] + 29.0)

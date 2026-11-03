@@ -422,8 +422,62 @@ func close_panel() -> void:
 	SignalBus.ui_panel_toggled.emit(PANEL_ID, false, true)
 
 
+func _get_recipe_tier(recipe: Dictionary) -> int:
+	if recipe.has("tier"):
+		return int(recipe["tier"])
+
+	var req_tech: String = str(recipe.get("tech_required", ""))
+	if req_tech != "":
+		if ResearchSys.instance != null:
+			var tdef: Dictionary = ResearchSys.instance.get_tech(req_tech)
+			if not tdef.is_empty() and tdef.has("tier"):
+				return int(tdef["tier"])
+		match req_tech:
+			"herbs_gathering", "stone_harvesting", "primitive_hearth", "food_roasting", \
+			"wood_harvesting", "plank_crafting", "primitive_archery", "wool_clothing", "primitive_survival":
+				return 1
+			"stone_tools", "stone_weapons", "material_refinement", "construction_carpentry", \
+			"construction_masonry", "gambeson_crafting", "leather_armor_crafting", "hunting_archery_shields":
+				return 2
+			"clay_ore_smelter", "bronze_tools", "bronze_weapons", "bronze_armor", "bronze_lamellar_crafting":
+				return 3
+			"iron_smelting", "iron_tools", "iron_weapons", "heavy_crossbow_and_hammers", \
+			"chainmail_weaving", "iron_plate_armor", "iron_working":
+				return 4
+			"steel_crucible_smelting", "steel_weapons", "steel_plate_armor", "master_smithing":
+				return 5
+
+	# Fallback by output item ID and keywords:
+	var out: Dictionary = recipe.get("output", {})
+	var out_id: String = str(out.get("item_id", str(recipe.get("id", ""))))
+
+	if out_id.find("steel") != -1 or out_id == "arming_doublet":
+		return 5
+	elif out_id.find("iron") != -1 or out_id.find("crossbow") != -1 or out_id.find("chainmail") != -1 \
+			or out_id == "war_hammer" or out_id == "iron_hauberk" or out_id == "quality_clothing" \
+			or out_id == "quality_iron":
+		return 4
+	elif out_id.find("bronze") != -1 or out_id == "shears" or out_id.find("tin") != -1:
+		return 3
+	elif out_id.find("boiled") != -1 or out_id.find("leather") != -1 or out_id.find("gambeson") != -1 \
+			or out_id.find("hunting_bow") != -1 or out_id.find("wooden_shield") != -1 or out_id == "hoe" \
+			or out_id == "stone_masonry" or out_id == "brick" or out_id == "tanned_leather" or out_id == "treated_leather":
+		return 2
+	elif out_id.find("stone_") != -1:
+		return 2
+
+	return 1
+
+
 func _pick_default_recipe() -> void:
 	var sorted_rids: Array = _recipes.keys()
+	sorted_rids.sort_custom(func(a: String, b: String) -> bool:
+		var tier_a: int = _get_recipe_tier(_recipes[a])
+		var tier_b: int = _get_recipe_tier(_recipes[b])
+		if tier_a != tier_b:
+			return tier_a < tier_b
+		return a < b
+	)
 	for rid in sorted_rids:
 		var recipe: Dictionary = _recipes[rid]
 		var out: Dictionary = recipe.get("output", {})
@@ -459,13 +513,33 @@ func refresh() -> void:
 
 	var sorted_rids: Array = _recipes.keys()
 	sorted_rids.sort_custom(func(a: String, b: String) -> bool:
-		var req_a: String = str(_recipes[a].get("tech_required", ""))
-		var req_b: String = str(_recipes[b].get("tech_required", ""))
+		var rec_a: Dictionary = _recipes[a]
+		var rec_b: Dictionary = _recipes[b]
+
+		# 1. Primary order: Tier ascending (T1 -> T2 -> T3 -> T4 -> T5)
+		var tier_a: int = _get_recipe_tier(rec_a)
+		var tier_b: int = _get_recipe_tier(rec_b)
+		if tier_a != tier_b:
+			return tier_a < tier_b
+
+		# 2. Within same tier: Unlocked recipes before Locked recipes
+		var req_a: String = str(rec_a.get("tech_required", ""))
+		var req_b: String = str(rec_b.get("tech_required", ""))
 		var lock_a: bool = (req_a != "" and ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_a))
 		var lock_b: bool = (req_b != "" and ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_b))
 		if lock_a != lock_b:
 			return not lock_a
-		return false
+
+		# 3. Within same lock state: Ready to craft (has materials) before lacking materials
+		var mats_a: bool = _meets_requirements(player, rec_a)
+		var mats_b: bool = _meets_requirements(player, rec_b)
+		if mats_a != mats_b:
+			return mats_a
+
+		# 4. Tie-breaker by output item ID or recipe ID
+		var out_a: String = str(rec_a.get("output", {}).get("item_id", a))
+		var out_b: String = str(rec_b.get("output", {}).get("item_id", b))
+		return out_a < out_b
 	)
 
 	var found_selected: bool = false
@@ -493,8 +567,9 @@ func refresh() -> void:
 		var req_station: String = str(recipe.get("station", ""))
 		var station_ok: bool = _is_station_available(req_station, available_stations, rid)
 		var mats_ok: bool = _meets_requirements(player, recipe)
+		var tier: int = _get_recipe_tier(recipe)
 
-		var card: Button = _build_recipe_card(rid, recipe, item_title, out_id, out_count, is_tech_unlocked, req_tech, station_ok, req_station, mats_ok)
+		var card: Button = _build_recipe_card(rid, recipe, item_title, out_id, out_count, is_tech_unlocked, req_tech, station_ok, req_station, mats_ok, tier)
 		_recipe_list_box.add_child(card)
 
 	if not found_selected and not sorted_rids.is_empty():
@@ -503,7 +578,7 @@ func refresh() -> void:
 	_update_inspector(player)
 
 
-func _build_recipe_card(rid: String, recipe: Dictionary, title: String, out_id: String, out_count: int, is_unlocked: bool, req_tech: String, station_ok: bool, req_station: String, mats_ok: bool) -> Button:
+func _build_recipe_card(rid: String, recipe: Dictionary, title: String, out_id: String, out_count: int, is_unlocked: bool, req_tech: String, station_ok: bool, req_station: String, mats_ok: bool, tier: int = 1) -> Button:
 	var btn: Button = Button.new()
 	btn.custom_minimum_size = Vector2(0.0, 46.0)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -520,29 +595,31 @@ func _build_recipe_card(rid: String, recipe: Dictionary, title: String, out_id: 
 	card_sb.content_margin_top = 4
 	card_sb.content_margin_bottom = 4
 
+	var tier_tag: String = "[T%d]" % tier
+
 	if not is_unlocked:
 		card_sb.bg_color = Color(0.08, 0.09, 0.11, 0.90)
 		card_sb.border_color = Color(0.32, 0.18, 0.18, 0.85)
 		card_sb.set_border_width_all(1)
-		btn.text = "   %s  •  [ЗАКРЫТО: Требует %s]" % [title, req_tech.capitalize()]
+		btn.text = "   %s %s  •  [ЗАКРЫТО: Требует %s]" % [tier_tag, title, req_tech.capitalize().replace("_", " ")]
 		btn.add_theme_color_override("font_color", Color(0.55, 0.52, 0.52, 1.0))
 	elif not station_ok:
 		card_sb.bg_color = Color(0.12, 0.11, 0.13, 0.92) if is_selected else Color(0.09, 0.09, 0.11, 0.85)
 		card_sb.border_color = Color(0.60, 0.45, 0.25, 0.90) if is_selected else Color(0.35, 0.28, 0.20, 0.70)
 		card_sb.set_border_width_all(2 if is_selected else 1)
-		btn.text = "   %s x%d   —   [ТРЕБУЕТСЯ: %s]" % [title, out_count, _station_name_ru(req_station).to_upper()]
+		btn.text = "   %s %s x%d   —   [ТРЕБУЕТСЯ: %s]" % [tier_tag, title, out_count, _station_name_ru(req_station).to_upper()]
 		btn.add_theme_color_override("font_color", Color(0.78, 0.70, 0.58, 1.0))
 	elif mats_ok:
 		card_sb.bg_color = Color(0.16, 0.18, 0.22, 0.98) if is_selected else Color(0.12, 0.13, 0.16, 0.95)
 		card_sb.border_color = Color(0.42, 0.68, 0.42, 0.95) if is_selected else Color(0.24, 0.28, 0.32, 0.80)
 		card_sb.set_border_width_all(2 if is_selected else 1)
-		btn.text = "   %s x%d   —   %s   [ГОТОВО]" % [title, out_count, _format_inputs(recipe.get("inputs", []))]
+		btn.text = "   %s %s x%d   —   %s   [ГОТОВО]" % [tier_tag, title, out_count, _format_inputs(recipe.get("inputs", []))]
 		btn.add_theme_color_override("font_color", Color(0.92, 0.90, 0.86, 1.0))
 	else:
 		card_sb.bg_color = Color(0.14, 0.15, 0.18, 0.95) if is_selected else Color(0.10, 0.11, 0.13, 0.90)
 		card_sb.border_color = Color(0.48, 0.50, 0.56, 0.90) if is_selected else Color(0.22, 0.24, 0.28, 0.70)
 		card_sb.set_border_width_all(2 if is_selected else 1)
-		btn.text = "   %s x%d   —   %s   [НЕТ РЕСУРСОВ]" % [title, out_count, _format_inputs(recipe.get("inputs", []))]
+		btn.text = "   %s %s x%d   —   %s   [НЕТ РЕСУРСОВ]" % [tier_tag, title, out_count, _format_inputs(recipe.get("inputs", []))]
 		btn.add_theme_color_override("font_color", Color(0.70, 0.72, 0.76, 1.0))
 
 	btn.add_theme_stylebox_override("normal", card_sb)
@@ -576,7 +653,8 @@ func _update_inspector(player: Node) -> void:
 
 	var item_type: String = str(item_def.get("type", "Material")).capitalize()
 	var slot_info: String = str(item_def.get("equip_slot", ""))
-	_insp_type_lbl.text = "%s  %s" % [item_type, ("• Slot: " + slot_info.capitalize()) if slot_info != "" else ""]
+	var tier: int = _get_recipe_tier(recipe)
+	_insp_type_lbl.text = "[TIER %d]  %s  %s" % [tier, item_type, ("• Slot: " + slot_info.capitalize()) if slot_info != "" else ""]
 
 	var weight: float = float(item_def.get("weight", 1.0))
 	var durability: int = int(item_def.get("durability", -1))
@@ -621,7 +699,12 @@ func _update_inspector(player: Node) -> void:
 		_insp_tech_lbl.modulate = Color(0.70, 0.74, 0.80)
 	else:
 		var is_tech_done: bool = (ResearchSys.instance != null and ResearchSys.instance.is_researched(req_tech))
-		_insp_tech_lbl.text = "Исследование: %s  [%s]" % [req_tech.capitalize(), "ИЗУЧЕНО" if is_tech_done else "ЗАКРЫТО"]
+		var tech_name: String = req_tech.capitalize().replace("_", " ")
+		if ResearchSys.instance != null:
+			var tdef: Dictionary = ResearchSys.instance.get_tech(req_tech)
+			if not tdef.is_empty():
+				tech_name = str(tdef.get("name", tech_name))
+		_insp_tech_lbl.text = "Исследование: %s  [%s]" % [tech_name, "ИЗУЧЕНО" if is_tech_done else "ЗАКРЫТО"]
 		_insp_tech_lbl.modulate = Color(0.52, 0.78, 0.50) if is_tech_done else Color(0.85, 0.38, 0.38)
 
 	# Build Materials Checklist

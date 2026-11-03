@@ -62,3 +62,16 @@
   - Mining Speed Scaling: dynamically scales harvest time (4.8s stone -> 3.4s bronze -> 2.2s iron -> 1.5s steel).
   - Silver Ore Deposits: added silver_vein definition and mountain/snow procedural generation.
   - Invariant Verification: E2E smoke test phase 7 expanded to explicitly verify starter tools and pickaxe tier mining restrictions; all 13 phases pass with 100% OK (E2E_ALL_SYSTEMS_VERIFIED_OK).
+- Craft Menu Tier-Ordered Sorting Overhaul (16:45):
+  - Fixed recipe order in CraftMenuUI: eliminated random/unsorted listing where steel items and late-game recipes were placed at the top.
+  - Implemented strict Tier-first sorting: T1 (Survival & Primitives) -> T2 (Crafting & Carpentry) -> T3 (Bronze Age) -> T4 (Iron Age) -> T5 (Steel Era).
+  - Within each tier, recipes are organized by status: Unlocked before Locked, and Materials-Ready before Lacking Materials.
+  - Added visible [T1]..[T5] tier badges to recipe cards and inspector cards.
+  - Re-verified all 13 integration test phases pass with 100% OK (E2E_ALL_SYSTEMS_VERIFIED_OK).
+- Center-Out Research Tree DAG & Arrow Direction Flow (16:55):
+  - Reorganized TIER I in data/tech_tree.json: Primitive Gathering (herbs_gathering) is established as the central root node (Y=3).
+  - Branch UPWARDS: Stone Gathering (Y=2) -> Primitive Hearth & Kiln (Y=1) -> Roasting & Boiling (Y=0) with directional arrowheads pointing strictly UPWARDS into card bottoms.
+  - Branch DOWNWARDS: Timber Gathering (Y=4) -> Carpentry & Planks (Y=5) -> Primitive Archery (Y=6) / Woolen Underarmor (Y=7) with directional arrowheads pointing strictly DOWNWARDS into card tops.
+  - Non-adjacent node routing: lines spanning across intermediate nodes (e.g. Planks Y=5 to Wool Y=7 skipping Archery Y=6) automatically route through the column's right-side gutter, preventing lines from crossing through unrelated nodes.
+  - UI Inspector Safety: added a 160px right-hand safety buffer in ResearchTreeUI to isolate buttons and status labels from desktop OS activation watermarks.
+  - Headless verification passes 100% OK across all 13 phases (E2E_ALL_SYSTEMS_VERIFIED_OK).
