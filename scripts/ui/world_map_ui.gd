@@ -27,9 +27,16 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	set_anchors_preset(Control.PRESET_FULL_RECT)
+	offset_left = 0
+	offset_top = 0
+	offset_right = 0
+	offset_bottom = 0
+	grow_horizontal = Control.GROW_DIRECTION_BOTH
+	grow_vertical = Control.GROW_DIRECTION_BOTH
+	mouse_filter = Control.MOUSE_FILTER_STOP
 
 	_map_image = Image.create(MAP_TEX_W, MAP_TEX_H, false, Image.FORMAT_RGBA8)
-	_map_image.fill(Color(0.06, 0.07, 0.09, 1.0))
+	_map_image.fill(Color(0.05, 0.06, 0.08, 1.0))
 	_map_texture = ImageTexture.create_from_image(_map_image)
 
 	_build_ui_layout()
@@ -110,18 +117,41 @@ func center_on_player() -> void:
 	var ptile: Vector2i = GameManager.get_player_tile()
 	var player_px: float = 512.0 + float(ptile.x - ptile.y) * 2.0
 	var player_py: float = float(ptile.x + ptile.y) * 1.0
-	var canvas_center: Vector2 = _map_canvas.size * 0.5
+	var c_sz: Vector2 = _map_canvas.size
+	if c_sz.x < 100.0 or c_sz.y < 100.0:
+		c_sz = get_viewport_rect().size - Vector2(56.0, 140.0)
+	var canvas_center: Vector2 = c_sz * 0.5
 	_pan_offset = canvas_center - Vector2(player_px, player_py) * _zoom
 	_map_canvas.queue_redraw()
 
 
 func _adjust_zoom(factor: float, pivot: Vector2) -> void:
 	var old_zoom: float = _zoom
-	_zoom = clampf(_zoom * factor, 0.45, 3.5)
+	_zoom = clampf(_zoom * factor, 0.55, 3.2)
 	if absf(_zoom - old_zoom) > 0.001:
 		_pan_offset = pivot - (pivot - _pan_offset) * (_zoom / old_zoom)
 		if _map_canvas != null:
 			_map_canvas.queue_redraw()
+
+
+func _get_cartographic_biome_color(bname: String) -> Color:
+	match bname:
+		"water":
+			return Color(0.24, 0.44, 0.68, 1.0) # Sapphire river / lake
+		"desert":
+			return Color(0.78, 0.70, 0.48, 1.0) # Warm dunes
+		"plains":
+			return Color(0.38, 0.54, 0.32, 1.0) # Rolling grassland
+		"forest":
+			return Color(0.22, 0.40, 0.22, 1.0) # Deep emerald woodland
+		"swamp":
+			return Color(0.32, 0.38, 0.28, 1.0) # Murky bog moss
+		"mountains":
+			return Color(0.48, 0.50, 0.54, 1.0) # Weathered granite slate
+		"snow":
+			return Color(0.88, 0.92, 0.96, 1.0) # Alpine snow peak
+		_:
+			return Color(0.40, 0.52, 0.36, 1.0)
 
 
 func _rebuild_world_map_texture() -> void:
@@ -131,30 +161,40 @@ func _rebuild_world_map_texture() -> void:
 	if world_sys == null:
 		return
 
-	_map_image.fill(Color(0.06, 0.07, 0.09, 1.0))
+	# Transparent background around the 45-degree diamond
+	_map_image.fill(Color(0.04, 0.05, 0.06, 0.0))
 
 	# Iterate 256x256 world tiles and rasterize 45-degree isometric diamond
 	for ty in range(Config.WORLD_SIZE_TILES):
 		for tx in range(Config.WORLD_SIZE_TILES):
 			var tpos: Vector2i = Vector2i(tx, ty)
+			var bname: String = world_sys.get_biome_cached(tpos)
 			var fstate: int = int(world_sys.get_fog_state(tpos))
+
+			var base_col: Color = _get_cartographic_biome_color(bname)
+			var col: Color = base_col
+
+			if fstate == int(Config.FogState.UNEXPLORED):
+				# Shaded relief topography: muted dark antique tint showing world geography without an empty black void
+				col = base_col.darkened(0.55)
+				col = col.lerp(Color(0.09, 0.10, 0.13, 1.0), 0.45)
+			elif fstate == int(Config.FogState.VISITED):
+				col = base_col.darkened(0.18)
+			else:
+				# Fully explored / visible: full crisp saturation
+				col = base_col
 
 			var px: int = 512 + (tx - ty) * 2
 			var py: int = tx + ty
-			if px < 1 or px >= MAP_TEX_W - 1 or py < 0 or py >= MAP_TEX_H - 1:
+			if px < 0 or px >= MAP_TEX_W - 1 or py < 0 or py >= MAP_TEX_H - 1:
 				continue
 
-			if fstate == int(Config.FogState.UNEXPLORED):
-				# Dark mystery slate fog
-				_map_image.set_pixel(px, py, Color(0.08, 0.09, 0.12, 1.0))
-			else:
-				var col: Color = world_sys.get_biome_color_fast(tpos)
-				if fstate == int(Config.FogState.VISITED):
-					col = col.darkened(0.40)
-				_map_image.set_pixel(px, py, col)
-				_map_image.set_pixel(px - 1, py, col)
-				_map_image.set_pixel(px + 1, py, col)
-				_map_image.set_pixel(px, py + 1, col.darkened(0.12))
+			# Fill 2x2 footprint for solid continuous coverage without gaps
+			_map_image.set_pixel(px, py, col)
+			_map_image.set_pixel(px + 1, py, col)
+			var shadow_col: Color = col.darkened(0.10)
+			_map_image.set_pixel(px, py + 1, shadow_col)
+			_map_image.set_pixel(px + 1, py + 1, shadow_col)
 
 	_map_texture.update(_map_image)
 	if _map_canvas != null:
@@ -162,18 +202,50 @@ func _rebuild_world_map_texture() -> void:
 
 
 func _build_ui_layout() -> void:
-	# Full-Screen Dark Overlay
+	# Full-Screen 100% Opaque Backdrop (Blocks world & HUD cleanly)
 	var bg: ColorRect = ColorRect.new()
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.color = Color(0.05, 0.06, 0.08, 0.94)
+	bg.offset_left = 0
+	bg.offset_top = 0
+	bg.offset_right = 0
+	bg.offset_bottom = 0
+	bg.color = Color(0.04, 0.05, 0.07, 1.0)
 	add_child(bg)
+
+	var bg_tex: TextureRect = TextureRect.new()
+	bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_tex.offset_left = 0
+	bg_tex.offset_top = 0
+	bg_tex.offset_right = 0
+	bg_tex.offset_bottom = 0
+	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
+	if ResourceLoader.exists("res://assets/sprites/ui/fullscreen_codex_bg.jpg"):
+		bg_tex.texture = load("res://assets/sprites/ui/fullscreen_codex_bg.jpg")
+	elif ResourceLoader.exists("res://assets/sprites/ui/fullscreen_survival_bg.jpg"):
+		bg_tex.texture = load("res://assets/sprites/ui/fullscreen_survival_bg.jpg")
+	add_child(bg_tex)
+
+	var dim_panel: ColorRect = ColorRect.new()
+	dim_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim_panel.offset_left = 0
+	dim_panel.offset_top = 0
+	dim_panel.offset_right = 0
+	dim_panel.offset_bottom = 0
+	dim_panel.color = Color(0.03, 0.04, 0.05, 0.70)
+	dim_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(dim_panel)
 
 	var margin: MarginContainer = MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 24)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_top", 16)
-	margin.add_theme_constant_override("margin_bottom", 16)
+	margin.offset_left = 0
+	margin.offset_top = 0
+	margin.offset_right = 0
+	margin.offset_bottom = 0
+	margin.add_theme_constant_override("margin_left", 28)
+	margin.add_theme_constant_override("margin_right", 28)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_bottom", 20)
 	add_child(margin)
 
 	var main_vbox: VBoxContainer = VBoxContainer.new()
@@ -191,13 +263,13 @@ func _build_ui_layout() -> void:
 	hdr.add_child(title_vbox)
 
 	var title: Label = Label.new()
-	title.text = "КАРТА МИРА [M]"
+	title.text = "АТЛАС МИРА [M]"
 	title.add_theme_font_size_override("font_size", 15)
 	title.modulate = Color(0.92, 0.90, 0.86, 1.0) # Antique ivory
 	title_vbox.add_child(title)
 
 	var subtitle: Label = Label.new()
-	subtitle.text = "Изометрический атлас исследованных земель (Ромб 45°)"
+	subtitle.text = "Изометрический атлас исследованных земель • Ромб 45°"
 	subtitle.add_theme_font_size_override("font_size", 10)
 	subtitle.modulate = Color(0.60, 0.64, 0.70, 1.0)
 	title_vbox.add_child(subtitle)
@@ -221,9 +293,10 @@ func _build_ui_layout() -> void:
 	var map_frame: PanelContainer = PanelContainer.new()
 	map_frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	map_frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	map_frame.clip_contents = true # Strict viewport clipping
 	var mf_sb: StyleBoxFlat = StyleBoxFlat.new()
-	mf_sb.bg_color = Color(0.06, 0.07, 0.09, 0.98)
-	mf_sb.border_color = Color(0.28, 0.32, 0.38, 0.95)
+	mf_sb.bg_color = Color(0.05, 0.06, 0.08, 1.0)
+	mf_sb.border_color = Color(0.32, 0.36, 0.42, 0.95)
 	mf_sb.set_border_width_all(2)
 	mf_sb.set_corner_radius_all(4)
 	map_frame.add_theme_stylebox_override("panel", mf_sb)
@@ -232,6 +305,7 @@ func _build_ui_layout() -> void:
 	_map_canvas = Control.new()
 	_map_canvas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_map_canvas.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_map_canvas.clip_contents = true
 	_map_canvas.mouse_filter = Control.MOUSE_FILTER_STOP
 	_map_canvas.mouse_default_cursor_shape = Control.CURSOR_DRAG
 	_map_canvas.draw.connect(_draw_canvas)
@@ -344,14 +418,17 @@ func _draw_canvas() -> void:
 	if _map_canvas == null:
 		return
 
-	# Draw transformed 1024x512 isometric world map
+	# Solid dark backdrop inside the canvas frame
+	_map_canvas.draw_rect(Rect2(Vector2.ZERO, _map_canvas.size), Color(0.04, 0.05, 0.07, 1.0), true)
+
+	# 1. Draw transformed 1024x512 isometric world map
 	var xform: Transform2D = Transform2D(0.0, Vector2(_zoom, _zoom), 0.0, _pan_offset)
 	_map_canvas.draw_set_transform_matrix(xform)
 
 	if _map_texture != null:
 		_map_canvas.draw_texture(_map_texture, Vector2.ZERO)
 
-	# 1. Diamond World Perimeter Line (45-degree Rhombus border)
+	# 2. Diamond World Perimeter Line (45-degree Rhombus border)
 	var world_diamond: PackedVector2Array = PackedVector2Array([
 		Vector2(512.0, 0.0),
 		Vector2(1024.0, 256.0),
@@ -359,7 +436,7 @@ func _draw_canvas() -> void:
 		Vector2(0.0, 256.0),
 		Vector2(512.0, 0.0)
 	])
-	_map_canvas.draw_polyline(world_diamond, Color(0.38, 0.42, 0.50, 0.90), 2.0 / _zoom, true)
+	_map_canvas.draw_polyline(world_diamond, Color(0.55, 0.60, 0.70, 0.95), 2.0 / _zoom, true)
 
 	# 2. Reset Transform for Vector Overlays
 	_map_canvas.draw_set_transform_matrix(Transform2D.IDENTITY)

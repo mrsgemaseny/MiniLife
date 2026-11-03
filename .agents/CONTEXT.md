@@ -181,10 +181,10 @@
   - Fixed GDScript 4 loop closure capture in `InventoryUI`: slot clicked/hovered lambdas explicitly capture `slot_name = k`, preventing slots from defaulting to `"weapon"`.
   - Fixed offhand shield equip dupe: `_on_armor_slot_clicked` strictly passes `slot_override = slot_key` to `eq.equip(c_id, c_dur, slot_key)` with slot validation.
   - Added non-stackable item protection in `_on_slot_clicked` (`max_stack = 1` for weapons/shields/armor) and fixed `InventoryComponent.remove_item` to clear empty slots with `{}` instead of `remove_at(i)`.
-- **45-Degree Isometric Rhombus Minimap & Full World Map [M] (2026-11-03)**:
-  - Converted `MinimapWidget` to authentic 45-degree isometric rhombus (`Rx=94.0, Ry=47.0`, 2:1 ratio) with vector diamond tile rasterization, eliminating low-res pixel stretch and blur. Dark chiseled iron frame with corner rivets, compass "N", and status pill.
-  - Implemented `WorldMapUI` (`scripts/ui/world_map_ui.gd`): full-screen 45-degree isometric atlas (1024x512 texture for 256x256 territory) with pan/zoom (0.45x..3.5x), player beacon, discovered POI markers, and coordinate inspector.
-  - Wired `[M]` key (`ui_map` in `GameManager` and `main.tscn`) and minimap click to toggle world map.
+- **45-Degree Isometric Rhombus Minimap & Cartographic World Atlas [M] (2026-11-03)**:
+  - Converted `MinimapWidget` to authentic 45-degree isometric rhombus (`Rx=94.0, Ry=47.0`, 2:1 ratio) with vector diamond tile rasterization, dark chiseled iron frame with corner rivets, compass "N", and status pill.
+  - Overhauled `WorldMapUI` (`scripts/ui/world_map_ui.gd`): 100% opaque fullscreen window with dark slate wallpaper, framed viewport with `clip_contents = true`, continuous 2x2 px tile coverage eliminating stripes, and cartographic shaded relief for unexplored regions (visible continental topography with river, lake, mountains, and desert contours instead of black voids).
+  - Wired `[M]` key and minimap click with smooth pan/zoom, player beacon, POI markers, and coordinate inspector. Static node in `scenes/main.tscn` under `UILayer`.
 - **Battle Brothers Style Pause Menu & Full Persistence Overhaul (2026-11-03)**:
   - Completely removed rectangular card placeholders and all blue colors from `PauseMenuUI`. Buttons sit directly on the crimson heraldic banner cloth with dark weathered timber (`#1a1412`), aged bronze borders (`#614d38`), and warm illuminated bronze hovers (`#c79e61`).
   - Fixed save/load failure: resolved pause-mode blocking (`process_mode = Node.PROCESS_MODE_ALWAYS` on `SaveSystem`), eliminated slot wipe on game boot in `SaveSystem._on_game_started`, and added full serialization of player structures, walls, floors, and chest inventories (`buildings.json`).
