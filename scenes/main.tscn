@@ -109,9 +109,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			SignalBus.ui_panel_requested.emit(\"pause\")
 	elif event.is_action_pressed(\"quick_save\"):
-		SignalBus.save_requested.emit(GameManager.get_active_slot())
+		var save_sys: Node = get_node_or_null(\"Systems/SaveSystem\")
+		if save_sys != null and save_sys.has_method(\"quick_save\"):
+			save_sys.call(\"quick_save\")
+		else:
+			SignalBus.save_requested.emit(\"quicksave\")
 	elif event.is_action_pressed(\"quick_load\"):
-		SignalBus.load_requested.emit(GameManager.get_active_slot())
+		var save_sys: Node = get_node_or_null(\"Systems/SaveSystem\")
+		if save_sys != null and save_sys.has_method(\"quick_load\"):
+			save_sys.call(\"quick_load\")
+		else:
+			SignalBus.load_requested.emit(\"quicksave\")
 	elif event.is_action_pressed(\"debug_god\"):
 		GameManager.debug_god_mode = not GameManager.debug_god_mode
 	elif event.is_action_pressed(\"debug_fast_time\"):

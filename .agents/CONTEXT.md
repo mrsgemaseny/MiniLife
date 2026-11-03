@@ -185,13 +185,9 @@
   - Converted `MinimapWidget` to authentic 45-degree isometric rhombus (`Rx=94.0, Ry=47.0`, 2:1 ratio) with vector diamond tile rasterization, dark chiseled iron frame with corner rivets, compass "N", and status pill.
   - Overhauled `WorldMapUI` (`scripts/ui/world_map_ui.gd`): 100% opaque fullscreen window with dark slate wallpaper, framed viewport with `clip_contents = true`, continuous 2x2 px tile coverage eliminating stripes, and cartographic shaded relief for unexplored regions (visible continental topography with river, lake, mountains, and desert contours instead of black voids).
   - Wired `[M]` key and minimap click with smooth pan/zoom, player beacon, POI markers, and coordinate inspector. Static node in `scenes/main.tscn` under `UILayer`.
-- **Battle Brothers Style Pause Menu & Full Persistence Overhaul (2026-11-03)**:
-  - Completely removed rectangular card placeholders and all blue colors from `PauseMenuUI`. Buttons sit directly on the crimson heraldic banner cloth with dark weathered timber (`#1a1412`), aged bronze borders (`#614d38`), and warm illuminated bronze hovers (`#c79e61`).
-  - Fixed save/load failure: resolved pause-mode blocking (`process_mode = Node.PROCESS_MODE_ALWAYS` on `SaveSystem`), eliminated slot wipe on game boot in `SaveSystem._on_game_started`, and added full serialization of player structures, walls, floors, and chest inventories (`buildings.json`).
-  - Boot restore: `scenes/main.tscn` loads existing save if present, maintaining persistent progression across restarts.
-  - Phase 12 of automated E2E test suite augmented with full save/load roundtrip assertions; 100% passing (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
-- **InventoryUI Craft Grid Removal (2026-11-03)**:
-  - Completely removed 2x2 quick craft grid (`craft_card`, `craft_grid`, input/output slots) from `InventoryUI` (`[I]`).
-  - Centered column now cleanly holds strictly the 24-slot backpack and 8-slot hotbar with aligned top baselines across all 3 inventory columns.
-  - All crafting is strictly consolidated into `CraftMenuUI` (`[C]`) and physical world stations (workbenches, furnaces, forges, alchemy stations).
-- **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `buildings.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.
+- **Battle Brothers & RimWorld Quick/Named Save System (2026-11-03)**:
+  - Quick save `[F5]` and quick load `[F9]` with dedicated screen notifications.
+  - Interactive save/load modal dialogs in `PauseMenuUI`: dark aged timber and bronze aesthetic, manual named saves (`LineEdit`), slot list with `[БЫСТРОЕ]`/`[АВТО]` badges, day/time, gold, hp, and slot deletion `[ ✕ ]`.
+  - 100% exact state restoration: player position, facing direction, active hotbar index, equipment and weapon sprites, 32-slot inventory alignment, research techs (`research.json`), structures (`buildings.json`), and dynamic chunk reloading around player tile.
+  - Phase 12 of automated E2E test suite updated with quick/named saves; 100% passing (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
+- **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `buildings.json`, `research.json`, `chunks/<x>_<y>.json`) + persistent `achievements.json`.

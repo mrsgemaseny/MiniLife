@@ -840,6 +840,20 @@ func load_save_data(w: Dictionary) -> void:
 			if int(fmap[k]) != int(FogState.UNEXPLORED):
 				explored.append(Config.key_to_vec2i(str(k)))
 	SignalBus.fog_snapshot_loaded.emit(explored)
+
+	# Reload active chunks to guarantee all harvested/restored resources reflect the save state
+	var old_chunks: Array[Vector2i] = []
+	for c in _loaded_chunks:
+		old_chunks.append(c)
+	for c in old_chunks:
+		_unload_chunk(c)
+	_loaded_chunks.clear()
+	_resource_nodes_by_tile.clear()
+
+	var ptile: Vector2i = GameManager.get_player_tile()
+	if ptile.x > -9000:
+		_stream_chunks_around(ptile)
+		update_visibility(Config.world_to_iso(ptile))
 	queue_redraw()
 
 

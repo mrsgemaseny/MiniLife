@@ -333,7 +333,40 @@ func _test_phase_12_delta_chunks_and_persistence(player: Player) -> void:
 
 	save_sys.delete_world_slot("e2e_full_slot")
 	assert(not SaveSystem.slot_exists("e2e_full_slot"), "slot must be removed after deletion")
-	print("[E2E Phase 12] OK (Weather, Delta Chunks & Save/Load verified)")
+
+	# Quick Save & Named Save Verification (RimWorld & Battle Brothers Style)
+	var q_ok: bool = save_sys.quick_save()
+	assert(q_ok, "quick_save must succeed")
+	assert(SaveSystem.slot_exists("quicksave"), "quicksave slot must exist")
+
+	var custom_name: String = "Моя Крепость День 5"
+	player.inventory.set_slot(0, {"item_id": "iron_sword", "count": 1, "durability": 110})
+	var custom_ok: bool = save_sys.save_slot("e2e_custom_named", custom_name)
+	assert(custom_ok, "named save must succeed")
+
+	var saves_list: Array[Dictionary] = save_sys.list_saves()
+	assert(saves_list.size() >= 2, "list_saves must return all saved slots")
+	var found_named: bool = false
+	for s in saves_list:
+		if str(s.get("slot", "")) == "e2e_custom_named":
+			assert(str(s.get("name", "")) == custom_name, "Metadata name must match custom typed name")
+			found_named = true
+	assert(found_named, "e2e_custom_named must be found in saves list")
+
+	# Mutate inventory item to test exact item restoration
+	player.inventory.set_slot(0, {})
+	assert(player.inventory.get_slot(0).is_empty(), "slot 0 must be empty before load")
+
+	var reload_named_ok: bool = save_sys.load_slot("e2e_custom_named")
+	assert(reload_named_ok, "load_slot for named save must succeed")
+	var restored_item: Dictionary = player.inventory.get_slot(0)
+	assert(not restored_item.is_empty(), "restored slot 0 must not be empty")
+	assert(str(restored_item.get("item_id", "")) == "iron_sword", "restored item must be iron_sword")
+
+	save_sys.delete_slot("e2e_custom_named")
+	save_sys.delete_slot("quicksave")
+	assert(not SaveSystem.slot_exists("e2e_custom_named"), "named slot must be deleted")
+	print("[E2E Phase 12] OK (Weather, Delta Chunks, QuickSave & Named Save/Load verified)")
 
 
 func execute_command(raw_line: String) -> String:

@@ -25,17 +25,99 @@ static func slot_exists(slot: String) -> bool:
 	return FileAccess.file_exists(meta_path)
 
 
-func save_slot(slot: String) -> bool:
+func quick_save() -> bool:
+	var ok: bool = save_slot("quicksave", "Быстрое сохранение")
+	if ok:
+		SignalBus.notification_posted.emit("Быстрое сохранение записано [F5]")
+	else:
+		SignalBus.notification_posted.emit("Ошибка быстрого сохранения!")
+	return ok
+
+
+func quick_load() -> bool:
+	var target: String = "quicksave"
+	if not slot_exists(target):
+		var saves: Array[Dictionary] = list_saves()
+		if not saves.is_empty():
+			target = str(saves[0].get("slot", ""))
+		else:
+			SignalBus.notification_posted.emit("Сохранения не найдены!")
+			return false
+	var ok: bool = load_slot(target)
+	if ok:
+		SignalBus.notification_posted.emit("Сохранение успешно загружено [F9]")
+	else:
+		SignalBus.notification_posted.emit("Ошибка загрузки сохранения!")
+	return ok
+
+
+func list_saves() -> Array[Dictionary]:
+	var saves: Array[Dictionary] = []
+	var root_dir: String = Config.SAVE_ROOT
+	if not DirAccess.dir_exists_absolute(root_dir):
+		return saves
+	var dir: DirAccess = DirAccess.open(root_dir)
+	if dir == null:
+		return saves
+	dir.list_dir_begin()
+	var folder_name: String = dir.get_next()
+	while folder_name != "":
+		if dir.current_is_dir() and not folder_name.begins_with("."):
+			var meta_path: String = root_dir + folder_name + "/meta.json"
+			if FileAccess.file_exists(meta_path):
+				var meta: Dictionary = _read_json(meta_path)
+				var unix_ts: int = int(meta.get("unix_timestamp", 0))
+				if unix_ts <= 0:
+					unix_ts = int(FileAccess.get_modified_time(meta_path))
+				var display_name: String = str(meta.get("name", folder_name))
+				if display_name.is_empty():
+					display_name = folder_name
+				var day: int = int(meta.get("day", 1))
+				var hour: float = float(meta.get("hour", Config.START_HOUR))
+				var time_str: String = str(meta.get("time_str", "День %d, %02d:%02d" % [day, int(floor(hour)), int(fmod(hour * 60.0, 60.0))]))
+				var saved_at: String = str(meta.get("saved_at", ""))
+				var seed_val: int = int(meta.get("seed", Config.DEFAULT_WORLD_SEED))
+				var gold_val: int = int(meta.get("gold", 0))
+				var hp_val: int = int(meta.get("hp", 100))
+				saves.append({
+					"slot": folder_name,
+					"name": display_name,
+					"day": day,
+					"hour": hour,
+					"time_str": time_str,
+					"saved_at": saved_at,
+					"unix_timestamp": unix_ts,
+					"seed": seed_val,
+					"gold": gold_val,
+					"hp": hp_val,
+					"is_quicksave": (folder_name == "quicksave"),
+					"is_autosave": (folder_name == "autosave")
+				})
+		folder_name = dir.get_next()
+	dir.list_dir_end()
+
+	# Sort newest first
+	saves.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a.get("unix_timestamp", 0)) > int(b.get("unix_timestamp", 0))
+	)
+	return saves
+
+
+func delete_slot(slot: String) -> bool:
+	delete_world_slot(slot)
+	return true
+
+
+func save_slot(slot: String, display_name: String = "") -> bool:
 	var target_slot: String = slot if slot != "" else _active_slot
 	_active_slot = target_slot
-	var bundle: Dictionary = {"meta": {}, "player": {}, "world": {}, "buildings": {}}
+	var bundle: Dictionary = {"meta": {}, "player": {}, "world": {}, "buildings": {}, "research": {}}
 	SignalBus.save_data_requested.emit(bundle)
 
 	# Direct fallback queries in case paused nodes didn't process the signal
-	if bundle["player"].is_empty():
-		var player_node: Node = get_tree().get_first_node_in_group("player")
-		if player_node != null and player_node.has_method("get_save_data"):
-			bundle["player"] = player_node.call("get_save_data")
+	var player_node: Node = get_tree().get_first_node_in_group("player")
+	if player_node != null and player_node.has_method("get_save_data"):
+		bundle["player"] = player_node.call("get_save_data")
 
 	var world_node: Node = get_tree().get_first_node_in_group("world")
 	if world_node == null:
@@ -51,14 +133,39 @@ func save_slot(slot: String) -> bool:
 	if bsys != null and bsys.has_method("get_save_data"):
 		bundle["buildings"] = bsys.call("get_save_data")
 
+	var rsys: ResearchSystem = ResearchSystem.instance
+	if rsys == null:
+		rsys = get_tree().root.find_child("ResearchSystem", true, false) as ResearchSystem
+	if rsys != null:
+		bundle["research"] = {"researched": rsys.get_researched_techs()}
+
+	# Compile rich metadata
 	var meta: Dictionary = bundle.get("meta", {})
 	meta["schema_version"] = SCHEMA_VERSION
-	if not meta.has("seed"):
-		meta["seed"] = GameManager.get_world_seed()
-	if not meta.has("day"):
-		meta["day"] = GameManager.get_day()
-	if not meta.has("slot"):
-		meta["slot"] = target_slot
+	meta["slot"] = target_slot
+	var s_name: String = display_name
+	if s_name.is_empty():
+		if target_slot == "quicksave":
+			s_name = "Быстрое сохранение"
+		elif target_slot == "autosave":
+			s_name = "Автосохранение"
+		else:
+			s_name = str(meta.get("name", target_slot))
+	meta["name"] = s_name
+	meta["seed"] = GameManager.get_world_seed()
+	meta["day"] = GameManager.get_day()
+	var cur_hour: float = GameManager.get_hour()
+	meta["hour"] = cur_hour
+	meta["time_str"] = "День %d, %02d:%02d" % [GameManager.get_day(), int(floor(cur_hour)), int(fmod(cur_hour * 60.0, 60.0))]
+	meta["saved_at"] = Time.get_datetime_string_from_system(false, true)
+	meta["unix_timestamp"] = int(Time.get_unix_time_from_system())
+
+	var p_dict: Dictionary = bundle.get("player", {})
+	var inv_dict: Dictionary = p_dict.get("inventory", {})
+	meta["gold"] = int(inv_dict.get("gold", 0))
+	var stats_dict: Dictionary = p_dict.get("stats", {})
+	meta["hp"] = int(stats_dict.get("health", 100))
+	meta["max_hp"] = int(stats_dict.get("max_health", 100))
 	bundle["meta"] = meta
 
 	var w: Dictionary = bundle.get("world", {})
@@ -76,6 +183,8 @@ func save_slot(slot: String) -> bool:
 		return false
 	if not _write_json(base_dir + "buildings.json", bundle["buildings"]):
 		return false
+	if bundle.has("research") and not (bundle["research"] as Dictionary).is_empty():
+		_write_json(base_dir + "research.json", bundle["research"])
 
 	for key in _dirty_chunks:
 		var cpos: Vector2i = Config.key_to_vec2i(str(key))
@@ -95,8 +204,11 @@ func load_slot(slot: String) -> bool:
 	var player_data: Dictionary = _read_json(base_dir + "player.json")
 	var world_data: Dictionary = _read_json(base_dir + "world.json")
 	var buildings_data: Dictionary = _read_json(base_dir + "buildings.json")
+	var research_data: Dictionary = _read_json(base_dir + "research.json")
+
 	var loaded_seed: int = int(world_data.get("world_seed", Config.DEFAULT_WORLD_SEED))
 	GameManager._world_seed = loaded_seed
+	GameManager.set_day_and_hour(int(meta.get("day", 1)), float(meta.get("hour", Config.START_HOUR)))
 
 	_active_slot = slot
 	_dirty_chunks.clear()
@@ -104,7 +216,8 @@ func load_slot(slot: String) -> bool:
 		"meta": meta,
 		"player": player_data,
 		"world": world_data,
-		"buildings": buildings_data
+		"buildings": buildings_data,
+		"research": research_data
 	}
 	SignalBus.save_data_loaded.emit(bundle)
 
@@ -124,6 +237,16 @@ func load_slot(slot: String) -> bool:
 		bsys = get_tree().root.find_child("BuildingSystem", true, false) as BuildingSystem
 	if bsys != null and bsys.has_method("load_save_data"):
 		bsys.call("load_save_data", buildings_data)
+
+	if research_data.has("researched"):
+		var rsys: ResearchSystem = ResearchSystem.instance
+		if rsys == null:
+			rsys = get_tree().root.find_child("ResearchSystem", true, false) as ResearchSystem
+		if rsys != null:
+			rsys._researched.clear()
+			for tid in research_data["researched"]:
+				rsys._researched.append(str(tid))
+			SignalBus.tech_tree_updated.emit()
 
 	GameManager.resume_loaded_game()
 	SignalBus.game_loaded.emit()

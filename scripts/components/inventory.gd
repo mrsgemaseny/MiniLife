@@ -294,11 +294,17 @@ func from_dict(data: Dictionary) -> void:
 	slots.clear()
 	for s in data.get("slots", []):
 		if s is Dictionary:
-			slots.append({
-				"item_id": str(s.get("item_id", "")),
-				"count": int(s.get("count", 1)),
-				"durability": int(s.get("durability", -1))
-			})
+			var it_id: String = str(s.get("item_id", ""))
+			if it_id.is_empty() or int(s.get("count", 0)) <= 0:
+				slots.append({})
+			else:
+				slots.append({
+					"item_id": it_id,
+					"count": int(s.get("count", 1)),
+					"durability": int(s.get("durability", -1))
+				})
+	while slots.size() < max_slots:
+		slots.append({})
 	contents_changed.emit()
 	gold_changed.emit(gold)
 

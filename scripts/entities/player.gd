@@ -936,6 +936,8 @@ func _connect_bus_signals() -> void:
 func get_save_data() -> Dictionary:
 	return {
 		"position": [global_position.x, global_position.y],
+		"active_hotbar_index": active_hotbar_index,
+		"facing_direction": [facing_direction.x, facing_direction.y],
 		"stats": stats.to_dict() if stats != null else {},
 		"health": health_comp.to_dict() if health_comp != null else {},
 		"skills": skills.to_dict() if skills != null else {},
@@ -953,6 +955,10 @@ func load_save_data(p: Dictionary) -> void:
 		global_position = Vector2(float(pos[0]), float(pos[1]))
 		current_tile = Config.iso_to_world(global_position)
 		GameManager.set_player_world_pos(global_position)
+	var facing_arr: Array = p.get("facing_direction", [1.0, 0.0])
+	if facing_arr.size() >= 2:
+		facing_direction = Vector2(float(facing_arr[0]), float(facing_arr[1]))
+	active_hotbar_index = int(p.get("active_hotbar_index", 0))
 	if stats != null:
 		stats.from_dict(p.get("stats", {}))
 		if stats.health <= 0.0:
@@ -979,6 +985,10 @@ func load_save_data(p: Dictionary) -> void:
 		SignalBus.player_stat_changed.emit("stamina", stats.stamina, stats.max_stamina)
 		SignalBus.player_stat_changed.emit("blood", stats.blood, stats.max_blood)
 	sync_weapon_from_active_slot()
+	if inventory != null:
+		SignalBus.inventory_changed.emit(self, inventory.snapshot())
+	if equipment != null:
+		SignalBus.equipment_changed.emit("weapon", equipment.get_item_id("weapon"))
 	queue_redraw()
 
 func _on_save_data_requested(bundle: Dictionary) -> void:
