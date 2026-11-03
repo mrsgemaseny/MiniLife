@@ -53,3 +53,12 @@
   - Updated ProgressionSystem milestone checks to trace the new granular T1-T5 tech milestones.
   - Upgraded ResearchTreeUI with a ScrollContainer-backed 5-column layout, Tier headers, in-column vertical dependency lines, and orthogonal cross-tier connection paths.
   - Headless verification passes 100% OK across all 13 phases (E2E_ALL_SYSTEMS_VERIFIED_OK).
+- Tool Tier Mining Restrictions & Starter Kit Overhaul (16:35):
+  - Starting Loadout: Player now spawns equipped with stone_axe in hotbar slot 0 and stone_pickaxe in hotbar slot 1.
+  - Pickaxe Tier Restrictions:
+    - Tier 1 (Stone Pickaxe): stone, coal, copper, tin. Cannot mine iron, silver, or gold.
+    - Tier 2 (Bronze Pickaxe): unlocks iron ore (iron_vein). Cannot mine silver or gold.
+    - Tier 3+ (Iron / Steel Pickaxe): unlocks precious metals (gold_quartz_vein, silver_vein).
+  - Mining Speed Scaling: dynamically scales harvest time (4.8s stone -> 3.4s bronze -> 2.2s iron -> 1.5s steel).
+  - Silver Ore Deposits: added silver_vein definition and mountain/snow procedural generation.
+  - Invariant Verification: E2E smoke test phase 7 expanded to explicitly verify starter tools and pickaxe tier mining restrictions; all 13 phases pass with 100% OK (E2E_ALL_SYSTEMS_VERIFIED_OK).

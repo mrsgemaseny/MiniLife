@@ -54,7 +54,9 @@ func _ready() -> void:
 	queue_redraw()
 
 func _grant_starter_kit() -> void:
-	# L1 Scavenger starts empty-handed: hands only, no tools
+	if inventory != null:
+		inventory.set_slot(0, {"item_id": "stone_axe", "count": 1, "durability": 65})
+		inventory.set_slot(1, {"item_id": "stone_pickaxe", "count": 1, "durability": 70})
 	active_hotbar_index = 0
 	sync_weapon_from_active_slot()
 	SignalBus.inventory_changed.emit(self, inventory.snapshot() if inventory != null else {})

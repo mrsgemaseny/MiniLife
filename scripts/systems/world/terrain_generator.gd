@@ -220,26 +220,30 @@ func get_resource_node_at(pos: Vector2i) -> String:
 			elif mtn_roll < 0.150:
 				return "vigor_herb"
 		else:
-			# High rocky cliffs: rare Iron (hard to find, not spam), Coal, minimal Boulders, zero trees
+			# High rocky cliffs: rare Iron, Silver, Coal, minimal Boulders, zero trees
 			if mtn_roll < 0.012:
 				return "iron_vein"
-			elif mtn_roll < 0.038:
+			elif mtn_roll < 0.022:
+				return "silver_vein"
+			elif mtn_roll < 0.046:
 				return "coal_deposit"
-			elif mtn_roll < 0.073:
+			elif mtn_roll < 0.076:
 				return "stone_boulder"
-			elif mtn_roll < 0.088:
+			elif mtn_roll < 0.091:
 				return "vigor_herb"
 		return ""
 
-	# 4. SNOW PEAKS (High frozen ridges: very rare iron, sparse boulders, alpine vigor herbs)
+	# 4. SNOW PEAKS (High frozen ridges: very rare iron/silver, sparse boulders, alpine vigor herbs)
 	if biome_id == "snow":
 		var snow_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 303)
 		var snow_roll: float = snow_rng.randf()
 		if snow_roll < 0.006:
 			return "iron_vein"
-		elif snow_roll < 0.020:
+		elif snow_roll < 0.012:
+			return "silver_vein"
+		elif snow_roll < 0.024:
 			return "vigor_herb"
-		elif snow_roll < 0.035:
+		elif snow_roll < 0.038:
 			return "stone_boulder"
 		return ""
 

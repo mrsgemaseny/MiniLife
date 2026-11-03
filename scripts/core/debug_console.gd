@@ -274,7 +274,36 @@ func _test_phase_7_continuous_harvesting_and_ecology(player: Player) -> void:
 
 	assert(not DataRegistry.get_item("torch").is_empty(), "Torch item definition missing")
 	assert(not DataRegistry.get_recipe("craft_torch").is_empty(), "Torch recipe missing")
-	print("[E2E Phase 7] OK (Continuous Harvest, Oak Tree Hitbox & Tree Ecology verified)")
+
+	# Pickaxe Tier Requirement Rules (Iron requires Bronze Pickaxe; Gold/Silver require Iron Pickaxe)
+	assert(player.inventory.has_item("stone_axe", 1), "Player must start with stone_axe")
+	assert(player.inventory.has_item("stone_pickaxe", 1), "Player must start with stone_pickaxe")
+
+	var iron_node: ResourceNode = ResourceNode.new()
+	iron_node.node_def_id = "iron_vein"
+	add_child(iron_node)
+	player.equipment.equip("stone_pickaxe", 70, "weapon")
+	var can_mine_iron_stone: Dictionary = iron_node.can_harvest(player)
+	assert(not bool(can_mine_iron_stone.get("ok", false)), "Stone pickaxe must NOT be able to mine iron ore")
+
+	player.equipment.equip("bronze_pickaxe", 120, "weapon")
+	var can_mine_iron_bronze: Dictionary = iron_node.can_harvest(player)
+	assert(bool(can_mine_iron_bronze.get("ok", false)), "Bronze pickaxe must be able to mine iron ore")
+
+	var gold_node: ResourceNode = ResourceNode.new()
+	gold_node.node_def_id = "gold_quartz_vein"
+	add_child(gold_node)
+	var can_mine_gold_bronze: Dictionary = gold_node.can_harvest(player)
+	assert(not bool(can_mine_gold_bronze.get("ok", false)), "Bronze pickaxe must NOT be able to mine gold ore")
+
+	player.equipment.equip("iron_pickaxe", 180, "weapon")
+	var can_mine_gold_iron: Dictionary = gold_node.can_harvest(player)
+	assert(bool(can_mine_gold_iron.get("ok", false)), "Iron pickaxe must be able to mine gold ore")
+
+	iron_node.queue_free()
+	gold_node.queue_free()
+
+	print("[E2E Phase 7] OK (Continuous Harvest, Starter Tools & Pickaxe Tier Restrictions verified)")
 
 
 func _test_phase_8_crafting_furnace_smelting(player: Player) -> void:

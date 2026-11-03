@@ -303,45 +303,89 @@ func cancel_harvest() -> void:
 		queue_redraw()
 
 
+func get_pickaxe_tier(weapon_id: String) -> int:
+	if weapon_id.find("steel_pickaxe") != -1:
+		return 4
+	elif weapon_id.find("iron_pickaxe") != -1:
+		return 3
+	elif weapon_id.find("bronze_pickaxe") != -1:
+		return 2
+	elif weapon_id.find("pickaxe") != -1:
+		return 1
+	return 0
+
+
+func can_harvest(harvester: Node) -> Dictionary:
+	if harvester == null:
+		return {"ok": false, "reason": "No harvester"}
+	var equip: EquipmentComponent = harvester.get("equipment") as EquipmentComponent
+	var held_weapon: String = equip.get_item_id("weapon") if equip != null else ""
+	var is_pick: bool = held_weapon.find("pickaxe") != -1
+	var is_axe: bool = held_weapon.find("axe") != -1 and not is_pick
+	var pick_tier: int = get_pickaxe_tier(held_weapon)
+
+	var is_rock: bool = (node_def_id.find("stone") != -1 or node_def_id.find("rock") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("ore") != -1 or node_def_id.find("deposit") != -1 or node_def_id.find("vein") != -1)
+	var is_tree: bool = (node_def_id.find("tree") != -1 or node_def_id.find("oak") != -1 or node_def_id.find("pine") != -1 or growth_stage == "small_tree")
+
+	if is_rock:
+		if not is_pick or pick_tier < 1:
+			return {"ok": false, "reason": "Requires a pickaxe to mine stone and ores!"}
+		var min_pick: int = int(_def.get("min_pickaxe_tier", 1))
+		var is_iron_ore: bool = (node_def_id == "iron_vein" or min_pick == 2)
+		if is_iron_ore and pick_tier < 2:
+			return {"ok": false, "reason": "Requires a bronze pickaxe or higher to mine iron ore!"}
+		var is_precious: bool = (node_def_id == "gold_quartz_vein" or node_def_id == "silver_vein" or min_pick >= 3)
+		if is_precious and pick_tier < 3:
+			return {"ok": false, "reason": "Requires an iron pickaxe or higher to mine gold and silver!"}
+
+	if is_tree and not is_axe:
+		return {"ok": false, "reason": "Requires an axe to chop trees!"}
+
+	return {"ok": true, "reason": ""}
+
+
 func harvest_channel(harvester: Node, delta: float) -> bool:
 	if harvester == null:
 		return false
 	_decay_timer = 0.0
 
+	var check: Dictionary = can_harvest(harvester)
+	if not bool(check.get("ok", false)):
+		cancel_harvest()
+		var now_msec: float = float(Time.get_ticks_msec()) * 0.001
+		if now_msec - _last_warning_time > 2.5:
+			_last_warning_time = now_msec
+			SignalBus.notification_posted.emit(str(check.get("reason", "Cannot harvest this resource!")))
+		return false
+
 	var equip: EquipmentComponent = harvester.get("equipment") as EquipmentComponent
 	var held_weapon: String = equip.get_item_id("weapon") if equip != null else ""
-	var is_pick: bool = held_weapon.find("pickaxe") != -1
-	var is_axe: bool = held_weapon.find("axe") != -1 and not is_pick
-	var is_iron: bool = held_weapon.find("iron") != -1
+	var pick_tier: int = get_pickaxe_tier(held_weapon)
 
 	var is_rock: bool = (node_def_id.find("stone") != -1 or node_def_id.find("rock") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("ore") != -1 or node_def_id.find("deposit") != -1 or node_def_id.find("vein") != -1)
 	var is_tree: bool = (node_def_id.find("tree") != -1 or node_def_id.find("oak") != -1 or node_def_id.find("pine") != -1 or growth_stage == "small_tree")
 	var is_plant: bool = (node_def_id.find("grass") != -1 or node_def_id.find("herb") != -1 or node_def_id.find("flower") != -1)
 	var is_bush: bool = (node_def_id.find("bush") != -1 or node_def_id.find("berry") != -1 or node_def_id.find("mushroom") != -1)
 
-	if is_rock and not is_pick:
-		cancel_harvest()
-		var now_msec: float = float(Time.get_ticks_msec()) * 0.001
-		if now_msec - _last_warning_time > 2.5:
-			_last_warning_time = now_msec
-			SignalBus.notification_posted.emit("Requires a pickaxe to mine stone and ores!")
-		return false
-
-	if is_tree and not is_axe:
-		cancel_harvest()
-		var now_msec: float = float(Time.get_ticks_msec()) * 0.001
-		if now_msec - _last_warning_time > 2.5:
-			_last_warning_time = now_msec
-			SignalBus.notification_posted.emit("Requires an axe to chop trees!")
-		return false
-
 	var req_time: float = 5.0
 	if is_plant:
 		req_time = 1.0
 	elif is_rock:
-		req_time = 2.4 if is_iron else 5.0
+		match pick_tier:
+			4: req_time = 1.5
+			3: req_time = 2.2
+			2: req_time = 3.4
+			_: req_time = 4.8
 	elif is_tree:
-		req_time = 2.0 if is_iron else 4.0
+		var axe_tier: int = 1
+		if held_weapon.find("steel_axe") != -1: axe_tier = 4
+		elif held_weapon.find("iron_axe") != -1: axe_tier = 3
+		elif held_weapon.find("bronze_axe") != -1: axe_tier = 2
+		match axe_tier:
+			4: req_time = 1.4
+			3: req_time = 2.0
+			2: req_time = 2.8
+			_: req_time = 3.8
 	elif is_bush:
 		req_time = 1.0
 

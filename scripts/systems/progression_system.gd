@@ -71,7 +71,7 @@ func can_open_craft_menu() -> bool:
 
 
 func can_harvest_with_tools() -> bool:
-	return current_level >= 2
+	return true
 
 
 func is_tier_unlocked(tier: int) -> bool:
