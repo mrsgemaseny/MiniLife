@@ -165,13 +165,25 @@ func _test_phase_4_character_anatomy_and_needs(player: Player) -> void:
 	var hp_gain_boosted: float = player.stats.health - 50.0
 	assert(hp_gain_boosted > hp_gain_standard, "Health regen at >90% hunger must exceed standard regen")
 
+	# Case 4: hunger < 30% -> Hungry debuff applied, no starvation damage at < 10%
+	player.stats.hunger = 20.0
+	player._physics_process(0.1)
+	assert(player.status_effects.has_effect("hungry"), "Hungry effect must be applied when hunger < 30%")
+
+	player.stats.hunger = 5.0
+	var hp_before_low_hunger: float = player.stats.health
+	player._physics_process(0.1)
+	assert(not player.status_effects.has_effect("starving"), "Starving effect must be removed")
+	assert(player.stats.health == hp_before_low_hunger, "Player must not take periodic damage at < 10% hunger")
+
 	# Restore full stats
 	player.stats.health = player.stats.max_health
 	player.stats.hunger = player.stats.max_hunger
+	player.status_effects.remove("hungry")
 	if player.health_comp != null:
 		player.health_comp.current = player.health_comp.maximum
 
-	print("[E2E Phase 4] OK (Unified Health & Armor, Hunger Regeneration, Starving rules verified)")
+	print("[E2E Phase 4] OK (Unified Health & Armor, Hunger Regeneration, Hungry debuffs verified)")
 
 
 func _test_phase_5_skills_and_perks(player: Player) -> void:

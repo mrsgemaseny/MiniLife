@@ -93,40 +93,35 @@ func _physics_process(delta: float) -> void:
 	else:
 		_knockback_velocity = Vector2.ZERO
 
-	# Stamina regeneration & well-fed health recovery
+	# Stamina regeneration (slowed by 50% when hungry)
 	if stats.stamina < stats.max_stamina:
-		stats.modify("stamina", Config.STAMINA_REGEN_PER_SEC * delta)
+		var stam_regen: float = Config.STAMINA_REGEN_PER_SEC
+		if status_effects != null and status_effects.has_effect("hungry"):
+			stam_regen *= 0.5
+		stats.modify("stamina", stam_regen * delta)
 
-	# Hunger Consequences (Task 4c)
+	# Hunger & Regeneration Rules
 	if stats.hunger <= 0.0 and not is_dead and not GameManager.debug_god_mode:
 		die()
-	elif stats.hunger < 10.0:
-		if not status_effects.has_effect("starving"):
-			status_effects.apply("starving", -1.0)
-		status_effects.remove("hungry")
-		if not GameManager.debug_god_mode:
-			stats.modify("health", -(1.0 / 60.0) * delta)
-			if stats.health <= 0.0 and not is_dead:
-				die()
 	elif stats.hunger < 30.0:
 		if not status_effects.has_effect("hungry"):
 			status_effects.apply("hungry", -1.0)
-		status_effects.remove("starving")
 	else:
 		status_effects.remove("hungry")
-		status_effects.remove("starving")
-		var hunger_ratio: float = stats.hunger / maxf(1.0, stats.max_hunger)
-		var regen_rate: float = 0.0
-		if hunger_ratio > 0.90:
-			regen_rate = 3.5
-		elif hunger_ratio > 0.50:
-			regen_rate = 1.5
 
-		if regen_rate > 0.0 and stats.health < stats.max_health:
-			var heal_amount: float = regen_rate * delta
-			stats.modify("health", heal_amount)
-			if health_comp != null:
-				health_comp.heal(heal_amount)
+	# Health Regeneration from Satiety (> 50% basic, > 90% boosted, <= 50% off)
+	var hunger_ratio: float = stats.hunger / maxf(1.0, stats.max_hunger)
+	var regen_rate: float = 0.0
+	if hunger_ratio > 0.90:
+		regen_rate = 3.5
+	elif hunger_ratio > 0.50:
+		regen_rate = 1.5
+
+	if regen_rate > 0.0 and stats.health < stats.max_health:
+		var heal_amount: float = regen_rate * delta
+		stats.modify("health", heal_amount)
+		if health_comp != null:
+			health_comp.heal(heal_amount)
 
 	if stats.health <= 0.0 and not is_dead and not GameManager.debug_god_mode:
 		die()
@@ -436,6 +431,8 @@ func perform_attack() -> void:
 
 	var w_stats: Dictionary = equipment.get_weapon_stats()
 	var atk_speed: float = maxf(0.25, float(w_stats.get("attack_speed", 1.0)))
+	if status_effects != null and status_effects.has_effect("hungry"):
+		atk_speed *= 0.75
 	_attack_cooldown = Config.BASE_ATTACK_COOLDOWN / atk_speed
 	_swing_duration = 0.26
 	_swing_timer = _swing_duration
@@ -904,6 +901,8 @@ func _connect_bus_signals() -> void:
 		if not is_dead:
 			stats.modify("hunger", -Config.HUNGER_DECAY_PER_HOUR)
 			needs.tick_hourly(GameManager.is_night())
+			if stats.hunger < 30.0:
+				needs.modify_need("morale", -3.0)
 	)
 	SignalBus.item_use_requested.connect(func(entity: Node, slot_index: int) -> void:
 		if entity == self:

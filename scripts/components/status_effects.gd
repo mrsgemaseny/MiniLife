@@ -14,8 +14,8 @@ const EFFECT_RULES: Dictionary = {
 	"infected": {"duration": 20.0, "tick_interval": 4.0, "damage": 2.0, "damage_type": "poison", "speed_mult": 0.85, "blocks_attack": false},
 	"well_fed": {"duration": 30.0, "tick_interval": 5.0, "damage": -1.5, "damage_type": "true", "speed_mult": 1.08, "damage_mult": 1.05, "blocks_attack": false},
 	"exhausted": {"duration": 15.0, "tick_interval": 0.0, "damage": 0.0, "damage_type": "true", "speed_mult": 0.7, "damage_mult": 0.85, "blocks_attack": false},
-	"hungry": {"duration": -1.0, "tick_interval": 0.0, "damage": 0.0, "damage_type": "true", "speed_mult": 0.8, "damage_mult": 0.9, "blocks_attack": false},
-	"starving": {"duration": -1.0, "tick_interval": 1.0, "damage": 1.0 / 60.0, "damage_type": "true", "speed_mult": 0.6, "damage_mult": 0.75, "blocks_attack": false}
+	"hungry": {"duration": -1.0, "tick_interval": 0.0, "damage": 0.0, "damage_type": "true", "speed_mult": 0.75, "damage_mult": 0.75, "blocks_attack": false},
+	"starving": {"duration": -1.0, "tick_interval": 0.0, "damage": 0.0, "damage_type": "true", "speed_mult": 0.6, "damage_mult": 0.70, "blocks_attack": false}
 }
 
 var _active: Dictionary = {}
