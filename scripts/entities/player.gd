@@ -794,20 +794,13 @@ func _setup_torch_light() -> void:
 	_torch_light.enabled = false
 	add_child(_torch_light)
 
-func _tick_torch(delta: float) -> void:
+func _tick_torch(_delta: float) -> void:
 	if _torch_light == null or equipment == null:
 		return
 	var is_torch_active: bool = (equipment.get_item_id("weapon") == "torch" or equipment.get_item_id("offhand") == "torch")
 	if is_torch_active:
 		_torch_light.enabled = true
 		_torch_light.energy = 1.15 + sin(Time.get_ticks_msec() * 0.007) * 0.08
-		_torch_burn_accum += delta
-		if _torch_burn_accum >= 1.0:
-			_torch_burn_accum -= 1.0
-			var broken: bool = equipment.damage_weapon(1)
-			if broken:
-				SignalBus.notification_posted.emit("Your torch burned out and extinguished.")
-				_torch_light.enabled = false
 	else:
 		_torch_light.enabled = false
 		_torch_burn_accum = 0.0

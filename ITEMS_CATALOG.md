@@ -53,7 +53,7 @@
 | `bronze_pickaxe` | Бронзовая кирка | Т3 | `weapon` | Бронза + Дерево | Добыча известняка, сланца и железной руды. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
 | `iron_pickaxe` | Железная кирка | Т4 | `weapon` | Железо + Дерево | Прочная кирка для разрушения гранита и богатых жил. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
 | `steel_pickaxe` | Стальная кирка | Т5 | `weapon` | Сталь + Дерево | Максимальная скорость проходки твердых скал. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
-| `torch` | Факел из сосновой смолы | Т1 | `weapon` | Дерево + Смола + Ткань | Источник света (300с горения), отпугивает волков ночью. | `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md`, `PROJECT_MiniLife.md` |
+| `torch` | Факел из сосновой смолы | Т1 | `weapon` | Дерево + Смола + Ткань | Бесконечный источник света, отпугивает волков ночью. | `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md`, `PROJECT_MiniLife.md` |
 | `fishing_rod` | Удочка | Т1-Т2 | `weapon` | Дерево + Ткань/Жила | Ловля рыбы в реках и озерах. | `ANIMALS_AND_FAUNA.md` |
 | `shears` | Ножницы для стрижки | Т1-Т2 | `tool` | Камень / Железо | Прижизненная стрижка шерсти с овец без забоя. | `ANIMALS_AND_FAUNA.md` |
 

@@ -876,10 +876,9 @@
 		"value": 15,
 		"stackable": true,
 		"max_stack": 64,
-		"durability": 300,
+		"durability": -1,
 		"stats": {
 			"light_radius": 280.0,
-			"burn_time_sec": 300.0,
 			"damage": 8,
 			"damage_type": "fire",
 			"attack_speed": 1.1,
