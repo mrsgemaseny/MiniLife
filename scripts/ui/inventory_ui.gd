@@ -211,7 +211,7 @@ func _build_minecraft_inventory_ui() -> void:
 	title_vbox.add_child(title)
 
 	var sub_lbl: Label = Label.new()
-	sub_lbl.text = "Управление снаряжением, полевой крафт и перенос грузов [ESC / I]"
+	sub_lbl.text = "Управление снаряжением и перенос грузов [ESC / I]"
 	sub_lbl.add_theme_font_size_override("font_size", 10)
 	sub_lbl.modulate = Color(0.55, 0.58, 0.64, 1.0)
 	title_vbox.add_child(sub_lbl)
@@ -418,57 +418,11 @@ func _build_minecraft_inventory_ui() -> void:
 	_gold_label.modulate = Color(0.92, 0.90, 0.86, 1.0)
 	eff3_vbox.add_child(_gold_label)
 
-	# CENTER COLUMN: Crafting 2x2 + Backpack (24) + Hotbar (8)
+	# CENTER COLUMN: Backpack (24) + Hotbar (8)
 	var center_col: VBoxContainer = VBoxContainer.new()
 	center_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	center_col.add_theme_constant_override("separation", 10)
+	center_col.add_theme_constant_override("separation", 14)
 	body_hbox.add_child(center_col)
-
-	var craft_card: PanelContainer = PanelContainer.new()
-	var c_sb: StyleBoxFlat = StyleBoxFlat.new()
-	c_sb.bg_color = Color(0.10, 0.11, 0.13, 0.95)
-	c_sb.border_color = Color(0.24, 0.26, 0.30, 0.85)
-	c_sb.set_border_width_all(1)
-	c_sb.set_corner_radius_all(3)
-	c_sb.set_content_margin_all(8)
-	craft_card.add_theme_stylebox_override("panel", c_sb)
-	center_col.add_child(craft_card)
-
-	var craft_vbox: VBoxContainer = VBoxContainer.new()
-	craft_vbox.add_theme_constant_override("separation", 6)
-	craft_card.add_child(craft_vbox)
-
-	var craft_title: Label = Label.new()
-	craft_title.text = "БЫСТРЫЙ КРАФТ ВЫЖИВАНИЯ (2x2)"
-	craft_title.add_theme_font_size_override("font_size", 10)
-	craft_title.modulate = Color(0.75, 0.78, 0.84)
-	craft_vbox.add_child(craft_title)
-
-	var craft_row: HBoxContainer = HBoxContainer.new()
-	craft_row.add_theme_constant_override("separation", 10)
-	craft_vbox.add_child(craft_row)
-
-	var craft_grid: GridContainer = GridContainer.new()
-	craft_grid.columns = 2
-	craft_grid.add_theme_constant_override("h_separation", 3)
-	craft_grid.add_theme_constant_override("v_separation", 3)
-	craft_row.add_child(craft_grid)
-
-	for ci in range(4):
-		var cs: Control = MCSlot.new()
-		cs.slot_group = "craft_input"
-		craft_grid.add_child(cs)
-
-	var arrow_lbl: Label = Label.new()
-	arrow_lbl.text = " ➔ "
-	arrow_lbl.add_theme_font_size_override("font_size", 16)
-	arrow_lbl.modulate = Color(0.65, 0.68, 0.74, 1.0)
-	arrow_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	craft_row.add_child(arrow_lbl)
-
-	var res_slot: Control = MCSlot.new()
-	res_slot.slot_group = "craft_output"
-	craft_row.add_child(res_slot)
 
 	# Main Backpack Section (24 slots)
 	var inv_title: Label = Label.new()

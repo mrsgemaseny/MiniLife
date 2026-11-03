@@ -190,4 +190,8 @@
   - Fixed save/load failure: resolved pause-mode blocking (`process_mode = Node.PROCESS_MODE_ALWAYS` on `SaveSystem`), eliminated slot wipe on game boot in `SaveSystem._on_game_started`, and added full serialization of player structures, walls, floors, and chest inventories (`buildings.json`).
   - Boot restore: `scenes/main.tscn` loads existing save if present, maintaining persistent progression across restarts.
   - Phase 12 of automated E2E test suite augmented with full save/load roundtrip assertions; 100% passing (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
+- **InventoryUI Craft Grid Removal (2026-11-03)**:
+  - Completely removed 2x2 quick craft grid (`craft_card`, `craft_grid`, input/output slots) from `InventoryUI` (`[I]`).
+  - Centered column now cleanly holds strictly the 24-slot backpack and 8-slot hotbar with aligned top baselines across all 3 inventory columns.
+  - All crafting is strictly consolidated into `CraftMenuUI` (`[C]`) and physical world stations (workbenches, furnaces, forges, alchemy stations).
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `buildings.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.
