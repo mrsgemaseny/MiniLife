@@ -187,13 +187,12 @@ func get_resource_node_at(pos: Vector2i) -> String:
 	var lake_se_center: Vector2 = Vector2(w_size * 0.74, w_size * 0.76)
 	var dist_lake_se: float = Vector2(float(pos.x), float(pos.y)).distance_to(lake_se_center)
 
-	# 1. TIN ORE (Alluvial riverbank and lake shore deposits — sparse gravel beds near water)
-	var is_water_shore: bool = (dist_river >= 2.4 and dist_river <= 6.5) or (dist_lake_se >= w_size * 0.055 and dist_lake_se <= w_size * 0.055 + 5.0)
+	# 1. TIN ORE (Alluvial riverbank and lake shore deposits — gravel beds near water)
+	var is_water_shore: bool = (dist_river >= 2.4 and dist_river <= 8.5) or (dist_lake_se >= w_size * 0.055 and dist_lake_se <= w_size * 0.055 + 7.0)
 	if is_water_shore and biome_id != "water":
 		var tin_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 909)
-		if tin_rng.randf() < 0.020:
+		if tin_rng.randf() < 0.042:
 			return "tin_vein"
-		return ""
 
 	# 2. GOLD ORE: strictly in high mountains near river or mountain streams
 	if elev > 0.40 and dist_river < 12.0:
@@ -202,21 +201,23 @@ func get_resource_node_at(pos: Vector2i) -> String:
 			return "gold_quartz_vein"
 
 	# 3. MOUNTAINS (Rocky Foothills vs High Cliffs)
-	# Copper spawns strictly in rocky places / mountain slopes
+	# Copper and Tin spawn in rocky foothills; Iron and Coal in high cliffs
 	if biome_id == "mountains":
 		var mtn_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 202)
 		var mtn_roll: float = mtn_rng.randf()
 		if elev < 0.52:
-			# Rocky foothills: Copper deposits around stone outcrops, pines, sparse boulders, no iron
+			# Rocky foothills: Copper and Tin deposits around stone outcrops, pines
 			if mtn_roll < 0.028:
 				return "copper_vein"
-			elif mtn_roll < 0.090:
+			elif mtn_roll < 0.054:
+				return "tin_vein"
+			elif mtn_roll < 0.095:
 				return "forest_pine"
-			elif mtn_roll < 0.115:
+			elif mtn_roll < 0.120:
 				return "stone_boulder"
-			elif mtn_roll < 0.130:
+			elif mtn_roll < 0.135:
 				return "wild_berry_bush"
-			elif mtn_roll < 0.148:
+			elif mtn_roll < 0.150:
 				return "vigor_herb"
 		else:
 			# High rocky cliffs: rare Iron (hard to find, not spam), Coal, minimal Boulders, zero trees

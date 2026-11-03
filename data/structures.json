@@ -81,13 +81,12 @@
 	{
 		"id": "forge",
 		"name": "Smelting Forge",
-		"tech_required": "pyrology_coal",
 		"hp": 200,
 		"color": "#495057",
 		"height_px": 22.0,
 		"materials": [
 			{ "item_id": "stone", "count": 8 },
-			{ "item_id": "iron_ingot", "count": 2 }
+			{ "item_id": "wood", "count": 4 }
 		],
 		"passable": false,
 		"interactable": true

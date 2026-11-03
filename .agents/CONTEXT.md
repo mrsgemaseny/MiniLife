@@ -205,15 +205,10 @@
   - 12 new 160x160 RGBA8 sprites in `assets/sprites/items/`: silver & gold coins (`silver_coins`, `gold_coins`, `copper_coins`), textiles (`wool` -> `cloth` -> `quality_cloth`), leathers (`leather_raw` -> `treated_leather` -> `quality_leather`), metals (`iron_ingot` -> `quality_iron` -> `steel_ingot`).
   - Integrated into `data/items.json`, `data/recipes.json`, and `ItemIconFactory._resolve_sprite_path()`.
   - Phase 1–12 automated E2E tests 100% passing (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
-- **Layered Armor System & 4x4 Weapon Matrix (2026-11-03)**:
-  - Added clothing underarmor slot (`clothing`) alongside chest armor (`chest`) in `EquipmentComponent` and `InventoryUI`.
-  - Enforced Anti-Cheese rule (no duplicate armor items across torso layers).
-  - Implemented Day R wear queue: outer armor takes 100% durability damage until broken, then clothing absorbs wear.
-  - Completed 4x4 weapon/tool matrix (sword, pickaxe, axe, dagger) across stone, bronze, iron, and steel.
-  - Added T1-T5 armor catalog (`gambeson`, `simple_chainmail`, `iron_hauberk`, `bronze_cuirass`, `mercenary_iron_cuirass`, `iron_scale_armor`, `steel_cuirass`, `steel_plate_armor`, helmets, greaves).
-  - Added `feet` (boots) slot: `leather_boots`, `bronze_boots`, `iron_boots`, `steel_boots`.
-  - Fixed QuickSave [F5] / QuickLoad [F9] InputMap registration and unhandled input hooks.
-  - Fixed large oak tree harvesting hitbox in `ResourceNode` & `Player`: added `contains_point` with visual bounds and prioritizes direct cursor hit over player proximity.
-  - Generated and integrated all 80 missing sprites from `ITEMS_CATALOG.md` (no procedural fallbacks, 160x160 RGBA8).
+- **Battle Brothers Equipment Sprites & Complete Catalog Coverage (2026-11-03)**:
+  - 32 icons upgraded to authentic Battle Brothers standard (headless bust, visible padded collar, leather straps, forged buckles, rivets).
+  - Torso Armors: `gambeson`, `simple_chainmail`, `iron_hauberk`, `leather_armor`, `boiled_leather_cuirass`, `leather_lamellar`, `bronze_cuirass`, `bronze_lamellar`, `iron_armor`, `iron_plate_armor`, `iron_lamellar`, `iron_scale_armor`, `iron_brigandine`, `steel_cuirass`, `steel_brigandine`, `steel_plate_armor`.
+  - Helmets, Greaves, Boots & Tools: `wool_hood`, `leather_helmet`, `bronze_helmet`, `iron_helmet`, `steel_helmet`, `chainmail_coif`, `wool_wraps`, `leather_greaves`, `bronze_greaves`, `iron_greaves`, `steel_greaves`, `leather_boots`, `bronze_boots`, `iron_boots`, `steel_boots`, `hoe`.
+  - 130/130 items in `data/items.json` have direct, dedicated 160x160 RGBA8 PNG sprites (0 missing).
   - 100% headless pass across all 13 E2E phases (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `buildings.json`, `research.json`, `chunks/<x>_<y>.json`) + persistent `achievements.json`.

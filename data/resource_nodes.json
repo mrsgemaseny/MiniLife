@@ -94,7 +94,7 @@
 	{
 		"id": "tin_vein",
 		"name": "Tin Deposit",
-		"biome": "water",
+		"biome": "plains",
 		"hits": 5,
 		"required_tool": "pickaxe",
 		"preferred_tool": "pickaxe",
