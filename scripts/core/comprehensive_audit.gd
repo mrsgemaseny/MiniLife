@@ -58,16 +58,28 @@ func _audit_items_catalog(report: Dictionary) -> void:
 		return
 
 	var required_items: Array[String] = [
-		# Weapons & Tools
-		"wooden_club", "wooden_spear", "iron_spear", "steel_war_pick", "primitive_bow", "javelins",
-		"fishing_rod", "shears", "hoe", "iron_sword", "iron_axe", "iron_pickaxe",
-		# Ammo
-		"arrow", "bronze_arrow", "iron_arrow", "iron_bolt", "steel_arrow",
-		# Armor & Clothing
-		"wool_hood", "leather_helmet", "iron_helmet", "wool_shirt", "quality_clothing", "arming_doublet",
-		"boiled_leather_cuirass", "leather_lamellar", "bronze_lamellar", "steel_brigandine",
-		"wool_wraps", "leather_greaves", "iron_greaves",
-		# Materials & Food
+		# User Weapons Catalog
+		"stone_sword", "stone_dagger", "stone_axe", "wooden_club", "wooden_spear",
+		"bronze_sword", "bronze_dagger", "bronze_axe", "bronze_spear",
+		"iron_sword", "iron_dagger", "iron_axe", "iron_spear", "war_hammer",
+		"steel_sword", "steel_dagger", "steel_axe", "steel_war_pick",
+		# Ranged & Ammo
+		"primitive_bow", "hunting_bow", "heavy_crossbow", "javelins",
+		"arrow", "bronze_arrow", "iron_bolt",
+		# Shields
+		"wooden_shield", "iron_shield",
+		# Head
+		"wool_hood", "leather_helmet", "bronze_helmet", "chainmail_coif", "iron_helmet", "steel_helmet",
+		# Clothing
+		"wool_shirt", "gambeson", "simple_chainmail", "quality_clothing", "arming_doublet",
+		# Chest
+		"leather_armor", "boiled_leather_cuirass", "leather_lamellar", "bronze_cuirass", "bronze_lamellar",
+		"iron_hauberk", "iron_lamellar", "iron_scale_armor", "iron_armor", "iron_plate_armor",
+		"steel_cuirass", "steel_brigandine", "steel_plate_armor",
+		# Legs
+		"wool_wraps", "leather_greaves", "bronze_greaves", "iron_greaves", "steel_greaves",
+		# Tools, Materials & Food
+		"fishing_rod", "shears", "hoe", "iron_pickaxe",
 		"stone_masonry", "clay", "brick", "charcoal", "feather", "silver_ore", "wheat", "flour",
 		"fish", "cooked_fish", "milk", "egg", "silver_coin", "gold_coin"
 	]
@@ -206,6 +218,50 @@ func _audit_armor_and_tiers(report: Dictionary) -> void:
 		report["errors"].append("Armor Tiers: outer chest did not absorb 100% durability wear before clothing")
 	eq.unequip("chest")
 	eq.unequip("clothing")
+
+	# Invariant 5: Exact Defense Values against Canonical Catalog
+	var target_defense: Dictionary = {
+		# Head
+		"wool_hood": 2,
+		"leather_helmet": 5,
+		"bronze_helmet": 8,
+		"chainmail_coif": 7,
+		"iron_helmet": 11,
+		"steel_helmet": 16,
+		# Clothing
+		"wool_shirt": 1,
+		"gambeson": 7,
+		"simple_chainmail": 15,
+		"quality_clothing": 0,
+		"arming_doublet": 0,
+		# Chest
+		"leather_armor": 4,
+		"boiled_leather_cuirass": 11,
+		"leather_lamellar": 14,
+		"bronze_cuirass": 18,
+		"bronze_lamellar": 20,
+		"iron_hauberk": 25,
+		"iron_lamellar": 24,
+		"iron_scale_armor": 23,
+		"iron_armor": 26,
+		"iron_plate_armor": 29,
+		"steel_cuirass": 36,
+		"steel_brigandine": 38,
+		"steel_plate_armor": 45,
+		# Legs
+		"wool_wraps": 1,
+		"leather_greaves": 4,
+		"bronze_greaves": 9,
+		"iron_greaves": 13,
+		"steel_greaves": 18
+	}
+
+	for it_id in target_defense:
+		var it: Dictionary = DataRegistry.get_item(it_id)
+		var expected: float = float(target_defense[it_id])
+		var actual: float = float(it.get("stats", {}).get("defense", 0.0))
+		if actual != expected:
+			report["errors"].append("Armor Defense Mismatch: '%s' expected defense %.0f, got %.0f" % [it_id, expected, actual])
 
 	report["checks_passed"] += 1
 
