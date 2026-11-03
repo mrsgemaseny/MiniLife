@@ -87,6 +87,21 @@ func _tick_fsm(delta: float) -> void:
 			if target_entity == null:
 				current_state = State.PATROL
 				return
+
+			# Wolf Torch Fear: Wolves flee from active torches and light sources
+			if enemy_id == "wolf" and target_entity.is_in_group("player"):
+				var has_torch: bool = false
+				if "equipment" in target_entity and target_entity.get("equipment") != null:
+					var peq: EquipmentComponent = target_entity.get("equipment") as EquipmentComponent
+					if peq != null and (peq.get_item_id("weapon") == "torch" or peq.get_item_id("offhand") == "torch"):
+						has_torch = true
+				if has_torch:
+					# Flee outward
+					velocity = (global_position - target_entity.global_position).normalized() * (move_speed * 0.8)
+					if sim_tier == SimulationBubble.Tier.FULL:
+						move_and_slide()
+					return
+
 			var dist: float = global_position.distance_to(target_entity.global_position)
 			if dist > aggro_range * 1.6:
 				current_state = State.PATROL

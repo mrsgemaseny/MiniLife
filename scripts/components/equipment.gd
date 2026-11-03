@@ -5,7 +5,7 @@ signal slot_changed(slot: String, item_id: String)
 signal item_broken(slot: String, item_id: String)
 signal weapon_durability_changed(new_dur: int)
 
-const SLOTS: Array[String] = ["head", "chest", "clothing", "legs", "weapon", "offhand"]
+const SLOTS: Array[String] = ["head", "chest", "clothing", "legs", "feet", "weapon", "offhand"]
 const UNARMED_STATS: Dictionary = {
 	"damage": 5.0,
 	"damage_type": "physical",
@@ -36,6 +36,20 @@ func can_equip(item_id: String) -> bool:
 	return slot != "" and SLOTS.has(slot)
 
 
+func can_equip_slot(item_id: String, target_slot: String) -> bool:
+	if not SLOTS.has(target_slot):
+		return false
+	if target_slot == "clothing" and (item_id in ["iron_hauberk", "iron_chainmail", "steel_plate_armor", "steel_brigandine"]):
+		return false
+	var def: Dictionary = _get_item_def(item_id)
+	if def.has("equip_slots"):
+		var slots: Array = def.get("equip_slots", [])
+		for s in slots:
+			if str(s) == target_slot:
+				return true
+	return _resolve_slot(def) == target_slot
+
+
 func equip(item_id: String, durability: int = -1, slot_override: String = "") -> Dictionary:
 	var def: Dictionary = _get_item_def(item_id)
 	var slot: String = slot_override
@@ -62,6 +76,11 @@ func equip(item_id: String, durability: int = -1, slot_override: String = "") ->
 		return {}
 	if slot == "clothing" and get_item_id("chest") == item_id:
 		SignalBus.notification_posted.emit("Cannot equip duplicate layers of the same armor.")
+		return {}
+
+	# Strict Hauberk & Plate Restriction: Iron Hauberk and Steel Plate/Brigandine are chest-only
+	if slot == "clothing" and (item_id == "iron_hauberk" or item_id == "iron_chainmail" or item_id == "steel_plate_armor" or item_id == "steel_brigandine"):
+		SignalBus.notification_posted.emit("Heavy mail and plate armor must be worn on the outer chest layer.")
 		return {}
 
 	var prev: Dictionary = _equipped.get(slot, {"item_id": "", "durability": -1}).duplicate()
@@ -111,6 +130,26 @@ func get_defense() -> float:
 		var stats: Dictionary = def.get("stats", {})
 		total += float(stats.get("defense", 0.0))
 	return total
+
+
+func get_total_weight() -> float:
+	var total: float = 0.0
+	for s in SLOTS:
+		var item_id: String = get_item_id(s)
+		if item_id == "":
+			continue
+		var def: Dictionary = _get_item_def(item_id)
+		total += float(def.get("weight", 0.0))
+	return total
+
+
+func get_stamina_cost_multiplier() -> float:
+	var w: float = get_total_weight()
+	if w > 18.0:
+		return 1.30
+	elif w > 8.0:
+		return 1.15
+	return 1.0
 
 
 func get_weapon_stats() -> Dictionary:
@@ -240,8 +279,10 @@ func _resolve_slot(def: Dictionary) -> String:
 			return "clothing"
 		"armor_chest", "armor":
 			return "chest"
-		"armor_legs", "boots":
+		"armor_legs", "pants", "greaves":
 			return "legs"
+		"armor_feet", "boots", "shoes":
+			return "feet"
 		"shield", "offhand":
 			return "offhand"
 	return ""

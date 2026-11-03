@@ -16,6 +16,7 @@ class TileState extends RefCounted:
 const CHUNK_SCENE: PackedScene = preload("res://scenes/world/chunk.tscn")
 const NPC_SCENE: PackedScene = preload("res://scenes/entities/npc_base.tscn")
 const ENEMY_SCENE: PackedScene = preload("res://scenes/entities/enemy_base.tscn")
+const ResourceNodeClass = preload("res://scripts/entities/resource_node.gd")
 
 @onready var ground_tile_map: TileMap = $GroundTileMap
 @onready var chunk_container: Node2D = $ChunkContainer
@@ -507,7 +508,7 @@ func _load_chunk(cpos: Vector2i) -> void:
 
 
 func _spawn_resource_node(chunk_node: Node2D, node_def_id: String, tpos: Vector2i, stage: String = "full") -> void:
-	var rnode: ResourceNode = ResourceNode.new()
+	var rnode = ResourceNodeClass.new()
 	rnode.node_def_id = node_def_id
 	rnode.tile_pos = tpos
 	rnode.growth_stage = stage

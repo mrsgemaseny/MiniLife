@@ -2,6 +2,9 @@ class_name DebugConsole
 extends Node
 
 const AudioDirectorClass = preload("res://autoloads/audio_director.gd")
+const ProgressionSystemClass = preload("res://scripts/systems/progression_system.gd")
+const CaravanSystemClass = preload("res://scripts/systems/economy/caravan_system.gd")
+const AnimalEntityClass = preload("res://scripts/entities/animal_entity.gd")
 
 
 func _ready() -> void:
@@ -70,9 +73,10 @@ func _run_e2e_exhaustive_suite() -> void:
 	_test_phase_10_building_structures_and_ysort(player)
 	_test_phase_11_inventory_hotbar_and_dupe_proofing(player)
 	_test_phase_12_delta_chunks_and_persistence(player)
+	_test_phase_13_master_contracts(player)
 
 	print("=======================================================")
-	print("[E2E_SUITE] ALL 12 PHASES EXHAUSTIVELY VERIFIED (100% OK)")
+	print("[E2E_SUITE] ALL 13 PHASES EXHAUSTIVELY VERIFIED (100% OK)")
 	print("=======================================================")
 	print("E2E_ALL_SYSTEMS_VERIFIED_OK")
 	get_tree().quit(0)
@@ -216,9 +220,21 @@ func _test_phase_7_continuous_harvesting_and_ecology(player: Player) -> void:
 	assert(not ResourceRegrowth.is_tree("stone_boulder"), "Stone boulder must NOT regrow")
 	assert(not ResourceRegrowth.is_tree("iron_vein"), "Iron vein must NOT regrow")
 
+	# Oak Tree Hitbox & Large Canopy Click Detection Test
+	var oak_node: ResourceNode = ResourceNode.new()
+	oak_node.node_def_id = "oak_tree"
+	oak_node.tile_pos = Vector2i(10, 10)
+	oak_node.global_position = Config.world_to_iso(Vector2i(10, 10))
+	add_child(oak_node)
+	assert(oak_node.contains_point(oak_node.global_position + Vector2(-15.0, -50.0)), "Canopy click at y=-50 must register on oak tree")
+	assert(oak_node.contains_point(oak_node.global_position + Vector2(0.0, -64.0)), "Top crown click must register on oak tree")
+	assert(oak_node.contains_point(oak_node.global_position + Vector2(0.0, 4.0)), "Ground tile click must register on oak tree")
+	assert(not oak_node.contains_point(oak_node.global_position + Vector2(100.0, 100.0)), "Far outside click must miss oak tree")
+	oak_node.queue_free()
+
 	assert(not DataRegistry.get_item("torch").is_empty(), "Torch item definition missing")
 	assert(not DataRegistry.get_recipe("craft_torch").is_empty(), "Torch recipe missing")
-	print("[E2E Phase 7] OK (Continuous Harvest & Tree Ecology verified)")
+	print("[E2E Phase 7] OK (Continuous Harvest, Oak Tree Hitbox & Tree Ecology verified)")
 
 
 func _test_phase_8_crafting_furnace_smelting(player: Player) -> void:
@@ -420,6 +436,72 @@ func _test_phase_12_delta_chunks_and_persistence(player: Player) -> void:
 	save_sys.delete_slot("quicksave")
 	assert(not SaveSystem.slot_exists("e2e_custom_named"), "named slot must be deleted")
 	print("[E2E Phase 12] OK (Weather, Delta Chunks, QuickSave & Named Save/Load verified)")
+
+
+func _test_phase_13_master_contracts(player: Player) -> void:
+	print("[E2E Phase 13] Master Specifications: Zero Clutter, Layered Armor, Farming, Progression, Fauna & Arbitrage...")
+
+	# 1. Zero Clutter verification
+	var forbidden_items: Array[String] = ["flint", "resin", "copper_coin", "poison", "poison_herb", "potion_antidote"]
+	for fit in forbidden_items:
+		assert(DataRegistry.get_item(fit).is_empty(), "Forbidden clutter item '%s' must not exist in items.json" % fit)
+
+	# 2. Progression System verification
+	var prog: Node = ProgressionSystemClass.instance
+	assert(prog != null, "ProgressionSystem instance must exist")
+	assert(int(prog.get("current_level")) >= 1 and int(prog.get("current_level")) <= 11, "Progression level must be valid")
+	assert(str(prog.call("get_level_title")) != "", "Progression title must be valid")
+
+	# 3. Layered Armor & Equipment Invariants
+	var eq: EquipmentComponent = player.equipment
+	assert(eq != null, "Player equipment component must exist")
+	# Heavy armor cannot be worn as underclothing
+	var can_wear_hauberk_undercloth: bool = eq.can_equip_slot("iron_hauberk", "clothing")
+	assert(not can_wear_hauberk_undercloth, "Iron Hauberk must not be wearable in clothing slot")
+	var can_wear_hauberk_chest: bool = eq.can_equip_slot("iron_hauberk", "chest")
+	assert(can_wear_hauberk_chest, "Iron Hauberk must be wearable in outer chest slot")
+	var stam_mult: float = eq.get_stamina_cost_multiplier()
+	assert(stam_mult >= 1.0, "Stamina multiplier must be >= 1.0")
+
+	# 4. Two-Currency Arbitrage & Caravan 5-Trip ROI
+	var car_sys: Node = get_tree().get_first_node_in_group("caravan_system")
+	if car_sys == null:
+		var systems: Node = get_node_or_null("/root/Main/Systems")
+		if systems != null:
+			car_sys = systems.get_node_or_null("CaravanSystem")
+	assert(car_sys != null, "CaravanSystem instance must exist")
+
+	var v_settle = (car_sys.get("settlements") as Dictionary)["village_oakhaven"]
+	var c_settle = (car_sys.get("settlements") as Dictionary)["city_ironford"]
+	var rate_v: int = int(car_sys.call("get_exchange_rate", null))
+	assert(rate_v == 15, "Village exchange rate must be 15 Silver per Gold")
+
+	# Test Caravan 5-trip ROI rule
+	for i in range(5):
+		car_sys.call("record_caravan_trip", "city_ironford", true)
+	assert(int(c_settle.get("caravan_trips")) >= 5, "Caravan trips must reach 5")
+	assert(bool(c_settle.get("is_roi_achieved")), "Caravan must achieve full ROI on 5 trips")
+
+	# 5. Non-Lethal Animal interaction verification
+	var cow: CharacterBody2D = AnimalEntityClass.new()
+	cow.set("animal_type", "cow")
+	add_child(cow)
+	player.inventory.add_item("empty_bottle", 1)
+	assert(player.inventory.has_item("empty_bottle", 1), "Player must have empty bottle")
+	cow.call("interact", player)
+	assert(player.inventory.has_item("milk", 1), "Player must have received milk from cow")
+	cow.queue_free()
+
+	# Shearing sheep
+	var sheep: CharacterBody2D = AnimalEntityClass.new()
+	sheep.set("animal_type", "sheep")
+	add_child(sheep)
+	player.inventory.add_item("shears", 1)
+	sheep.call("interact", player)
+	assert(player.inventory.has_item("wool", 2), "Player must have received sheared wool from sheep")
+	sheep.queue_free()
+
+	print("[E2E Phase 13] OK (Zero Clutter, Layered Armor, Progression L1-L11, Caravan 5-Trip ROI, Fauna verified)")
 
 
 func execute_command(raw_line: String) -> String:

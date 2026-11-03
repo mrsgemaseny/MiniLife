@@ -15,9 +15,13 @@ func get_recipes_for_station(station_id: String) -> Array[Dictionary]:
 		if station_id == "" and req_station == "":
 			result.append(recipe)
 		elif station_id != "":
-			if req_station == station_id or req_station == "":
+			if req_station == station_id:
 				result.append(recipe)
-			elif (req_station in ["campfire", "alchemy_station"]) and (station_id in ["campfire", "alchemy_station"]):
+			elif req_station == "" and station_id in ["workbench", "campfire"]:
+				result.append(recipe)
+			elif req_station == "water_mill" and station_id == "mechanical_water_mill":
+				result.append(recipe)
+			elif req_station == "furnace" and station_id == "ore_smelter":
 				result.append(recipe)
 	return result
 
@@ -30,8 +34,9 @@ func can_craft(recipe_id: String, crafter: Node, active_station: String = "") ->
 		return {"ok": false, "reason": "No crafter"}
 	var required_station: String = str(recipe.get("station", ""))
 	if required_station != "" and required_station != active_station:
-		var is_brewing_compat: bool = (required_station in ["campfire", "alchemy_station"]) and (active_station in ["campfire", "alchemy_station"])
-		if not is_brewing_compat and not _is_near_station(crafter, required_station):
+		var is_mill_compat: bool = (required_station == "water_mill" and active_station == "mechanical_water_mill")
+		var is_smelt_compat: bool = (required_station == "furnace" and active_station == "ore_smelter")
+		if not is_mill_compat and not is_smelt_compat and not _is_near_station(crafter, required_station):
 			return {"ok": false, "reason": "Requires station: " + required_station}
 
 	var req_tech: String = str(recipe.get("tech_required", ""))
@@ -48,11 +53,24 @@ func can_craft(recipe_id: String, crafter: Node, active_station: String = "") ->
 	var inv: InventoryComponent = crafter.get("inventory") as InventoryComponent
 	if inv == null:
 		return {"ok": false, "reason": "No inventory"}
+
+	var crafter_tile: Vector2i = Vector2i.ZERO
+	if crafter is Node2D:
+		crafter_tile = Config.iso_to_world((crafter as Node2D).global_position)
+
+	var storage_mgr: StorageManager = null
+	if BuildingSystem.instance != null:
+		storage_mgr = BuildingSystem.instance.get_storage_manager()
+
 	for inp in recipe.get("inputs", []):
 		if inp is Dictionary:
 			var item_id: String = str(inp.get("item_id", ""))
 			var count: int = int(inp.get("count", 1))
-			if not inv.has_item(item_id, count):
+			var personal_cnt: int = inv.get_item_count(item_id)
+			var chest_cnt: int = 0
+			if storage_mgr != null and personal_cnt < count:
+				chest_cnt = storage_mgr.count_item_in_radius(crafter_tile, item_id, 4)
+			if personal_cnt + chest_cnt < count:
 				return {"ok": false, "reason": "Missing material: " + item_id}
 
 	var output: Dictionary = recipe.get("output", {})
@@ -76,21 +94,46 @@ func craft(recipe_id: String, crafter: Node, active_station: String = "") -> boo
 	var inv: InventoryComponent = crafter.get("inventory") as InventoryComponent
 	var skills: SkillsComponent = crafter.get("skills") as SkillsComponent
 
+	var crafter_tile: Vector2i = Vector2i.ZERO
+	if crafter is Node2D:
+		crafter_tile = Config.iso_to_world((crafter as Node2D).global_position)
+
+	var storage_mgr: StorageManager = null
+	if BuildingSystem.instance != null:
+		storage_mgr = BuildingSystem.instance.get_storage_manager()
+
+	var had_water_bottle: bool = false
+
 	for inp in recipe.get("inputs", []):
 		if inp is Dictionary:
-			inv.remove_item(str(inp.get("item_id", "")), int(inp.get("count", 1)))
+			var item_id: String = str(inp.get("item_id", ""))
+			var count: int = int(inp.get("count", 1))
+			if item_id == "water_bottle":
+				had_water_bottle = true
+
+			var personal_cnt: int = inv.get_item_count(item_id)
+			var from_inv: int = mini(personal_cnt, count)
+			if from_inv > 0:
+				inv.remove_item(item_id, from_inv)
+			var rem: int = count - from_inv
+			if rem > 0 and storage_mgr != null:
+				storage_mgr.remove_item_from_radius(crafter_tile, item_id, rem, 4)
 
 	var output: Dictionary = recipe.get("output", {})
 	var out_id: String = str(output.get("item_id", ""))
 	var out_count: int = int(output.get("count", 1))
 	var req_station: String = str(recipe.get("station", ""))
 	if skills != null:
-		if req_station == "forge":
+		if req_station == "forge" or req_station == "ore_smelter":
 			out_count += SmeltingSystem.compute_smelt_bonus_yield(skills.get_level("smithing"))
 		elif req_station == "campfire":
 			out_count += CookingSystem.compute_meal_bonus_count(skills.get_level("cooking"))
 
 	inv.add_item(out_id, out_count)
+
+	# Return bottle if water was consumed
+	if had_water_bottle:
+		inv.add_item("empty_bottle", 1)
 
 	var xp_rewards: Dictionary = recipe.get("xp_reward", {})
 	if skills != null:

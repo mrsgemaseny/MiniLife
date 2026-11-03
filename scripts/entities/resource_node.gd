@@ -45,7 +45,7 @@ func _process(delta: float) -> void:
 		needs_redraw = true
 
 	_decay_timer += delta
-	if _decay_timer > 0.15 and harvest_progress > 0.0:
+	if _decay_timer > 0.35 and harvest_progress > 0.0:
 		cancel_harvest()
 
 	for i in range(_chips.size() - 1, -1, -1):
@@ -83,6 +83,41 @@ static func _get_tex(path: String) -> Texture2D:
 	if tex != null:
 		_res_tex_cache[path] = tex
 	return tex
+
+
+func get_visual_rect() -> Rect2:
+	if growth_stage == "stump":
+		return Rect2(-10.0, -10.0, 20.0, 18.0)
+	elif growth_stage == "small_tree":
+		return Rect2(-22.0, -50.0, 44.0, 54.0)
+	elif node_def_id.find("pine") != -1:
+		return Rect2(-29.0, -68.0, 58.0, 72.0)
+	elif node_def_id.find("tree") != -1 or node_def_id.find("oak") != -1:
+		return Rect2(-40.0, -68.0, 80.0, 72.0)
+	elif node_def_id.find("bush") != -1 or node_def_id.find("berry") != -1:
+		return Rect2(-22.0, -26.0, 44.0, 32.0)
+	elif node_def_id.find("herb") != -1 or node_def_id.find("grass") != -1:
+		return Rect2(-20.0, -40.0, 40.0, 46.0)
+	else:
+		return Rect2(-26.0, -32.0, 52.0, 38.0)
+
+
+func contains_point(world_pt: Vector2) -> bool:
+	var local_pt: Vector2 = world_pt - global_position
+	# 1. Check visual sprite bounds (with generous 8px margin so edge clicks count)
+	var vrect: Rect2 = get_visual_rect().grow(8.0)
+	if vrect.has_point(local_pt):
+		return true
+	# 2. Check if mouse is directly targeting the ground tile diamond
+	var tpos_mouse: Vector2i = Config.iso_to_world(world_pt)
+	if tpos_mouse == tile_pos:
+		return true
+	# 3. Fallback circular check around visual center
+	var v_center: Vector2 = vrect.get_center()
+	var max_r: float = maxf(vrect.size.x, vrect.size.y) * 0.58
+	if local_pt.distance_to(v_center) <= max_r:
+		return true
+	return false
 
 
 func _draw() -> void:
@@ -435,6 +470,15 @@ func harvest_hit(_harvester: Node) -> bool:
 func _deplete_and_grant(harvester: Node) -> void:
 	var inv: InventoryComponent = harvester.get("inventory") as InventoryComponent
 	var skills: SkillsComponent = harvester.get("skills") as SkillsComponent
+	var equip: EquipmentComponent = harvester.get("equipment") as EquipmentComponent
+	var has_blade: bool = false
+	if equip != null:
+		var held_id: String = equip.get_item_id("weapon")
+		if held_id.find("dagger") != -1 or held_id.find("sword") != -1 or held_id.find("blade") != -1:
+			has_blade = true
+
+	var is_flora: bool = node_def_id.find("herb") != -1 or node_def_id == "wild_grass" or node_def_id == "wild_berry_bush"
+
 	var total_dropped: int = 0
 	var primary_item: String = "wood"
 	for drop in _def.get("drops", []):
@@ -442,11 +486,17 @@ func _deplete_and_grant(harvester: Node) -> void:
 			var item_id: String = str(drop.get("item_id", "wood"))
 			var min_c: int = int(drop.get("min", 1))
 			var max_c: int = int(drop.get("max", 2))
-			var cnt: int = randi_range(min_c, maxi(min_c, max_c))
+			var cnt: int = max_c if (has_blade and is_flora) else randi_range(min_c, maxi(min_c, max_c))
 			if cnt > 0 and inv != null:
 				inv.add_item(item_id, cnt)
 				total_dropped += cnt
 				primary_item = item_id
+
+	# Knife herbalism bonus: 30% chance for extra wheat_seeds when harvesting flora
+	if has_blade and is_flora and inv != null:
+		if randf() < 0.30:
+			inv.add_item("wheat_seeds", 1)
+			SignalBus.notification_posted.emit("Carefully cut seeds with blade (+1 Wheat Seeds).")
 
 	var skill_name: String = str(_def.get("skill", "woodcutting"))
 	var xp_val: float = float(_def.get("xp", 12.0))

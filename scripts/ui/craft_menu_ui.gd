@@ -328,6 +328,10 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 func open_panel(station_id: String = "") -> void:
 	if station_id == "":
 		station_id = _detect_nearby_station()
+	var prog_node: Node = get_tree().root.find_child("ProgressionSystem", true, false)
+	if station_id == "" and prog_node != null and prog_node.has_method("can_open_craft_menu") and not bool(prog_node.call("can_open_craft_menu")):
+		SignalBus.notification_posted.emit("Hand crafting is locked for L1 Scavengers. Gather 30 raw resources by hand to unlock.")
+		return
 	_active_station = station_id
 	visible = true
 	_pick_default_recipe()
@@ -637,9 +641,23 @@ func _meets_requirements(player: Node, recipe: Dictionary) -> bool:
 		return false
 	if not skills.meets_requirements(recipe.get("skill_required", {})):
 		return false
+
+	var ptile: Vector2i = Vector2i.ZERO
+	if player is Node2D:
+		ptile = Config.iso_to_world((player as Node2D).global_position)
+	var storage_mgr: StorageManager = null
+	if BuildingSystem.instance != null:
+		storage_mgr = BuildingSystem.instance.get_storage_manager()
+
 	for inp in recipe.get("inputs", []):
 		if inp is Dictionary:
-			if not inv.has_item(str(inp.get("item_id", "")), int(inp.get("count", 1))):
+			var item_id: String = str(inp.get("item_id", ""))
+			var needed: int = int(inp.get("count", 1))
+			var p_cnt: int = inv.get_item_count(item_id)
+			var c_cnt: int = 0
+			if storage_mgr != null and p_cnt < needed:
+				c_cnt = storage_mgr.count_item_in_radius(ptile, item_id, 4)
+			if p_cnt + c_cnt < needed:
 				return false
 	return true
 

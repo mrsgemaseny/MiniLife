@@ -35,6 +35,12 @@ static func _resolve_sprite_path(id: String) -> String:
 		return "res://assets/sprites/structures/bed.png"
 	if id == "furnace" or id.find("furnace") != -1:
 		return "res://assets/sprites/structures/furnace.png"
+	if id == "ore_smelter" or id.find("smelter") != -1:
+		return "res://assets/sprites/structures/furnace.png"
+	if id == "water_mill" or id == "mechanical_water_mill" or id.find("mill") != -1:
+		return "res://assets/sprites/structures/workbench.png"
+	if id == "well" or id == "water_collector" or id.find("well") != -1:
+		return "res://assets/sprites/structures/water_collector.png"
 	if id == "forge" or id.find("forge") != -1:
 		return "res://assets/sprites/structures/forge.png"
 	if id == "pit_trap" or id.find("pit") != -1:
@@ -65,12 +71,16 @@ static func _resolve_sprite_path(id: String) -> String:
 		return "res://assets/sprites/items/potion_healing.png"
 	if id == "potion_stamina" or id == "stamina_potion" or id.find("stamina_potion") != -1:
 		return "res://assets/sprites/items/potion_stamina.png"
-	if id == "potion_antidote" or id == "antidote":
-		return "res://assets/sprites/items/potion_antidote.png"
 	if id == "potion_ironskin" or id == "ironskin_potion":
 		return "res://assets/sprites/items/potion_ironskin.png"
 	if id == "wheat_seeds" or id == "seeds":
 		return "res://assets/sprites/items/wheat_seeds.png"
+	if id == "wheat" or id == "flour":
+		return "res://assets/sprites/items/wheat_seeds.png"
+	if id == "fish" or id == "cooked_fish":
+		return "res://assets/sprites/items/cooked_meat.png"
+	if id == "milk" or id == "egg":
+		return "res://assets/sprites/items/water_bottle.png"
 	if id == "berries" or id.find("berries") != -1:
 		return "res://assets/sprites/items/berries.png"
 	if id == "bread" or id.find("bread") != -1:
@@ -81,30 +91,29 @@ static func _resolve_sprite_path(id: String) -> String:
 		return "res://assets/sprites/items/bandage.png"
 	if id == "medicine" or id.find("poultice") != -1:
 		return "res://assets/sprites/items/medicine.png"
-	if id == "poison" or id.find("venom") != -1:
-		return "res://assets/sprites/items/poison.png"
 	if id == "torch" or id.find("torch") != -1:
 		return "res://assets/sprites/items/torch.png"
-	if id == "arrow" or id.find("arrow") != -1:
+	if id.find("arrow") != -1 or id.find("bolt") != -1:
 		return "res://assets/sprites/items/arrow.png"
 	if id == "silver_coin" or id == "silver_coins" or id == "silver":
 		return "res://assets/sprites/items/silver_coin.png"
-	if id == "copper_coin" or id == "copper_coins":
-		return "res://assets/sprites/items/copper_coin.png"
 	if id == "coins" or id == "coin" or id == "gold_coin" or id == "gold_coins" or (id.find("gold") != -1 and id.find("ore") == -1):
 		return "res://assets/sprites/items/gold_coin.png"
 
 	# 5. Armor & Protection aliases
-	if id == "leather_armor" or id == "tunic" or id.find("tunic") != -1 or id.find("leather_armor") != -1 or id.find("gambeson") != -1:
+	if id == "leather_armor" or id == "tunic" or id.find("tunic") != -1:
 		return "res://assets/sprites/items/leather_armor.png"
-	if id == "chainmail_coif" or id.find("coif") != -1 or id.find("helmet") != -1 or id.find("helm") != -1:
+	if id == "chainmail_coif" or id.find("coif") != -1:
 		return "res://assets/sprites/items/chainmail_coif.png"
-	if id == "iron_chainmail" or id.find("chainmail") != -1 or id.find("hauberk") != -1 or id.find("iron_armor") != -1 or id.find("lamellar") != -1 or id.find("cuirass") != -1 or id.find("brigandine") != -1 or id.find("scale") != -1 or id.find("plate") != -1:
-		return "res://assets/sprites/items/iron_chainmail.png"
-	if id == "iron_greaves" or id.find("greaves") != -1 or id.find("legging") != -1:
-		return "res://assets/sprites/items/chainmail_leggings.png"
 	if id.find("shield") != -1:
 		return "res://assets/sprites/items/iron_shield.png"
+	if id.find("boots") != -1 or id.find("sabaton") != -1:
+		if id.find("steel") != -1 and FileAccess.file_exists(ProjectSettings.globalize_path("res://assets/sprites/items/steel_boots.png")):
+			return "res://assets/sprites/items/steel_boots.png"
+		if id.find("iron") != -1 and FileAccess.file_exists(ProjectSettings.globalize_path("res://assets/sprites/items/iron_boots.png")):
+			return "res://assets/sprites/items/iron_boots.png"
+		if FileAccess.file_exists(ProjectSettings.globalize_path("res://assets/sprites/items/leather_boots.png")):
+			return "res://assets/sprites/items/leather_boots.png"
 
 	# 6. Common material and food aliases
 	if id == "cooked_food" or id.find("cooked") != -1:
@@ -125,10 +134,6 @@ static func _resolve_sprite_path(id: String) -> String:
 		return "res://assets/sprites/items/quality_leather.png"
 	if id == "raw_leather" or id == "leather" or id == "leather_hide" or id == "leather_raw":
 		return "res://assets/sprites/items/leather_raw.png"
-	if id == "stone_sword" or id == "bronze_sword" or id == "steel_sword":
-		return "res://assets/sprites/items/iron_sword.png"
-	if id == "stone_dagger" or id == "bronze_dagger" or id == "steel_dagger":
-		return "res://assets/sprites/items/iron_dagger.png"
 	if id == "quality_iron" or id == "wrought_iron":
 		return "res://assets/sprites/items/quality_iron.png"
 	if id == "steel" or id == "steel_ingot":
@@ -149,14 +154,22 @@ static func _resolve_sprite_path(id: String) -> String:
 		return "res://assets/sprites/items/iron_ingot.png"
 	if id == "bronze_ingot":
 		return "res://assets/sprites/items/bronze_ingot.png"
-	if id == "stone" or id == "rough_stone":
+	if id == "stone" or id == "rough_stone" or id == "stone_masonry":
 		return "res://assets/sprites/items/stone.png"
-	if id == "flint":
-		return "res://assets/sprites/items/flint.png"
-	if id == "resin" or id == "pine_resin":
-		return "res://assets/sprites/items/resin.png"
+	if id == "clay" or id == "brick":
+		return "res://assets/sprites/items/stone.png"
+	if id == "feather":
+		return "res://assets/sprites/items/wool.png"
+	if id == "silver_ore":
+		return "res://assets/sprites/items/iron_ore.png"
 
 	# 3. Weapons and tools keywords
+	if id.find("club") != -1:
+		return "res://assets/sprites/items/wood.png"
+	if id.find("javelin") != -1:
+		return "res://assets/sprites/items/spear.png"
+	if id.find("fishing") != -1 or id.find("shears") != -1 or id.find("hoe") != -1:
+		return "res://assets/sprites/items/stone_axe.png"
 	if id.find("pick") != -1:
 		return "res://assets/sprites/items/stone_pickaxe.png"
 	if id.find("axe") != -1:
@@ -330,6 +343,10 @@ static func _draw_item_art(img: Image, id: String) -> void:
 		_fill_rect(img, Rect2i(8, 7, 16, 19), Color(0.72, 0.76, 0.84), out)
 		_fill_rect(img, Rect2i(5, 8, 22, 6), Color(0.60, 0.64, 0.70), out)
 		_fill_rect(img, Rect2i(11, 10, 10, 14), Color(0.85, 0.88, 0.94), Color(0, 0, 0, 0))
+	elif id.find("coin") != -1:
+		var ccol: Color = Color(0.95, 0.80, 0.20) if id.find("gold") != -1 else Color(0.80, 0.84, 0.90)
+		_fill_circle(img, Vector2i(16, 16), 8, ccol, out)
+		_fill_circle(img, Vector2i(16, 16), 5, ccol.lightened(0.25), Color(0, 0, 0, 0))
 	elif id.find("campfire") != -1 or id.find("forge") != -1:
 		_fill_circle(img, Vector2i(16, 20), 7, Color(0.96, 0.42, 0.10), out)
 		_fill_circle(img, Vector2i(16, 15), 5, Color(1.0, 0.86, 0.24), out)

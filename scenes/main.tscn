@@ -60,6 +60,21 @@ func _setup_dynamic_systems() -> void:
 			f_sys.name = \"FurnaceSystem\"
 			f_sys.set_script(load(\"res://scripts/systems/crafting/furnace_system.gd\"))
 			systems.add_child(f_sys)
+		if systems.get_node_or_null(\"FarmingSystem\") == null:
+			var farm_sys: Node2D = Node2D.new()
+			farm_sys.name = \"FarmingSystem\"
+			farm_sys.set_script(load(\"res://scripts/systems/farming_system.gd\"))
+			systems.add_child(farm_sys)
+		if systems.get_node_or_null(\"ProgressionSystem\") == null:
+			var prog_sys: Node = Node.new()
+			prog_sys.name = \"ProgressionSystem\"
+			prog_sys.set_script(load(\"res://scripts/systems/progression_system.gd\"))
+			systems.add_child(prog_sys)
+		if systems.get_node_or_null(\"CaravanSystem\") == null:
+			var car_sys: Node = Node.new()
+			car_sys.name = \"CaravanSystem\"
+			car_sys.set_script(load(\"res://scripts/systems/economy/caravan_system.gd\"))
+			systems.add_child(car_sys)
 
 	var ui_layer: CanvasLayer = get_node_or_null(\"UILayer\") as CanvasLayer
 	if ui_layer != null:
@@ -117,18 +132,24 @@ func _unhandled_input(event: InputEvent) -> void:
 			SignalBus.ui_close_all_requested.emit()
 		else:
 			SignalBus.ui_panel_requested.emit(\"pause\")
-	elif event.is_action_pressed(\"quick_save\"):
+	elif event.is_action_pressed(\"quick_save\") or (event is InputEventKey and event.pressed and not event.echo and ((event as InputEventKey).keycode == KEY_F5 or (event as InputEventKey).physical_keycode == KEY_F5)):
 		var save_sys: Node = get_node_or_null(\"Systems/SaveSystem\")
+		if save_sys == null:
+			save_sys = get_tree().get_first_node_in_group(\"save_system\")
 		if save_sys != null and save_sys.has_method(\"quick_save\"):
 			save_sys.call(\"quick_save\")
 		else:
 			SignalBus.save_requested.emit(\"quicksave\")
-	elif event.is_action_pressed(\"quick_load\"):
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(\"quick_load\") or (event is InputEventKey and event.pressed and not event.echo and ((event as InputEventKey).keycode == KEY_F9 or (event as InputEventKey).physical_keycode == KEY_F9)):
 		var save_sys: Node = get_node_or_null(\"Systems/SaveSystem\")
+		if save_sys == null:
+			save_sys = get_tree().get_first_node_in_group(\"save_system\")
 		if save_sys != null and save_sys.has_method(\"quick_load\"):
 			save_sys.call(\"quick_load\")
 		else:
 			SignalBus.load_requested.emit(\"quicksave\")
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(\"debug_god\"):
 		GameManager.debug_god_mode = not GameManager.debug_god_mode
 	elif event.is_action_pressed(\"debug_fast_time\"):

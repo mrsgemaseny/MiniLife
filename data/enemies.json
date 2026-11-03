@@ -70,7 +70,7 @@
 		"is_boss": false,
 		"loot_table": {
 			"gold": 20,
-			"items": { "herb": 3, "poison": 1 }
+			"items": { "herb": 3, "leather_hide": 1 }
 		},
 		"respawns": false
 	},

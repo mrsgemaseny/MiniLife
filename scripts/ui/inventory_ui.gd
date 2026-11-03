@@ -282,6 +282,7 @@ func _build_minecraft_inventory_ui() -> void:
 		{"key": "chest", "placeholder": "Chest"},
 		{"key": "clothing", "placeholder": "Clothes"},
 		{"key": "legs", "placeholder": "Legs"},
+		{"key": "feet", "placeholder": "Boots"},
 		{"key": "weapon", "placeholder": "Hand"}
 	]
 	for ak in armor_keys:
@@ -864,7 +865,9 @@ func _on_armor_slot_clicked(slot_key: String, mouse_button: int, shift: bool) ->
 		elif slot_key == "clothing":
 			valid = (def_slot in ["clothing", "underarmor"] or it_type in ["clothing", "underarmor"] or c_id.find("gambeson") != -1 or c_id.find("tunic") != -1 or c_id.find("simple_chainmail") != -1 or c_id == "chainmail")
 		elif slot_key == "legs":
-			valid = (def_slot == "legs" or it_type in ["armor_legs", "boots"] or c_id.find("leggings") != -1 or c_id.find("greaves") != -1 or c_id.find("chausses") != -1)
+			valid = (def_slot == "legs" or it_type in ["armor_legs", "pants"] or c_id.find("greaves") != -1 or c_id.find("wraps") != -1 or c_id.find("pants") != -1)
+		elif slot_key == "feet":
+			valid = (def_slot in ["feet", "boots"] or it_type in ["armor_feet", "boots", "shoes"] or c_id.find("boots") != -1 or c_id.find("shoes") != -1 or c_id.find("sabatons") != -1)
 
 		if valid:
 			# Anti-Cheese: Prevent duplicate armor on torso layers

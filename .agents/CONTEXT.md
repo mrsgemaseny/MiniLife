@@ -21,6 +21,16 @@
 - [x] M5 — События рассказчика, боссы, эндгейм-крепость, достижения и хроника мира
 
 ## Architecture Summary
+- **Master Specification Compliance (2026-11-03 — 100% Implemented across all 9 Phases)**:
+  - **Zero Clutter**: Completely purged `flint`, `resin`, `copper_coin`, `poison`, `poison_herb`, `potion_antidote`. Converted food healing so only roasted meat heals HP (+10 HP).
+  - **Complete Catalog & Stations**: Integrated all 31 weapons, tools, ammo packs (x20), headwear, clothing/underarmor, chest armor, leg armor, materials, and food items. Added `ore_smelter`, `water_mill`, `mechanical_water_mill`, and `well`.
+  - **Layered Armor & Weapon Archetypes**: Disallowed heavy mail and plate armor in clothing slot; implemented armor wear queue from outer chest to underarmor; added weapon archetypes (1.5s stun for clubs, x2.5-x2.8 crit for spears/bows, x3 sunder wear for hammers/war picks, bleed for swords/blades).
+  - **Craft Stations & 4-Tile Chest Auto-Pull**: Integrated 4-tile chest resource pulling into `CraftSystem` and `CraftMenuUI`; direct water drawing from wells into empty bottles.
+  - **Flora & Farming**: Added `FarmingSystem` for tilled soil, wheat growth (stages 1-3) and harvesting; knife/blade herbalism bonus.
+  - **Progression System L1-L11**: Added `ProgressionSystem` gating L1-L11; player starts empty-handed without free stone tools.
+  - **Fauna & Animals**: Implemented wolf night torch fear; added `AnimalEntity` with non-lethal milking (cow), shearing (sheep), eggs (chicken), pack donkey storage (+12 slots), and untouchable domestic companions (0 drop on dog/cat).
+  - **Two-Currency Arbitrage & Caravan Economy**: Added `CaravanSystem` with `silver_coin` and `gold_coin`, regional exchange rates (1:15 in village vs 1:25 in city), 5-trip caravan ROI threshold, and trade UI arbitrage exchange.
+  - **13-Phase Automated E2E Verification**: All 13 integration phases passing with zero errors (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
 - **Engine & Language**: Godot 4.7, GDScript (strict static typing).
 - **View**: 2D Isometric (`y_sort_enabled = true` on all world, chunk, structure, and entity nodes).
 - **Decoupling**: Zero cross-system imports; all inter-system communication strictly through `SignalBus`.

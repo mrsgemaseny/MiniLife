@@ -121,6 +121,16 @@ func _build_ui() -> void:
 	sell_btn.pressed.connect(_on_sell_pressed)
 	btn_row.add_child(sell_btn)
 
+	var buy_gold_btn: Button = Button.new()
+	buy_gold_btn.text = "Exchange: Silver -> 1 Gold"
+	buy_gold_btn.pressed.connect(_on_buy_gold_pressed)
+	btn_row.add_child(buy_gold_btn)
+
+	var sell_gold_btn: Button = Button.new()
+	sell_gold_btn.text = "Exchange: 1 Gold -> Silver"
+	sell_gold_btn.pressed.connect(_on_sell_gold_pressed)
+	btn_row.add_child(sell_gold_btn)
+
 	var close_btn: Button = Button.new()
 	close_btn.text = "Close Trade"
 	close_btn.pressed.connect(close_trade)
@@ -153,7 +163,12 @@ func _refresh_lists() -> void:
 	if player != null and player.get("inventory") is InventoryComponent:
 		var inv: InventoryComponent = player.get("inventory") as InventoryComponent
 		if _info_label != null:
-			_info_label.text = "Your Gold: %d | Select an item on the left to Buy, or on the right to Sell." % inv.gold
+			var is_city: bool = false
+			if _current_trader != null and "is_in_city" in _current_trader:
+				is_city = bool(_current_trader.get("is_in_city"))
+			var rate: int = 25 if is_city else 15
+			var loc_name: String = "Trade City" if is_city else "Village / Frontier"
+			_info_label.text = "Wealth: %d Gold | %d Silver  [Rate at %s: 1 Gold = %d Silver]" % [inv.gold, inv.silver + inv.count_of("silver_coin"), loc_name, rate]
 		for slot in inv.slots:
 			var iid: String = str(slot.get("item_id", ""))
 			var cnt: int = int(slot.get("count", 0))
@@ -161,6 +176,14 @@ func _refresh_lists() -> void:
 			var sell_val: int = maxi(1, int(round(float(def.get("value", 5)) * 0.65)))
 			_player_item_ids.append(iid)
 			_player_list.add_item("[SELL] %s x%d (+%d Gold ea)" % [str(def.get("name", iid)), cnt, sell_val])
+
+func _on_buy_gold_pressed() -> void:
+	SignalBus.currency_exchange_requested.emit(_current_trader, true, 1)
+	_refresh_lists()
+
+func _on_sell_gold_pressed() -> void:
+	SignalBus.currency_exchange_requested.emit(_current_trader, false, 1)
+	_refresh_lists()
 
 func _on_buy_pressed() -> void:
 	var sel: PackedInt32Array = _stock_list.get_selected_items()

@@ -107,6 +107,8 @@ signal rumor_spread(faction: String, summary: String, rep_delta: int)
 signal trade_session_requested(npc: Node)
 signal trade_transaction_requested(npc: Node, item_id: String, count: int, is_buying: bool)
 signal trade_completed(npc_id: String, gold_delta: int)
+signal currency_exchange_requested(npc: Node, to_gold: bool, amount: int)
+signal caravan_trip_completed(settlement_id: String, trip_count: int, is_roi_achieved: bool)
 
 # Dialogue
 signal dialogue_started(npc_id: String, dialogue_id: String)

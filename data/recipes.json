@@ -88,7 +88,7 @@
 		"station": "workbench",
 		"inputs": [
 			{ "item_id": "cloth", "count": 2 },
-			{ "item_id": "resin", "count": 1 }
+			{ "item_id": "wool", "count": 1 }
 		],
 		"output": { "item_id": "quality_cloth", "count": 1 },
 		"skill_required": { "crafting": 3 },
@@ -108,8 +108,8 @@
 		"id": "craft_tanned_leather",
 		"station": "workbench",
 		"inputs": [
-			{ "item_id": "treated_leather", "count": 1 },
-			{ "item_id": "resin", "count": 1 }
+			{ "item_id": "treated_leather", "count": 2 },
+			{ "item_id": "wood", "count": 2 }
 		],
 		"output": { "item_id": "tanned_leather", "count": 1 },
 		"skill_required": { "crafting": 4 },
@@ -142,10 +142,10 @@
 		"station": "workbench",
 		"tech_required": "archery",
 		"inputs": [
-			{ "item_id": "wood", "count": 1 },
+			{ "item_id": "wood", "count": 4 },
 			{ "item_id": "stone", "count": 1 }
 		],
-		"output": { "item_id": "arrow", "count": 8 },
+		"output": { "item_id": "arrow", "count": 20 },
 		"skill_required": {},
 		"xp_reward": { "ranged": 6, "construction": 6 }
 	},
@@ -160,17 +160,6 @@
 		"output": { "item_id": "medicine", "count": 1 },
 		"skill_required": { "alchemy": 8 },
 		"xp_reward": { "alchemy": 20, "medicine": 10 }
-	},
-	{
-		"id": "craft_poison",
-		"station": "workbench",
-		"tech_required": "herbalism_medicine",
-		"inputs": [
-			{ "item_id": "herb", "count": 4 }
-		],
-		"output": { "item_id": "poison", "count": 1 },
-		"skill_required": { "alchemy": 12 },
-		"xp_reward": { "alchemy": 24 }
 	},
 	{
 		"id": "craft_hunting_bow",
@@ -189,7 +178,8 @@
 		"station": "workbench",
 		"tech_required": "woodworking",
 		"inputs": [
-			{ "item_id": "cloth", "count": 4 }
+			{ "item_id": "raw_leather", "count": 4 },
+			{ "item_id": "cloth", "count": 1 }
 		],
 		"output": { "item_id": "leather_armor", "count": 1 },
 		"skill_required": {},
@@ -573,7 +563,7 @@
 	},
 	{
 		"id": "brew_potion_healing",
-		"station": "campfire",
+		"station": "alchemy_station",
 		"tech_required": "herbalism_medicine",
 		"inputs": [
 			{ "item_id": "water_bottle", "count": 1 },
@@ -585,35 +575,25 @@
 	},
 	{
 		"id": "brew_potion_stamina",
-		"station": "campfire",
+		"station": "alchemy_station",
 		"tech_required": "herbalism_medicine",
 		"inputs": [
 			{ "item_id": "water_bottle", "count": 1 },
-			{ "item_id": "vigor_herb", "count": 2 }
+			{ "item_id": "vigor_herb", "count": 2 },
+			{ "item_id": "berries", "count": 2 }
 		],
 		"output": { "item_id": "potion_stamina", "count": 1 },
 		"skill_required": { "medicine": 5 },
 		"xp_reward": { "medicine": 16 }
 	},
 	{
-		"id": "brew_potion_antidote",
-		"station": "campfire",
-		"tech_required": "herbalism_medicine",
-		"inputs": [
-			{ "item_id": "water_bottle", "count": 1 },
-			{ "item_id": "poison_herb", "count": 2 }
-		],
-		"output": { "item_id": "potion_antidote", "count": 1 },
-		"skill_required": { "medicine": 8 },
-		"xp_reward": { "medicine": 18 }
-	},
-	{
 		"id": "brew_potion_ironskin",
-		"station": "campfire",
+		"station": "alchemy_station",
 		"tech_required": "alchemical_elixirs",
 		"inputs": [
 			{ "item_id": "water_bottle", "count": 1 },
-			{ "item_id": "fire_herb", "count": 2 }
+			{ "item_id": "fire_herb", "count": 2 },
+			{ "item_id": "coal", "count": 1 }
 		],
 		"output": { "item_id": "potion_ironskin", "count": 1 },
 		"skill_required": { "medicine": 12 },
@@ -797,5 +777,342 @@
 		"output": { "item_id": "steel_plate_armor", "count": 1 },
 		"skill_required": { "smithing": 36 },
 		"xp_reward": { "smithing": 65 }
+	},
+	{
+		"id": "craft_wooden_club",
+		"station": "",
+		"inputs": [
+			{ "item_id": "wood", "count": 4 }
+		],
+		"output": { "item_id": "wooden_club", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "construction": 8 }
+	},
+	{
+		"id": "craft_wooden_spear",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "plank", "count": 2 },
+			{ "item_id": "cloth", "count": 1 }
+		],
+		"output": { "item_id": "wooden_spear", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "construction": 10 }
+	},
+	{
+		"id": "forge_iron_spear",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "quality_iron", "count": 2 },
+			{ "item_id": "plank", "count": 2 },
+			{ "item_id": "treated_leather", "count": 1 }
+		],
+		"output": { "item_id": "iron_spear", "count": 1 },
+		"skill_required": { "smithing": 20 },
+		"xp_reward": { "smithing": 30 }
+	},
+	{
+		"id": "forge_steel_war_pick",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "steel_ingot", "count": 4 },
+			{ "item_id": "plank", "count": 2 },
+			{ "item_id": "tanned_leather", "count": 1 }
+		],
+		"output": { "item_id": "steel_war_pick", "count": 1 },
+		"skill_required": { "smithing": 32 },
+		"xp_reward": { "smithing": 48 }
+	},
+	{
+		"id": "craft_primitive_bow",
+		"station": "",
+		"inputs": [
+			{ "item_id": "wood", "count": 4 },
+			{ "item_id": "cloth", "count": 2 }
+		],
+		"output": { "item_id": "primitive_bow", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "construction": 12 }
+	},
+	{
+		"id": "craft_javelins",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "plank", "count": 2 },
+			{ "item_id": "stone", "count": 1 }
+		],
+		"output": { "item_id": "javelins", "count": 2 },
+		"skill_required": {},
+		"xp_reward": { "construction": 10 }
+	},
+	{
+		"id": "craft_bronze_arrow",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "bronze_ingot", "count": 1 },
+			{ "item_id": "plank", "count": 2 }
+		],
+		"output": { "item_id": "bronze_arrow", "count": 20 },
+		"skill_required": {},
+		"xp_reward": { "crafting": 14 }
+	},
+	{
+		"id": "forge_iron_arrow",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 1 },
+			{ "item_id": "plank", "count": 2 },
+			{ "item_id": "feather", "count": 2 }
+		],
+		"output": { "item_id": "iron_arrow", "count": 20 },
+		"skill_required": { "smithing": 15 },
+		"xp_reward": { "smithing": 22 }
+	},
+	{
+		"id": "forge_iron_bolt",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 2 },
+			{ "item_id": "plank", "count": 1 }
+		],
+		"output": { "item_id": "iron_bolt", "count": 20 },
+		"skill_required": { "smithing": 18 },
+		"xp_reward": { "smithing": 25 }
+	},
+	{
+		"id": "forge_steel_arrow",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "steel_ingot", "count": 1 },
+			{ "item_id": "plank", "count": 2 },
+			{ "item_id": "feather", "count": 2 }
+		],
+		"output": { "item_id": "steel_arrow", "count": 20 },
+		"skill_required": { "smithing": 30 },
+		"xp_reward": { "smithing": 35 }
+	},
+	{
+		"id": "craft_fishing_rod",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "plank", "count": 2 },
+			{ "item_id": "cloth", "count": 2 }
+		],
+		"output": { "item_id": "fishing_rod", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "crafting": 10 }
+	},
+	{
+		"id": "craft_shears",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "copper_ore", "count": 2 },
+			{ "item_id": "wood", "count": 1 }
+		],
+		"output": { "item_id": "shears", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "crafting": 12 }
+	},
+	{
+		"id": "craft_hoe",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "plank", "count": 2 },
+			{ "item_id": "stone", "count": 2 }
+		],
+		"output": { "item_id": "hoe", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "construction": 10 }
+	},
+	{
+		"id": "craft_wool_hood",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "wool", "count": 2 },
+			{ "item_id": "cloth", "count": 1 }
+		],
+		"output": { "item_id": "wool_hood", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "crafting": 10 }
+	},
+	{
+		"id": "craft_leather_helmet",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "treated_leather", "count": 2 },
+			{ "item_id": "cloth", "count": 1 }
+		],
+		"output": { "item_id": "leather_helmet", "count": 1 },
+		"skill_required": { "crafting": 2 },
+		"xp_reward": { "crafting": 14 }
+	},
+	{
+		"id": "forge_iron_helmet",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 3 },
+			{ "item_id": "cloth", "count": 1 }
+		],
+		"output": { "item_id": "iron_helmet", "count": 1 },
+		"skill_required": { "smithing": 20 },
+		"xp_reward": { "smithing": 26 }
+	},
+	{
+		"id": "craft_wool_shirt",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "wool", "count": 3 }
+		],
+		"output": { "item_id": "wool_shirt", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "crafting": 10 }
+	},
+	{
+		"id": "craft_quality_clothing",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "quality_cloth", "count": 2 },
+			{ "item_id": "wool", "count": 2 }
+		],
+		"output": { "item_id": "quality_clothing", "count": 1 },
+		"skill_required": { "crafting": 5 },
+		"xp_reward": { "crafting": 24 }
+	},
+	{
+		"id": "craft_arming_doublet",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "quality_cloth", "count": 3 },
+			{ "item_id": "tanned_leather", "count": 1 }
+		],
+		"output": { "item_id": "arming_doublet", "count": 1 },
+		"skill_required": { "crafting": 6 },
+		"xp_reward": { "crafting": 28 }
+	},
+	{
+		"id": "craft_boiled_leather_cuirass",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "treated_leather", "count": 3 },
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "boiled_leather_cuirass", "count": 1 },
+		"skill_required": { "crafting": 3 },
+		"xp_reward": { "crafting": 18 }
+	},
+	{
+		"id": "craft_leather_lamellar",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "treated_leather", "count": 4 },
+			{ "item_id": "cloth", "count": 2 }
+		],
+		"output": { "item_id": "leather_lamellar", "count": 1 },
+		"skill_required": { "crafting": 4 },
+		"xp_reward": { "crafting": 22 }
+	},
+	{
+		"id": "forge_bronze_lamellar",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "bronze_ingot", "count": 5 },
+			{ "item_id": "treated_leather", "count": 2 }
+		],
+		"output": { "item_id": "bronze_lamellar", "count": 1 },
+		"skill_required": { "smithing": 14 },
+		"xp_reward": { "smithing": 28 }
+	},
+	{
+		"id": "forge_steel_brigandine",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "steel_ingot", "count": 6 },
+			{ "item_id": "tanned_leather", "count": 3 }
+		],
+		"output": { "item_id": "steel_brigandine", "count": 1 },
+		"skill_required": { "smithing": 34 },
+		"xp_reward": { "smithing": 55 }
+	},
+	{
+		"id": "craft_wool_wraps",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "wool", "count": 2 }
+		],
+		"output": { "item_id": "wool_wraps", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "crafting": 8 }
+	},
+	{
+		"id": "craft_leather_greaves",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "treated_leather", "count": 2 },
+			{ "item_id": "cloth", "count": 1 }
+		],
+		"output": { "item_id": "leather_greaves", "count": 1 },
+		"skill_required": { "crafting": 2 },
+		"xp_reward": { "crafting": 12 }
+	},
+	{
+		"id": "craft_stone_masonry",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "stone", "count": 4 }
+		],
+		"output": { "item_id": "stone_masonry", "count": 1 },
+		"skill_required": { "construction": 5 },
+		"xp_reward": { "construction": 14 }
+	},
+	{
+		"id": "smelt_brick",
+		"station": "furnace",
+		"inputs": [
+			{ "item_id": "clay", "count": 2 }
+		],
+		"output": { "item_id": "brick", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "crafting": 8 }
+	},
+	{
+		"id": "burn_charcoal",
+		"station": "campfire",
+		"inputs": [
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "charcoal", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "survival": 6 }
+	},
+	{
+		"id": "mill_flour",
+		"station": "water_mill",
+		"inputs": [
+			{ "item_id": "wheat", "count": 2 }
+		],
+		"output": { "item_id": "flour", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "crafting": 8 }
+	},
+	{
+		"id": "cook_fish",
+		"station": "campfire",
+		"inputs": [
+			{ "item_id": "fish", "count": 1 }
+		],
+		"output": { "item_id": "cooked_fish", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "cooking": 10 }
+	},
+	{
+		"id": "bake_bread",
+		"station": "furnace",
+		"inputs": [
+			{ "item_id": "flour", "count": 1 },
+			{ "item_id": "water_bottle", "count": 1 }
+		],
+		"output": { "item_id": "bread", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "cooking": 14 }
 	}
 ]

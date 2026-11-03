@@ -3,10 +3,12 @@ extends Resource
 
 signal contents_changed()
 signal gold_changed(gold: int)
+signal silver_changed(silver: int)
 
 @export var max_weight: float = Config.MAX_INVENTORY_WEIGHT
 @export var max_slots: int = Config.MAX_INVENTORY_SLOTS
 @export var gold: int = 0
+@export var silver: int = 0
 var slots: Array[Dictionary] = []
 
 
@@ -270,6 +272,21 @@ func spend_gold(amount: int) -> bool:
 	return true
 
 
+func add_silver(amount: int) -> void:
+	if amount == 0:
+		return
+	silver = maxi(silver + amount, 0)
+	silver_changed.emit(silver)
+
+
+func spend_silver(amount: int) -> bool:
+	if amount < 0 or silver < amount:
+		return false
+	silver -= amount
+	silver_changed.emit(silver)
+	return true
+
+
 func snapshot() -> Dictionary:
 	var copied: Array[Dictionary] = []
 	for s in slots:
@@ -279,7 +296,8 @@ func snapshot() -> Dictionary:
 		"weight": get_total_weight(),
 		"max_weight": max_weight,
 		"max_slots": max_slots,
-		"gold": gold
+		"gold": gold,
+		"silver": silver
 	}
 
 
@@ -291,6 +309,7 @@ func from_dict(data: Dictionary) -> void:
 	max_weight = float(data.get("max_weight", Config.MAX_INVENTORY_WEIGHT))
 	max_slots = int(data.get("max_slots", Config.MAX_INVENTORY_SLOTS))
 	gold = int(data.get("gold", 0))
+	silver = int(data.get("silver", 0))
 	slots.clear()
 	for s in data.get("slots", []):
 		if s is Dictionary:

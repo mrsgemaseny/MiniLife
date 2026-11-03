@@ -223,5 +223,60 @@
 		],
 		"passable": true,
 		"interactable": false
+	},
+	{
+		"id": "ore_smelter",
+		"name": "High-Heat Ore Smelter",
+		"tech_required": "pyrology_coal",
+		"hp": 240,
+		"color": "#a84218",
+		"height_px": 24.0,
+		"materials": [
+			{ "item_id": "stone", "count": 6 },
+			{ "item_id": "clay", "count": 4 }
+		],
+		"passable": false,
+		"interactable": true
+	},
+	{
+		"id": "water_mill",
+		"name": "Riverside Water Mill",
+		"hp": 260,
+		"color": "#654321",
+		"height_px": 32.0,
+		"materials": [
+			{ "item_id": "plank", "count": 6 },
+			{ "item_id": "stone", "count": 4 }
+		],
+		"passable": false,
+		"interactable": true
+	},
+	{
+		"id": "mechanical_water_mill",
+		"name": "Mechanical Precision Mill",
+		"tech_required": "war_machinery",
+		"hp": 400,
+		"color": "#475569",
+		"height_px": 36.0,
+		"materials": [
+			{ "item_id": "plank", "count": 6 },
+			{ "item_id": "stone_masonry", "count": 6 },
+			{ "item_id": "iron_ingot", "count": 4 }
+		],
+		"passable": false,
+		"interactable": true
+	},
+	{
+		"id": "well",
+		"name": "Stone Freshwater Well",
+		"hp": 180,
+		"color": "#0284c7",
+		"height_px": 18.0,
+		"materials": [
+			{ "item_id": "plank", "count": 4 },
+			{ "item_id": "stone", "count": 4 }
+		],
+		"passable": false,
+		"interactable": true
 	}
 ]

@@ -55,6 +55,41 @@ func populate_chest_loot(tile_pos: Vector2i, title: String, gold: int, items: Di
 		inv.add_item(str(item_id), cnt)
 
 
+func get_nearby_containers(center_tile: Vector2i, max_tile_dist: int = 4) -> Array[InventoryComponent]:
+	var list: Array[InventoryComponent] = []
+	for key in _containers:
+		var parts: PackedStringArray = str(key).split(",")
+		if parts.size() == 2:
+			var tpos: Vector2i = Vector2i(int(parts[0]), int(parts[1]))
+			if Config.tile_distance(center_tile, tpos) <= max_tile_dist:
+				var c_inv: InventoryComponent = _containers[key] as InventoryComponent
+				if c_inv != null:
+					list.append(c_inv)
+	return list
+
+
+func count_item_in_radius(center_tile: Vector2i, item_id: String, max_tile_dist: int = 4) -> int:
+	var total: int = 0
+	var containers: Array[InventoryComponent] = get_nearby_containers(center_tile, max_tile_dist)
+	for cinv in containers:
+		total += cinv.get_item_count(item_id)
+	return total
+
+
+func remove_item_from_radius(center_tile: Vector2i, item_id: String, amount: int, max_tile_dist: int = 4) -> int:
+	var needed: int = amount
+	var containers: Array[InventoryComponent] = get_nearby_containers(center_tile, max_tile_dist)
+	for cinv in containers:
+		if needed <= 0:
+			break
+		var available: int = cinv.get_item_count(item_id)
+		if available > 0:
+			var to_take: int = mini(available, needed)
+			cinv.remove_item(item_id, to_take)
+			needed -= to_take
+	return amount - needed
+
+
 func to_dict() -> Dictionary:
 	var out: Dictionary = {}
 	for key in _containers:

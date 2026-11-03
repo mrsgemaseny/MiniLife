@@ -27,7 +27,7 @@ func _ready() -> void:
 
 	if interactable:
 		add_to_group("interactable")
-	if structure_id in ["workbench", "forge", "campfire", "furnace", "research_table"]:
+	if structure_id in ["workbench", "forge", "campfire", "furnace", "research_table", "alchemy_station", "ore_smelter", "water_mill", "mechanical_water_mill", "well"]:
 		add_to_group("craft_station")
 
 	if animate_construction:
@@ -378,7 +378,7 @@ func dismantle(breaker: Node) -> void:
 
 
 func get_station_id() -> String:
-	if structure_id in ["workbench", "forge", "campfire", "furnace", "research_table", "alchemy_station"]:
+	if structure_id in ["workbench", "forge", "campfire", "furnace", "research_table", "alchemy_station", "ore_smelter", "water_mill", "mechanical_water_mill", "well"]:
 		return structure_id
 	return ""
 
@@ -390,8 +390,18 @@ func interact(actor: Node) -> void:
 			if _collision != null:
 				_collision.set_deferred("disabled", is_door_open)
 			queue_redraw()
-		"workbench", "forge", "campfire", "alchemy_station":
+		"workbench", "forge", "campfire", "alchemy_station", "ore_smelter", "water_mill", "mechanical_water_mill":
 			SignalBus.craft_station_opened.emit(structure_id)
+		"well":
+			if actor != null:
+				var inv: InventoryComponent = actor.get("inventory") as InventoryComponent
+				if inv != null and inv.has_item("empty_bottle", 1):
+					inv.remove_item("empty_bottle", 1)
+					inv.add_item("water_bottle", 1)
+					SignalBus.notification_posted.emit("Drew clean water from the well.")
+					SignalBus.ui_sound_requested.emit("click")
+				else:
+					SignalBus.notification_posted.emit("Need an Empty Bottle to draw water.")
 		"furnace":
 			SignalBus.furnace_opened.emit("furnace_" + Config.vec2i_to_key(tile_pos), tile_pos)
 		"research_table":

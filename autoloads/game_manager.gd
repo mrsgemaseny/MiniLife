@@ -219,6 +219,29 @@ func load_json_indexed(relative_path: String, key_field: String = "id") -> Dicti
 	return result
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		var k: InputEventKey = event as InputEventKey
+		if k.keycode == KEY_F5 or k.physical_keycode == KEY_F5:
+			var save_sys: Node = get_tree().get_first_node_in_group("save_system")
+			if save_sys == null:
+				save_sys = get_tree().root.find_child("SaveSystem", true, false)
+			if save_sys != null and save_sys.has_method("quick_save"):
+				save_sys.call("quick_save")
+			else:
+				SignalBus.save_requested.emit("quicksave")
+			get_viewport().set_input_as_handled()
+		elif k.keycode == KEY_F9 or k.physical_keycode == KEY_F9:
+			var save_sys: Node = get_tree().get_first_node_in_group("save_system")
+			if save_sys == null:
+				save_sys = get_tree().root.find_child("SaveSystem", true, false)
+			if save_sys != null and save_sys.has_method("quick_load"):
+				save_sys.call("quick_load")
+			else:
+				SignalBus.load_requested.emit("quicksave")
+			get_viewport().set_input_as_handled()
+
+
 func _on_character_creation_completed(class_id: String, chosen_traits: Array, world_seed: int) -> void:
 	_selected_class = class_id if class_id != "" else Config.DEFAULT_CLASS
 	_selected_traits.clear()
@@ -300,6 +323,7 @@ func _register_default_inputs() -> void:
 		if not InputMap.has_action(action_name):
 			InputMap.add_action(action_name)
 			var ev: InputEventKey = InputEventKey.new()
+			ev.keycode = key_bindings[action_name]
 			ev.physical_keycode = key_bindings[action_name]
 			InputMap.action_add_event(action_name, ev)
 

@@ -32,8 +32,7 @@
 		"trunk_color": "#4f3621",
 		"radius": 20.0,
 		"drops": [
-			{ "item_id": "wood", "min": 3, "max": 6 },
-			{ "item_id": "resin", "min": 0, "max": 2 }
+			{ "item_id": "wood", "min": 3, "max": 6 }
 		]
 	},
 	{
@@ -51,8 +50,7 @@
 		"trunk_color": "#555a5e",
 		"radius": 16.0,
 		"drops": [
-			{ "item_id": "stone", "min": 2, "max": 5 },
-			{ "item_id": "flint", "min": 0, "max": 2 }
+			{ "item_id": "stone", "min": 2, "max": 5 }
 		]
 	},
 	{
@@ -243,25 +241,6 @@
 		"has_collision": false,
 		"drops": [
 			{ "item_id": "vigor_herb", "min": 1, "max": 3 }
-		]
-	},
-	{
-		"id": "poison_herb",
-		"name": "Swamp Nightshade",
-		"biome": "swamp",
-		"hits": 1,
-		"required_tool": "",
-		"preferred_tool": "",
-		"skill": "foraging",
-		"xp": 15.0,
-		"regrows": true,
-		"regrow_days": 3,
-		"color": "#ab47bc",
-		"trunk_color": "#7b1fa2",
-		"radius": 10.0,
-		"has_collision": false,
-		"drops": [
-			{ "item_id": "poison_herb", "min": 1, "max": 3 }
 		]
 	},
 	{
