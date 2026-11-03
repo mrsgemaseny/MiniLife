@@ -56,22 +56,7 @@ func _grant_starter_kit() -> void:
 	if inventory.slots.is_empty():
 		inventory.add_item("stone_axe", 1)
 		inventory.add_item("stone_pickaxe", 1)
-		inventory.add_item("iron_sword", 1)
-		inventory.add_item("hunting_bow", 1)
-		inventory.add_item("cooked_food", 5)
-		inventory.add_item("bandage", 4)
-		inventory.add_item("wood", 14)
-		inventory.add_item("stone", 12)
-		inventory.add_item("bronze_spear", 1)
-		inventory.add_item("war_hammer", 1)
-		inventory.add_item("iron_dagger", 1)
-		inventory.add_item("heavy_crossbow", 1)
-		inventory.add_item("torch", 1)
-		inventory.add_item("arrow", 20)
-		inventory.add_item("cloth", 8)
-		inventory.add_gold(35)
 		active_hotbar_index = 0
-		equipment.equip("wooden_shield")
 		sync_weapon_from_active_slot()
 		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 

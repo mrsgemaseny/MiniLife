@@ -50,7 +50,7 @@ func _ready() -> void:
 	update_stat("health", 100.0, 100.0)
 	update_stat("hunger", 100.0, 100.0)
 	update_stat("stamina", 100.0, 100.0)
-	update_gold(35)
+	update_gold(0)
 	update_time(int(GameManager.get_hour()))
 	call_deferred("_refresh_hotbar_from_player")
 

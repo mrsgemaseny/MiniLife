@@ -179,6 +179,8 @@ func _test_phase_7_continuous_harvesting_and_ecology(player: Player) -> void:
 
 func _test_phase_8_crafting_furnace_smelting(player: Player) -> void:
 	print("[E2E Phase 8] Crafting System & 3-Slot Thermal Furnace Smelting...")
+	if player.inventory.get_item_count("wood") < 1:
+		player.inventory.add_item("wood", 5)
 	var initial_wood: int = player.inventory.get_item_count("wood")
 	var initial_planks: int = player.inventory.get_item_count("plank")
 	
