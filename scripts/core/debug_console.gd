@@ -279,6 +279,8 @@ func _test_phase_7_continuous_harvesting_and_ecology(player: Player) -> void:
 
 func _test_phase_8_crafting_furnace_smelting(player: Player) -> void:
 	print("[E2E Phase 8] Crafting System & 3-Slot Thermal Furnace Smelting...")
+	if ResearchSystem.instance != null and not ResearchSystem.instance.is_researched("plank_crafting"):
+		ResearchSystem.instance.get_researched_techs().append("plank_crafting")
 	if player.inventory.get_item_count("wood") < 1:
 		player.inventory.add_item("wood", 5)
 	var initial_wood: int = player.inventory.get_item_count("wood")
@@ -325,9 +327,10 @@ func _test_phase_9_research_codex_stone_aesthetic(player: Player) -> void:
 	print("[E2E Phase 9] Scholar's Research Codex & Stone Aesthetic Invariants...")
 	SignalBus.research_table_opened.emit()
 	assert(ResearchSystem.instance != null, "ResearchSystem instance missing")
-	assert(ResearchSystem.instance.is_researched("primitive_survival"), "Root tech must be unlocked")
-	assert(not ResearchSystem.instance.get_tech("stone_masonry").is_empty(), "stone_masonry missing")
-	assert(not ResearchSystem.instance.get_tech("pyrology_coal").is_empty(), "pyrology_coal missing")
+	assert(ResearchSystem.instance.is_researched("herbs_gathering"), "Root tech herbs_gathering must be unlocked")
+	assert(not ResearchSystem.instance.get_tech("stone_harvesting").is_empty(), "stone_harvesting missing")
+	assert(not ResearchSystem.instance.get_tech("clay_ore_smelter").is_empty(), "clay_ore_smelter missing")
+	assert(not ResearchSystem.instance.get_tech("steel_crucible_smelting").is_empty(), "steel_crucible_smelting missing")
 	print("[E2E Phase 9] OK (Research Tree DAG & Stone Codex verified)")
 
 

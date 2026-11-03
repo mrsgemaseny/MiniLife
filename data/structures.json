@@ -28,7 +28,7 @@
 	{
 		"id": "wall",
 		"name": "Stone Wall",
-		"tech_required": "stone_masonry",
+		"tech_required": "construction_masonry",
 		"hp": 300,
 		"color": "#6c757d",
 		"height_px": 28.0,
@@ -94,7 +94,7 @@
 	{
 		"id": "furnace",
 		"name": "Stone Smelting Furnace",
-		"tech_required": "stone_masonry",
+		"tech_required": "primitive_hearth",
 		"hp": 220,
 		"color": "#9e472a",
 		"height_px": 20.0,

@@ -45,3 +45,11 @@
   - CraftMenu Catalog Visibility: eliminated premature recipe filtering based on active station. All catalog items remain discoverable with explicit station badges [ТРЕБУЕТСЯ: КУЗНИЦА] and disabled craft button when station is out of reach.
   - Station Hierarchy: Workbench can craft bronze tier tools/weapons directly from bronze ingots; Forge acts as superset of Workbench; multi-station detection scans radius for all nearby crafting stations.
   - Headless verification passes 100% OK across all 13 phases (E2E_ALL_SYSTEMS_VERIFIED_OK).
+- Granular Research & Tech Tree Overhaul (16:30):
+  - Completely redesigned data/tech_tree.json into a 30-node granular DAG spanning 5 distinct Tiers (Survival, Crafting, Bronze, Iron, Steel).
+  - Enforced authentic material progression: herbs -> wood/stone -> hearth/planks -> roasting/archery -> tools/weapons -> carpentry/masonry -> clay ore smelter -> bronze alloy -> iron bloomeries -> steel crucible.
+  - Re-wired all recipes in data/recipes.json and structures in data/structures.json to connect to granular tech prerequisite IDs.
+  - Updated ResearchSystem with herbs_gathering root unlock and backwards-compatible aliases for legacy systems.
+  - Updated ProgressionSystem milestone checks to trace the new granular T1-T5 tech milestones.
+  - Upgraded ResearchTreeUI with a ScrollContainer-backed 5-column layout, Tier headers, in-column vertical dependency lines, and orthogonal cross-tier connection paths.
+  - Headless verification passes 100% OK across all 13 phases (E2E_ALL_SYSTEMS_VERIFIED_OK).

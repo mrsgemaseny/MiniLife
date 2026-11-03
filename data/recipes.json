@@ -2,6 +2,7 @@
 	{
 		"id": "craft_stone_axe",
 		"station": "",
+		"tech_required": "stone_tools",
 		"inputs": [
 			{ "item_id": "wood", "count": 2 },
 			{ "item_id": "stone", "count": 2 }
@@ -13,6 +14,7 @@
 	{
 		"id": "craft_stone_pickaxe",
 		"station": "",
+		"tech_required": "stone_tools",
 		"inputs": [
 			{ "item_id": "wood", "count": 2 },
 			{ "item_id": "stone", "count": 3 }
@@ -24,6 +26,7 @@
 	{
 		"id": "craft_stone_sword",
 		"station": "",
+		"tech_required": "stone_weapons",
 		"inputs": [
 			{ "item_id": "wood", "count": 1 },
 			{ "item_id": "stone", "count": 3 }
@@ -35,6 +38,7 @@
 	{
 		"id": "craft_stone_dagger",
 		"station": "",
+		"tech_required": "stone_weapons",
 		"inputs": [
 			{ "item_id": "wood", "count": 1 },
 			{ "item_id": "stone", "count": 1 }
@@ -46,6 +50,7 @@
 	{
 		"id": "craft_bandage",
 		"station": "",
+		"tech_required": "",
 		"inputs": [
 			{ "item_id": "cloth", "count": 2 }
 		],
@@ -56,6 +61,7 @@
 	{
 		"id": "craft_plank",
 		"station": "",
+		"tech_required": "plank_crafting",
 		"inputs": [
 			{ "item_id": "wood", "count": 1 }
 		],
@@ -76,6 +82,7 @@
 	{
 		"id": "craft_cloth_from_wool",
 		"station": "workbench",
+		"tech_required": "wool_clothing",
 		"inputs": [
 			{ "item_id": "wool", "count": 2 }
 		],
@@ -86,6 +93,7 @@
 	{
 		"id": "craft_quality_cloth",
 		"station": "workbench",
+		"tech_required": "material_refinement",
 		"inputs": [
 			{ "item_id": "cloth", "count": 2 },
 			{ "item_id": "wool", "count": 1 }
@@ -97,6 +105,7 @@
 	{
 		"id": "craft_treated_leather",
 		"station": "workbench",
+		"tech_required": "material_refinement",
 		"inputs": [
 			{ "item_id": "raw_leather", "count": 1 }
 		],
@@ -107,6 +116,7 @@
 	{
 		"id": "craft_tanned_leather",
 		"station": "workbench",
+		"tech_required": "material_refinement",
 		"inputs": [
 			{ "item_id": "treated_leather", "count": 2 },
 			{ "item_id": "wood", "count": 2 }
@@ -118,6 +128,7 @@
 	{
 		"id": "craft_quality_iron",
 		"station": "forge",
+		"tech_required": "iron_smelting",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 2 },
 			{ "item_id": "coal", "count": 1 }
@@ -129,6 +140,7 @@
 	{
 		"id": "craft_steel_ingot",
 		"station": "forge",
+		"tech_required": "steel_crucible_smelting",
 		"inputs": [
 			{ "item_id": "quality_iron", "count": 2 },
 			{ "item_id": "coal", "count": 2 }
@@ -140,7 +152,7 @@
 	{
 		"id": "craft_arrows",
 		"station": "workbench",
-		"tech_required": "archery",
+		"tech_required": "primitive_archery",
 		"inputs": [
 			{ "item_id": "wood", "count": 4 },
 			{ "item_id": "stone", "count": 1 }
@@ -152,7 +164,7 @@
 	{
 		"id": "craft_medicine",
 		"station": "workbench",
-		"tech_required": "herbalism_medicine",
+		"tech_required": "herbs_gathering",
 		"inputs": [
 			{ "item_id": "herb", "count": 3 },
 			{ "item_id": "cloth", "count": 1 }
@@ -164,7 +176,7 @@
 	{
 		"id": "craft_hunting_bow",
 		"station": "workbench",
-		"tech_required": "archery",
+		"tech_required": "hunting_archery_shields",
 		"inputs": [
 			{ "item_id": "wood", "count": 3 },
 			{ "item_id": "cloth", "count": 1 }
@@ -176,7 +188,7 @@
 	{
 		"id": "craft_leather_armor",
 		"station": "workbench",
-		"tech_required": "woodworking",
+		"tech_required": "leather_armor_crafting",
 		"inputs": [
 			{ "item_id": "raw_leather", "count": 4 },
 			{ "item_id": "cloth", "count": 1 }
@@ -188,7 +200,7 @@
 	{
 		"id": "smelt_bronze_ingot",
 		"station": "forge",
-		"tech_required": "pyrology_coal",
+		"tech_required": "clay_ore_smelter",
 		"inputs": [
 			{ "item_id": "copper_ore", "count": 1 },
 			{ "item_id": "tin_ore", "count": 1 }
@@ -211,7 +223,7 @@
 	{
 		"id": "forge_bronze_spear",
 		"station": "forge",
-		"tech_required": "bronze_metallurgy",
+		"tech_required": "bronze_weapons",
 		"inputs": [
 			{ "item_id": "bronze_ingot", "count": 2 },
 			{ "item_id": "wood", "count": 2 }
@@ -223,7 +235,7 @@
 	{
 		"id": "forge_bronze_pickaxe",
 		"station": "forge",
-		"tech_required": "bronze_metallurgy",
+		"tech_required": "bronze_tools",
 		"inputs": [
 			{ "item_id": "bronze_ingot", "count": 2 },
 			{ "item_id": "wood", "count": 2 }
@@ -235,7 +247,7 @@
 	{
 		"id": "forge_bronze_axe",
 		"station": "forge",
-		"tech_required": "bronze_metallurgy",
+		"tech_required": "bronze_tools",
 		"inputs": [
 			{ "item_id": "bronze_ingot", "count": 2 },
 			{ "item_id": "wood", "count": 2 }
@@ -247,7 +259,7 @@
 	{
 		"id": "forge_bronze_sword",
 		"station": "forge",
-		"tech_required": "bronze_metallurgy",
+		"tech_required": "bronze_weapons",
 		"inputs": [
 			{ "item_id": "bronze_ingot", "count": 3 },
 			{ "item_id": "wood", "count": 1 }
@@ -259,7 +271,7 @@
 	{
 		"id": "forge_bronze_dagger",
 		"station": "forge",
-		"tech_required": "bronze_metallurgy",
+		"tech_required": "bronze_weapons",
 		"inputs": [
 			{ "item_id": "bronze_ingot", "count": 1 },
 			{ "item_id": "wood", "count": 1 }
@@ -271,7 +283,7 @@
 	{
 		"id": "forge_iron_axe",
 		"station": "forge",
-		"tech_required": "iron_smelting",
+		"tech_required": "iron_tools",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 3 },
 			{ "item_id": "wood", "count": 2 }
@@ -283,7 +295,7 @@
 	{
 		"id": "forge_iron_pickaxe",
 		"station": "forge",
-		"tech_required": "iron_smelting",
+		"tech_required": "iron_tools",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 3 },
 			{ "item_id": "wood", "count": 2 }
@@ -295,7 +307,7 @@
 	{
 		"id": "forge_iron_sword",
 		"station": "forge",
-		"tech_required": "iron_forging",
+		"tech_required": "iron_weapons",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 3 },
 			{ "item_id": "wood", "count": 1 }
@@ -307,7 +319,7 @@
 	{
 		"id": "forge_iron_dagger",
 		"station": "forge",
-		"tech_required": "iron_forging",
+		"tech_required": "iron_weapons",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 1 },
 			{ "item_id": "wood", "count": 1 }
@@ -319,7 +331,7 @@
 	{
 		"id": "forge_iron_shield",
 		"station": "forge",
-		"tech_required": "iron_forging",
+		"tech_required": "iron_weapons",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 4 },
 			{ "item_id": "wood", "count": 2 }
@@ -331,7 +343,7 @@
 	{
 		"id": "craft_wooden_shield",
 		"station": "workbench",
-		"tech_required": "woodworking",
+		"tech_required": "hunting_archery_shields",
 		"inputs": [
 			{ "item_id": "wood", "count": 3 },
 			{ "item_id": "iron_ingot", "count": 1 }
@@ -343,7 +355,7 @@
 	{
 		"id": "forge_war_hammer",
 		"station": "forge",
-		"tech_required": "war_machinery",
+		"tech_required": "heavy_crossbow_and_hammers",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 4 },
 			{ "item_id": "wood", "count": 2 }
@@ -355,7 +367,7 @@
 	{
 		"id": "forge_iron_war_pick",
 		"station": "forge",
-		"tech_required": "war_machinery",
+		"tech_required": "heavy_crossbow_and_hammers",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 3 },
 			{ "item_id": "wood", "count": 2 }
@@ -367,7 +379,7 @@
 	{
 		"id": "forge_heavy_crossbow",
 		"station": "forge",
-		"tech_required": "crossbows",
+		"tech_required": "heavy_crossbow_and_hammers",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 3 },
 			{ "item_id": "plank", "count": 2 }
@@ -379,7 +391,7 @@
 	{
 		"id": "forge_chainmail_coif",
 		"station": "forge",
-		"tech_required": "chainmail_armor",
+		"tech_required": "chainmail_weaving",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 2 },
 			{ "item_id": "cloth", "count": 1 }
@@ -391,7 +403,7 @@
 	{
 		"id": "forge_iron_chainmail",
 		"station": "forge",
-		"tech_required": "chainmail_armor",
+		"tech_required": "chainmail_weaving",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 5 },
 			{ "item_id": "cloth", "count": 2 }
@@ -403,7 +415,7 @@
 	{
 		"id": "forge_iron_greaves",
 		"station": "forge",
-		"tech_required": "iron_working",
+		"tech_required": "iron_plate_armor",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 3 },
 			{ "item_id": "treated_leather", "count": 1 }
@@ -415,6 +427,7 @@
 	{
 		"id": "cook_meat",
 		"station": "campfire",
+		"tech_required": "food_roasting",
 		"inputs": [
 			{ "item_id": "food_raw", "count": 1 }
 		],
@@ -425,6 +438,7 @@
 	{
 		"id": "cook_hunters_stew",
 		"station": "campfire",
+		"tech_required": "food_roasting",
 		"inputs": [
 			{ "item_id": "food_raw", "count": 2 },
 			{ "item_id": "herb", "count": 2 }
@@ -436,6 +450,7 @@
 	{
 		"id": "craft_torch",
 		"station": "",
+		"tech_required": "wood_harvesting",
 		"inputs": [
 			{ "item_id": "wood", "count": 1 },
 			{ "item_id": "cloth", "count": 1 }
@@ -447,7 +462,7 @@
 	{
 		"id": "forge_steel_pickaxe",
 		"station": "forge",
-		"tech_required": "iron_mastery",
+		"tech_required": "steel_weapons",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 4 },
 			{ "item_id": "coal", "count": 2 },
@@ -460,7 +475,7 @@
 	{
 		"id": "forge_steel_axe",
 		"station": "forge",
-		"tech_required": "iron_mastery",
+		"tech_required": "steel_weapons",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 4 },
 			{ "item_id": "coal", "count": 2 },
@@ -473,7 +488,7 @@
 	{
 		"id": "forge_steel_sword",
 		"station": "forge",
-		"tech_required": "iron_mastery",
+		"tech_required": "steel_weapons",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 5 },
 			{ "item_id": "coal", "count": 3 },
@@ -486,7 +501,7 @@
 	{
 		"id": "forge_steel_dagger",
 		"station": "forge",
-		"tech_required": "iron_mastery",
+		"tech_required": "steel_weapons",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 2 },
 			{ "item_id": "coal", "count": 1 },
@@ -499,7 +514,7 @@
 	{
 		"id": "craft_wood_wall",
 		"station": "",
-		"tech_required": "",
+		"tech_required": "construction_carpentry",
 		"inputs": [
 			{ "item_id": "wood", "count": 2 }
 		],
@@ -510,7 +525,7 @@
 	{
 		"id": "craft_wood_floor",
 		"station": "",
-		"tech_required": "",
+		"tech_required": "construction_carpentry",
 		"inputs": [
 			{ "item_id": "wood", "count": 1 }
 		],
@@ -521,7 +536,7 @@
 	{
 		"id": "craft_stone_wall",
 		"station": "",
-		"tech_required": "stone_masonry",
+		"tech_required": "construction_masonry",
 		"inputs": [
 			{ "item_id": "stone", "count": 2 }
 		],
@@ -532,7 +547,7 @@
 	{
 		"id": "craft_stone_floor",
 		"station": "",
-		"tech_required": "stone_masonry",
+		"tech_required": "construction_masonry",
 		"inputs": [
 			{ "item_id": "stone", "count": 1 }
 		],
@@ -543,7 +558,7 @@
 	{
 		"id": "craft_wood_door",
 		"station": "",
-		"tech_required": "woodworking",
+		"tech_required": "construction_carpentry",
 		"inputs": [
 			{ "item_id": "wood", "count": 3 }
 		],
@@ -627,7 +642,7 @@
 	{
 		"id": "craft_gambeson",
 		"station": "workbench",
-		"tech_required": "textile_weaving",
+		"tech_required": "gambeson_crafting",
 		"inputs": [
 			{ "item_id": "cloth", "count": 4 }
 		],
@@ -638,7 +653,7 @@
 	{
 		"id": "forge_simple_chainmail",
 		"station": "forge",
-		"tech_required": "iron_working",
+		"tech_required": "chainmail_weaving",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 4 },
 			{ "item_id": "cloth", "count": 1 }
@@ -650,7 +665,7 @@
 	{
 		"id": "forge_iron_hauberk",
 		"station": "forge",
-		"tech_required": "iron_working",
+		"tech_required": "chainmail_weaving",
 		"inputs": [
 			{ "item_id": "quality_iron", "count": 4 },
 			{ "item_id": "cloth", "count": 2 }
@@ -662,7 +677,7 @@
 	{
 		"id": "forge_bronze_cuirass",
 		"station": "forge",
-		"tech_required": "bronze_casting",
+		"tech_required": "bronze_armor",
 		"inputs": [
 			{ "item_id": "bronze_ingot", "count": 5 },
 			{ "item_id": "treated_leather", "count": 2 }
@@ -674,7 +689,7 @@
 	{
 		"id": "forge_bronze_helmet",
 		"station": "forge",
-		"tech_required": "bronze_casting",
+		"tech_required": "bronze_armor",
 		"inputs": [
 			{ "item_id": "bronze_ingot", "count": 3 }
 		],
@@ -685,7 +700,7 @@
 	{
 		"id": "forge_bronze_greaves",
 		"station": "forge",
-		"tech_required": "bronze_casting",
+		"tech_required": "bronze_armor",
 		"inputs": [
 			{ "item_id": "bronze_ingot", "count": 3 },
 			{ "item_id": "treated_leather", "count": 1 }
@@ -697,7 +712,7 @@
 	{
 		"id": "forge_iron_armor",
 		"station": "forge",
-		"tech_required": "iron_working",
+		"tech_required": "iron_plate_armor",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 5 },
 			{ "item_id": "treated_leather", "count": 2 }
@@ -709,7 +724,7 @@
 	{
 		"id": "forge_iron_plate_armor",
 		"station": "forge",
-		"tech_required": "iron_working",
+		"tech_required": "iron_plate_armor",
 		"inputs": [
 			{ "item_id": "quality_iron", "count": 5 },
 			{ "item_id": "treated_leather", "count": 2 }
@@ -721,7 +736,7 @@
 	{
 		"id": "forge_iron_lamellar",
 		"station": "forge",
-		"tech_required": "iron_working",
+		"tech_required": "iron_plate_armor",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 4 },
 			{ "item_id": "treated_leather", "count": 2 }
@@ -733,7 +748,7 @@
 	{
 		"id": "forge_iron_scale_armor",
 		"station": "forge",
-		"tech_required": "iron_working",
+		"tech_required": "chainmail_weaving",
 		"inputs": [
 			{ "item_id": "quality_iron", "count": 4 },
 			{ "item_id": "treated_leather", "count": 2 }
@@ -745,7 +760,7 @@
 	{
 		"id": "forge_steel_cuirass",
 		"station": "forge",
-		"tech_required": "master_smithing",
+		"tech_required": "steel_plate_armor",
 		"inputs": [
 			{ "item_id": "steel_ingot", "count": 4 },
 			{ "item_id": "tanned_leather", "count": 2 }
@@ -757,7 +772,7 @@
 	{
 		"id": "forge_steel_helmet",
 		"station": "forge",
-		"tech_required": "master_smithing",
+		"tech_required": "steel_plate_armor",
 		"inputs": [
 			{ "item_id": "steel_ingot", "count": 3 },
 			{ "item_id": "tanned_leather", "count": 1 }
@@ -769,7 +784,7 @@
 	{
 		"id": "forge_steel_greaves",
 		"station": "forge",
-		"tech_required": "master_smithing",
+		"tech_required": "steel_plate_armor",
 		"inputs": [
 			{ "item_id": "steel_ingot", "count": 3 },
 			{ "item_id": "tanned_leather", "count": 1 }
@@ -781,7 +796,7 @@
 	{
 		"id": "forge_steel_plate_armor",
 		"station": "forge",
-		"tech_required": "master_smithing",
+		"tech_required": "steel_plate_armor",
 		"inputs": [
 			{ "item_id": "steel_ingot", "count": 7 },
 			{ "item_id": "tanned_leather", "count": 3 }
@@ -793,6 +808,7 @@
 	{
 		"id": "craft_wooden_club",
 		"station": "",
+		"tech_required": "plank_crafting",
 		"inputs": [
 			{ "item_id": "wood", "count": 4 }
 		],
@@ -803,6 +819,7 @@
 	{
 		"id": "craft_wooden_spear",
 		"station": "workbench",
+		"tech_required": "plank_crafting",
 		"inputs": [
 			{ "item_id": "plank", "count": 2 },
 			{ "item_id": "cloth", "count": 1 }
@@ -814,6 +831,7 @@
 	{
 		"id": "forge_iron_spear",
 		"station": "forge",
+		"tech_required": "iron_weapons",
 		"inputs": [
 			{ "item_id": "quality_iron", "count": 2 },
 			{ "item_id": "plank", "count": 2 },
@@ -826,6 +844,7 @@
 	{
 		"id": "forge_steel_war_pick",
 		"station": "forge",
+		"tech_required": "steel_weapons",
 		"inputs": [
 			{ "item_id": "steel_ingot", "count": 4 },
 			{ "item_id": "plank", "count": 2 },
@@ -838,6 +857,7 @@
 	{
 		"id": "craft_primitive_bow",
 		"station": "",
+		"tech_required": "primitive_archery",
 		"inputs": [
 			{ "item_id": "wood", "count": 4 },
 			{ "item_id": "cloth", "count": 2 }
@@ -849,6 +869,7 @@
 	{
 		"id": "craft_javelins",
 		"station": "workbench",
+		"tech_required": "primitive_archery",
 		"inputs": [
 			{ "item_id": "plank", "count": 2 },
 			{ "item_id": "stone", "count": 1 }
@@ -860,6 +881,7 @@
 	{
 		"id": "craft_bronze_arrow",
 		"station": "workbench",
+		"tech_required": "bronze_weapons",
 		"inputs": [
 			{ "item_id": "bronze_ingot", "count": 1 },
 			{ "item_id": "plank", "count": 2 }
@@ -871,6 +893,7 @@
 	{
 		"id": "forge_iron_arrow",
 		"station": "forge",
+		"tech_required": "iron_weapons",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 1 },
 			{ "item_id": "plank", "count": 2 },
@@ -883,6 +906,7 @@
 	{
 		"id": "forge_iron_bolt",
 		"station": "forge",
+		"tech_required": "heavy_crossbow_and_hammers",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 2 },
 			{ "item_id": "plank", "count": 1 }
@@ -894,6 +918,7 @@
 	{
 		"id": "forge_steel_arrow",
 		"station": "forge",
+		"tech_required": "steel_weapons",
 		"inputs": [
 			{ "item_id": "steel_ingot", "count": 1 },
 			{ "item_id": "plank", "count": 2 },
@@ -906,6 +931,7 @@
 	{
 		"id": "craft_fishing_rod",
 		"station": "workbench",
+		"tech_required": "plank_crafting",
 		"inputs": [
 			{ "item_id": "plank", "count": 2 },
 			{ "item_id": "cloth", "count": 2 }
@@ -917,6 +943,7 @@
 	{
 		"id": "craft_shears",
 		"station": "workbench",
+		"tech_required": "bronze_tools",
 		"inputs": [
 			{ "item_id": "copper_ore", "count": 2 },
 			{ "item_id": "wood", "count": 1 }
@@ -928,6 +955,7 @@
 	{
 		"id": "craft_hoe",
 		"station": "workbench",
+		"tech_required": "stone_tools",
 		"inputs": [
 			{ "item_id": "plank", "count": 2 },
 			{ "item_id": "stone", "count": 2 }
@@ -939,6 +967,7 @@
 	{
 		"id": "craft_wool_hood",
 		"station": "workbench",
+		"tech_required": "wool_clothing",
 		"inputs": [
 			{ "item_id": "wool", "count": 2 },
 			{ "item_id": "cloth", "count": 1 }
@@ -950,6 +979,7 @@
 	{
 		"id": "craft_leather_helmet",
 		"station": "workbench",
+		"tech_required": "leather_armor_crafting",
 		"inputs": [
 			{ "item_id": "treated_leather", "count": 2 },
 			{ "item_id": "cloth", "count": 1 }
@@ -961,6 +991,7 @@
 	{
 		"id": "forge_iron_helmet",
 		"station": "forge",
+		"tech_required": "iron_plate_armor",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 3 },
 			{ "item_id": "cloth", "count": 1 }
@@ -972,6 +1003,7 @@
 	{
 		"id": "craft_wool_shirt",
 		"station": "workbench",
+		"tech_required": "wool_clothing",
 		"inputs": [
 			{ "item_id": "wool", "count": 3 }
 		],
@@ -982,6 +1014,7 @@
 	{
 		"id": "craft_quality_clothing",
 		"station": "workbench",
+		"tech_required": "wool_clothing",
 		"inputs": [
 			{ "item_id": "quality_cloth", "count": 2 },
 			{ "item_id": "wool", "count": 2 }
@@ -993,6 +1026,7 @@
 	{
 		"id": "craft_arming_doublet",
 		"station": "workbench",
+		"tech_required": "steel_plate_armor",
 		"inputs": [
 			{ "item_id": "quality_cloth", "count": 3 },
 			{ "item_id": "tanned_leather", "count": 1 }
@@ -1004,6 +1038,7 @@
 	{
 		"id": "craft_boiled_leather_cuirass",
 		"station": "workbench",
+		"tech_required": "leather_armor_crafting",
 		"inputs": [
 			{ "item_id": "treated_leather", "count": 3 },
 			{ "item_id": "wood", "count": 2 }
@@ -1015,6 +1050,7 @@
 	{
 		"id": "craft_leather_lamellar",
 		"station": "workbench",
+		"tech_required": "leather_armor_crafting",
 		"inputs": [
 			{ "item_id": "treated_leather", "count": 4 },
 			{ "item_id": "cloth", "count": 2 }
@@ -1026,6 +1062,7 @@
 	{
 		"id": "forge_bronze_lamellar",
 		"station": "forge",
+		"tech_required": "bronze_lamellar_crafting",
 		"inputs": [
 			{ "item_id": "bronze_ingot", "count": 5 },
 			{ "item_id": "treated_leather", "count": 2 }
@@ -1037,6 +1074,7 @@
 	{
 		"id": "forge_steel_brigandine",
 		"station": "forge",
+		"tech_required": "steel_plate_armor",
 		"inputs": [
 			{ "item_id": "steel_ingot", "count": 6 },
 			{ "item_id": "tanned_leather", "count": 3 }
@@ -1048,6 +1086,7 @@
 	{
 		"id": "craft_wool_wraps",
 		"station": "workbench",
+		"tech_required": "wool_clothing",
 		"inputs": [
 			{ "item_id": "wool", "count": 2 }
 		],
@@ -1058,6 +1097,7 @@
 	{
 		"id": "craft_leather_greaves",
 		"station": "workbench",
+		"tech_required": "leather_armor_crafting",
 		"inputs": [
 			{ "item_id": "treated_leather", "count": 2 },
 			{ "item_id": "cloth", "count": 1 }
@@ -1069,6 +1109,7 @@
 	{
 		"id": "craft_stone_masonry",
 		"station": "workbench",
+		"tech_required": "construction_masonry",
 		"inputs": [
 			{ "item_id": "stone", "count": 4 }
 		],
@@ -1079,6 +1120,7 @@
 	{
 		"id": "smelt_brick",
 		"station": "furnace",
+		"tech_required": "construction_masonry",
 		"inputs": [
 			{ "item_id": "clay", "count": 2 }
 		],
@@ -1089,6 +1131,7 @@
 	{
 		"id": "burn_charcoal",
 		"station": "campfire",
+		"tech_required": "primitive_hearth",
 		"inputs": [
 			{ "item_id": "wood", "count": 2 }
 		],
@@ -1099,6 +1142,7 @@
 	{
 		"id": "mill_flour",
 		"station": "water_mill",
+		"tech_required": "",
 		"inputs": [
 			{ "item_id": "wheat", "count": 2 }
 		],
@@ -1109,6 +1153,7 @@
 	{
 		"id": "cook_fish",
 		"station": "campfire",
+		"tech_required": "food_roasting",
 		"inputs": [
 			{ "item_id": "fish", "count": 1 }
 		],
@@ -1119,6 +1164,7 @@
 	{
 		"id": "bake_bread",
 		"station": "furnace",
+		"tech_required": "food_roasting",
 		"inputs": [
 			{ "item_id": "flour", "count": 1 },
 			{ "item_id": "water_bottle", "count": 1 }

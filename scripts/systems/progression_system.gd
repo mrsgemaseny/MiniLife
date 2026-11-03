@@ -143,17 +143,17 @@ func _on_tech_researched(tech_id: String) -> void:
 		var RS = load("res://scripts/systems/research_system.gd")
 		if RS.instance != null:
 			var t1_complete: bool = true
-			for t in ["primitive_survival", "stone_masonry", "woodworking", "herbalism_medicine"]:
+			for t in ["herbs_gathering", "wood_harvesting", "plank_crafting", "stone_harvesting", "primitive_hearth", "food_roasting"]:
 				if not RS.instance.is_researched(t):
 					t1_complete = false
 					break
 			if t1_complete:
 				_advance_to_level(4)
 	elif current_level == 5:
-		if tech_id == "iron_smelting" or tech_id == "iron_forging":
+		if tech_id == "iron_smelting" or tech_id == "clay_ore_smelter":
 			_advance_to_level(6)
 	elif current_level == 8:
-		if tech_id == "master_smithing":
+		if tech_id == "steel_crucible_smelting" or tech_id == "steel_weapons":
 			_advance_to_level(9)
 
 

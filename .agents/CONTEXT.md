@@ -6,6 +6,12 @@
 - **Repository**: `https://github.com/mrsgemaseny/MiniLife`
 
 ## Recent Accomplishments
+- **Granular Research & Tech Tree Overhaul (2026-11-03)**:
+  - **30-Node Granular Tech Tree**: Completely redesigned `data/tech_tree.json` into a 30-node DAG across 5 Tiers (T1 Survival, T2 Crafting, T3 Bronze, T4 Iron, T5 Steel). Follows realistic step-by-step discovery: raw materials -> thermal hearth -> roasting/archery -> stone tools/weapons -> carpentry/masonry -> clay ore smelter -> bronze metallurgy -> iron bloomeries -> steel crucible.
+  - **Full Recipe & Structure Integration**: Normalized all recipe prerequisites in `data/recipes.json` and structures in `data/structures.json` to link strictly to granular tech IDs.
+  - **Research & Progression Systems**: Updated `ResearchSystem` to start with `herbs_gathering` while preserving legacy compatibility aliases; updated `ProgressionSystem` milestone logic to track granular tech unlocks.
+  - **Scrollable 5-Tier UI**: Overhauled `ResearchTreeUI` with `ScrollContainer`, 5 Tier header banners, in-column vertical dependency lines, and orthogonal branch lines with directional arrowheads.
+  - **E2E Smoke Verification**: 100% pass across all 13 phases in headless Godot testing (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
 - **Metallurgy & Crafting Catalog Discovery Overhaul (2026-11-03)**:
   - **Tin Ore Deposits**: Added alluvial `tin_vein` spawning along river/lake sand shores (rate 0.042) and rocky foothills in mountains (rate 0.054), fixing tin ore absence on world map.
   - **Dual-Slot Furnace & Alloying**: Redesigned `FurnaceSystem` and `FurnaceUI` to have 2 input slots for authentic metallurgy:

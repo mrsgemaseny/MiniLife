@@ -6,8 +6,9 @@ const ResearchSys = preload("res://scripts/systems/research_system.gd")
 const IconFactory = preload("res://scripts/ui/item_icon_factory.gd")
 
 var _panel: PanelContainer = null
+var _scroll: ScrollContainer = null
 var _canvas: Control = null
-var _selected_tech_id: String = "primitive_survival"
+var _selected_tech_id: String = "herbs_gathering"
 
 # Bottom inspector widgets
 var _insp_icon_rect: TextureRect = null
@@ -153,14 +154,19 @@ func _build_ui() -> void:
 	sep.add_theme_stylebox_override("separator", sep_sb)
 	main_vbox.add_child(sep)
 
-	# 2. Main Diagram Canvas (Fixed 936x370 layout - NO SCROLLBARS)
+	# 2. Main Diagram Canvas inside ScrollContainer
+	_scroll = ScrollContainer.new()
+	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	main_vbox.add_child(_scroll)
+
 	_canvas = Control.new()
-	_canvas.custom_minimum_size = Vector2(936.0, 370.0)
-	_canvas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_canvas.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_canvas.custom_minimum_size = Vector2(1360.0, 660.0)
 	_canvas.mouse_filter = Control.MOUSE_FILTER_PASS
 	_canvas.draw.connect(_on_canvas_draw)
-	main_vbox.add_child(_canvas)
+	_scroll.add_child(_canvas)
 
 	# Separator above inspector
 	var sep2: HSeparator = HSeparator.new()
@@ -269,28 +275,28 @@ func refresh() -> void:
 	var all_techs: Dictionary = ResearchSys.instance.get_all_techs()
 	var player: Node = get_tree().get_first_node_in_group("player")
 
-	var canvas_w: float = _canvas.size.x if _canvas.size.x > 800.0 else 960.0
-	var start_x: float = maxf(24.0, (canvas_w - 960.0) * 0.5)
-	var col_x_coords: Array[float] = [start_x, start_x + 242.0, start_x + 484.0, start_x + 726.0]
-	var row_y_coords: Array[float] = [46.0, 126.0, 206.0, 286.0]
+	var col_x_coords: Array[float] = [28.0, 292.0, 556.0, 820.0, 1084.0]
+	var row_y_coords: Array[float] = [46.0, 122.0, 198.0, 274.0, 350.0, 426.0, 502.0, 578.0]
 
 	# Column Tier Banners at top of canvas
 	var tier_titles: Array[String] = [
-		"TIER I • НАЧАЛО",
+		"TIER I • ВЫЖИВАНИЕ",
 		"TIER II • РЕМЕСЛО",
-		"TIER III • ОБРАБОТКА",
-		"TIER IV • МАСТЕРСТВО"
+		"TIER III • БРОНЗА",
+		"TIER IV • ЖЕЛЕЗО",
+		"TIER V • СТАЛЬ"
 	]
 	var tier_colors: Array[Color] = [
 		Color(0.78, 0.80, 0.84),
 		Color(0.74, 0.76, 0.80),
 		Color(0.82, 0.84, 0.88),
-		Color(0.88, 0.89, 0.92)
+		Color(0.88, 0.89, 0.92),
+		Color(0.95, 0.92, 0.82)
 	]
 
-	for i in range(4):
+	for i in range(5):
 		var thdr: PanelContainer = PanelContainer.new()
-		thdr.custom_minimum_size = Vector2(210.0, 26.0)
+		thdr.custom_minimum_size = Vector2(230.0, 26.0)
 		thdr.position = Vector2(col_x_coords[i], 10.0)
 
 		var tbox: StyleBoxFlat = StyleBoxFlat.new()
@@ -312,8 +318,8 @@ func refresh() -> void:
 	# Build compact, distinct Tech Node Badges (Solid card buttons - NO DESLOP)
 	for tid in all_techs:
 		var tech: Dictionary = all_techs[tid]
-		var gx: int = clampi(int(tech.get("grid_x", 0)), 0, 3)
-		var gy: int = clampi(int(tech.get("grid_y", 0)), 0, 3)
+		var gx: int = clampi(int(tech.get("grid_x", 0)), 0, 4)
+		var gy: int = clampi(int(tech.get("grid_y", 0)), 0, 7)
 		var npos: Vector2 = Vector2(col_x_coords[gx], row_y_coords[gy])
 
 		var node_widget: Control = _build_compact_tech_node(tech, player)
@@ -332,7 +338,7 @@ func _build_compact_tech_node(tech: Dictionary, player: Node) -> Control:
 	var is_selected: bool = (tid == _selected_tech_id)
 
 	var card: Button = Button.new()
-	card.custom_minimum_size = Vector2(210.0, 58.0)
+	card.custom_minimum_size = Vector2(230.0, 58.0)
 	card.flat = false
 
 	var csb: StyleBoxFlat = StyleBoxFlat.new()
@@ -416,49 +422,55 @@ func _on_canvas_draw() -> void:
 	if ResearchSys.instance == null:
 		return
 	var all_techs: Dictionary = ResearchSys.instance.get_all_techs()
-	var canvas_w: float = _canvas.size.x if _canvas.size.x > 800.0 else 960.0
-	var start_x: float = maxf(24.0, (canvas_w - 960.0) * 0.5)
-	var col_x_coords: Array[float] = [start_x, start_x + 242.0, start_x + 484.0, start_x + 726.0]
-	var row_y_coords: Array[float] = [46.0, 126.0, 206.0, 286.0]
+	var col_x_coords: Array[float] = [28.0, 292.0, 556.0, 820.0, 1084.0]
+	var row_y_coords: Array[float] = [46.0, 122.0, 198.0, 274.0, 350.0, 426.0, 502.0, 578.0]
 
 	# Dotted Vertical Tier Divider Lines
-	for i in range(1, 4):
-		var div_x: float = col_x_coords[i] - 16.0
-		_canvas.draw_dashed_line(Vector2(div_x, 10.0), Vector2(div_x, 355.0), Color(0.20, 0.22, 0.26, 0.60), 1.0, 5.0)
+	for i in range(1, 5):
+		var div_x: float = col_x_coords[i] - 17.0
+		_canvas.draw_dashed_line(Vector2(div_x, 10.0), Vector2(div_x, 640.0), Color(0.20, 0.22, 0.26, 0.60), 1.0, 5.0)
 
-	# Clean orthogonal branch lines (source right -> target left)
+	# Clean orthogonal branch lines (source right -> target left, or vertical for same-tier)
 	for tid in all_techs:
 		var tech: Dictionary = all_techs[tid]
 		var prereqs: Array = tech.get("prerequisites", [])
-		var gx: int = clampi(int(tech.get("grid_x", 0)), 0, 3)
-		var gy: int = clampi(int(tech.get("grid_y", 0)), 0, 3)
-		var to_pt: Vector2 = Vector2(col_x_coords[gx], row_y_coords[gy] + 29.0)
+		var gx: int = clampi(int(tech.get("grid_x", 0)), 0, 4)
+		var gy: int = clampi(int(tech.get("grid_y", 0)), 0, 7)
 
 		for pre in prereqs:
 			var pre_str: String = str(pre)
 			if all_techs.has(pre_str):
 				var ptech: Dictionary = all_techs[pre_str]
-				var pgx: int = clampi(int(ptech.get("grid_x", 0)), 0, 3)
-				var pgy: int = clampi(int(ptech.get("grid_y", 0)), 0, 3)
-				if pgx >= gx:
-					continue
-				var from_pt: Vector2 = Vector2(col_x_coords[pgx] + 210.0, row_y_coords[pgy] + 29.0)
+				var pgx: int = clampi(int(ptech.get("grid_x", 0)), 0, 4)
+				var pgy: int = clampi(int(ptech.get("grid_y", 0)), 0, 7)
 
 				var is_conn_active: bool = ResearchSys.instance.is_researched(pre_str)
 				var line_col: Color = Color(0.68, 0.72, 0.78, 0.85) if is_conn_active else Color(0.25, 0.27, 0.32, 0.60)
 				var line_w: float = 1.8 if is_conn_active else 1.2
 
-				if absf(from_pt.y - to_pt.y) < 2.0:
+				if pgx == gx:
+					# Vertical connection within same tier column
+					var from_pt: Vector2 = Vector2(col_x_coords[pgx] + 115.0, row_y_coords[pgy] + 58.0)
+					var to_pt: Vector2 = Vector2(col_x_coords[gx] + 115.0, row_y_coords[gy])
 					_canvas.draw_line(from_pt, to_pt, line_col, line_w)
-				else:
-					var mid_x: float = (from_pt.x + to_pt.x) * 0.5
-					_canvas.draw_line(from_pt, Vector2(mid_x, from_pt.y), line_col, line_w)
-					_canvas.draw_line(Vector2(mid_x, from_pt.y), Vector2(mid_x, to_pt.y), line_col, line_w)
-					_canvas.draw_line(Vector2(mid_x, to_pt.y), to_pt, line_col, line_w)
+					_canvas.draw_line(to_pt + Vector2(-3.5, -4.0), to_pt, line_col, line_w)
+					_canvas.draw_line(to_pt + Vector2(3.5, -4.0), to_pt, line_col, line_w)
+				elif pgx < gx:
+					# Orthogonal line across tier columns
+					var from_pt: Vector2 = Vector2(col_x_coords[pgx] + 230.0, row_y_coords[pgy] + 29.0)
+					var to_pt: Vector2 = Vector2(col_x_coords[gx], row_y_coords[gy] + 29.0)
 
-				# Arrowhead entering target left side
-				_canvas.draw_line(to_pt + Vector2(-5.0, -3.5), to_pt, line_col, line_w)
-				_canvas.draw_line(to_pt + Vector2(-5.0, 3.5), to_pt, line_col, line_w)
+					if absf(from_pt.y - to_pt.y) < 2.0:
+						_canvas.draw_line(from_pt, to_pt, line_col, line_w)
+					else:
+						var mid_x: float = (from_pt.x + to_pt.x) * 0.5
+						_canvas.draw_line(from_pt, Vector2(mid_x, from_pt.y), line_col, line_w)
+						_canvas.draw_line(Vector2(mid_x, from_pt.y), Vector2(mid_x, to_pt.y), line_col, line_w)
+						_canvas.draw_line(Vector2(mid_x, to_pt.y), to_pt, line_col, line_w)
+
+					# Arrowhead entering target left side
+					_canvas.draw_line(to_pt + Vector2(-5.0, -3.5), to_pt, line_col, line_w)
+					_canvas.draw_line(to_pt + Vector2(-5.0, 3.5), to_pt, line_col, line_w)
 
 
 func _update_inspector_display(player: Node) -> void:

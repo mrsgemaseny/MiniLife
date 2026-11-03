@@ -4,7 +4,7 @@ extends Node
 static var instance: ResearchSystem = null
 
 var _techs: Dictionary = {} # tech_id -> Dictionary
-var _researched: Array[String] = ["primitive_survival"]
+var _researched: Array[String] = ["herbs_gathering"]
 
 
 func _ready() -> void:
@@ -17,7 +17,7 @@ func _ready() -> void:
 
 func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
 	if is_new:
-		_researched = ["primitive_survival"]
+		_researched = ["herbs_gathering"]
 		SignalBus.tech_tree_updated.emit()
 
 
@@ -36,6 +36,12 @@ func get_all_techs() -> Dictionary:
 
 
 func get_tech(tech_id: String) -> Dictionary:
+	if tech_id == "primitive_survival":
+		return _techs.get("herbs_gathering", {})
+	if tech_id == "stone_masonry":
+		return _techs.get("construction_masonry", {})
+	if tech_id == "pyrology_coal":
+		return _techs.get("primitive_hearth", {})
 	return _techs.get(tech_id, {})
 
 
@@ -44,6 +50,12 @@ func get_researched_techs() -> Array[String]:
 
 
 func is_researched(tech_id: String) -> bool:
+	if tech_id == "primitive_survival":
+		return _researched.has("herbs_gathering")
+	if tech_id == "stone_masonry":
+		return _researched.has("construction_masonry")
+	if tech_id == "pyrology_coal":
+		return _researched.has("primitive_hearth")
 	return _researched.has(tech_id)
 
 
