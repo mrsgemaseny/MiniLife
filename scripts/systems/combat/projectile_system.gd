@@ -17,4 +17,8 @@ func _on_projectile_fired(origin: Vector2, direction: Vector2, speed: float, dam
 	proj.shooter = shooter
 	if max_range > 0.0:
 		proj.max_range = max_range
+	if shooter != null and shooter.has_method("get_last_fired_projectile_id"):
+		proj.item_id = str(shooter.call("get_last_fired_projectile_id"))
+		if proj.item_id == "javelins" or proj.item_id == "javelin":
+			proj.projectile_type = "javelin"
 	add_child(proj)

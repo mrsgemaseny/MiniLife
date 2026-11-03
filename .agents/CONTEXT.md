@@ -236,4 +236,8 @@
   - Helmets, Greaves, Boots & Tools: `wool_hood`, `leather_helmet`, `bronze_helmet`, `iron_helmet`, `steel_helmet`, `chainmail_coif`, `wool_wraps`, `leather_greaves`, `bronze_greaves`, `iron_greaves`, `steel_greaves`, `leather_boots`, `bronze_boots`, `iron_boots`, `steel_boots`, `hoe`.
   - 130/130 items in `data/items.json` have direct, dedicated 160x160 RGBA8 PNG sprites (0 missing).
   - 100% headless pass across all 13 E2E phases (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
+- **Javelins Throwing Animation & Ammo Consumption (2026-11-03)**:
+  - Added dedicated javelin throwing mechanics: over-the-shoulder cocked charge stance, MiniDayZ aiming cone, forward lunge follow-through.
+  - Fixed ammo bug: throwing javelins strictly decrements active stack (`count -= 1`) without requiring or consuming arrows.
+  - In-flight javelin projectile scaled to 58px (~4x arrow length) with leaf spearhead and ash shaft; ground drops return `javelins`.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `buildings.json`, `research.json`, `chunks/<x>_<y>.json`) + persistent `achievements.json`.

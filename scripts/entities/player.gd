@@ -30,6 +30,7 @@ var _torch_burn_accum: float = 0.0
 var _is_charging_bow: bool = false
 var _bow_charge_time: float = 0.0
 const MAX_BOW_CHARGE_TIME: float = 0.85
+var _last_fired_projectile_id: String = "arrow"
 var _harvest_swing_timer: float = 0.0
 var _current_mining_target: ResourceNode = null
 var _locked_target: Node2D = null
@@ -130,9 +131,9 @@ func _physics_process(delta: float) -> void:
 	# Torch Lighting & Durability Burn (Task 4a)
 	_tick_torch(delta)
 
-	# Bow Aiming & Charging Mechanics
+	# Bow & Javelin Aiming & Charging Mechanics
 	if _is_charging_bow:
-		if not _is_holding_bow() or stats.stamina <= 0.0:
+		if not _is_holding_ranged() or stats.stamina <= 0.0:
 			_is_charging_bow = false
 			_bow_charge_time = 0.0
 			needs_redraw = true
@@ -149,7 +150,7 @@ func _physics_process(delta: float) -> void:
 
 	# Continuous Minecraft-style Resource Harvesting & Structure Dismantling
 	var is_mining_channel: bool = false
-	var is_attack_pressed: bool = Input.is_action_pressed("attack") and not _is_holding_bow() and not is_dead and not GameManager.is_paused()
+	var is_attack_pressed: bool = Input.is_action_pressed("attack") and not _is_holding_ranged() and not is_dead and not GameManager.is_paused()
 
 	if is_attack_pressed:
 		var mouse_world: Vector2 = get_global_mouse_position()
@@ -369,23 +370,44 @@ func _read_movement_input() -> Vector2:
 		return Vector2.ZERO
 	return Vector2(dir.x, dir.y * 0.5).normalized()
 
+func get_last_fired_projectile_id() -> String:
+	return _last_fired_projectile_id
+
+func _is_holding_javelin() -> bool:
+	if equipment == null:
+		return false
+	var wid: String = equipment.get_item_id("weapon")
+	return wid == "javelins" or wid == "javelin"
+
 func _is_holding_bow() -> bool:
 	if equipment == null:
 		return false
 	var weapon_id: String = equipment.get_item_id("weapon")
 	if weapon_id.is_empty() or weapon_id == "torch":
 		return false
+	if _is_holding_javelin():
+		return false
 	var w_stats: Dictionary = equipment.get_weapon_stats()
 	return weapon_id.find("bow") != -1 or weapon_id.find("crossbow") != -1 or str(w_stats.get("range", "melee")) == "ranged"
+
+func _is_holding_ranged() -> bool:
+	return _is_holding_bow() or _is_holding_javelin()
 
 func _start_bow_charge() -> void:
 	if _attack_cooldown > 0.0:
 		return
-	if not inventory.has_item("arrow", 1):
-		SignalBus.notification_posted.emit("Out of arrows!")
-		return
+	var is_jav: bool = _is_holding_javelin()
+	if is_jav:
+		var slot: Dictionary = inventory.get_slot(active_hotbar_index)
+		if slot.is_empty() or int(slot.get("count", 1)) <= 0:
+			SignalBus.notification_posted.emit("No javelins left!")
+			return
+	else:
+		if not inventory.has_item("arrow", 1):
+			SignalBus.notification_posted.emit("Out of arrows!")
+			return
 	if stats.stamina < 5.0:
-		SignalBus.notification_posted.emit("Too exhausted to draw bow!")
+		SignalBus.notification_posted.emit("Too exhausted to throw!" if is_jav else "Too exhausted to draw bow!")
 		return
 	_is_charging_bow = true
 	_bow_charge_time = 0.0
@@ -403,48 +425,75 @@ func _release_bow_shot() -> void:
 
 	var charge_ratio: float = clampf(_bow_charge_time / MAX_BOW_CHARGE_TIME, 0.25, 1.0)
 	_bow_charge_time = 0.0
+	var is_jav: bool = _is_holding_javelin()
 
-	if not inventory.has_item("arrow", 1):
-		SignalBus.notification_posted.emit("Out of arrows!")
-		queue_redraw()
-		return
+	if is_jav:
+		var slot: Dictionary = inventory.get_slot(active_hotbar_index)
+		if slot.is_empty() or int(slot.get("count", 1)) <= 0:
+			SignalBus.notification_posted.emit("No javelins left!")
+			queue_redraw()
+			return
+	else:
+		if not inventory.has_item("arrow", 1):
+			SignalBus.notification_posted.emit("Out of arrows!")
+			queue_redraw()
+			return
 
-	var stam_cost: float = Config.STAMINA_COST_ATTACK * charge_ratio
+	var stam_cost: float = (Config.STAMINA_COST_ATTACK * 1.1 if is_jav else Config.STAMINA_COST_ATTACK) * charge_ratio
 	if stats.stamina < stam_cost:
-		SignalBus.notification_posted.emit("Too exhausted to loose arrow!")
+		SignalBus.notification_posted.emit("Too exhausted to throw!" if is_jav else "Too exhausted to loose arrow!")
 		queue_redraw()
 		return
 
 	stats.modify("stamina", -stam_cost)
-	inventory.remove_item("arrow", 1)
+
+	# Consumption of ammo
+	if is_jav:
+		_last_fired_projectile_id = "javelins"
+		var slot: Dictionary = inventory.get_slot(active_hotbar_index)
+		var cur_cnt: int = int(slot.get("count", 1)) - 1
+		if cur_cnt <= 0:
+			inventory.set_slot(active_hotbar_index, {})
+			equipment.unequip("weapon")
+			SignalBus.notification_posted.emit("Last javelin thrown!")
+		else:
+			slot["count"] = cur_cnt
+			inventory.set_slot(active_hotbar_index, slot)
+		sync_weapon_from_active_slot()
+		SignalBus.inventory_changed.emit(self, inventory.snapshot())
+	else:
+		_last_fired_projectile_id = "arrow"
+		inventory.remove_item("arrow", 1)
 
 	var w_stats: Dictionary = equipment.get_weapon_stats()
-	var base_dmg: float = float(w_stats.get("damage", 16.0))
+	var base_dmg: float = float(w_stats.get("damage", 22.0 if is_jav else 16.0))
 	var skill_lvl: int = skills.get_level("ranged")
 	var scaled_dmg: float = base_dmg * (1.0 + float(skill_lvl) * Config.SKILL_DAMAGE_BONUS_PER_LEVEL) * (0.35 + 0.65 * charge_ratio)
-	var proj_speed: float = Config.PROJECTILE_SPEED * (0.45 + 0.55 * charge_ratio)
+	var speed_mult: float = 0.72 if is_jav else 1.0
+	var proj_speed: float = Config.PROJECTILE_SPEED * speed_mult * (0.45 + 0.55 * charge_ratio)
 
 	# MiniDayZ Aiming Cone Spread & Range
-	var min_spread: float = deg_to_rad(lerpf(5.5, 1.2, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
-	var max_spread: float = deg_to_rad(lerpf(42.0, 24.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
+	var min_spread: float = deg_to_rad(lerpf(6.0 if is_jav else 5.5, 1.4, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
+	var max_spread: float = deg_to_rad(lerpf(45.0, 22.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
 	var current_spread: float = lerpf(max_spread, min_spread, pow(charge_ratio, 1.7))
 	var random_spread: float = randf_range(-current_spread, current_spread)
 	var fire_dir: Vector2 = facing_direction.rotated(random_spread)
 
-	var min_dist: float = 65.0
-	var max_dist: float = lerpf(260.0, 420.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0))
+	var min_dist: float = 50.0 if is_jav else 65.0
+	var max_dist: float = lerpf(220.0, 340.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)) if is_jav else lerpf(260.0, 420.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0))
 	var current_range: float = lerpf(min_dist, max_dist, pow(charge_ratio, 1.4))
 
-	var shoot_origin: Vector2 = global_position + Vector2(0.0, -12.0) + facing_direction * 12.0
+	var shoot_origin: Vector2 = global_position + Vector2(0.0, -12.0) + facing_direction * 14.0
 	SignalBus.projectile_fired.emit(shoot_origin, fire_dir, proj_speed, scaled_dmg, "physical", self, current_range)
 	SignalBus.bow_released.emit(charge_ratio)
 	skills.gain_xp("ranged", Config.XP_PER_RANGED_HIT)
-	equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
+	if not is_jav:
+		equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
 
-	_attack_cooldown = 0.28
-	_swing_duration = 0.18
+	_attack_cooldown = 0.35 if is_jav else 0.28
+	_swing_duration = 0.22 if is_jav else 0.18
 	_swing_timer = _swing_duration
-	_lunge_offset = -facing_direction * 4.0
+	_lunge_offset = facing_direction * 11.0 if is_jav else -facing_direction * 4.0
 	queue_redraw()
 
 func _tick_auto_attack(_delta: float) -> void:
@@ -508,7 +557,7 @@ func _get_enemy_under_cursor() -> Node2D:
 func perform_attack() -> void:
 	if _attack_cooldown > 0.0:
 		return
-	if _is_holding_bow():
+	if _is_holding_ranged():
 		_start_bow_charge()
 		return
 	if stats.stamina < Config.STAMINA_COST_ATTACK:
@@ -1218,6 +1267,7 @@ func _draw() -> void:
 	if not weapon_id.is_empty():
 		var weapon_tex: ImageTexture = IconFactory.get_world_sprite(weapon_id)
 		var is_bow: bool = weapon_id.find("bow") != -1 or weapon_id.find("crossbow") != -1
+		var is_javelin: bool = (weapon_id == "javelins" or weapon_id == "javelin")
 		var base_angle: float = 0.0
 		var anchor_rect: Rect2 = Rect2(-6.0, -18.0, 24.0, 24.0)
 
@@ -1225,6 +1275,10 @@ func _draw() -> void:
 			# Bow is held centered in the hand, standing upright facing outward
 			base_angle = deg_to_rad(135.0) * rot_dir
 			anchor_rect = Rect2(-12.0, -12.0, 24.0, 24.0)
+		elif is_javelin:
+			# Javelin is a long throwing spear (nearly 4x arrow size)
+			base_angle = -deg_to_rad(32.0) * rot_dir
+			anchor_rect = Rect2(-10.0, -42.0, 52.0, 52.0)
 		elif weapon_id == "torch":
 			base_angle = -deg_to_rad(28.0) * rot_dir
 			anchor_rect = Rect2(-8.0, -24.0, 30.0, 30.0)
@@ -1234,14 +1288,26 @@ func _draw() -> void:
 			anchor_rect = Rect2(-6.0, -18.0, 24.0, 24.0)
 
 		var swing_angle_ofs: float = 0.0
-		if is_bow and _is_charging_bow:
+		if is_javelin and _is_charging_bow:
+			var charge_ratio: float = clampf(_bow_charge_time / MAX_BOW_CHARGE_TIME, 0.0, 1.0)
+			# Hand raised over shoulder, cocked back for throw
+			hand_pos = body_ofs + Vector2(-hand_x * 0.3, -17.0) - facing_direction * (5.0 + charge_ratio * 7.5)
+			# Javelin tilts horizontal, ready to throw along facing direction
+			base_angle = facing_direction.angle() if not is_facing_left else (facing_direction.angle() + PI)
+			swing_angle_ofs = -deg_to_rad(10.0) * (1.0 - charge_ratio) * rot_dir
+		elif is_bow and _is_charging_bow:
 			var charge_ratio: float = clampf(_bow_charge_time / MAX_BOW_CHARGE_TIME, 0.0, 1.0)
 			hand_pos = body_ofs + Vector2(hand_x, -13.0) + facing_direction * 2.0
 			swing_angle_ofs = -charge_ratio * deg_to_rad(22.0) * rot_dir
 		elif _swing_timer > 0.0:
 			var prog: float = 1.0 - (_swing_timer / maxf(0.01, _swing_duration))
 			var eased: float = 1.0 - pow(1.0 - prog, 3.0)
-			if is_bow:
+			if is_javelin:
+				# Throwing follow-through: hand thrusts forward along facing direction
+				hand_pos = body_ofs + Vector2(hand_x, -14.0) + facing_direction * (eased * 10.0)
+				base_angle = facing_direction.angle() if not is_facing_left else (facing_direction.angle() + PI)
+				swing_angle_ofs = lerpf(deg_to_rad(25.0), -deg_to_rad(15.0), eased) * rot_dir
+			elif is_bow:
 				# Bow draw string back and snap
 				swing_angle_ofs = -sin(prog * PI) * deg_to_rad(18.0) * rot_dir
 			else:
@@ -1254,14 +1320,29 @@ func _draw() -> void:
 		var final_rot: float = base_angle + swing_angle_ofs
 		var weapon_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left else Vector2(1.0, 1.0)
 
-		if weapon_tex != null:
+		# If charging javelin, draw procedural large spear in hand
+		if is_javelin and _is_charging_bow:
+			var j_dir: Vector2 = facing_direction
+			var j_tip: Vector2 = hand_pos + j_dir * 36.0
+			var j_tail: Vector2 = hand_pos - j_dir * 20.0
+			# Ash shaft
+			draw_line(j_tail, j_tip, Color(0.12, 0.09, 0.06), 3.8) # Outline
+			draw_line(j_tail, j_tip - j_dir * 10.0, Color(0.68, 0.50, 0.30), 2.6)
+			# Leather grip at hand
+			draw_line(hand_pos - j_dir * 5.0, hand_pos + j_dir * 5.0, Color(0.35, 0.22, 0.12), 3.2)
+			# Forged leaf spearhead
+			draw_line(j_tip - j_dir * 12.0, j_tip, Color(0.12, 0.14, 0.18), 4.8)
+			draw_line(j_tip - j_dir * 12.0, j_tip, Color(0.72, 0.76, 0.84), 3.4)
+			draw_line(j_tip - j_dir * 10.0, j_tip, Color(0.92, 0.95, 1.0), 1.6)
+			draw_circle(j_tip, 1.6, Color(0.95, 0.96, 1.0))
+		elif weapon_tex != null:
 			draw_set_transform(hand_pos, final_rot, weapon_scale)
 			draw_texture_rect(weapon_tex, anchor_rect, false)
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		else:
-			var tip_local: Vector2 = Vector2(cos(final_rot), sin(final_rot)) * 19.0
+			var tip_local: Vector2 = Vector2(cos(final_rot), sin(final_rot)) * (42.0 if is_javelin else 19.0)
 			var weapon_tip: Vector2 = hand_pos + Vector2(tip_local.x * weapon_scale.x, tip_local.y)
-			draw_line(hand_pos, weapon_tip, Color(0.84, 0.88, 0.92), 2.8)
+			draw_line(hand_pos, weapon_tip, Color(0.84, 0.88, 0.92), 3.2 if is_javelin else 2.8)
 
 		if weapon_id == "torch":
 			var flame_phase: float = sin(Time.get_ticks_msec() * 0.015)
@@ -1278,14 +1359,16 @@ func _draw() -> void:
 			draw_line(arrow_front - facing_direction * 3.5, arrow_front, Color(0.88, 0.90, 0.94), 2.8)
 			draw_line(arrow_back, arrow_back + facing_direction * 3.0, Color(0.88, 0.28, 0.28), 2.2)
 
+		if (is_bow or is_javelin) and _is_charging_bow:
+			var charge_ratio: float = clampf(_bow_charge_time / MAX_BOW_CHARGE_TIME, 0.0, 1.0)
 			# MiniDayZ Dynamic Aiming Cone (Wide & short -> Narrow laser sniper beam)
 			var skill_lvl: int = skills.get_level("ranged")
-			var min_spread: float = deg_to_rad(lerpf(5.5, 1.2, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
-			var max_spread: float = deg_to_rad(lerpf(42.0, 24.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
+			var min_spread: float = deg_to_rad(lerpf(6.0 if is_javelin else 5.5, 1.4, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
+			var max_spread: float = deg_to_rad(lerpf(45.0, 22.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
 			var current_spread: float = lerpf(max_spread, min_spread, pow(charge_ratio, 1.7))
 
-			var min_dist: float = 65.0
-			var max_dist: float = lerpf(260.0, 420.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0))
+			var min_dist: float = 50.0 if is_javelin else 65.0
+			var max_dist: float = lerpf(220.0, 340.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)) if is_javelin else lerpf(260.0, 420.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0))
 			var current_range: float = lerpf(min_dist, max_dist, pow(charge_ratio, 1.4))
 
 			var aim_base_angle: float = facing_direction.angle()
