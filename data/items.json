@@ -890,17 +890,17 @@
 		"skill_required": {}
 	},
 	{
-		"id": "chainmail_leggings",
-		"name": "Iron Chainmail Chausses",
+		"id": "iron_greaves",
+		"name": "Iron Greaves",
 		"type": "armor_legs",
 		"equip_slot": "legs",
 		"weight": 4.5,
-		"value": 95,
+		"value": 110,
 		"stackable": false,
-		"durability": 135,
-		"stats": { "defense": 12 },
+		"durability": 150,
+		"stats": { "defense": 13 },
 		"visual": { "sprite": "items/chainmail_leggings.png", "color": "#949ea8" },
-		"craft_requirements": { "iron_ingot": 3, "cloth": 1 },
+		"craft_requirements": { "iron_ingot": 3, "treated_leather": 1 },
 		"craft_station": "forge",
 		"skill_required": { "smithing": 20 }
 	},

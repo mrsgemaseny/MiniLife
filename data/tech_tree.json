@@ -166,7 +166,7 @@
 		"grid_y": 0,
 		"prerequisites": ["iron_forging"],
 		"costs": { "iron_ingot": 5, "cloth": 4 },
-		"unlocks": ["forge_chainmail_coif", "forge_iron_chainmail", "forge_chainmail_leggings"]
+		"unlocks": ["forge_chainmail_coif", "forge_iron_chainmail", "forge_iron_greaves"]
 	},
 	{
 		"id": "war_machinery",

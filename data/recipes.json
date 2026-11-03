@@ -399,14 +399,14 @@
 		"xp_reward": { "smithing": 50 }
 	},
 	{
-		"id": "forge_chainmail_leggings",
+		"id": "forge_iron_greaves",
 		"station": "forge",
-		"tech_required": "chainmail_armor",
+		"tech_required": "iron_working",
 		"inputs": [
 			{ "item_id": "iron_ingot", "count": 3 },
-			{ "item_id": "cloth", "count": 1 }
+			{ "item_id": "treated_leather", "count": 1 }
 		],
-		"output": { "item_id": "chainmail_leggings", "count": 1 },
+		"output": { "item_id": "iron_greaves", "count": 1 },
 		"skill_required": { "smithing": 20 },
 		"xp_reward": { "smithing": 36 }
 	},

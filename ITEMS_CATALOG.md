@@ -120,8 +120,7 @@
 | `wool_wraps` | Шерстяные обмотки | Т1 | `legs` | Овечья шерсть | Защита стоп и голеней от терновника (+1 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `leather_greaves` | Кожаные поножи | Т2 | `legs` | Обработанная кожа | Плотные поножи со шнуровкой (+4 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `bronze_greaves` | Бронзовые поножи (кнемиды) | Т3 | `legs` | Бронзовый слиток | Литые анатомические поножи гоплита (+9 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
-| `chainmail_leggings` | Железные кольчужные шоссы | Т4 | `legs` | Железные кольца | Кольчужные чулки с кожаной подошвой (+12 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
-| `iron_greaves` | Железные поножи | Т4 | `legs` | Железные пластины | Накладные железные шины на голень (+13 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
+| `iron_greaves` | Железные поножи | Т4 | `legs` | Железный слиток + Кожа | Классические железные поножи (+13 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `steel_greaves` | Стальные латные поножи и сабатоны | Т5 | `legs` | Стальной слиток | Полные сегментированные поножи с наколенниками (+18 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 
 ---
