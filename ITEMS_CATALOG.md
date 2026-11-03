@@ -87,7 +87,7 @@
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `wool_shirt` | Шерстяная рубаха / туника | Т1 | `clothing` | Овечья шерсть | Нательная одежда выживальщика (+1 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `gambeson` | Стеганый гамбезон | Т2 | `clothing` / `chest` | Ткань x4 | Многослойный поддоспешник (+7 брони). Гасит дробящий урон. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
-| `simple_chainmail` | Простая железная кольчуга | Т4 | `clothing` / `chest` | Железо x4 + Ткань x1 | Кольчатая рубаха (+15 брони). Надевается под кирасу или хауберк. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
+| `simple_chainmail` | Простая железная кольчуга | Т4 | `clothing` / `chest` | Железо x4 + Ткань x1 | Кольчатая рубаха (+15 брони). Надевается под железную броню, пластинчатые доспехи или хауберк. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `quality_clothing` | Качественная благородная одежда | Т4 | `clothing` | Качественная ткань | Повышает социальный статус и дипломатию в городах. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
 | `arming_doublet` | Стеганый дублет под латы | Т5 | `clothing` | Качественная ткань + Кожа | Анатомический поддоспешник для ношения полного латного доспеха. | `ARMOR_AND_TIERS.md` |
 
@@ -103,10 +103,10 @@
 | `bronze_cuirass` | Бронзовая мускульная кираса | Т3 | `chest` | Бронзовый слиток | Литой бронзовый панцирь с анатомическим рельефом (+18 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `bronze_lamellar` | Бронзовый ламелляр | Т3 | `chest` | Бронзовые пластины | Наборный доспех из сотен бронзовых пластинок (+20 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `iron_hauberk` | Полный тяжелый хауберк | Т4 | `chest` (строго) | Качественное железо | Длиннополая кольчуга до колен (+25 брони). Основа для двойной кольчуги. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
-| `iron_lamellar` | Железный ламелляр | Т4 | `chest` | Железные пластины | Восточный наборный панцирь на ременной основе (+24 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
+| `iron_lamellar` | Железный ламелляр | Т4 | `chest` | Железные пластины | Наборный железный панцирь на ременной основе (+24 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `iron_scale_armor` | Железные чешуйчатые доспехи | Т4 | `chest` | Железо + Кожа | Перекрывающиеся железные чешуйки на кожаной основе (+23 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
-| `mercenary_iron_cuirass` | Пластинчатый доспех / кираса наемника | Т4 | `chest` | Качественное железо | Кованый железный нагрудник (НЕ латы, только железная кираса!). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
-| `iron_brigandine` | Железная бригантина | Т4 | `chest` | Железные пластины + Ткань | Пластины, заклепанные под суконную ткань (+26 брони). | `ARMOR_AND_TIERS.md` |
+| `iron_armor` | Железная броня | Т4 | `chest` | Железный слиток + Кожа | Классическая железная броня корпуса (+26 брони). Называется просто железная броня. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
+| `iron_plate_armor` | Пластинчатые доспехи | Т4 | `chest` | Качественное железо + Кожа | Пластинчатый доспех из клепаных железных пластин (+29 брони). Отдельный доспех, не равен железной броне. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `steel_cuirass` | Стальной пластинчатый доспех / кираса | Т5 | `chest` | Стальной слиток | Высокоуглеродистая монолитная кираса с ребром (+36 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `steel_brigandine` | Стальная бригантина | Т5 | `chest` | Закаленные пластины стали | Элитная рыцарская бригантина на бархате (+38 брони). | `ARMOR_AND_TIERS.md` |
 | `steel_plate_armor` | Полные латные доспехи | Т5 | `chest` (монолит) | Стальной слиток | Полный гарнитур монолитной защиты (латы строго Т5 из стали!). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |

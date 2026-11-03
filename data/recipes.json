@@ -703,16 +703,40 @@
 		"xp_reward": { "smithing": 18 }
 	},
 	{
-		"id": "forge_mercenary_iron_cuirass",
+		"id": "forge_iron_armor",
+		"station": "forge",
+		"tech_required": "iron_working",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 5 },
+			{ "item_id": "treated_leather", "count": 2 }
+		],
+		"output": { "item_id": "iron_armor", "count": 1 },
+		"skill_required": { "smithing": 24 },
+		"xp_reward": { "smithing": 36 }
+	},
+	{
+		"id": "forge_iron_plate_armor",
 		"station": "forge",
 		"tech_required": "iron_working",
 		"inputs": [
 			{ "item_id": "quality_iron", "count": 5 },
 			{ "item_id": "treated_leather", "count": 2 }
 		],
-		"output": { "item_id": "mercenary_iron_cuirass", "count": 1 },
+		"output": { "item_id": "iron_plate_armor", "count": 1 },
 		"skill_required": { "smithing": 26 },
 		"xp_reward": { "smithing": 40 }
+	},
+	{
+		"id": "forge_iron_lamellar",
+		"station": "forge",
+		"tech_required": "iron_working",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 4 },
+			{ "item_id": "treated_leather", "count": 2 }
+		],
+		"output": { "item_id": "iron_lamellar", "count": 1 },
+		"skill_required": { "smithing": 22 },
+		"xp_reward": { "smithing": 32 }
 	},
 	{
 		"id": "forge_iron_scale_armor",

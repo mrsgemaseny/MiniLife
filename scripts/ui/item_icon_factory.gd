@@ -99,7 +99,7 @@ static func _resolve_sprite_path(id: String) -> String:
 		return "res://assets/sprites/items/leather_armor.png"
 	if id == "chainmail_coif" or id.find("coif") != -1 or id.find("helmet") != -1 or id.find("helm") != -1:
 		return "res://assets/sprites/items/chainmail_coif.png"
-	if id == "iron_chainmail" or id.find("chainmail") != -1 or id.find("hauberk") != -1 or id.find("cuirass") != -1 or id.find("brigandine") != -1 or id.find("scale") != -1 or id.find("plate") != -1:
+	if id == "iron_chainmail" or id.find("chainmail") != -1 or id.find("hauberk") != -1 or id.find("iron_armor") != -1 or id.find("lamellar") != -1 or id.find("cuirass") != -1 or id.find("brigandine") != -1 or id.find("scale") != -1 or id.find("plate") != -1:
 		return "res://assets/sprites/items/iron_chainmail.png"
 	if id == "chainmail_leggings" or id.find("chausses") != -1 or id.find("legging") != -1 or id.find("greaves") != -1:
 		return "res://assets/sprites/items/chainmail_leggings.png"
