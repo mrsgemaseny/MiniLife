@@ -2129,5 +2129,26 @@
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
+	},
+	{
+		"id": "torch",
+		"name": "Pitch Torch",
+		"type": "weapon",
+		"equip_slot": "weapon",
+		"placeable_structure": "torch",
+		"weight": 0.5,
+		"value": 6,
+		"stackable": true,
+		"max_stack": 16,
+		"durability": -1,
+		"stats": {
+			"damage": 6,
+			"attack_speed": 1.0,
+			"range": "melee"
+		},
+		"visual": { "sprite": "items/torch.png", "color": "#f59e0b" },
+		"craft_requirements": { "wood": 1, "herb": 1 },
+		"craft_station": "",
+		"skill_required": {}
 	}
 ]

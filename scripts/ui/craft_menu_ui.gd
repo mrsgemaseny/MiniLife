@@ -329,10 +329,6 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 func open_panel(station_id: String = "") -> void:
 	if station_id == "":
 		station_id = _detect_nearby_station()
-	var prog_node: Node = get_tree().root.find_child("ProgressionSystem", true, false)
-	if station_id == "" and prog_node != null and prog_node.has_method("can_open_craft_menu") and not bool(prog_node.call("can_open_craft_menu")):
-		SignalBus.notification_posted.emit("Hand crafting is locked for L1 Scavengers. Gather 30 raw resources by hand to unlock.")
-		return
 	_active_station = station_id
 	visible = true
 	_pick_default_recipe()

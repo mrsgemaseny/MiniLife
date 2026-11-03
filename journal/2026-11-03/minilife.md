@@ -75,3 +75,11 @@
   - Non-adjacent node routing: lines spanning across intermediate nodes (e.g. Planks Y=5 to Wool Y=7 skipping Archery Y=6) automatically route through the column's right-side gutter, preventing lines from crossing through unrelated nodes.
   - UI Inspector Safety: added a 160px right-hand safety buffer in ResearchTreeUI to isolate buttons and status labels from desktop OS activation watermarks.
   - Headless verification passes 100% OK across all 13 phases (E2E_ALL_SYSTEMS_VERIFIED_OK).
+- Flora Foraging, Pitch Torch & Field Hand-Crafting Overhaul (17:15):
+  - Guaranteed Herb Drops: updated wild_grass, wild_berry_bush, healing_herb, and swamp_herb_patch in data/resource_nodes.json to drop herb (wild meadow plant fibers) needed for T1 research and cloth crafting.
+  - Instant [E] / RMB Hand Foraging: added is_forageable() and interact() to ResourceNode, registering wild plants into interactable group for 1-click foraging on [E] or RMB, and reduced LMB channel harvest time to 0.20s.
+  - Pitch Torch Added: created torch item definition in data/items.json (placeable_structure: torch, weapon slot, 16 max stack) and craft_torch recipe in data/recipes.json (1 Wood + 1 Herb -> 2 Torches, field hand craftable).
+  - Unrestricted Field Hand Crafting: removed L1 scavenger lock in ProgressionSystem.can_open_craft_menu() and CraftMenuUI.open_panel(). Players can open [C] anywhere.
+  - Starter Field Crafting Suite: wood torches, wooden clubs (wooden_club), wooden spears (wooden_spear), cloth, bandages, planks, flint daggers, and wood building blocks are all craftable on foot without requiring a stationary workbench.
+  - Research Codex Clarity: replaced cryptic error strings with human-readable localized requirement badges (e.g. "Не хватает: Трава (0/4)") and prominent [ ИССЛЕДОВАТЬ ТЕХНОЛОГИЮ ] active buttons when resources are met.
+  - Headless verification passes 100% OK across all 13 phases (E2E_ALL_SYSTEMS_VERIFIED_OK).

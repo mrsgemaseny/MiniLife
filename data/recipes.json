@@ -1,5 +1,17 @@
 [
 	{
+		"id": "craft_torch",
+		"station": "",
+		"tech_required": "",
+		"inputs": [
+			{ "item_id": "wood", "count": 1 },
+			{ "item_id": "herb", "count": 1 }
+		],
+		"output": { "item_id": "torch", "count": 2 },
+		"skill_required": {},
+		"xp_reward": { "survival": 4 }
+	},
+	{
 		"id": "craft_stone_axe",
 		"station": "",
 		"tech_required": "stone_tools",
@@ -808,9 +820,9 @@
 	{
 		"id": "craft_wooden_club",
 		"station": "",
-		"tech_required": "plank_crafting",
+		"tech_required": "",
 		"inputs": [
-			{ "item_id": "wood", "count": 4 }
+			{ "item_id": "wood", "count": 3 }
 		],
 		"output": { "item_id": "wooden_club", "count": 1 },
 		"skill_required": {},
@@ -818,11 +830,11 @@
 	},
 	{
 		"id": "craft_wooden_spear",
-		"station": "workbench",
-		"tech_required": "plank_crafting",
+		"station": "",
+		"tech_required": "",
 		"inputs": [
-			{ "item_id": "plank", "count": 2 },
-			{ "item_id": "cloth", "count": 1 }
+			{ "item_id": "wood", "count": 2 },
+			{ "item_id": "herb", "count": 1 }
 		],
 		"output": { "item_id": "wooden_spear", "count": 1 },
 		"skill_required": {},

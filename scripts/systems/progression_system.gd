@@ -67,7 +67,7 @@ func get_current_title() -> String:
 
 
 func can_open_craft_menu() -> bool:
-	return current_level >= 2
+	return true
 
 
 func can_harvest_with_tools() -> bool:

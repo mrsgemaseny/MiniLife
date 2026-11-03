@@ -21,6 +21,8 @@ var _last_warning_time: float = -10.0
 func _ready() -> void:
 	y_sort_enabled = true
 	add_to_group("harvestable")
+	if is_forageable():
+		add_to_group("interactable")
 	# Resources are walkable/soft — zero collision so player and entities can walk freely through them
 	collision_layer = 0
 	collision_mask = 0
@@ -369,7 +371,7 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 
 	var req_time: float = 5.0
 	if is_plant:
-		req_time = 1.0
+		req_time = 0.20
 	elif is_rock:
 		match pick_tier:
 			4: req_time = 1.5
@@ -387,7 +389,7 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 			2: req_time = 2.8
 			_: req_time = 3.8
 	elif is_bush:
-		req_time = 1.0
+		req_time = 0.35
 
 	var skills: SkillsComponent = harvester.get("skills") as SkillsComponent
 	var skill_type: String = "mining" if is_rock else ("woodcutting" if is_tree else "foraging")
@@ -422,6 +424,17 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 		return true
 
 	return false
+
+
+func is_forageable() -> bool:
+	return node_def_id.find("herb") != -1 or node_def_id.find("grass") != -1 or node_def_id.find("berry") != -1 or node_def_id.find("bush") != -1 or node_def_id.find("flower") != -1
+
+
+func interact(harvester: Node) -> void:
+	# Hand foraging via [E] or RMB for wild plants, herbs and bushes
+	if is_forageable():
+		SignalBus.ui_sound_requested.emit("harvest_foliage")
+		_deplete_and_grant(harvester)
 
 
 

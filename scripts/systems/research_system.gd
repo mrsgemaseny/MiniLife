@@ -61,9 +61,9 @@ func is_researched(tech_id: String) -> bool:
 
 func can_research(tech_id: String, player: Node) -> Dictionary:
 	if not _techs.has(tech_id):
-		return {"ok": false, "reason": "Unknown technology"}
+		return {"ok": false, "reason": "Неизвестная технология"}
 	if is_researched(tech_id):
-		return {"ok": false, "reason": "Already researched"}
+		return {"ok": false, "reason": "Уже изучено"}
 
 	var tech_def: Dictionary = _techs[tech_id]
 	var prereqs: Array = tech_def.get("prerequisites", [])
@@ -71,17 +71,23 @@ func can_research(tech_id: String, player: Node) -> Dictionary:
 		var pre_str: String = str(pre)
 		if not is_researched(pre_str):
 			var pre_name: String = str(_techs.get(pre_str, {}).get("name", pre_str))
-			return {"ok": false, "reason": "Requires: " + pre_name}
+			return {"ok": false, "reason": "Требуется изучить: " + pre_name}
 
 	if player != null:
 		var inv: InventoryComponent = player.get("inventory") as InventoryComponent
 		if inv == null:
-			return {"ok": false, "reason": "No inventory"}
+			return {"ok": false, "reason": "Нет инвентаря"}
 		var costs: Dictionary = tech_def.get("costs", {})
 		for item_id in costs:
 			var req_cnt: int = int(costs[item_id])
 			if not inv.has_item(str(item_id), req_cnt):
-				return {"ok": false, "reason": "Requires %s x%d" % [str(item_id).capitalize(), req_cnt]}
+				var mat_name: String = str(item_id).capitalize().replace("_", " ")
+				if item_id == "herb": mat_name = "Трава"
+				elif item_id == "wood": mat_name = "Дерево"
+				elif item_id == "stone": mat_name = "Камень"
+				elif item_id == "cloth": mat_name = "Ткань"
+				elif item_id == "plank": mat_name = "Доски"
+				return {"ok": false, "reason": "Не хватает: %s (%d/%d)" % [mat_name, inv.count_of(str(item_id)), req_cnt]}
 
 	return {"ok": true, "reason": ""}
 

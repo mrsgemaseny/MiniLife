@@ -127,7 +127,7 @@ func _build_ui() -> void:
 	title_vbox.add_child(title)
 
 	var subtitle: Label = Label.new()
-	subtitle.text = "Открытие новых знаний, строительных чертежей и рецептов ковки [ESC / R чтобы закрыть]"
+	subtitle.text = "Соберите ресурсы в мире [E / ЛКМ], выберите технологию и нажмите [ИССЛЕДОВАТЬ ТЕХНОЛОГИЮ] [ESC / R чтобы закрыть]"
 	subtitle.add_theme_font_size_override("font_size", 10)
 	subtitle.modulate = Color(0.55, 0.58, 0.64, 1.0) # Muted silver
 	title_vbox.add_child(subtitle)
@@ -566,9 +566,15 @@ func _update_inspector_display(player: Node) -> void:
 				var cur_cnt: int = inv.count_of(str(mat_id)) if inv != null else 0
 				if cur_cnt < req_cnt:
 					all_met = false
-				cost_strs.append("%s: %d/%d" % [str(mat_id).capitalize().replace("_", " "), cur_cnt, req_cnt])
+				var mat_name: String = str(mat_id).capitalize().replace("_", " ")
+				if mat_id == "herb": mat_name = "Трава"
+				elif mat_id == "wood": mat_name = "Дерево"
+				elif mat_id == "stone": mat_name = "Камень"
+				elif mat_id == "cloth": mat_name = "Ткань"
+				elif mat_id == "plank": mat_name = "Доски"
+				cost_strs.append("%s: %d/%d" % [mat_name, cur_cnt, req_cnt])
 			_insp_cost_lbl.text = "Требуемые ресурсы: " + "  |  ".join(cost_strs)
-			_insp_cost_lbl.modulate = Color(0.88, 0.89, 0.92) if all_met else Color(0.82, 0.48, 0.45)
+			_insp_cost_lbl.modulate = Color(0.55, 0.90, 0.60) if all_met else Color(0.92, 0.45, 0.42)
 
 	# Update Action Button
 	if _insp_research_btn != null:
@@ -581,10 +587,9 @@ func _update_inspector_display(player: Node) -> void:
 			_insp_research_btn.disabled = false
 		else:
 			var reason: String = str(check.get("reason", "Заблокировано"))
-			_insp_research_btn.text = reason.to_upper()
+			_insp_research_btn.text = reason
 			_insp_research_btn.disabled = true
-			_insp_research_btn.disabled = true
-			_insp_research_btn.modulate = Color(0.55, 0.56, 0.60)
+			_insp_research_btn.modulate = Color(0.65, 0.68, 0.72)
 
 
 func _on_research_button_pressed() -> void:

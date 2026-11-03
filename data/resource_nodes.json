@@ -174,7 +174,7 @@
 		"id": "wild_berry_bush",
 		"name": "Berry Shrub",
 		"biome": "plains",
-		"hits": 2,
+		"hits": 1,
 		"required_tool": "",
 		"preferred_tool": "",
 		"skill": "foraging",
@@ -185,15 +185,15 @@
 		"trunk_color": "#c9384a",
 		"radius": 12.0,
 		"drops": [
-			{ "item_id": "berries", "min": 2, "max": 4 },
-			{ "item_id": "herb", "min": 0, "max": 1 }
+			{ "item_id": "berries", "min": 2, "max": 3 },
+			{ "item_id": "herb", "min": 1, "max": 2 }
 		]
 	},
 	{
 		"id": "swamp_herb_patch",
 		"name": "Bog Herb Cluster",
 		"biome": "swamp",
-		"hits": 2,
+		"hits": 1,
 		"required_tool": "",
 		"preferred_tool": "",
 		"skill": "foraging",
@@ -204,7 +204,7 @@
 		"trunk_color": "#73a942",
 		"radius": 12.0,
 		"drops": [
-			{ "item_id": "herb", "min": 2, "max": 5 }
+			{ "item_id": "herb", "min": 3, "max": 5 }
 		]
 	},
 	{
@@ -215,7 +215,7 @@
 		"required_tool": "",
 		"preferred_tool": "",
 		"skill": "foraging",
-		"xp": 4.0,
+		"xp": 6.0,
 		"regrows": true,
 		"regrow_days": 2,
 		"color": "#5a9e32",
@@ -223,8 +223,8 @@
 		"radius": 10.0,
 		"has_collision": false,
 		"drops": [
-			{ "item_id": "wheat_seeds", "min": 0, "max": 1 },
-			{ "item_id": "wild_grass", "min": 1, "max": 2 }
+			{ "item_id": "herb", "min": 1, "max": 2 },
+			{ "item_id": "wheat_seeds", "min": 0, "max": 1 }
 		]
 	},
 	{
@@ -243,7 +243,8 @@
 		"radius": 10.0,
 		"has_collision": false,
 		"drops": [
-			{ "item_id": "healing_herb", "min": 1, "max": 3 }
+			{ "item_id": "herb", "min": 2, "max": 3 },
+			{ "item_id": "healing_herb", "min": 1, "max": 2 }
 		]
 	},
 	{

@@ -6,6 +6,14 @@
 - **Repository**: `https://github.com/mrsgemaseny/MiniLife`
 
 ## Recent Accomplishments
+- **Flora Foraging, Pitch Torch & Field Hand-Crafting Suite (2026-11-03)**:
+  - **Guaranteed Plant Foraging**: Plants and bushes (`wild_grass`, `wild_berry_bush`, `healing_herb`) drop `herb` fibers for T1 research and cloth crafting.
+  - **1-Click Hand Harvesting**: `ResourceNode` flora registered in `interactable` for instant gathering via `[E]` or RMB, plus fast 0.20s LMB channel harvest.
+  - **Pitch Torch**: Added `torch` item to `data/items.json` and `craft_torch` recipe (`wood: 1, herb: 1 -> torch: 2`) to `data/recipes.json`.
+  - **Unrestricted Field Crafting**: Removed L1 scavenger lock in `ProgressionSystem` and `CraftMenuUI`.
+  - **Starter Hand Crafting**: Torches, wooden clubs, wooden spears, cloth, bandages, planks, flint daggers, and wooden blocks craftable in the field without stations.
+  - **Research Codex Clarity**: Clear localized requirements (e.g. `Не хватает: Трава (0/4)`) and active `[ ИССЛЕДОВАТЬ ТЕХНОЛОГИЮ ]` button.
+  - **E2E Smoke Verification**: 100% pass across all 13 phases in headless Godot (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
 - **Center-Out Research Tree DAG & Flow Reversal (2026-11-03)**:
   - **Center Root Architecture**: In TIER I, `herbs_gathering` (Primitive Gathering) sits centrally at `Y=3`.
   - **Upward Branch**: Stone Gathering (`Y=2`) -> Primitive Hearth & Kiln (`Y=1`) -> Roasting & Boiling (`Y=0`) with arrows directed upwards.
