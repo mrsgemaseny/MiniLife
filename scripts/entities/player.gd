@@ -296,11 +296,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		var mb: InputEventMouseButton = event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_WHEEL_UP:
-			select_hotbar_slot((active_hotbar_index - 1 + 8) % 8)
+			select_hotbar_slot(posmod(active_hotbar_index - 1, 8))
 			get_viewport().set_input_as_handled()
 			return
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			select_hotbar_slot((active_hotbar_index + 1) % 8)
+			select_hotbar_slot(posmod(active_hotbar_index + 1, 8))
 			get_viewport().set_input_as_handled()
 			return
 

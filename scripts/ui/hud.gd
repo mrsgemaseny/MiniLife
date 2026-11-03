@@ -78,22 +78,6 @@ func _process(delta: float) -> void:
 			if _banner_timer <= 0.0:
 				_location_banner.visible = false
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		var k: int = (event as InputEventKey).keycode
-		if k >= KEY_1 and k <= KEY_8:
-			var slot_idx: int = k - KEY_1
-			_activate_hotbar_slot(slot_idx)
-	elif event is InputEventMouseButton and event.pressed:
-		var mb: InputEventMouseButton = event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			var player: Node = get_tree().get_first_node_in_group("player")
-			if player != null and "active_hotbar_index" in player:
-				var cur: int = int(player.get("active_hotbar_index"))
-				var step: int = -1 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else 1
-				var next_idx: int = posmod(cur + step, 8)
-				_activate_hotbar_slot(next_idx)
-
 func _make_bar_style(bg_col: Color, border_col: Color = Color(0.22, 0.25, 0.30, 0.65)) -> StyleBoxFlat:
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
 	sb.bg_color = bg_col
