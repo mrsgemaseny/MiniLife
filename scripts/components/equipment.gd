@@ -5,7 +5,7 @@ signal slot_changed(slot: String, item_id: String)
 signal item_broken(slot: String, item_id: String)
 signal weapon_durability_changed(new_dur: int)
 
-const SLOTS: Array[String] = ["head", "chest", "legs", "weapon", "offhand"]
+const SLOTS: Array[String] = ["head", "chest", "clothing", "legs", "weapon", "offhand"]
 const UNARMED_STATS: Dictionary = {
 	"damage": 5.0,
 	"damage_type": "physical",
@@ -27,15 +27,43 @@ static func _get_item_def(item_id: String) -> Dictionary:
 
 func can_equip(item_id: String) -> bool:
 	var def: Dictionary = _get_item_def(item_id)
+	if def.has("equip_slots"):
+		var slots: Array = def.get("equip_slots", [])
+		for s in slots:
+			if SLOTS.has(str(s)):
+				return true
 	var slot: String = _resolve_slot(def)
 	return slot != "" and SLOTS.has(slot)
 
 
 func equip(item_id: String, durability: int = -1, slot_override: String = "") -> Dictionary:
 	var def: Dictionary = _get_item_def(item_id)
-	var slot: String = slot_override if not slot_override.is_empty() else _resolve_slot(def)
+	var slot: String = slot_override
+	if slot.is_empty():
+		if def.has("equip_slots"):
+			var allowed_slots: Array = def.get("equip_slots", [])
+			# Prefer empty slot, else first allowed slot
+			for aslot in allowed_slots:
+				var s_str: String = str(aslot)
+				if SLOTS.has(s_str) and get_item_id(s_str).is_empty():
+					slot = s_str
+					break
+			if slot.is_empty() and allowed_slots.size() > 0:
+				slot = str(allowed_slots[0])
+		else:
+			slot = _resolve_slot(def)
+
 	if slot == "" or not SLOTS.has(slot):
 		return {}
+
+	# Anti-Cheese Rule: Cannot wear duplicate items on torso layers
+	if slot == "chest" and get_item_id("clothing") == item_id:
+		SignalBus.notification_posted.emit("Cannot equip duplicate layers of the same armor.")
+		return {}
+	if slot == "clothing" and get_item_id("chest") == item_id:
+		SignalBus.notification_posted.emit("Cannot equip duplicate layers of the same armor.")
+		return {}
+
 	var prev: Dictionary = _equipped.get(slot, {"item_id": "", "durability": -1}).duplicate()
 	var dur: int = durability if durability >= 0 else int(def.get("durability", -1))
 	_equipped[slot] = {"item_id": item_id, "durability": dur}
@@ -124,6 +152,42 @@ func damage_weapon(wear: int = 1) -> bool:
 	return false
 
 
+func damage_armor(wear: int = 1) -> bool:
+	# Day R Wear Queue: Outer Chest Armor absorbs 100% until broken
+	var chest_entry: Dictionary = _equipped.get("chest", {})
+	var chest_id: String = str(chest_entry.get("item_id", ""))
+	var chest_dur: int = int(chest_entry.get("durability", -1))
+	if chest_id != "" and chest_dur > 0:
+		chest_dur -= wear
+		if chest_dur <= 0:
+			_equipped["chest"] = {"item_id": "", "durability": -1}
+			slot_changed.emit("chest", "")
+			item_broken.emit("chest", chest_id)
+			return true
+		else:
+			chest_entry["durability"] = chest_dur
+			_equipped["chest"] = chest_entry
+			return false
+
+	# If outer chest armor is shattered / empty, clothing underarmor takes damage
+	var cloth_entry: Dictionary = _equipped.get("clothing", {})
+	var cloth_id: String = str(cloth_entry.get("item_id", ""))
+	var cloth_dur: int = int(cloth_entry.get("durability", -1))
+	if cloth_id != "" and cloth_dur > 0:
+		cloth_dur -= wear
+		if cloth_dur <= 0:
+			_equipped["clothing"] = {"item_id": "", "durability": -1}
+			slot_changed.emit("clothing", "")
+			item_broken.emit("clothing", cloth_id)
+			return true
+		else:
+			cloth_entry["durability"] = cloth_dur
+			_equipped["clothing"] = cloth_entry
+			return false
+
+	return false
+
+
 func get_sprite_layers() -> Dictionary:
 	var layers: Dictionary = {}
 	for s in SLOTS:
@@ -162,12 +226,18 @@ func from_dict(data: Dictionary) -> void:
 func _resolve_slot(def: Dictionary) -> String:
 	if def.has("equip_slot"):
 		return str(def["equip_slot"])
+	if def.has("equip_slots"):
+		var slots: Array = def.get("equip_slots", [])
+		if slots.size() > 0:
+			return str(slots[0])
 	var t: String = str(def.get("type", ""))
 	match t:
 		"weapon", "tool":
 			return "weapon"
 		"armor_head", "helmet":
 			return "head"
+		"armor_clothing", "clothing", "underarmor":
+			return "clothing"
 		"armor_chest", "armor":
 			return "chest"
 		"armor_legs", "boots":

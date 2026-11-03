@@ -37,12 +37,15 @@ script/source = "extends Node2D
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_dynamic_systems()
-	GameManager.start_new_game(Config.DEFAULT_WORLD_SEED, Config.DEFAULT_SAVE_SLOT)
 	var args: PackedStringArray = OS.get_cmdline_user_args()
-	if not args.has(\"--e2e-smoke\") and not args.has(\"--e2e-full\") and not args.has(\"--render-map\"):
+	if args.has(\"--e2e-smoke\") or args.has(\"--e2e-full\") or args.has(\"--render-map\"):
+		GameManager.start_new_game(Config.DEFAULT_WORLD_SEED, Config.DEFAULT_SAVE_SLOT)
+	else:
 		var mm: Node = get_node_or_null(\"UILayer/MainMenu\")
 		if mm != null and mm.has_method(\"open_menu\"):
 			mm.call(\"open_menu\")
+		else:
+			GameManager.start_new_game(Config.DEFAULT_WORLD_SEED, Config.DEFAULT_SAVE_SLOT)
 
 func _setup_dynamic_systems() -> void:
 	var systems: Node = get_node_or_null(\"Systems\")

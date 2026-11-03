@@ -24,8 +24,14 @@ var _furnaces: Dictionary = {}
 
 func _ready() -> void:
 	instance = self
+	SignalBus.game_started.connect(_on_game_started)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
+
+
+func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
+	if is_new:
+		_furnaces.clear()
 
 
 static func is_valid_fuel(item_id: String) -> bool:

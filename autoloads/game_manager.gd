@@ -83,6 +83,7 @@ func start_new_game(new_seed: int, slot: String = Config.DEFAULT_SAVE_SLOT) -> v
 	_paused_by_ui = false
 	_state = State.PLAYING
 	get_tree().paused = false
+	SignalBus.world_delete_requested.emit(slot)
 	SignalBus.game_started.emit(_world_seed, _active_slot, true)
 
 

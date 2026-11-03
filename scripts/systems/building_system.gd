@@ -17,6 +17,7 @@ var _pulse_phase: float = 0.0
 func _ready() -> void:
 	instance = self
 	y_sort_enabled = true
+	SignalBus.game_started.connect(_on_game_started)
 	SignalBus.build_mode_changed.connect(_on_build_mode_changed)
 	SignalBus.build_requested.connect(_on_build_requested)
 	SignalBus.structure_placement_validated.connect(_on_structure_placement_validated)
@@ -24,6 +25,30 @@ func _ready() -> void:
 	SignalBus.structure_destroyed.connect(_on_structure_destroyed)
 	SignalBus.structure_removal_requested.connect(_on_structure_removal_requested)
 	SignalBus.trap_triggered.connect(_on_trap_triggered)
+
+
+func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
+	if is_new:
+		clear_all_structures()
+
+
+func clear_all_structures() -> void:
+	for key in _placed_structures.keys():
+		var s: Node = _placed_structures[key]
+		if is_instance_valid(s):
+			s.queue_free()
+	_placed_structures.clear()
+	for key in _placed_floors.keys():
+		var f: Node = _placed_floors[key]
+		if is_instance_valid(f):
+			f.queue_free()
+	_placed_floors.clear()
+	_placed_nodes.clear()
+	_storage_mgr = StorageManager.new()
+	_defense_net = DefenseNetwork.new()
+	for node in get_tree().get_nodes_in_group("structures"):
+		if is_instance_valid(node) and node is StructureEntity:
+			node.queue_free()
 
 
 func _process(delta: float) -> void:

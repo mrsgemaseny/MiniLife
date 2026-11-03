@@ -22,6 +22,28 @@
 		"xp_reward": { "construction": 12 }
 	},
 	{
+		"id": "craft_stone_sword",
+		"station": "",
+		"inputs": [
+			{ "item_id": "wood", "count": 1 },
+			{ "item_id": "stone", "count": 3 }
+		],
+		"output": { "item_id": "stone_sword", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "construction": 12 }
+	},
+	{
+		"id": "craft_stone_dagger",
+		"station": "",
+		"inputs": [
+			{ "item_id": "wood", "count": 1 },
+			{ "item_id": "stone", "count": 1 }
+		],
+		"output": { "item_id": "stone_dagger", "count": 1 },
+		"skill_required": {},
+		"xp_reward": { "construction": 8 }
+	},
+	{
 		"id": "craft_bandage",
 		"station": "",
 		"inputs": [
@@ -76,20 +98,20 @@
 		"id": "craft_treated_leather",
 		"station": "workbench",
 		"inputs": [
-			{ "item_id": "leather_hide", "count": 1 },
-			{ "item_id": "resin", "count": 1 }
+			{ "item_id": "raw_leather", "count": 1 }
 		],
 		"output": { "item_id": "treated_leather", "count": 1 },
 		"skill_required": { "crafting": 2 },
 		"xp_reward": { "crafting": 12 }
 	},
 	{
-		"id": "craft_quality_leather",
+		"id": "craft_tanned_leather",
 		"station": "workbench",
 		"inputs": [
-			{ "item_id": "treated_leather", "count": 2 }
+			{ "item_id": "treated_leather", "count": 1 },
+			{ "item_id": "resin", "count": 1 }
 		],
-		"output": { "item_id": "quality_leather", "count": 1 },
+		"output": { "item_id": "tanned_leather", "count": 1 },
 		"skill_required": { "crafting": 4 },
 		"xp_reward": { "crafting": 22 }
 	},
@@ -231,6 +253,30 @@
 		"output": { "item_id": "bronze_axe", "count": 1 },
 		"skill_required": { "smithing": 8 },
 		"xp_reward": { "smithing": 24 }
+	},
+	{
+		"id": "forge_bronze_sword",
+		"station": "forge",
+		"tech_required": "bronze_metallurgy",
+		"inputs": [
+			{ "item_id": "bronze_ingot", "count": 3 },
+			{ "item_id": "wood", "count": 1 }
+		],
+		"output": { "item_id": "bronze_sword", "count": 1 },
+		"skill_required": { "smithing": 10 },
+		"xp_reward": { "smithing": 28 }
+	},
+	{
+		"id": "forge_bronze_dagger",
+		"station": "forge",
+		"tech_required": "bronze_metallurgy",
+		"inputs": [
+			{ "item_id": "bronze_ingot", "count": 1 },
+			{ "item_id": "wood", "count": 1 }
+		],
+		"output": { "item_id": "bronze_dagger", "count": 1 },
+		"skill_required": { "smithing": 6 },
+		"xp_reward": { "smithing": 18 }
 	},
 	{
 		"id": "forge_iron_axe",
@@ -436,6 +482,19 @@
 		"xp_reward": { "smithing": 55 }
 	},
 	{
+		"id": "forge_steel_dagger",
+		"station": "forge",
+		"tech_required": "iron_mastery",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 2 },
+			{ "item_id": "coal", "count": 1 },
+			{ "item_id": "wood", "count": 1 }
+		],
+		"output": { "item_id": "steel_dagger", "count": 1 },
+		"skill_required": { "smithing": 25 },
+		"xp_reward": { "smithing": 38 }
+	},
+	{
 		"id": "craft_wood_wall",
 		"station": "",
 		"tech_required": "",
@@ -572,5 +631,147 @@
 		"output": { "item_id": "alchemy_station", "count": 1 },
 		"skill_required": { "construction": 10 },
 		"xp_reward": { "construction": 25 }
+	},
+	{
+		"id": "craft_gambeson",
+		"station": "workbench",
+		"tech_required": "textile_weaving",
+		"inputs": [
+			{ "item_id": "cloth", "count": 4 }
+		],
+		"output": { "item_id": "gambeson", "count": 1 },
+		"skill_required": { "crafting": 3 },
+		"xp_reward": { "crafting": 15 }
+	},
+	{
+		"id": "forge_simple_chainmail",
+		"station": "forge",
+		"tech_required": "iron_working",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 4 },
+			{ "item_id": "cloth", "count": 1 }
+		],
+		"output": { "item_id": "simple_chainmail", "count": 1 },
+		"skill_required": { "smithing": 16 },
+		"xp_reward": { "smithing": 25 }
+	},
+	{
+		"id": "forge_iron_hauberk",
+		"station": "forge",
+		"tech_required": "iron_working",
+		"inputs": [
+			{ "item_id": "quality_iron", "count": 4 },
+			{ "item_id": "cloth", "count": 2 }
+		],
+		"output": { "item_id": "iron_hauberk", "count": 1 },
+		"skill_required": { "smithing": 24 },
+		"xp_reward": { "smithing": 35 }
+	},
+	{
+		"id": "forge_bronze_cuirass",
+		"station": "forge",
+		"tech_required": "bronze_casting",
+		"inputs": [
+			{ "item_id": "bronze_ingot", "count": 5 },
+			{ "item_id": "treated_leather", "count": 2 }
+		],
+		"output": { "item_id": "bronze_cuirass", "count": 1 },
+		"skill_required": { "smithing": 12 },
+		"xp_reward": { "smithing": 22 }
+	},
+	{
+		"id": "forge_bronze_helmet",
+		"station": "forge",
+		"tech_required": "bronze_casting",
+		"inputs": [
+			{ "item_id": "bronze_ingot", "count": 3 }
+		],
+		"output": { "item_id": "bronze_helmet", "count": 1 },
+		"skill_required": { "smithing": 10 },
+		"xp_reward": { "smithing": 18 }
+	},
+	{
+		"id": "forge_bronze_greaves",
+		"station": "forge",
+		"tech_required": "bronze_casting",
+		"inputs": [
+			{ "item_id": "bronze_ingot", "count": 3 },
+			{ "item_id": "treated_leather", "count": 1 }
+		],
+		"output": { "item_id": "bronze_greaves", "count": 1 },
+		"skill_required": { "smithing": 10 },
+		"xp_reward": { "smithing": 18 }
+	},
+	{
+		"id": "forge_mercenary_iron_cuirass",
+		"station": "forge",
+		"tech_required": "iron_working",
+		"inputs": [
+			{ "item_id": "quality_iron", "count": 5 },
+			{ "item_id": "treated_leather", "count": 2 }
+		],
+		"output": { "item_id": "mercenary_iron_cuirass", "count": 1 },
+		"skill_required": { "smithing": 26 },
+		"xp_reward": { "smithing": 40 }
+	},
+	{
+		"id": "forge_iron_scale_armor",
+		"station": "forge",
+		"tech_required": "iron_working",
+		"inputs": [
+			{ "item_id": "quality_iron", "count": 4 },
+			{ "item_id": "treated_leather", "count": 2 }
+		],
+		"output": { "item_id": "iron_scale_armor", "count": 1 },
+		"skill_required": { "smithing": 22 },
+		"xp_reward": { "smithing": 32 }
+	},
+	{
+		"id": "forge_steel_cuirass",
+		"station": "forge",
+		"tech_required": "master_smithing",
+		"inputs": [
+			{ "item_id": "steel_ingot", "count": 4 },
+			{ "item_id": "tanned_leather", "count": 2 }
+		],
+		"output": { "item_id": "steel_cuirass", "count": 1 },
+		"skill_required": { "smithing": 32 },
+		"xp_reward": { "smithing": 50 }
+	},
+	{
+		"id": "forge_steel_helmet",
+		"station": "forge",
+		"tech_required": "master_smithing",
+		"inputs": [
+			{ "item_id": "steel_ingot", "count": 3 },
+			{ "item_id": "tanned_leather", "count": 1 }
+		],
+		"output": { "item_id": "steel_helmet", "count": 1 },
+		"skill_required": { "smithing": 30 },
+		"xp_reward": { "smithing": 45 }
+	},
+	{
+		"id": "forge_steel_greaves",
+		"station": "forge",
+		"tech_required": "master_smithing",
+		"inputs": [
+			{ "item_id": "steel_ingot", "count": 3 },
+			{ "item_id": "tanned_leather", "count": 1 }
+		],
+		"output": { "item_id": "steel_greaves", "count": 1 },
+		"skill_required": { "smithing": 30 },
+		"xp_reward": { "smithing": 45 }
+	},
+	{
+		"id": "forge_steel_plate_armor",
+		"station": "forge",
+		"tech_required": "master_smithing",
+		"inputs": [
+			{ "item_id": "steel_ingot", "count": 7 },
+			{ "item_id": "tanned_leather", "count": 3 }
+		],
+		"output": { "item_id": "steel_plate_armor", "count": 1 },
+		"skill_required": { "smithing": 36 },
+		"xp_reward": { "smithing": 65 }
 	}
 ]

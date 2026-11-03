@@ -305,9 +305,11 @@ func delete_world_slot(slot: String) -> void:
 		DirAccess.remove_absolute(base_dir)
 
 
-func _on_game_started(_seed: int, slot: String, _is_new: bool) -> void:
+func _on_game_started(_seed: int, slot: String, is_new: bool) -> void:
 	_active_slot = slot
 	_dirty_chunks.clear()
+	if is_new:
+		delete_world_slot(slot)
 
 
 func _on_save_requested(slot: String) -> void:

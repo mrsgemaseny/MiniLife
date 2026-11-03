@@ -189,4 +189,11 @@
   - 12 new 160x160 RGBA8 sprites in `assets/sprites/items/`: silver & gold coins (`silver_coins`, `gold_coins`, `copper_coins`), textiles (`wool` -> `cloth` -> `quality_cloth`), leathers (`leather_raw` -> `treated_leather` -> `quality_leather`), metals (`iron_ingot` -> `quality_iron` -> `steel_ingot`).
   - Integrated into `data/items.json`, `data/recipes.json`, and `ItemIconFactory._resolve_sprite_path()`.
   - Phase 1–12 automated E2E tests 100% passing (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
+- **Layered Armor System & 4x4 Weapon Matrix (2026-11-03)**:
+  - Added clothing underarmor slot (`clothing`) alongside chest armor (`chest`) in `EquipmentComponent` and `InventoryUI`.
+  - Enforced Anti-Cheese rule (no duplicate armor items across torso layers).
+  - Implemented Day R wear queue: outer armor takes 100% durability damage until broken, then clothing absorbs wear.
+  - Completed 4x4 weapon/tool matrix (sword, pickaxe, axe, dagger) across stone, bronze, iron, and steel.
+  - Added T1-T5 armor catalog (`gambeson`, `simple_chainmail`, `iron_hauberk`, `bronze_cuirass`, `mercenary_iron_cuirass`, `iron_scale_armor`, `steel_cuirass`, `steel_plate_armor`, helmets, greaves).
+  - 100% headless pass across all 12 E2E phases (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `buildings.json`, `research.json`, `chunks/<x>_<y>.json`) + persistent `achievements.json`.

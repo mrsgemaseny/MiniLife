@@ -280,6 +280,7 @@ func _build_minecraft_inventory_ui() -> void:
 	var armor_keys: Array[Dictionary] = [
 		{"key": "head", "placeholder": "Helm"},
 		{"key": "chest", "placeholder": "Chest"},
+		{"key": "clothing", "placeholder": "Clothes"},
 		{"key": "legs", "placeholder": "Legs"},
 		{"key": "weapon", "placeholder": "Hand"}
 	]
@@ -298,7 +299,7 @@ func _build_minecraft_inventory_ui() -> void:
 	# Character Preview Well
 	var char_well: PanelContainer = PanelContainer.new()
 	char_well.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	char_well.custom_minimum_size = Vector2(100.0, 180.0)
+	char_well.custom_minimum_size = Vector2(100.0, 246.0)
 	var cw_sb: StyleBoxFlat = StyleBoxFlat.new()
 	cw_sb.bg_color = Color(0.10, 0.11, 0.13, 0.95)
 	cw_sb.border_color = Color(0.24, 0.26, 0.30, 0.85)
@@ -850,17 +851,29 @@ func _on_armor_slot_clicked(slot_key: String, mouse_button: int, shift: bool) ->
 		var def: Dictionary = DataRegistry.get_item(c_id)
 		var it_type: String = str(def.get("type", ""))
 		var def_slot: String = str(def.get("equip_slot", ""))
+		var allowed_slots: Array = def.get("equip_slots", [])
 		var valid: bool = false
-		if slot_key == "offhand":
+		if allowed_slots.has(slot_key):
+			valid = true
+		elif slot_key == "offhand":
 			valid = (def_slot == "offhand" or it_type in ["shield", "offhand"] or c_id.find("shield") != -1 or c_id == "torch")
 		elif slot_key == "head":
 			valid = (def_slot == "head" or it_type in ["armor_head", "helmet"] or c_id.find("helm") != -1 or c_id.find("coif") != -1)
 		elif slot_key == "chest":
-			valid = (def_slot == "chest" or it_type in ["armor_chest", "armor"] or c_id.find("chainmail") != -1 or c_id.find("armor") != -1 or c_id.find("tunic") != -1)
+			valid = (def_slot == "chest" or it_type in ["armor_chest", "armor"] or c_id.find("chainmail") != -1 or c_id.find("armor") != -1 or c_id.find("tunic") != -1 or c_id.find("cuirass") != -1 or c_id.find("hauberk") != -1 or c_id.find("gambeson") != -1 or c_id.find("brigandine") != -1 or c_id.find("scale") != -1 or c_id.find("lamellar") != -1)
+		elif slot_key == "clothing":
+			valid = (def_slot in ["clothing", "underarmor"] or it_type in ["clothing", "underarmor"] or c_id.find("gambeson") != -1 or c_id.find("tunic") != -1 or c_id.find("simple_chainmail") != -1 or c_id == "chainmail")
 		elif slot_key == "legs":
 			valid = (def_slot == "legs" or it_type in ["armor_legs", "boots"] or c_id.find("leggings") != -1 or c_id.find("greaves") != -1 or c_id.find("chausses") != -1)
 
 		if valid:
+			# Anti-Cheese: Prevent duplicate armor on torso layers
+			if slot_key == "chest" and eq.get_item_id("clothing") == c_id:
+				SignalBus.notification_posted.emit("Cannot equip duplicate layers of the same armor.")
+				return
+			if slot_key == "clothing" and eq.get_item_id("chest") == c_id:
+				SignalBus.notification_posted.emit("Cannot equip duplicate layers of the same armor.")
+				return
 			if current_id != "":
 				# Slot is occupied: swap only if cursor has exactly 1 item
 				var c_cnt: int = int(_cursor_stack.get("count", 1))

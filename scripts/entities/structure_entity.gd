@@ -130,8 +130,15 @@ func _draw() -> void:
 	var hh: float = float(Config.HALF_TILE.y) * 0.82
 	var outline_col: Color = Color(0.08, 0.09, 0.11, 0.92)
 
-	# Ground shadow
-	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 2.5), hw * 0.95, hh * 0.95), Color(0.0, 0.0, 0.0, 0.30))
+	# Ground shadow (never for floors, fitted contact shadow for furniture)
+	var is_floor_struct: bool = structure_id in ["floor", "stone_floor"]
+	if not is_floor_struct:
+		if structure_id in ["workbench", "research_table", "alchemy_station"]:
+			draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 7.0), hw * 0.78, hh * 0.52), Color(0.0, 0.0, 0.0, 0.24))
+		elif structure_id == "bed":
+			draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 6.0), hw * 0.85, hh * 0.58), Color(0.0, 0.0, 0.0, 0.24))
+		else:
+			draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 2.5), hw * 0.90, hh * 0.85), Color(0.0, 0.0, 0.0, 0.28))
 
 	# 1. High-fidelity isometric structure sprite
 	var stex: Texture2D = _get_structure_tex(structure_id)
@@ -148,28 +155,28 @@ func _draw() -> void:
 		
 		var tw: float = float(stex.get_width())
 		var th: float = float(stex.get_height())
-		var target_w: float = 64.0
+		var target_w: float = 58.0
 		if structure_id == "workbench" or structure_id == "research_table" or structure_id == "alchemy_station":
-			target_w = 76.0
-		elif structure_id == "bed":
-			target_w = 80.0
-		elif structure_id == "stone_floor":
-			target_w = 68.0
-		elif structure_id == "chest" or structure_id == "storage" or structure_id == "iron_vault":
-			target_w = 56.0
-		elif structure_id == "wood_wall" or structure_id == "stone_wall" or structure_id == "door" or structure_id == "wood_door":
-			target_w = 62.0
-		elif structure_id == "campfire":
 			target_w = 58.0
+		elif structure_id == "bed":
+			target_w = 60.0
+		elif structure_id == "stone_floor":
+			target_w = 64.0
+		elif structure_id == "chest" or structure_id == "storage" or structure_id == "iron_vault":
+			target_w = 52.0
+		elif structure_id == "wood_wall" or structure_id == "stone_wall" or structure_id == "door" or structure_id == "wood_door":
+			target_w = 60.0
+		elif structure_id == "campfire":
+			target_w = 54.0
 		elif structure_id == "water_collector":
-			target_w = 48.0
+			target_w = 46.0
 		elif structure_id == "torch":
-			target_w = 34.0
+			target_w = 32.0
 		
 		var scale_f: float = target_w / tw
 		var target_h: float = th * scale_f
 		var rx: float = -target_w * 0.5
-		var ry: float = 12.0 - target_h
+		var ry: float = 10.0 - target_h
 		
 		draw_texture_rect(stex, Rect2(rx, ry, target_w, target_h), false, mod_col)
 		if structure_id == "torch":

@@ -276,7 +276,7 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 	var equip: EquipmentComponent = harvester.get("equipment") as EquipmentComponent
 	var held_weapon: String = equip.get_item_id("weapon") if equip != null else ""
 	var is_pick: bool = held_weapon.find("pickaxe") != -1
-	var is_axe: bool = held_weapon.find("axe") != -1
+	var is_axe: bool = held_weapon.find("axe") != -1 and not is_pick
 	var is_iron: bool = held_weapon.find("iron") != -1
 
 	var is_rock: bool = (node_def_id.find("stone") != -1 or node_def_id.find("rock") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("ore") != -1 or node_def_id.find("deposit") != -1 or node_def_id.find("vein") != -1)

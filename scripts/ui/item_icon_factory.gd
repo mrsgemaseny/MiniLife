@@ -95,13 +95,13 @@ static func _resolve_sprite_path(id: String) -> String:
 		return "res://assets/sprites/items/gold_coin.png"
 
 	# 5. Armor & Protection aliases
-	if id == "leather_armor" or id == "tunic" or id.find("tunic") != -1 or id.find("leather_armor") != -1:
+	if id == "leather_armor" or id == "tunic" or id.find("tunic") != -1 or id.find("leather_armor") != -1 or id.find("gambeson") != -1:
 		return "res://assets/sprites/items/leather_armor.png"
-	if id == "chainmail_coif" or id.find("coif") != -1:
+	if id == "chainmail_coif" or id.find("coif") != -1 or id.find("helmet") != -1 or id.find("helm") != -1:
 		return "res://assets/sprites/items/chainmail_coif.png"
-	if id == "iron_chainmail" or id.find("chainmail") != -1 and id.find("coif") == -1 and id.find("legging") == -1:
+	if id == "iron_chainmail" or id.find("chainmail") != -1 or id.find("hauberk") != -1 or id.find("cuirass") != -1 or id.find("brigandine") != -1 or id.find("scale") != -1 or id.find("plate") != -1:
 		return "res://assets/sprites/items/iron_chainmail.png"
-	if id == "chainmail_leggings" or id.find("chausses") != -1 or id.find("legging") != -1:
+	if id == "chainmail_leggings" or id.find("chausses") != -1 or id.find("legging") != -1 or id.find("greaves") != -1:
 		return "res://assets/sprites/items/chainmail_leggings.png"
 	if id.find("shield") != -1:
 		return "res://assets/sprites/items/iron_shield.png"
@@ -121,10 +121,14 @@ static func _resolve_sprite_path(id: String) -> String:
 		return "res://assets/sprites/items/cloth.png"
 	if id == "treated_leather" or id.find("treated_leather") != -1:
 		return "res://assets/sprites/items/treated_leather.png"
-	if id == "quality_leather" or id.find("quality_leather") != -1:
+	if id == "tanned_leather" or id == "quality_leather" or id.find("tanned_leather") != -1 or id.find("quality_leather") != -1:
 		return "res://assets/sprites/items/quality_leather.png"
-	if id == "leather" or id == "leather_hide" or id == "leather_raw":
+	if id == "raw_leather" or id == "leather" or id == "leather_hide" or id == "leather_raw":
 		return "res://assets/sprites/items/leather_raw.png"
+	if id == "stone_sword" or id == "bronze_sword" or id == "steel_sword":
+		return "res://assets/sprites/items/iron_sword.png"
+	if id == "stone_dagger" or id == "bronze_dagger" or id == "steel_dagger":
+		return "res://assets/sprites/items/iron_dagger.png"
 	if id == "quality_iron" or id == "wrought_iron":
 		return "res://assets/sprites/items/quality_iron.png"
 	if id == "steel" or id == "steel_ingot":

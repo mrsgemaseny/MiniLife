@@ -10,8 +10,15 @@ var _researched: Array[String] = ["primitive_survival"]
 func _ready() -> void:
 	instance = self
 	_load_tech_tree()
+	SignalBus.game_started.connect(_on_game_started)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
+
+
+func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
+	if is_new:
+		_researched = ["primitive_survival"]
+		SignalBus.tech_tree_updated.emit()
 
 
 func _load_tech_tree() -> void:

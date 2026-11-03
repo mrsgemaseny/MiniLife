@@ -749,9 +749,12 @@ func apply_status(effect: String, duration: float, intensity: float) -> void:
 func take_damage(amount: float, damage_type: String = "physical", source: Node = null) -> void:
 	if is_dead or GameManager.debug_god_mode:
 		return
-	var mitigated: float = health_comp.take_damage(amount, damage_type, equipment.get_defense())
+	var def: float = equipment.get_defense() if equipment != null else 0.0
+	var mitigated: float = health_comp.take_damage(amount, damage_type, def)
 	stats.modify("health", -mitigated)
 	skills.gain_xp("defense", mitigated * 0.7)
+	if equipment != null and damage_type == "physical":
+		equipment.damage_armor(1)
 	var src_name: String = str(source.name) if source != null else damage_type
 	SignalBus.player_damaged.emit(mitigated, src_name)
 	queue_redraw()
@@ -863,6 +866,9 @@ func _connect_component_signals() -> void:
 			inventory.set_slot(active_hotbar_index, {})
 			SignalBus.notification_posted.emit("%s broke!" % item_id.capitalize().replace("_", " "))
 			queue_redraw()
+		elif slot_key in ["chest", "clothing", "head", "legs", "offhand"]:
+			SignalBus.notification_posted.emit("Your %s shattered!" % item_id.capitalize().replace("_", " "))
+			queue_redraw()
 	)
 	equipment.slot_changed.connect(func(slot: String, item_id: String) -> void:
 		stats.defense = equipment.get_defense()
@@ -917,6 +923,52 @@ func _connect_bus_signals() -> void:
 	)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
+	SignalBus.game_started.connect(_on_game_started)
+
+func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
+	if is_new:
+		reset_to_new_game()
+
+func reset_to_new_game() -> void:
+	is_dead = false
+	_attack_cooldown = 0.0
+	_swing_timer = 0.0
+	_is_charging_bow = false
+	_bow_charge_time = 0.0
+	_knockback_velocity = Vector2.ZERO
+	_current_mining_target = null
+	if inventory != null:
+		inventory.slots.clear()
+		inventory.gold = 0
+		_grant_starter_kit()
+		SignalBus.inventory_changed.emit(self, inventory.snapshot())
+		SignalBus.player_gold_changed.emit(0)
+	if equipment != null:
+		equipment.unequip("weapon")
+		equipment.unequip("chest")
+		equipment.unequip("clothing")
+		equipment.unequip("legs")
+		equipment.unequip("head")
+		equipment.unequip("offhand")
+	sync_weapon_from_active_slot()
+	if stats != null:
+		stats.health = stats.max_health
+		stats.hunger = stats.max_hunger
+		stats.stamina = stats.max_stamina
+		stats.blood = stats.max_blood
+		SignalBus.player_stat_changed.emit("health", stats.health, stats.max_health)
+		SignalBus.player_stat_changed.emit("hunger", stats.hunger, stats.max_hunger)
+		SignalBus.player_stat_changed.emit("stamina", stats.stamina, stats.max_stamina)
+		SignalBus.player_stat_changed.emit("blood", stats.blood, stats.max_blood)
+	if health_comp != null:
+		health_comp.current = health_comp.maximum
+	if status_effects != null:
+		status_effects.clear_all()
+	if needs != null:
+		needs.rest = 100.0
+		needs.comfort = 100.0
+		needs.morale = 100.0
+	queue_redraw()
 
 func get_save_data() -> Dictionary:
 	return {
