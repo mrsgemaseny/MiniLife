@@ -32,6 +32,7 @@ var _bow_charge_time: float = 0.0
 const MAX_BOW_CHARGE_TIME: float = 0.85
 var _harvest_swing_timer: float = 0.0
 var _current_mining_target: ResourceNode = null
+var _locked_target: Node2D = null
 
 func _ready() -> void:
 	add_to_group("player")
@@ -229,6 +230,9 @@ func _physics_process(delta: float) -> void:
 			_current_mining_target.cancel_harvest()
 		_current_mining_target = null
 
+	if not is_mining_channel:
+		_tick_auto_attack(delta)
+
 	health_comp.tick_regen(delta)
 	status_effects.tick(delta)
 
@@ -311,6 +315,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 
 	if event.is_action_pressed("attack"):
+		var enemy_target: Node2D = _get_enemy_under_cursor()
+		if enemy_target != null:
+			_locked_target = enemy_target
+			SignalBus.notification_posted.emit("Target focused: " + (str(enemy_target.get("display_name")) if "display_name" in enemy_target else "Enemy"))
+			get_viewport().set_input_as_handled()
+			return
+
 		var struct_under_cursor: StructureEntity = _get_structure_under_cursor()
 		if struct_under_cursor != null:
 			if not struct_under_cursor.is_player_built:
@@ -434,6 +445,64 @@ func _release_bow_shot() -> void:
 	_lunge_offset = -facing_direction * 4.0
 	queue_redraw()
 
+func _tick_auto_attack(_delta: float) -> void:
+	if _attack_cooldown > 0.0 or is_dead or GameManager.is_paused():
+		return
+	if _is_holding_bow() or _is_charging_bow or _is_holding_consumable():
+		return
+	if _current_mining_target != null:
+		return
+	if stats.stamina < Config.STAMINA_COST_ATTACK:
+		return
+
+	var w_stats: Dictionary = equipment.get_weapon_stats()
+	var attack_range_px: float = float(w_stats.get("range_px", Config.MELEE_RANGE))
+
+	var target: Node2D = null
+	if _locked_target != null and is_instance_valid(_locked_target):
+		if _locked_target.has_method("is_alive") and not bool(_locked_target.call("is_alive")):
+			_locked_target = null
+		else:
+			var d: float = global_position.distance_to(_locked_target.global_position)
+			if d <= attack_range_px:
+				target = _locked_target
+			elif d > attack_range_px * 2.5:
+				_locked_target = null
+
+	if target == null:
+		var enemies: Array[Node] = get_tree().get_nodes_in_group("enemies")
+		if enemies.is_empty():
+			enemies = get_tree().get_nodes_in_group("enemy")
+		var closest_dist: float = attack_range_px
+		for e in enemies:
+			if e is Node2D and is_instance_valid(e) and e != self:
+				if e.has_method("is_alive") and not bool(e.call("is_alive")):
+					continue
+				var dist: float = global_position.distance_to((e as Node2D).global_position)
+				if dist <= closest_dist:
+					closest_dist = dist
+					target = e as Node2D
+
+	if target != null:
+		facing_direction = (target.global_position - global_position).normalized()
+		perform_attack()
+
+
+func _get_enemy_under_cursor() -> Node2D:
+	var mouse_world: Vector2 = get_global_mouse_position()
+	var enemies: Array[Node] = get_tree().get_nodes_in_group("enemies")
+	if enemies.is_empty():
+		enemies = get_tree().get_nodes_in_group("enemy")
+	for e in enemies:
+		if e is Node2D and is_instance_valid(e) and e != self:
+			if e.has_method("is_alive") and not bool(e.call("is_alive")):
+				continue
+			var dist: float = (e as Node2D).global_position.distance_to(mouse_world)
+			if dist <= 36.0:
+				return e as Node2D
+	return null
+
+
 func perform_attack() -> void:
 	if _attack_cooldown > 0.0:
 		return
@@ -454,8 +523,10 @@ func perform_attack() -> void:
 	_swing_timer = _swing_duration
 	SignalBus.weapon_swung.emit(equipment.get_item_id("weapon"))
 
-	var mouse_world: Vector2 = get_global_mouse_position()
-	var aim_dir: Vector2 = (mouse_world - global_position).normalized()
+	var target_world: Vector2 = get_global_mouse_position()
+	if _locked_target != null and is_instance_valid(_locked_target):
+		target_world = _locked_target.global_position
+	var aim_dir: Vector2 = (target_world - global_position).normalized()
 	if aim_dir.length_squared() > 0.01:
 		facing_direction = aim_dir
 	_lunge_offset = facing_direction * 10.5

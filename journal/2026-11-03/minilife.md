@@ -21,3 +21,11 @@
   - Verified animal interactions (milking, shearing, egg laying, pack donkey 12 slots, dog/cat 0 drops, wolf torch fear).
   - Verified two-currency arbitrage (15:1 village vs 25:1 city) and 5-trip caravan ROI rule.
   - Verified farming crop lifecycle (plant, 3-stage daily growth, harvest yield).
+- Combat System Overhaul (15:25):
+  - Implemented Melee Auto-Attack in Player: automatic attack in weapon range based on position, freeing movement controls for tactical footwork and kiting.
+  - Added manual target locking on LMB click on enemy combatants. Ranged combat (bows/crossbows) remains strictly manual.
+  - Implemented Directional Shield Blocking in MeleeResolver & CombatSystem: frontal arc (+/- 63 deg) blocks physical damage and damages shield durability, while flank and rear hits completely bypass shields (+15% flanking bonus).
+  - Implemented Armor Penetration: added chekan (iron_war_pick, 40% penetration) and heavy_crossbow (35% penetration) to items, recipes, and damage mitigation formulas.
+  - Implemented Factional AI in EnemyBase for active pool: Bandits (direct rush), Raiders (angular surrounding/encircling), Mercenaries (adaptive shield flanking and healing potion usage below 35% HP).
+  - Updated COMBAT_SYSTEM.md specification.
+  - Verified 100% pass across all 13 E2E phases (E2E_ALL_SYSTEMS_VERIFIED_OK).

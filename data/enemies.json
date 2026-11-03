@@ -18,6 +18,7 @@
 		"id": "bandit_scout",
 		"name": "Bandit Scout",
 		"biome": "plains",
+		"faction": "bandits",
 		"hp": 75,
 		"damage": 14,
 		"speed": 160,
@@ -33,6 +34,7 @@
 		"id": "bandit_raider",
 		"name": "Outlaw Axeman",
 		"biome": "forest",
+		"faction": "bandits",
 		"hp": 95,
 		"damage": 18,
 		"speed": 155,
@@ -41,6 +43,59 @@
 		"loot_table": {
 			"gold": 38,
 			"items": { "iron_ingot": 1, "bandage": 1 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "raider_marauder",
+		"name": "Desert Raider",
+		"biome": "desert",
+		"faction": "raiders",
+		"hp": 105,
+		"defense": 12,
+		"damage": 17,
+		"speed": 160,
+		"has_shield": true,
+		"color": "#b86230",
+		"is_boss": false,
+		"loot_table": {
+			"gold": 45,
+			"items": { "copper_ore": 3, "bandage": 1 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "mercenary_guard",
+		"name": "Mercenary Guard",
+		"biome": "mountains",
+		"faction": "mercenaries",
+		"hp": 130,
+		"defense": 22,
+		"damage": 20,
+		"speed": 150,
+		"has_shield": true,
+		"color": "#4a5568",
+		"is_boss": false,
+		"loot_table": {
+			"gold": 65,
+			"items": { "iron_ingot": 2, "medicine": 1 }
+		},
+		"respawns": false
+	},
+	{
+		"id": "mercenary_skirmisher",
+		"name": "Mercenary Skirmisher",
+		"biome": "forest",
+		"faction": "mercenaries",
+		"hp": 110,
+		"damage": 22,
+		"speed": 170,
+		"has_shield": false,
+		"color": "#2d3748",
+		"is_boss": false,
+		"loot_table": {
+			"gold": 70,
+			"items": { "iron_sword": 1, "bandage": 2 }
 		},
 		"respawns": false
 	},

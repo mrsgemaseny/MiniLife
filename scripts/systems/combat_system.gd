@@ -71,8 +71,8 @@ func _on_melee_attack_requested(attacker: Node2D, origin: Vector2, direction: Ve
 			eq.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
 
 
-func resolve_damage(raw_amount: float, damage_type: String, target: Node) -> float:
-	return MeleeResolver.compute_mitigated_damage(raw_amount, damage_type, target)
+func resolve_damage(raw_amount: float, damage_type: String, target: Node, armor_penetration: float = 0.0) -> float:
+	return MeleeResolver.compute_mitigated_damage(raw_amount, damage_type, target, armor_penetration)
 
 
 func apply_knockback(target: Node, source: Node, strength: float = Config.KNOCKBACK_SPEED) -> void:
@@ -97,8 +97,38 @@ func _on_damage_requested(target: Node, amount: float, damage_type: String, sour
 		var hit_chance: float = MeleeResolver.compute_hit_chance(source, target)
 		if randf() > hit_chance:
 			return
+
+	var armor_pen: float = 0.0
+	var final_dmg: float = amount
+
+	if source != null and source is Node2D:
+		var attacker_pos: Vector2 = (source as Node2D).global_position
+		var block_res: Dictionary = MeleeResolver.check_directional_shield_block(attacker_pos, target)
+		if bool(block_res.get("blocked", false)):
+			if "equipment" in target and target.get("equipment") != null:
+				var target_eq: EquipmentComponent = target.get("equipment") as EquipmentComponent
+				if target_eq != null:
+					target_eq.damage_shield(1)
+			if "stats" in target and target.get("stats") is StatsComponent:
+				(target.get("stats") as StatsComponent).modify("stamina", -12.0)
+			SignalBus.notification_posted.emit("Blocked by shield!")
+			return
+
+		if bool(block_res.get("flanking", false)):
+			final_dmg *= 1.15
+
+		if "equipment" in source and source.get("equipment") != null:
+			var eq: EquipmentComponent = source.get("equipment") as EquipmentComponent
+			if eq != null:
+				var w_stats: Dictionary = eq.get_weapon_stats()
+				armor_pen = float(w_stats.get("armor_penetration", 0.0))
+				if str(w_stats.get("weapon_archetype", "")) == "war_pick":
+					armor_pen = maxf(armor_pen, 0.40)
+				elif eq.get_item_id("weapon").find("crossbow") != -1:
+					armor_pen = maxf(armor_pen, 0.35)
+
 	var valid_type: String = damage_type if DAMAGE_TYPES.has(damage_type) else "physical"
-	var final_damage: float = resolve_damage(amount, valid_type, target)
+	var final_damage: float = resolve_damage(final_dmg, valid_type, target, armor_pen)
 	if target.has_method("take_damage"):
 		target.call("take_damage", final_damage, valid_type, source)
 	if source != null and valid_type == "physical":

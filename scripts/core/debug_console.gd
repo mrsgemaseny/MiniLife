@@ -204,14 +204,53 @@ func _test_phase_5_skills_and_perks(player: Player) -> void:
 
 
 func _test_phase_6_combat_aiming_and_ballistics(player: Player) -> void:
-	print("[E2E Phase 6] Combat Aiming, Weapon Swings & Bow Ballistics...")
+	print("[E2E Phase 6] Combat Aiming, Directional Shields, Faction AI & Auto-Attack...")
 	player.perform_attack()
 	SignalBus.weapon_swung.emit("iron_sword")
 	SignalBus.bow_drawn.emit()
 	SignalBus.bow_released.emit(0.95)
 	SignalBus.arrow_impacted.emit(player.global_position + Vector2(60.0, 30.0), "flesh")
 	SignalBus.arrow_impacted.emit(player.global_position + Vector2(120.0, 60.0), "structure")
-	print("[E2E Phase 6] OK (Swings, Bow Charge & Ballistic Impact verified)")
+
+	# 1. Directional Shield Block Test
+	var test_dummy: EnemyBase = EnemyBase.new()
+	test_dummy.enemy_id = "mercenary_guard"
+	test_dummy.facing_direction = Vector2.DOWN
+	add_child(test_dummy)
+	test_dummy.global_position = Vector2(100.0, 100.0)
+
+	# Attacker in front of dummy (y = 150.0): to_attacker is Vector2.DOWN, facing is Vector2.DOWN -> blocked!
+	var front_attacker_pos: Vector2 = Vector2(100.0, 150.0)
+	var front_res: Dictionary = MeleeResolver.check_directional_shield_block(front_attacker_pos, test_dummy)
+	assert(bool(front_res.get("blocked", false)) == true, "Frontal attack against shield must be blocked")
+
+	# Attacker behind dummy (y = 50.0): to_attacker is Vector2.UP, facing is Vector2.DOWN -> bypassed flank!
+	var rear_attacker_pos: Vector2 = Vector2(100.0, 50.0)
+	var rear_res: Dictionary = MeleeResolver.check_directional_shield_block(rear_attacker_pos, test_dummy)
+	assert(bool(rear_res.get("blocked", false)) == false, "Rear attack against shield must NOT be blocked")
+	assert(bool(rear_res.get("flanking", false)) == true, "Rear attack must be flagged as flanking")
+
+	# 2. Armor Penetration Test
+	var full_mitigated: float = MeleeResolver.compute_mitigated_damage(30.0, "physical", test_dummy, 0.0)
+	var pen_mitigated: float = MeleeResolver.compute_mitigated_damage(30.0, "physical", test_dummy, 0.40)
+	assert(pen_mitigated > full_mitigated, "Armor penetration must result in higher damage dealt")
+
+	# 3. Faction AI Initialization Test
+	var bandit_mob: EnemyBase = EnemyBase.new()
+	bandit_mob.enemy_id = "bandit_scout"
+	add_child(bandit_mob)
+	assert(bandit_mob.is_in_group("enemies"), "Enemy must be in 'enemies' group")
+
+	var raider_mob: EnemyBase = EnemyBase.new()
+	raider_mob.enemy_id = "raider_marauder"
+	add_child(raider_mob)
+	assert(raider_mob.has_shield(), "Raider marauder must have shield")
+
+	test_dummy.queue_free()
+	bandit_mob.queue_free()
+	raider_mob.queue_free()
+
+	print("[E2E Phase 6] OK (Directional Shields, Flanking, Armor Pen & Faction AI verified)")
 
 
 func _test_phase_7_continuous_harvesting_and_ecology(player: Player) -> void:

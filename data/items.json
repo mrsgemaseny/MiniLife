@@ -703,7 +703,9 @@
 			"damage": 26,
 			"damage_type": "physical",
 			"attack_speed": 0.75,
-			"range": "ranged"
+			"range": "ranged",
+			"weapon_archetype": "crossbow",
+			"armor_penetration": 0.35
 		},
 		"visual": { "sprite": "items/heavy_crossbow.png", "color": "#6e7680" },
 		"craft_requirements": { "iron_ingot": 3, "plank": 2 },
@@ -743,12 +745,36 @@
 			"damage": 25,
 			"damage_type": "physical",
 			"attack_speed": 0.85,
-			"range": "melee"
+			"range": "melee",
+			"weapon_archetype": "hammer",
+			"sunder_armor": true
 		},
 		"visual": { "sprite": "items/war_hammer.png", "color": "#8c96a0" },
 		"craft_requirements": { "iron_ingot": 4, "wood": 2 },
 		"craft_station": "forge",
 		"skill_required": { "smithing": 22 }
+	},
+	{
+		"id": "iron_war_pick",
+		"name": "Iron Chekan",
+		"type": "weapon",
+		"equip_slot": "weapon",
+		"weight": 3.2,
+		"value": 90,
+		"stackable": false,
+		"durability": 120,
+		"stats": {
+			"damage": 20,
+			"damage_type": "physical",
+			"attack_speed": 1.1,
+			"range": "melee",
+			"weapon_archetype": "war_pick",
+			"armor_penetration": 0.40
+		},
+		"visual": { "sprite": "items/war_hammer.png", "color": "#7e8894" },
+		"craft_requirements": { "iron_ingot": 3, "wood": 2 },
+		"craft_station": "forge",
+		"skill_required": { "smithing": 18 }
 	},
 	{
 		"id": "wooden_shield",

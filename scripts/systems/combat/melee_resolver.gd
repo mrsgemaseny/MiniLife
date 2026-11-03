@@ -50,7 +50,39 @@ static func compute_hit_chance(attacker: Node, target: Node) -> float:
 	return clampf(base_chance, 0.25, 0.96)
 
 
-static func compute_mitigated_damage(raw_amount: float, damage_type: String, target: Node) -> float:
+static func check_directional_shield_block(attacker_pos: Vector2, target: Node) -> Dictionary:
+	if target == null:
+		return {"blocked": false, "flanking": false, "front_dot": 0.0}
+
+	var has_shield: bool = false
+	if target.has_method("has_shield"):
+		has_shield = bool(target.call("has_shield"))
+	elif "equipment" in target and target.get("equipment") != null:
+		var eq: EquipmentComponent = target.get("equipment") as EquipmentComponent
+		if eq != null:
+			has_shield = eq.has_shield()
+
+	var target_pos: Vector2 = Vector2.ZERO
+	if target is Node2D:
+		target_pos = (target as Node2D).global_position
+
+	var to_attacker: Vector2 = (attacker_pos - target_pos).normalized()
+	var target_facing: Vector2 = Vector2.DOWN
+	if "facing_direction" in target:
+		target_facing = (target.get("facing_direction") as Vector2).normalized()
+	if target_facing.length_squared() < 0.001:
+		target_facing = Vector2.DOWN
+
+	var front_dot: float = target_facing.dot(to_attacker)
+	var is_front: bool = (front_dot >= 0.45) # Frontal arc ~126 degrees (+/- 63 deg)
+
+	if has_shield and is_front:
+		return {"blocked": true, "flanking": false, "front_dot": front_dot}
+
+	return {"blocked": false, "flanking": not is_front, "front_dot": front_dot}
+
+
+static func compute_mitigated_damage(raw_amount: float, damage_type: String, target: Node, armor_penetration: float = 0.0) -> float:
 	var amount: float = maxf(raw_amount, 0.0)
 	if amount <= 0.0 or target == null or damage_type == "true":
 		return amount
@@ -60,6 +92,7 @@ static func compute_mitigated_damage(raw_amount: float, damage_type: String, tar
 	elif "stats" in target and target.get("stats") is StatsComponent:
 		defense = maxf((target.get("stats") as StatsComponent).defense, 0.0)
 	if damage_type == "physical" and defense > 0.0:
-		var reduction: float = defense / (defense + Config.ARMOR_K_CONSTANT)
+		var effective_defense: float = defense * (1.0 - clampf(armor_penetration, 0.0, 0.90))
+		var reduction: float = effective_defense / (effective_defense + Config.ARMOR_K_CONSTANT)
 		return maxf(amount * (1.0 - reduction), 1.0)
 	return amount

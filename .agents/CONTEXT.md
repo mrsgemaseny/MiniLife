@@ -31,6 +31,12 @@
   - **Fauna & Animals**: Implemented wolf night torch fear; added `AnimalEntity` with non-lethal milking (cow), shearing (sheep), eggs (chicken), pack donkey storage (+12 slots), and untouchable domestic companions (0 drop on dog/cat).
   - **Two-Currency Arbitrage & Caravan Economy**: Added `CaravanSystem` with `silver_coin` and `gold_coin`, regional exchange rates (1:15 in village vs 1:25 in city), 5-trip caravan ROI threshold, and trade UI arbitrage exchange.
   - **13-Phase Automated E2E Verification**: All 13 integration phases passing with zero errors (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
+- **Tactical Combat System Overhaul (2026-11-03 — Auto-Attack, Directional Shields & Active Factions)**:
+  - **Melee Auto-Attack & Positioning**: Implemented automatic melee strikes within weapon range, freeing player movement for tactical positioning, kiting, and flanking. Added manual target locking on LMB click on enemy combatants. Ranged combat (bows/crossbows) remains strictly manual.
+  - **Directional Shield Blocking & Flanking**: Added vector dot product shield check in `MeleeResolver` & `CombatSystem`. Frontal hits (+/- 63 deg) are blocked and wear shield durability; flank and rear attacks bypass shields (+15% flanking damage). Added `has_shield()` and `damage_shield()` to `EquipmentComponent` and `EnemyBase`.
+  - **Armor Penetration & Chekan**: Added `iron_war_pick` (Chekan, 40% armor penetration) and `heavy_crossbow` (35% armor penetration) into `data/items.json`, `data/recipes.json`, and damage formulas.
+  - **Active Faction AI (Bandits, Raiders, Mercenaries)**: Added dedicated tactical behaviors in `EnemyBase`: Bandits (direct zerg rush), Raiders (angular surrounding/encircling), and Mercenaries (adaptive shield flanking, target switching, and healing draught consumption at < 35% HP). Added `raider_marauder`, `mercenary_guard`, and `mercenary_skirmisher` to `data/enemies.json`.
+  - **E2E Test Suite Phase 6**: Expanded Phase 6 to verify directional shield blocks, rear flank bypass, armor penetration calculation, and faction AI initialization. All 13 phases passing 100% OK (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
 - **Engine & Language**: Godot 4.7, GDScript (strict static typing).
 - **View**: 2D Isometric (`y_sort_enabled = true` on all world, chunk, structure, and entity nodes).
 - **Decoupling**: Zero cross-system imports; all inter-system communication strictly through `SignalBus`.

@@ -11,10 +11,13 @@ enum State { PATROL, CHASE, ATTACK }
 @export var attack_cooldown: float = 1.2
 @export var move_speed: float = 115.0
 @export var no_respawn: bool = true
+@export var ai_profile: String = ""
 @export var stats: StatsComponent
 
 var spawn_uid: String = ""
 var display_name: String = "Hostile"
+var facing_direction: Vector2 = Vector2.DOWN
+var has_used_potion: bool = false
 var current_state: State = State.PATROL
 var target_entity: Node2D = null
 var sim_tier: int = SimulationBubble.Tier.FULL
@@ -28,12 +31,19 @@ var _enemy_def: Dictionary = {}
 func _ready() -> void:
 	y_sort_enabled = true
 	add_to_group("enemy")
+	add_to_group("enemies")
 	add_to_group("combatant")
 	if stats == null:
 		stats = StatsComponent.new()
 	_apply_enemy_definition()
 	SignalBus.player_tile_changed.connect(_on_player_tile_changed)
 	queue_redraw()
+
+
+func has_shield() -> bool:
+	if bool(_enemy_def.get("has_shield", false)):
+		return true
+	return enemy_id.find("shield") != -1 or enemy_id.find("warlord") != -1
 
 func _apply_enemy_definition() -> void:
 	_enemy_def = DataRegistry.get_enemy(enemy_id)
@@ -108,7 +118,42 @@ func _tick_fsm(delta: float) -> void:
 			elif dist <= attack_range:
 				current_state = State.ATTACK
 			else:
-				velocity = (target_entity.global_position - global_position).normalized() * move_speed
+				var to_target: Vector2 = (target_entity.global_position - global_position).normalized()
+				var prof: String = ai_profile
+				if prof.is_empty():
+					if faction_id == "mercenaries" or enemy_id.find("mercenary") != -1:
+						prof = "mercenary"
+					elif faction_id == "raiders" or enemy_id.find("raider") != -1:
+						prof = "raider"
+					elif faction_id == "wildlife":
+						prof = "wildlife"
+					else:
+						prof = "bandit"
+
+				match prof:
+					"mercenary":
+						if stats.health < stats.max_health * 0.35 and not has_used_potion:
+							has_used_potion = true
+							stats.modify("health", 35.0)
+							SignalBus.notification_posted.emit(display_name + " drank healing draught!")
+							velocity = -to_target * (move_speed * 1.1)
+						else:
+							var target_facing: Vector2 = target_entity.get("facing_direction") if "facing_direction" in target_entity else Vector2.DOWN
+							var to_merc: Vector2 = (global_position - target_entity.global_position).normalized()
+							if target_facing.dot(to_merc) > 0.40:
+								var strafe_sign: float = 1.0 if (hash(name) % 2 == 0) else -1.0
+								var perp: Vector2 = Vector2(-to_target.y, to_target.x) * strafe_sign
+								velocity = (to_target * 0.4 + perp * 0.8).normalized() * move_speed
+							else:
+								velocity = to_target * move_speed
+					"raider":
+						var flank_rad: float = (float(hash(name) % 5) - 2.0) * 0.26
+						velocity = to_target.rotated(flank_rad) * move_speed
+					_:
+						velocity = to_target * move_speed
+
+				if velocity.length_squared() > 1.0:
+					facing_direction = velocity.normalized()
 				if sim_tier == SimulationBubble.Tier.FULL:
 					move_and_slide()
 				else:

@@ -227,6 +227,31 @@ func damage_armor(wear: int = 1) -> bool:
 	return false
 
 
+func has_shield() -> bool:
+	var off_id: String = get_item_id("offhand")
+	if off_id.is_empty():
+		return false
+	var def: Dictionary = _get_item_def(off_id)
+	return str(def.get("type", "")) == "shield" or off_id.find("shield") != -1
+
+
+func damage_shield(wear: int = 1) -> bool:
+	var entry: Dictionary = _equipped.get("offhand", {})
+	var item_id: String = str(entry.get("item_id", ""))
+	var dur: int = int(entry.get("durability", -1))
+	if item_id == "" or dur < 0:
+		return false
+	dur -= wear
+	if dur <= 0:
+		_equipped["offhand"] = {"item_id": "", "durability": -1}
+		slot_changed.emit("offhand", "")
+		item_broken.emit("offhand", item_id)
+		return true
+	entry["durability"] = dur
+	_equipped["offhand"] = entry
+	return false
+
+
 func get_sprite_layers() -> Dictionary:
 	var layers: Dictionary = {}
 	for s in SLOTS:

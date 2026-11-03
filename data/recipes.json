@@ -353,6 +353,18 @@
 		"xp_reward": { "smithing": 44 }
 	},
 	{
+		"id": "forge_iron_war_pick",
+		"station": "forge",
+		"tech_required": "war_machinery",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 3 },
+			{ "item_id": "wood", "count": 2 }
+		],
+		"output": { "item_id": "iron_war_pick", "count": 1 },
+		"skill_required": { "smithing": 18 },
+		"xp_reward": { "smithing": 36 }
+	},
+	{
 		"id": "forge_heavy_crossbow",
 		"station": "forge",
 		"tech_required": "crossbows",
