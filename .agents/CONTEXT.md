@@ -185,6 +185,11 @@
   - Converted `MinimapWidget` to authentic 45-degree isometric rhombus (`Rx=94.0, Ry=47.0`, 2:1 ratio) with vector diamond tile rasterization, eliminating low-res pixel stretch and blur. Dark chiseled iron frame with corner rivets, compass "N", and status pill.
   - Implemented `WorldMapUI` (`scripts/ui/world_map_ui.gd`): full-screen 45-degree isometric atlas (1024x512 texture for 256x256 territory) with pan/zoom (0.45x..3.5x), player beacon, discovered POI markers, and coordinate inspector.
   - Wired `[M]` key (`ui_map` in `GameManager` and `main.tscn`) and minimap click to toggle world map.
+- **Battle Brothers Style Pause Menu & Inventory Slot Stabilization (2026-11-03)**:
+  - Generated 16:9 gritty digital painting (`battle_brothers_menu_bg.jpg`) and coat-of-arms heraldic centerpiece (`menu_shield_banner.jpg` / `menu_shield_banner_alpha.png`) via `image-generator` subagents.
+  - Rebuilt `PauseMenuUI` (`scripts/ui/pause_menu_ui.gd`): round wooden shield with iron boss, crossed weapons, and crimson banner holding carved timber/bronze buttons: `Resume [ESC]`, `Save Game [F5]`, `Load Game [F9]`, `Options`, `Quit`.
+  - Added Options sub-panel with Master/Music/SFX volume sliders and Fullscreen toggle.
+  - Fixed ESC input handling: closes active blocking panels if open, otherwise toggles `PauseMenuUI`.
 - **Weather Particles Canvas Layer Isolation (2026-11-02)**:
   - Fixed rain/fog particles bleeding over UI windows: lowered `WeatherCanvas.layer` from 15 to 2 (`PROCESS_MODE_PAUSABLE`) and explicitly set `UILayer.layer = 20` in `main.tscn`. Rain strictly renders in the world plane underneath interface panels.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.
