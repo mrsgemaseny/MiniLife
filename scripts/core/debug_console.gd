@@ -286,7 +286,7 @@ func _test_phase_11_inventory_hotbar_and_dupe_proofing(player: Player) -> void:
 		assert(player.equipment.get_item_id("offhand") == "wooden_shield", "Shield must re-equip to offhand")
 		assert(player.equipment.get_item_id("weapon") == w_before, "Weapon in hand must remain intact")
 
-	for pname in ["inventory", "map", "craft", "build", "quests", "character", "factions", "chronicle", "achievements"]:
+	for pname in ["inventory", "map", "craft", "build", "quests", "character", "factions", "chronicle", "achievements", "pause"]:
 		SignalBus.ui_panel_requested.emit(pname)
 	SignalBus.ui_close_all_requested.emit()
 
