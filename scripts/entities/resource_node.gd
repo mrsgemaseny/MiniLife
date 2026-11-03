@@ -93,8 +93,12 @@ func _draw() -> void:
 
 	# Ground shadow firmly anchored under the resource base
 	var is_plant_node: bool = (node_def_id.find("grass") != -1 or node_def_id.find("herb") != -1 or node_def_id.find("flower") != -1)
+	var is_bush_node: bool = (node_def_id.find("berry") != -1 or node_def_id.find("bush") != -1)
 	var shadow_y: float = 3.0 if is_plant_node else 4.0
-	if is_plant_node:
+	if is_bush_node:
+		# Bushes (berry_bush.png) already contain a natural organic shadow baked into the sprite
+		pass
+	elif is_plant_node:
 		draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, shadow_y), radius * 0.55, radius * 0.28), Color(0.0, 0.0, 0.0, 0.12))
 	else:
 		draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, shadow_y), radius * 1.25, radius * 0.62), Color(0.0, 0.0, 0.0, 0.36))
