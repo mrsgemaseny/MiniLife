@@ -52,6 +52,70 @@
 		"xp_reward": { "construction": 7 }
 	},
 	{
+		"id": "craft_cloth_from_wool",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "wool", "count": 2 }
+		],
+		"output": { "item_id": "cloth", "count": 2 },
+		"skill_required": {},
+		"xp_reward": { "crafting": 10 }
+	},
+	{
+		"id": "craft_quality_cloth",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "cloth", "count": 2 },
+			{ "item_id": "resin", "count": 1 }
+		],
+		"output": { "item_id": "quality_cloth", "count": 1 },
+		"skill_required": { "crafting": 3 },
+		"xp_reward": { "crafting": 16 }
+	},
+	{
+		"id": "craft_treated_leather",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "leather_hide", "count": 1 },
+			{ "item_id": "resin", "count": 1 }
+		],
+		"output": { "item_id": "treated_leather", "count": 1 },
+		"skill_required": { "crafting": 2 },
+		"xp_reward": { "crafting": 12 }
+	},
+	{
+		"id": "craft_quality_leather",
+		"station": "workbench",
+		"inputs": [
+			{ "item_id": "treated_leather", "count": 2 }
+		],
+		"output": { "item_id": "quality_leather", "count": 1 },
+		"skill_required": { "crafting": 4 },
+		"xp_reward": { "crafting": 22 }
+	},
+	{
+		"id": "craft_quality_iron",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "iron_ingot", "count": 2 },
+			{ "item_id": "coal", "count": 1 }
+		],
+		"output": { "item_id": "quality_iron", "count": 1 },
+		"skill_required": { "smithing": 15 },
+		"xp_reward": { "smithing": 28 }
+	},
+	{
+		"id": "craft_steel_ingot",
+		"station": "forge",
+		"inputs": [
+			{ "item_id": "quality_iron", "count": 2 },
+			{ "item_id": "coal", "count": 2 }
+		],
+		"output": { "item_id": "steel_ingot", "count": 1 },
+		"skill_required": { "smithing": 30 },
+		"xp_reward": { "smithing": 45 }
+	},
+	{
 		"id": "craft_arrows",
 		"station": "workbench",
 		"tech_required": "archery",

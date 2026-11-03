@@ -87,8 +87,12 @@ static func _resolve_sprite_path(id: String) -> String:
 		return "res://assets/sprites/items/torch.png"
 	if id == "arrow" or id.find("arrow") != -1:
 		return "res://assets/sprites/items/arrow.png"
-	if id == "coins" or id == "coin" or id.find("gold") != -1 and id.find("ore") == -1:
-		return "res://assets/sprites/items/coins.png"
+	if id == "silver_coin" or id == "silver_coins" or id == "silver":
+		return "res://assets/sprites/items/silver_coin.png"
+	if id == "copper_coin" or id == "copper_coins":
+		return "res://assets/sprites/items/copper_coin.png"
+	if id == "coins" or id == "coin" or id == "gold_coin" or id == "gold_coins" or (id.find("gold") != -1 and id.find("ore") == -1):
+		return "res://assets/sprites/items/gold_coin.png"
 
 	# 5. Armor & Protection aliases
 	if id == "leather_armor" or id == "tunic" or id.find("tunic") != -1 or id.find("leather_armor") != -1:
@@ -109,10 +113,22 @@ static func _resolve_sprite_path(id: String) -> String:
 		return "res://assets/sprites/items/raw_meat.png"
 	if id == "herb" or id.find("herbs") != -1:
 		return "res://assets/sprites/items/herb.png"
+	if id == "wool" or id.find("wool") != -1:
+		return "res://assets/sprites/items/wool.png"
+	if id == "quality_cloth":
+		return "res://assets/sprites/items/quality_cloth.png"
 	if id == "cloth" or id.find("fabric") != -1:
 		return "res://assets/sprites/items/cloth.png"
-	if id == "leather" or id == "leather_hide":
-		return "res://assets/sprites/items/leather_hide.png"
+	if id == "treated_leather" or id.find("treated_leather") != -1:
+		return "res://assets/sprites/items/treated_leather.png"
+	if id == "quality_leather" or id.find("quality_leather") != -1:
+		return "res://assets/sprites/items/quality_leather.png"
+	if id == "leather" or id == "leather_hide" or id == "leather_raw":
+		return "res://assets/sprites/items/leather_raw.png"
+	if id == "quality_iron" or id == "wrought_iron":
+		return "res://assets/sprites/items/quality_iron.png"
+	if id == "steel" or id == "steel_ingot":
+		return "res://assets/sprites/items/steel_ingot.png"
 	if id == "wood" or id == "wood_log" or id == "log":
 		return "res://assets/sprites/items/wood.png"
 	if id == "plank" or id == "wood_plank":
