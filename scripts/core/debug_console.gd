@@ -293,7 +293,8 @@ func _test_phase_8_crafting_furnace_smelting(player: Player) -> void:
 	
 	print("CraftMenuUI node found: ", craft_ui != null)
 	if craft_ui != null:
-		craft_ui.open_panel("")
+		craft_ui.open_panel("workbench")
+		assert(craft_ui._recipe_list_box.get_child_count() > 25, "All catalog recipes must remain visible at workbench")
 		craft_ui._selected_recipe_id = "craft_plank"
 		craft_ui._execute_craft(1)
 		craft_ui.close_panel()
@@ -305,6 +306,16 @@ func _test_phase_8_crafting_furnace_smelting(player: Player) -> void:
 	print("Craft Plank Test: wood before=%d after=%d, planks before=%d after=%d" % [initial_wood, after_wood, initial_planks, after_planks])
 	assert(after_wood == initial_wood - 1, "Wood should decrease by 1")
 	assert(after_planks == initial_planks + 2, "Planks should increase by 2")
+
+	# Metallurgy Dual-Slot Furnace Recipe Verification
+	var FS = preload("res://scripts/systems/crafting/furnace_system.gd")
+	var bronze_smelt: Dictionary = FS.get_smelt_recipe("copper_ore", "tin_ore")
+	assert(str(bronze_smelt.get("output", "")) == "bronze_ingot", "Furnace dual-slot copper+tin must yield bronze_ingot")
+	var steel_smelt: Dictionary = FS.get_smelt_recipe("iron_ingot", "coal")
+	assert(str(steel_smelt.get("output", "")) == "steel_ingot", "Furnace dual-slot iron+coal must yield steel_ingot")
+	var iron_smelt: Dictionary = FS.get_smelt_recipe("iron_ore", "")
+	assert(str(iron_smelt.get("output", "")) == "iron_ingot", "Furnace single-slot iron_ore must yield iron_ingot")
+
 	SignalBus.furnace_opened.emit("test_furnace", Vector2i(0, 0))
 	assert(not DataRegistry.get_recipe("craft_stone_pickaxe").is_empty(), "Pickaxe recipe missing")
 	print("[E2E Phase 8] OK (Recipes, Crafting Signal & Furnace Station verified)")

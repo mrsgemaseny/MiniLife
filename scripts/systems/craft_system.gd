@@ -23,6 +23,10 @@ func get_recipes_for_station(station_id: String) -> Array[Dictionary]:
 				result.append(recipe)
 			elif req_station == "furnace" and station_id == "ore_smelter":
 				result.append(recipe)
+			elif req_station == "workbench" and station_id == "forge":
+				result.append(recipe)
+			elif req_station == "forge" and station_id == "workbench" and str(recipe.get("id", "")).find("bronze") != -1:
+				result.append(recipe)
 	return result
 
 
@@ -36,7 +40,10 @@ func can_craft(recipe_id: String, crafter: Node, active_station: String = "") ->
 	if required_station != "" and required_station != active_station:
 		var is_mill_compat: bool = (required_station == "water_mill" and active_station == "mechanical_water_mill")
 		var is_smelt_compat: bool = (required_station == "furnace" and active_station == "ore_smelter")
-		if not is_mill_compat and not is_smelt_compat and not _is_near_station(crafter, required_station):
+		var is_forge_bench: bool = (required_station == "workbench" and active_station == "forge")
+		var is_bronze_bench: bool = (required_station == "forge" and active_station == "workbench" and recipe_id.find("bronze") != -1)
+		var is_brew_compat: bool = (required_station in ["campfire", "alchemy_station"] and active_station in ["campfire", "alchemy_station"])
+		if not is_mill_compat and not is_smelt_compat and not is_forge_bench and not is_bronze_bench and not is_brew_compat and not _is_near_station(crafter, required_station):
 			return {"ok": false, "reason": "Requires station: " + required_station}
 
 	var req_tech: String = str(recipe.get("tech_required", ""))
@@ -156,8 +163,14 @@ func _is_near_station(crafter: Node, station_id: String) -> bool:
 	var ctile: Vector2i = Config.iso_to_world(cpos)
 	for node in get_tree().get_nodes_in_group("craft_station"):
 		if node is Node2D and node.has_method("get_station_id"):
-			if str(node.call("get_station_id")) == station_id:
+			var st_id: String = str(node.call("get_station_id"))
+			if st_id != "":
 				var stile: Vector2i = Config.iso_to_world((node as Node2D).global_position)
 				if Config.tile_distance(ctile, stile) <= 3:
-					return true
+					if st_id == station_id:
+						return true
+					if station_id == "workbench" and st_id == "forge":
+						return true
+					if station_id in ["campfire", "alchemy_station"] and st_id in ["campfire", "alchemy_station"]:
+						return true
 	return false

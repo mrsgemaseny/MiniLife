@@ -6,6 +6,17 @@
 - **Repository**: `https://github.com/mrsgemaseny/MiniLife`
 
 ## Recent Accomplishments
+- **Metallurgy & Crafting Catalog Discovery Overhaul (2026-11-03)**:
+  - **Tin Ore Deposits**: Added alluvial `tin_vein` spawning along river/lake sand shores (rate 0.042) and rocky foothills in mountains (rate 0.054), fixing tin ore absence on world map.
+  - **Dual-Slot Furnace & Alloying**: Redesigned `FurnaceSystem` and `FurnaceUI` to have 2 input slots for authentic metallurgy:
+    - Copper Ore + Tin Ore -> Bronze Ingot (3.6s)
+    - Iron Ingot + Coal -> Steel Ingot (4.5s)
+    - Iron Ore + Coal -> Quality Iron (3.8s)
+    - Single-slot smelting preserved for iron ore, clay bricks, charcoal pyrolysis, and food cooking.
+  - **Furnace UI**: Added second input slot `_input_slot2`, drag-and-drop / shift-click routing, and dynamic Metallurgy Handbook showing dual-slot alloy formulas.
+  - **CraftMenu Catalog Visibility**: Removed recipe filtering that hid forge/station recipes from player view. All catalog items remain discoverable with explicit station badges `[ТРЕБУЕТСЯ: КУЗНИЦА]` and disabled craft button when station is out of reach.
+  - **Station Hierarchy**: Workbench can craft bronze tier tools/weapons directly; Forge acts as superset of Workbench; multi-station detection scans radius for all nearby crafting stations.
+  - **E2E Integration Verification**: All 13 test phases passing 100% OK (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
 - **Modular Monolith Expansion (Phases 1–15 Complete)**:
   - **Autoloads & Core**: `Config`, `SignalBus`, `DataRegistry`, `AudioDirector` (procedural `AudioStreamGenerator` SFX synth), `GameManager`, plus `IsoMath`, `RngService`, `EventJournal`, `DebugConsole`.
   - **Deep Components**: `StatsComponent`, `HealthComponent` (limb-level HP for head, torso, arms, legs, bleeding, fractures, bandaging), `SkillsComponent` (18 use-based skills with perks at 25/50/75/100), `InventoryComponent`, `EquipmentComponent`, `TraitsComponent`, `StatusEffectsComponent`, `NeedsComponent`, `MemoryComponent`.

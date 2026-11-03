@@ -34,3 +34,14 @@
   - Aligned exact defense stats for underarmor clothing: quality_clothing (+0 defense, social status) and arming_doublet (+0 defense, T5 harness).
   - Automated continuous invariant check in ComprehensiveAuditClass ensuring zero drift for all 56 catalog items and defense values.
   - Headless verification passes 100% OK (E2E_ALL_SYSTEMS_VERIFIED_OK).
+- Metallurgy, Furnace Dual-Input Alloying & Crafting Discovery Overhaul (15:55):
+  - World Generation: added alluvial tin_vein deposits along riverbanks/lakeshores (rate 0.042) and mountain foothills (rate 0.054), fixing tin ore absence on world map.
+  - Dual-Slot Furnace & Alloying System: redesigned FurnaceSystem and FurnaceUI to feature 2 input chambers for authentic metallurgy:
+    - Copper Ore + Tin Ore -> Bronze Ingot (3.6s)
+    - Iron Ingot + Coal -> Steel Ingot (4.5s)
+    - Iron Ore + Coal -> Quality Iron (3.8s)
+    - Single-slot smelting preserved for iron ore, clay bricks, charcoal pyrolysis, and food cooking.
+  - Furnace UI: added second input slot MCSlot, updated drag-and-drop / shift-click routing, and added dynamic Metallurgy Handbook showing dual-slot alloy formulas.
+  - CraftMenu Catalog Visibility: eliminated premature recipe filtering based on active station. All catalog items remain discoverable with explicit station badges [ТРЕБУЕТСЯ: КУЗНИЦА] and disabled craft button when station is out of reach.
+  - Station Hierarchy: Workbench can craft bronze tier tools/weapons directly from bronze ingots; Forge acts as superset of Workbench; multi-station detection scans radius for all nearby crafting stations.
+  - Headless verification passes 100% OK across all 13 phases (E2E_ALL_SYSTEMS_VERIFIED_OK).
