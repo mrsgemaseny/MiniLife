@@ -11,6 +11,7 @@ var _tile_pos: Vector2i = Vector2i.ZERO
 
 var _panel: PanelContainer = null
 var _input_slot: Control = null
+var _input_slot2: Control = null
 var _fuel_slot: Control = null
 var _output_slot: Control = null
 var _flame_widget: Control = null
@@ -219,19 +220,33 @@ func _build_ui() -> void:
 	machine_hbox.add_theme_constant_override("separation", 28)
 	m_vbox.add_child(machine_hbox)
 
-	# Left Stack: Input Slot + Fire Flame + Fuel Slot
+	# Left Stack: Dual Input Slots + Fire Flame + Fuel Slot
 	var left_stack: VBoxContainer = VBoxContainer.new()
 	left_stack.alignment = BoxContainer.ALIGNMENT_CENTER
 	left_stack.add_theme_constant_override("separation", 6)
 	machine_hbox.add_child(left_stack)
 
+	# 2 Input Slots for Authentic Alloying (Copper + Tin, Iron + Coal)
+	var inputs_hbox: HBoxContainer = HBoxContainer.new()
+	inputs_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	inputs_hbox.add_theme_constant_override("separation", 6)
+	left_stack.add_child(inputs_hbox)
+
 	_input_slot = MCSlot.new()
 	_input_slot.slot_group = "furnace_input"
-	_input_slot.placeholder_text = "Ore/Meat"
+	_input_slot.placeholder_text = "Руда 1"
 	_input_slot.slot_clicked.connect(func(_idx, btn, shift): _on_furnace_slot_clicked("input", btn, shift))
 	_input_slot.slot_hovered.connect(func(_idx): _on_furnace_slot_hovered("input"))
 	_input_slot.slot_unhovered.connect(func(_idx): _hide_tooltip())
-	left_stack.add_child(_input_slot)
+	inputs_hbox.add_child(_input_slot)
+
+	_input_slot2 = MCSlot.new()
+	_input_slot2.slot_group = "furnace_input2"
+	_input_slot2.placeholder_text = "Руда 2"
+	_input_slot2.slot_clicked.connect(func(_idx, btn, shift): _on_furnace_slot_clicked("input2", btn, shift))
+	_input_slot2.slot_hovered.connect(func(_idx): _on_furnace_slot_hovered("input2"))
+	_input_slot2.slot_unhovered.connect(func(_idx): _hide_tooltip())
+	inputs_hbox.add_child(_input_slot2)
 
 	# Animated Fire Flame Widget
 	_flame_widget = Control.new()
@@ -341,17 +356,20 @@ func _build_ui() -> void:
 	r_vbox.add_child(r_title)
 
 	var r_desc: Label = Label.new()
-	r_desc.text = "Поместите руду в верхний отсек, а топливо (уголь или древесину) — в нижний. Печь плавит сырье автоматически."
+	r_desc.text = "Смешивайте компоненты в верхних отсеках: Медь + Олово дают Бронзу, а Железо + Уголь дают Сталь. В нижний отсек загружайте топливо."
 	r_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	r_desc.add_theme_font_size_override("font_size", 10)
 	r_desc.modulate = Color(0.60, 0.63, 0.68)
 	r_vbox.add_child(r_desc)
 
 	var recipes_list: Array[Dictionary] = [
-		{"in": "iron_ore", "out": "iron_ingot", "time": "20 сек", "fuel": "Уголь / Дерево"},
-		{"in": "copper_ore", "out": "bronze_ingot", "time": "16 сек", "fuel": "Уголь / Дерево"},
-		{"in": "wood", "out": "coal", "time": "12 сек", "fuel": "Дерево (пиролиз)"},
-		{"in": "raw_meat", "out": "cooked_meat", "time": "8 сек", "fuel": "Любое топливо"}
+		{"in1": "copper_ore", "in2": "tin_ore", "out": "bronze_ingot", "time": "3.6 сек", "fuel": "Уголь / Дерево"},
+		{"in1": "iron_ingot", "in2": "coal", "out": "steel_ingot", "time": "4.5 сек", "fuel": "Уголь"},
+		{"in1": "iron_ore", "in2": "coal", "out": "quality_iron", "time": "3.8 сек", "fuel": "Уголь / Дерево"},
+		{"in1": "iron_ore", "in2": "", "out": "iron_ingot", "time": "3.6 сек", "fuel": "Уголь / Дерево"},
+		{"in1": "wood", "in2": "", "out": "coal", "time": "2.4 сек", "fuel": "Дерево (пиролиз)"},
+		{"in1": "clay", "in2": "", "out": "brick", "time": "3.0 сек", "fuel": "Уголь / Дерево"},
+		{"in1": "raw_meat", "in2": "", "out": "cooked_food", "time": "2.0 сек", "fuel": "Любое топливо"}
 	]
 	for r in recipes_list:
 		var r_card: PanelContainer = PanelContainer.new()
@@ -365,15 +383,31 @@ func _build_ui() -> void:
 		r_vbox.add_child(r_card)
 
 		var r_row: HBoxContainer = HBoxContainer.new()
-		r_row.add_theme_constant_override("separation", 8)
+		r_row.add_theme_constant_override("separation", 6)
 		r_card.add_child(r_row)
 
-		var in_icon: TextureRect = TextureRect.new()
-		in_icon.custom_minimum_size = Vector2(24, 24)
-		in_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		in_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		in_icon.texture = IconFactory.get_icon(r["in"])
-		r_row.add_child(in_icon)
+		var in1_id: String = str(r["in1"])
+		var in1_icon: TextureRect = TextureRect.new()
+		in1_icon.custom_minimum_size = Vector2(22, 22)
+		in1_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		in1_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		in1_icon.texture = IconFactory.get_icon(in1_id)
+		r_row.add_child(in1_icon)
+
+		var in2_id: String = str(r.get("in2", ""))
+		if in2_id != "":
+			var plus_lbl: Label = Label.new()
+			plus_lbl.text = "+"
+			plus_lbl.add_theme_font_size_override("font_size", 10)
+			plus_lbl.modulate = Color(0.65, 0.68, 0.74)
+			r_row.add_child(plus_lbl)
+
+			var in2_icon: TextureRect = TextureRect.new()
+			in2_icon.custom_minimum_size = Vector2(22, 22)
+			in2_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			in2_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			in2_icon.texture = IconFactory.get_icon(in2_id)
+			r_row.add_child(in2_icon)
 
 		var arr_lbl: Label = Label.new()
 		arr_lbl.text = "➔"
@@ -381,14 +415,14 @@ func _build_ui() -> void:
 		r_row.add_child(arr_lbl)
 
 		var out_icon: TextureRect = TextureRect.new()
-		out_icon.custom_minimum_size = Vector2(24, 24)
+		out_icon.custom_minimum_size = Vector2(22, 22)
 		out_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		out_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		out_icon.texture = IconFactory.get_icon(r["out"])
+		out_icon.texture = IconFactory.get_icon(str(r["out"]))
 		r_row.add_child(out_icon)
 
 		var meta_lbl: Label = Label.new()
-		meta_lbl.text = "%s  •  %s" % [r["time"], r["fuel"]]
+		meta_lbl.text = "%s  •  %s" % [str(r["time"]), str(r["fuel"])]
 		meta_lbl.add_theme_font_size_override("font_size", 9)
 		meta_lbl.modulate = Color(0.65, 0.68, 0.74)
 		meta_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -542,11 +576,17 @@ func refresh() -> void:
 
 	var state: Dictionary = FurnaceSys.instance.get_furnace_state(_active_furnace_id)
 
-	# Input slot
+	# Input slot 1
 	var in_item: String = str(state.get("ore_item", ""))
 	var in_cnt: int = int(state.get("ore_count", 0))
 	if _input_slot != null:
 		_input_slot.set_item({"item_id": in_item, "count": in_cnt, "durability": -1} if in_cnt > 0 else {})
+
+	# Input slot 2 (Alloy component)
+	var in2_item: String = str(state.get("ore2_item", ""))
+	var in2_cnt: int = int(state.get("ore2_count", 0))
+	if _input_slot2 != null:
+		_input_slot2.set_item({"item_id": in2_item, "count": in2_cnt, "durability": -1} if in2_cnt > 0 else {})
 
 	# Fuel slot
 	var fuel_item: String = str(state.get("fuel_item", ""))
@@ -627,6 +667,32 @@ func _on_furnace_slot_clicked(slot_type: String, mouse_btn: int, shift_pressed: 
 						_cursor_stack["count"] = 0
 					if int(_cursor_stack["count"]) <= 0:
 						_cursor_stack = {}
+	elif slot_type == "input2":
+		var cur_in2: String = str(state.get("ore2_item", ""))
+		var cur_cnt2: int = int(state.get("ore2_count", 0))
+		if _cursor_stack.is_empty():
+			if cur_cnt2 > 0:
+				if mouse_btn == MOUSE_BUTTON_RIGHT and cur_cnt2 > 1:
+					var take: int = int(ceil(float(cur_cnt2) / 2.0))
+					_cursor_stack = {"item_id": cur_in2, "count": take, "durability": -1}
+					state["ore2_count"] = cur_cnt2 - take
+				else:
+					_cursor_stack = {"item_id": cur_in2, "count": cur_cnt2, "durability": -1}
+					state["ore2_item"] = ""
+					state["ore2_count"] = 0
+		else:
+			var c_id2: String = str(_cursor_stack.get("item_id", ""))
+			if FurnaceSys.is_valid_input(c_id2):
+				if cur_cnt2 == 0 or cur_in2 == c_id2:
+					state["ore2_item"] = c_id2
+					if mouse_btn == MOUSE_BUTTON_RIGHT:
+						state["ore2_count"] = cur_cnt2 + 1
+						_cursor_stack["count"] = int(_cursor_stack["count"]) - 1
+					else:
+						state["ore2_count"] = cur_cnt2 + int(_cursor_stack.get("count", 1))
+						_cursor_stack["count"] = 0
+					if int(_cursor_stack["count"]) <= 0:
+						_cursor_stack = {}
 	elif slot_type == "fuel":
 		var cur_fuel: String = str(state.get("fuel_item", ""))
 		var cur_cnt: int = int(state.get("fuel_count", 0))
@@ -678,11 +744,24 @@ func _on_player_slot_clicked(slot_index: int, mouse_btn: int, shift_pressed: boo
 				state["fuel_count"] = int(state.get("fuel_count", 0)) + it_cnt
 				inv.set_slot(slot_index, {})
 		elif FurnaceSys.is_valid_input(it_id):
-			var cur_i: String = str(state.get("ore_item", ""))
-			if cur_i == "" or cur_i == it_id:
-				state["ore_item"] = it_id
+			var cur_i1: String = str(state.get("ore_item", ""))
+			var cur_i2: String = str(state.get("ore2_item", ""))
+			if cur_i1 == it_id:
 				state["ore_count"] = int(state.get("ore_count", 0)) + it_cnt
 				inv.set_slot(slot_index, {})
+			elif cur_i2 == it_id:
+				state["ore2_count"] = int(state.get("ore2_count", 0)) + it_cnt
+				inv.set_slot(slot_index, {})
+			elif cur_i1 == "":
+				state["ore_item"] = it_id
+				state["ore_count"] = it_cnt
+				inv.set_slot(slot_index, {})
+			elif cur_i2 == "":
+				state["ore2_item"] = it_id
+				state["ore2_count"] = it_cnt
+				inv.set_slot(slot_index, {})
+			else:
+				inv.quick_move_slot(slot_index)
 		else:
 			inv.quick_move_slot(slot_index)
 		refresh()
@@ -759,6 +838,9 @@ func _on_furnace_slot_hovered(slot_type: String) -> void:
 	if slot_type == "input":
 		item_id = str(state.get("ore_item", ""))
 		cnt = int(state.get("ore_count", 0))
+	elif slot_type == "input2":
+		item_id = str(state.get("ore2_item", ""))
+		cnt = int(state.get("ore2_count", 0))
 	elif slot_type == "fuel":
 		item_id = str(state.get("fuel_item", ""))
 		cnt = int(state.get("fuel_count", 0))

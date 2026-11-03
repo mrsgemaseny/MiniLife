@@ -153,6 +153,7 @@ func _setup_styled_craft_menu() -> void:
 			cbtn.add_theme_stylebox_override("normal", cbsb)
 			cbtn.pressed.connect(func():
 				_current_category = cid
+				_pick_default_recipe()
 				refresh()
 			)
 			_category_buttons[cid] = cbtn
@@ -359,6 +360,60 @@ func _detect_nearby_station() -> String:
 	return best_station
 
 
+func _get_all_nearby_stations() -> Array[String]:
+	var result: Array[String] = []
+	if _active_station != "":
+		result.append(_active_station)
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if player == null or not (player is Node2D):
+		return result
+	var ptile: Vector2i = Config.iso_to_world((player as Node2D).global_position)
+	for node in get_tree().get_nodes_in_group("craft_station"):
+		if node is Node2D and node.has_method("get_station_id"):
+			var st_id: String = str(node.call("get_station_id"))
+			if st_id != "":
+				var stile: Vector2i = Config.iso_to_world((node as Node2D).global_position)
+				if Config.tile_distance(ptile, stile) <= 3 and not (st_id in result):
+					result.append(st_id)
+	return result
+
+
+func _is_station_available(req_station: String, available_stations: Array[String], recipe_id: String = "") -> bool:
+	if req_station == "":
+		return true
+	if req_station in available_stations:
+		return true
+	# Forge can fulfill all workbench recipes
+	if req_station == "workbench" and ("forge" in available_stations):
+		return true
+	# Workbench can craft bronze gear directly
+	if req_station == "forge" and ("workbench" in available_stations) and recipe_id.find("bronze") != -1:
+		return true
+	# Brewing stations compatibility
+	if req_station in ["campfire", "alchemy_station"]:
+		for st in available_stations:
+			if st in ["campfire", "alchemy_station"]:
+				return true
+	# Mills compatibility
+	if req_station == "water_mill" and ("mechanical_water_mill" in available_stations):
+		return true
+	# Smelters compatibility
+	if req_station == "furnace" and ("ore_smelter" in available_stations):
+		return true
+	return false
+
+
+func _station_name_ru(station_id: String) -> String:
+	match station_id:
+		"workbench": return "Верстак"
+		"forge": return "Кузница"
+		"furnace": return "Печь"
+		"campfire": return "Костер"
+		"alchemy_station": return "Алхимический стол"
+		"water_mill": return "Мельница"
+		_: return station_id.capitalize()
+
+
 func close_panel() -> void:
 	if not visible:
 		return
@@ -371,8 +426,11 @@ func _pick_default_recipe() -> void:
 	var sorted_rids: Array = _recipes.keys()
 	for rid in sorted_rids:
 		var recipe: Dictionary = _recipes[rid]
-		var req_station: String = str(recipe.get("station", ""))
-		if (_active_station == "" and req_station == "") or (_active_station != "" and (req_station == "" or req_station == _active_station)):
+		var out: Dictionary = recipe.get("output", {})
+		var out_id: String = str(out.get("item_id", rid))
+		var item_def: Dictionary = DataRegistry.get_item(out_id)
+		var item_type: String = str(item_def.get("type", ""))
+		if _matches_category(item_type, out_id):
 			_selected_recipe_id = rid
 			return
 	if not sorted_rids.is_empty():
@@ -397,6 +455,8 @@ func refresh() -> void:
 		btn.modulate = Color(0.95, 0.93, 0.90) if cid == _current_category else Color(0.55, 0.58, 0.64)
 
 	var player: Node = get_tree().get_first_node_in_group("player")
+	var available_stations: Array[String] = _get_all_nearby_stations()
+
 	var sorted_rids: Array = _recipes.keys()
 	sorted_rids.sort_custom(func(a: String, b: String) -> bool:
 		var req_a: String = str(_recipes[a].get("tech_required", ""))
@@ -411,14 +471,6 @@ func refresh() -> void:
 	var found_selected: bool = false
 	for rid in sorted_rids:
 		var recipe: Dictionary = _recipes[rid]
-		var req_station: String = str(recipe.get("station", ""))
-		if _active_station == "" and req_station != "":
-			continue
-		if _active_station != "" and req_station != "" and req_station != _active_station:
-			var is_brew: bool = (req_station in ["campfire", "alchemy_station"]) and (_active_station in ["campfire", "alchemy_station"])
-			if not is_brew:
-				continue
-
 		var out: Dictionary = recipe.get("output", {})
 		var out_id: String = str(out.get("item_id", rid))
 		var out_count: int = int(out.get("count", 1))
@@ -438,9 +490,11 @@ func refresh() -> void:
 			if ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_tech):
 				is_tech_unlocked = false
 
-		var can_craft: bool = is_tech_unlocked and _meets_requirements(player, recipe)
+		var req_station: String = str(recipe.get("station", ""))
+		var station_ok: bool = _is_station_available(req_station, available_stations, rid)
+		var mats_ok: bool = _meets_requirements(player, recipe)
 
-		var card: Button = _build_recipe_card(rid, recipe, item_title, out_id, out_count, is_tech_unlocked, req_tech, can_craft)
+		var card: Button = _build_recipe_card(rid, recipe, item_title, out_id, out_count, is_tech_unlocked, req_tech, station_ok, req_station, mats_ok)
 		_recipe_list_box.add_child(card)
 
 	if not found_selected and not sorted_rids.is_empty():
@@ -449,7 +503,7 @@ func refresh() -> void:
 	_update_inspector(player)
 
 
-func _build_recipe_card(rid: String, recipe: Dictionary, title: String, out_id: String, out_count: int, is_unlocked: bool, req_tech: String, can_craft: bool) -> Button:
+func _build_recipe_card(rid: String, recipe: Dictionary, title: String, out_id: String, out_count: int, is_unlocked: bool, req_tech: String, station_ok: bool, req_station: String, mats_ok: bool) -> Button:
 	var btn: Button = Button.new()
 	btn.custom_minimum_size = Vector2(0.0, 46.0)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -472,7 +526,13 @@ func _build_recipe_card(rid: String, recipe: Dictionary, title: String, out_id: 
 		card_sb.set_border_width_all(1)
 		btn.text = "   %s  •  [ЗАКРЫТО: Требует %s]" % [title, req_tech.capitalize()]
 		btn.add_theme_color_override("font_color", Color(0.55, 0.52, 0.52, 1.0))
-	elif can_craft:
+	elif not station_ok:
+		card_sb.bg_color = Color(0.12, 0.11, 0.13, 0.92) if is_selected else Color(0.09, 0.09, 0.11, 0.85)
+		card_sb.border_color = Color(0.60, 0.45, 0.25, 0.90) if is_selected else Color(0.35, 0.28, 0.20, 0.70)
+		card_sb.set_border_width_all(2 if is_selected else 1)
+		btn.text = "   %s x%d   —   [ТРЕБУЕТСЯ: %s]" % [title, out_count, _station_name_ru(req_station).to_upper()]
+		btn.add_theme_color_override("font_color", Color(0.78, 0.70, 0.58, 1.0))
+	elif mats_ok:
 		card_sb.bg_color = Color(0.16, 0.18, 0.22, 0.98) if is_selected else Color(0.12, 0.13, 0.16, 0.95)
 		card_sb.border_color = Color(0.42, 0.68, 0.42, 0.95) if is_selected else Color(0.24, 0.28, 0.32, 0.80)
 		card_sb.set_border_width_all(2 if is_selected else 1)
@@ -540,7 +600,20 @@ func _update_inspector(player: Node) -> void:
 	_insp_stats_lbl.text = " | ".join(stat_parts)
 
 	var req_station: String = str(recipe.get("station", ""))
-	_insp_station_lbl.text = "Станок: %s" % (req_station.capitalize() if req_station != "" else "Ручной крафт (без станка)")
+	var available_stations: Array[String] = _get_all_nearby_stations()
+	var station_ok: bool = _is_station_available(req_station, available_stations, _selected_recipe_id)
+
+	if req_station == "":
+		_insp_station_lbl.text = "Станок: Ручной крафт (без станка)"
+		_insp_station_lbl.modulate = Color(0.70, 0.74, 0.80)
+	else:
+		var st_disp_name: String = _station_name_ru(req_station)
+		if station_ok:
+			_insp_station_lbl.text = "Станок: %s  [ДОСТУПЕН]" % st_disp_name
+			_insp_station_lbl.modulate = Color(0.52, 0.78, 0.50)
+		else:
+			_insp_station_lbl.text = "Станок: %s  [НЕТ ПОБЛИЗОСТИ]" % st_disp_name
+			_insp_station_lbl.modulate = Color(0.85, 0.45, 0.35)
 
 	var req_tech: String = str(recipe.get("tech_required", ""))
 	if req_tech == "":
@@ -589,12 +662,14 @@ func _update_inspector(player: Node) -> void:
 			_insp_mats_box.add_child(mat_row)
 
 	var is_tech_unlocked: bool = (req_tech == "" or (ResearchSys.instance != null and ResearchSys.instance.is_researched(req_tech)))
-	var can_forge: bool = is_tech_unlocked and all_mats_ok
+	var can_forge: bool = is_tech_unlocked and station_ok and all_mats_ok
 
 	_insp_craft1_btn.disabled = not can_forge
 	_insp_craft5_btn.disabled = not can_forge
 	if not is_tech_unlocked:
 		_insp_craft1_btn.text = "[ТРЕБУЕТСЯ ИССЛЕДОВАНИЕ]"
+	elif not station_ok:
+		_insp_craft1_btn.text = "[ТРЕБУЕТСЯ: %s]" % _station_name_ru(req_station).to_upper()
 	elif not all_mats_ok:
 		_insp_craft1_btn.text = "[НЕДОСТАТОЧНО РЕСУРСОВ]"
 	else:
@@ -610,11 +685,23 @@ func _execute_craft(multiplier: int) -> void:
 	if req_tech != "" and ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_tech):
 		return
 
+	var req_station: String = str(recipe.get("station", ""))
+	var available_stations: Array[String] = _get_all_nearby_stations()
+	if not _is_station_available(req_station, available_stations, _selected_recipe_id):
+		return
+
+	var station_to_pass: String = _active_station
+	if station_to_pass == "" or not _is_station_available(req_station, [station_to_pass], _selected_recipe_id):
+		for st in available_stations:
+			if _is_station_available(req_station, [st], _selected_recipe_id):
+				station_to_pass = st
+				break
+
 	var cs: CraftSystem = CraftSystem.new()
 	for _step in range(multiplier):
-		if not cs.can_craft(_selected_recipe_id, player, _active_station).get("ok", false):
+		if not cs.can_craft(_selected_recipe_id, player, station_to_pass).get("ok", false):
 			break
-		SignalBus.craft_requested.emit(_selected_recipe_id, player, _active_station)
+		SignalBus.craft_requested.emit(_selected_recipe_id, player, station_to_pass)
 	refresh()
 
 
