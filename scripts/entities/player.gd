@@ -115,8 +115,18 @@ func _physics_process(delta: float) -> void:
 	else:
 		status_effects.remove("hungry")
 		status_effects.remove("starving")
-		if stats.hunger > 40.0 and stats.health < stats.max_health:
-			stats.modify("health", 1.8 * delta)
+		var hunger_ratio: float = stats.hunger / maxf(1.0, stats.max_hunger)
+		var regen_rate: float = 0.0
+		if hunger_ratio > 0.90:
+			regen_rate = 3.5
+		elif hunger_ratio > 0.50:
+			regen_rate = 1.5
+
+		if regen_rate > 0.0 and stats.health < stats.max_health:
+			var heal_amount: float = regen_rate * delta
+			stats.modify("health", heal_amount)
+			if health_comp != null:
+				health_comp.heal(heal_amount)
 
 	if stats.health <= 0.0 and not is_dead and not GameManager.debug_god_mode:
 		die()

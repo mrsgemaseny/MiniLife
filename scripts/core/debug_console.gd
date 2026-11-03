@@ -139,7 +139,39 @@ func _test_phase_4_character_anatomy_and_needs(player: Player) -> void:
 
 	assert(StatusEffectsComponent.EFFECT_RULES.has("hungry"), "Hungry effect missing")
 	assert(StatusEffectsComponent.EFFECT_RULES.has("starving"), "Starving effect missing")
-	print("[E2E Phase 4] OK (Unified Health & Armor, Need Decay, Starving rules verified)")
+
+	# Test hunger-based health regeneration
+	player.stats.health = 50.0
+	if player.health_comp != null:
+		player.health_comp.current = 50.0
+
+	# Case 1: hunger <= 50% -> 0 regeneration
+	player.stats.hunger = 40.0
+	player._physics_process(0.1)
+	assert(player.stats.health == 50.0, "Health must not regenerate when hunger <= 50%")
+
+	# Case 2: hunger > 50% -> standard regeneration
+	player.stats.hunger = 70.0
+	player._physics_process(0.1)
+	var hp_gain_standard: float = player.stats.health - 50.0
+	assert(hp_gain_standard > 0.0, "Health must regenerate when hunger > 50%")
+
+	# Case 3: hunger > 90% -> increased regeneration
+	player.stats.health = 50.0
+	if player.health_comp != null:
+		player.health_comp.current = 50.0
+	player.stats.hunger = 95.0
+	player._physics_process(0.1)
+	var hp_gain_boosted: float = player.stats.health - 50.0
+	assert(hp_gain_boosted > hp_gain_standard, "Health regen at >90% hunger must exceed standard regen")
+
+	# Restore full stats
+	player.stats.health = player.stats.max_health
+	player.stats.hunger = player.stats.max_hunger
+	if player.health_comp != null:
+		player.health_comp.current = player.health_comp.maximum
+
+	print("[E2E Phase 4] OK (Unified Health & Armor, Hunger Regeneration, Starving rules verified)")
 
 
 func _test_phase_5_skills_and_perks(player: Player) -> void:
