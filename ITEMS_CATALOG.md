@@ -9,7 +9,7 @@
 | ID | Название | Тир | Слот | Материал / База | Описание и боевая роль | Где упоминается в MD |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `stone_sword` | Каменный меч | Т1 | `weapon` | Камень + Дерево | Примитивный широкий клинок из оббитого камня. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
-| `stone_dagger` | Кремниевый нож / кинжал | Т1 | `weapon` | Кремень + Дерево | Быстрый нож для разделки дичи и срезания растений. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `HERBS_AND_ALCHEMY.md` |
+| `stone_dagger` | Каменный нож | Т1 | `weapon` | Камень + Дерево | Нож из сколотого камня для разделки дичи и сбора трав. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `HERBS_AND_ALCHEMY.md` |
 | `stone_axe` | Каменный топорик | Т1 | `weapon` | Камень + Дерево | Лесорубный и боевой топорик со сколотым лезвием. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `wooden_club` | Деревянная дубина / палица | Т1 | `weapon` | Древесина | Тяжелая дубина. Накладывает оглушение (Stun). | `COMBAT_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `wooden_spear` | Деревянное копье | Т2 | `weapon` | Доски + Камень/Кожа | Охотничье древковое оружие. Критический выпад x2.5. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `COMBAT_SYSTEM.md` |
@@ -36,7 +36,7 @@
 | `primitive_bow` | Простой деревянный лук | Т1 | `weapon` | Дерево + Шерсть/Ткань | Примитивный цельнодеревянный лук для охоты. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
 | `hunting_bow` | Охотничий лук | Т2 | `weapon` | Древесина + Ткань | Составной усиленный лук повышенной настильности. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `heavy_crossbow` | Арбалет с железной дугой | Т4 | `weapon` | Качественное железо | Оружие бронебойного залпа. Срезает доспехи на дистанции. | `ARMOR_AND_TIERS.md`, `PROJECT_MiniLife.md` |
-| `javelins` | Метательные дротики | Т1-Т2 | `weapon` | Дерево + Кремень | Легкие метательные копья короткой дистанции. | `PROJECT_MiniLife.md` |
+| `javelins` | Метательные дротики | Т1-Т2 | `weapon` | Дерево + Камень | Легкие метательные копья короткой дистанции. | `PROJECT_MiniLife.md` |
 | `arrow` | Деревянные стрелы | Т1 | `ammo` | Дерево + Камень | Стрелы с каменным наконечником без перьев (пачка 20 шт). | `ANIMALS_AND_FAUNA.md`, `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
 | `bronze_arrow` | Бронзовые стрелы | Т3 | `ammo` | Дерево + Бронза | Стрелы с литым наконечником (пачка 20 шт). | `ANIMALS_AND_FAUNA.md`, `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
 | `iron_arrow` | Железные стрелы | Т4 | `ammo` | Дерево + Железо + Перья | Профессиональные боевые стрелы с оперением (пачка 20 шт). | `ANIMALS_AND_FAUNA.md`, `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
@@ -53,7 +53,7 @@
 | `bronze_pickaxe` | Бронзовая кирка | Т3 | `weapon` | Бронза + Дерево | Добыча известняка, сланца и железной руды. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
 | `iron_pickaxe` | Железная кирка | Т4 | `weapon` | Железо + Дерево | Прочная кирка для разрушения гранита и богатых жил. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
 | `steel_pickaxe` | Стальная кирка | Т5 | `weapon` | Сталь + Дерево | Максимальная скорость проходки твердых скал. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
-| `torch` | Факел из сосновой смолы | Т1 | `weapon` | Дерево + Смола + Ткань | Бесконечный источник света, отпугивает волков ночью. | `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md`, `PROJECT_MiniLife.md` |
+| `torch` | Факел | Т1 | `weapon` / блок | Дерево + Ткань | Бесконечное время горения. Переносится в руках или ставится на землю (ПКМ). Отпугивает волков ночью. | `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md`, `PROJECT_MiniLife.md` |
 | `fishing_rod` | Удочка | Т1-Т2 | `weapon` | Дерево + Ткань/Жила | Ловля рыбы в реках и озерах. | `ANIMALS_AND_FAUNA.md` |
 | `shears` | Ножницы для стрижки | Т1-Т2 | `tool` | Камень / Железо | Прижизненная стрижка шерсти с овец без забоя. | `ANIMALS_AND_FAUNA.md` |
 
@@ -85,7 +85,7 @@
 
 | ID | Название | Тир | Слот | Материал / База | Описание и роль в слоистой броне | Где упоминается в MD |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `wool_shirt` | Шерстяная рубаха / туника | Т1 | `clothing` | Овечья шерсть | Нательная одежда выживальщика (+1 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
+| `wool_shirt` | Шерстяная рубаха / туника | Т1 | `clothing` | Шерсть | Нательная одежда выживальщика (+1 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `gambeson` | Стеганый гамбезон | Т2 | `clothing` / `chest` | Ткань x4 | Многослойный поддоспешник (+7 брони). Гасит дробящий урон. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `simple_chainmail` | Простая железная кольчуга | Т4 | `clothing` / `chest` | Железо x4 + Ткань x1 | Кольчатая рубаха (+15 брони). Надевается под железную броню, пластинчатые доспехи или хауберк. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `quality_clothing` | Качественная благородная одежда | Т4 | `clothing` | Качественная ткань | Повышает социальный статус и дипломатию в городах. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
@@ -117,7 +117,7 @@
 
 | ID | Название | Тир | Слот | Материал / База | Описание и параметры | Где упоминается в MD |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `wool_wraps` | Шерстяные обмотки | Т1 | `legs` | Овечья шерсть | Защита стоп и голеней от терновника (+1 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
+| `wool_wraps` | Шерстяные обмотки | Т1 | `legs` | Шерсть | Защита стоп и голеней от терновника (+1 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `leather_greaves` | Кожаные поножи | Т2 | `legs` | Обработанная кожа | Плотные поножи со шнуровкой (+4 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `bronze_greaves` | Бронзовые поножи (кнемиды) | Т3 | `legs` | Бронзовый слиток | Литые анатомические поножи гоплита (+9 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `iron_greaves` | Железные поножи | Т4 | `legs` | Железный слиток + Кожа | Классические железные поножи (+13 брони). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
@@ -132,29 +132,27 @@
 | `wood` | Древесина / бревно | Т1 | Дерево | Рубка деревьев топором в лесу и на равнинах. | Все MD файлы |
 | `plank` | Деревянные доски | Т2 | Пиломатериалы | Распил бревен на верстаке. | `CRAFTING_SYSTEM.md`, `PROGRESSION_SYSTEM.md`, `PROJECT_MiniLife.md` |
 | `stone` | Камень / булыжник | Т1 | Камень | Сбор с земли и ломка валунов киркой. | Все MD файлы |
-| `flint` | Острый кремень | Т1 | Камень | Добыча при колке булыжников и речной гальки. | `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md` |
 | `stone_masonry` | Обработанный камень (блоки) | Т2 | Строительный камень | Тесание булыжников на верстаке для каменной кладки. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
-| `clay` | Природная глина | Т1 | Керамика | Добыча по берегам рек, ручьев и в болотных низинах. | `WORLD_GENERATION_AND_BIOMES.md`, `CRAFTING_SYSTEM.md` |
-| `brick` | Обожженный кирпич | Т2 | Керамика | Обжиг глины в каменной печи. | `CRAFTING_SYSTEM.md`, `PROGRESSION_SYSTEM.md` |
-| `resin` | Сосновая смола | Т1 | Горючее / Связующее | Рубка хвойных деревьев в тайге. | `HERBS_AND_ALCHEMY.md`, `PROGRESSION_SYSTEM.md` |
+| `clay` | Природная глина | Т1-Т2 | Керамика | Добыча по берегам рек, ручьев и в болотных низинах. Необходима для печей. | `WORLD_GENERATION_AND_BIOMES.md`, `CRAFTING_SYSTEM.md` |
+| `brick` | Обожженный кирпич | Т2 | Керамика | Обжиг глины в простой печи. | `CRAFTING_SYSTEM.md`, `PROGRESSION_SYSTEM.md` |
 | `charcoal` | Древесный уголь | Т1 | Топливо | Пережог бревен в костре или печи. | `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
 | `coal` | Каменный уголь (антрацит) | Т2 | Топливо | Добыча из угольных скальных жил в горах. | `WORLD_GENERATION_AND_BIOMES.md`, `PROGRESSION_SYSTEM.md` |
-| `wool` | Овечья шерсть | Т1 | Текстиль | Стрижка домашних овец ножницами. | `ARMOR_AND_TIERS.md`, `ANIMALS_AND_FAUNA.md`, `PROGRESSION_SYSTEM.md` |
-| `cloth` | Ткань | Т2 | Текстиль | Прядение овечьей шерсти на верстаке. | `ARMOR_AND_TIERS.md`, `ANIMALS_AND_FAUNA.md`, `PROGRESSION_SYSTEM.md` |
-| `quality_cloth` | Качественная ткань | Т4 | Текстиль | Тонкое полотно с пропиткой для элитных доспехов. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
-| `raw_leather` | Сырая кожа | Т1-Т2 | Кожа | Забой диких и домашних животных (коровы, олени, волки). | `ARMOR_AND_TIERS.md`, `ANIMALS_AND_FAUNA.md`, `PROGRESSION_SYSTEM.md` |
-| `treated_leather` | Обработанная кожа | Т3-Т4 | Кожа | Очистка и размягчение сырой кожи на верстаке со смолой. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
-| `tanned_leather` | Дубленая качественная кожа | Т4-Т5 | Кожа | Вываривание в танинах и дубильных чанах для лат и кирас. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
-| `feather` | Птичьи перья | Т1-Т2 | Оперение | Периодический сбор у кур и охота на птиц. | `ANIMALS_AND_FAUNA.md` |
-| `copper_ore` | Медная руда | Т3 | Руда | Добыча жил в оврагах, холмах и предгорьях. | `WORLD_GENERATION_AND_BIOMES.md`, `PROGRESSION_SYSTEM.md` |
-| `tin_ore` | Оловянная руда | Т3 | Руда | Добыча редких жил в предгорьях и руслах ручьев. | `WORLD_GENERATION_AND_BIOMES.md`, `PROGRESSION_SYSTEM.md` |
-| `bronze_ingot` | Бронзовый слиток | Т3 | Металл | Совместная плавка меди и олова в кузнечном горне. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
-| `iron_ore` | Железная руда | Т4 | Руда | Добыча в скальных горных массивах и шахтах. | `WORLD_GENERATION_AND_BIOMES.md`, `PROGRESSION_SYSTEM.md` |
-| `iron_ingot` | Железный слиток | Т4 | Металл | Выплавка кричного железа из руды в сыродутной печи. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
-| `quality_iron` | Качественное кованое железо | Т4 | Металл | Проковка и очистка железной крицы от шлаков с углем. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
-| `steel_ingot` | Стальной слиток | Т5 | Металл | Тигельная плавка качественного железа с антрацитом. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
-| `gold_ore` | Золотая руда (кварц) | Т3-Т5 | Благородный металл | Аллювиальные россыпи строго около гор и горных речек. | `WORLD_GENERATION_AND_BIOMES.md`, `ALIFE_AND_ECONOMY.md` |
-| `silver_ore` | Серебряная руда (галенит) | Т3-Т5 | Благородный металл | Глубокие скальные жилы в горах. | `WORLD_GENERATION_AND_BIOMES.md`, `ALIFE_AND_ECONOMY.md` |
+| `wool` | Шерсть | Т1 | Текстиль | Стрижка домашних овец ножницами. Базовый текстиль. | `ARMOR_AND_TIERS.md`, `ANIMALS_AND_FAUNA.md`, `PROGRESSION_SYSTEM.md` |
+| `cloth` | Ткань | Т2 | Текстиль | Прядение шерсти на верстаке. | `ARMOR_AND_TIERS.md`, `ANIMALS_AND_FAUNA.md`, `PROGRESSION_SYSTEM.md` |
+| `quality_cloth` | Качественная ткань | Т4 | Текстиль | Тонкое благородное полотно для качественной одежды и хауберков. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
+| `raw_leather` | Сырая кожа | Т1-Т2 | Кожа | Забой животных (коровы, олени, волки). Идет на сыромятные жилеты. | `ARMOR_AND_TIERS.md`, `ANIMALS_AND_FAUNA.md`, `PROGRESSION_SYSTEM.md` |
+| `treated_leather` | Обработанная кожа | Т3-Т4 | Кожа | Очистка и размягчение сырой кожи на верстаке. Идет на ремни ламелляров и поножи. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
+| `tanned_leather` | Дубленая качественная кожа | Т4-Т5 | Кожа | Глубокое дубление обработанной кожи для кирас, бригантин и лат. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
+| `feather` | Птичьи перья | Т1 | Оперение | Сбор у домашней птицы и охота на дичь. Оперение стрел. | `ANIMALS_AND_FAUNA.md` |
+| `copper_ore` | Медная руда | Т2 | Руда | Добывается каменной киркой (Т2). Сырье для бронзового слитка на Т3. | `WORLD_GENERATION_AND_BIOMES.md`, `PROGRESSION_SYSTEM.md` |
+| `tin_ore` | Оловянная руда | Т2 | Руда | Добывается каменной киркой (Т2). Сырье для бронзового слитка на Т3. | `WORLD_GENERATION_AND_BIOMES.md`, `PROGRESSION_SYSTEM.md` |
+| `bronze_ingot` | Бронзовый слиток | Т3 | Металл | Выплавка меди и олова в плавильной печи для руды (`ore_smelter`). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
+| `iron_ore` | Железная руда | Т3 | Руда | Добывается бронзовой киркой (Т3). Сырье для железного слитка на Т4. | `WORLD_GENERATION_AND_BIOMES.md`, `PROGRESSION_SYSTEM.md` |
+| `iron_ingot` | Железный слиток | Т4 | Металл | Выплавка из руды в плавильной печи для руды (`ore_smelter`). | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
+| `quality_iron` | Качественное железо | Т4.2 | Металл | Проковка и вторичная очистка железа в горне; ступень к стали Т5. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md` |
+| `steel_ingot` | Стальной слиток | Т5 | Металл | Переплавка качественного железа с углем в кузнечном горне и наковальне. | `ARMOR_AND_TIERS.md`, `PROGRESSION_SYSTEM.md`, `CRAFTING_SYSTEM.md` |
+| `gold_ore` | Золотая руда | Т3 | Благородный металл | Добывается железной киркой (Т3) в скалах и аллювии горных рек. | `WORLD_GENERATION_AND_BIOMES.md`, `ALIFE_AND_ECONOMY.md` |
+| `silver_ore` | Серебряная руда | Т3 | Благородный металл | Добывается железной киркой (Т3) в глубоких горных жилах. | `WORLD_GENERATION_AND_BIOMES.md`, `ALIFE_AND_ECONOMY.md` |
 
 ---
 
@@ -162,40 +160,36 @@
 
 | ID | Название | Тир | Категория | Рецепт / Источник | Действие и применение | Где упоминается в MD |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `wild_grass` | Дикая трава | Т1 | Растение | Равнины, опушки лесов | Источник диких семян пшеницы (15% шанс). | `HERBS_AND_ALCHEMY.md` |
-| `wheat_seeds` | Семена пшеницы | Т1 | Семена | Дроп с дикой травы | Посев мотыгой во вспаханную землю. | `HERBS_AND_ALCHEMY.md` |
-| `wheat` | Снопы пшеницы | Т1 | Урожай | Сбор урожая со вспаханного поля | Помол в муку на мельнице или верстаке. | `HERBS_AND_ALCHEMY.md`, `ALIFE_AND_ECONOMY.md` |
-| `flour` | Мука | Т2 | Ингредиент | Помол зерен пшеницы | Выпечка хлеба в печи. | `HERBS_AND_ALCHEMY.md` |
-| `herb` | Дикорастущие травы | Т1 | Растение | Сбор на полянах руками или ножом | Базовый компонент лечебных припарок. | `HERBS_AND_ALCHEMY.md`, `PROJECT_MiniLife.md` |
-| `healing_herb` | Целебная трава | Т1 | Растение | Поляны, леса, предгорья | Прямое жевание (+4 HP) или сырье для зелья. | `HERBS_AND_ALCHEMY.md`, `PROGRESSION_SYSTEM.md` |
-| `vigor_herb` | Горная трава | Т1 | Растение | Скалы, предгорья, снег | Восстановление стамины (+20) и сырье для эликсиров. | `HERBS_AND_ALCHEMY.md`, `PROGRESSION_SYSTEM.md` |
-| `poison_herb` | Болотный ядоцвет | Т1 | Растение | Болота и гнилые низины | Сырье для противоядия и боевых ядов. | `HERBS_AND_ALCHEMY.md`, `PROGRESSION_SYSTEM.md` |
+| `wild_grass` / `herb` | Дикая трава (дикорастущие травы) | Т1 | Растение | Равнины, поляны, опушки лесов | Источник семян пшеницы (15%) и растительных волокон для ткани. | `HERBS_AND_ALCHEMY.md`, `PROJECT_MiniLife.md` |
+| `wheat_seeds` | Семена пшеницы | Т1 | Семена | Сбор дикой травы | Посев мотыгой во вспаханную землю. | `HERBS_AND_ALCHEMY.md` |
+| `wheat` | Пшеница (снопы) | Т1-Т2 | Урожай | Сбор урожая со вспаханного поля | Помол в муку на водяной мельнице (`water_mill`). | `HERBS_AND_ALCHEMY.md`, `ALIFE_AND_ECONOMY.md` |
+| `flour` | Мука | Т2 | Ингредиент | Помол пшеницы на водяной мельнице | Выпечка хлеба в простой печи (`furnace`). | `HERBS_AND_ALCHEMY.md` |
+| `healing_herb` | Лечебная трава | Т1 | Растение | Поляны, леса, предгорья | Прямое употребление (+4 HP) или компонент целительного раствора. | `HERBS_AND_ALCHEMY.md`, `PROGRESSION_SYSTEM.md` |
+| `vigor_herb` | Горная трава бодрости | Т1 | Растение | Скалы, предгорья, снег | Восстановление стамины (+20) и сырье для эликсиров. | `HERBS_AND_ALCHEMY.md`, `PROGRESSION_SYSTEM.md` |
 | `fire_herb` | Пустынный огнецвет | Т1 | Растение | Пески и дюны пустыни | Сырье для настоя каменной кожи. | `HERBS_AND_ALCHEMY.md`, `PROGRESSION_SYSTEM.md` |
-| `empty_bottle` | Стеклянная бутыль | Т2 | Посуда | Выплавка из песка/кварца в печи | Многоразовая тара под жидкости и зелья. | `HERBS_AND_ALCHEMY.md` |
-| `water_bottle` | Бутыль с чистой водой | Т2 | Напиток | Набор воды из колодца/реки | Базовый растворитель для всех зелий. | `HERBS_AND_ALCHEMY.md` |
-| `potion_healing` | Зелье исцеления | Т2 | Зелье | `water_bottle` + 2x `healing_herb` | Мгновенно восстанавливает +45 HP и закрывает раны. | `HERBS_AND_ALCHEMY.md` |
-| `potion_stamina` | Зелье выносливости | Т2 | Зелье | `water_bottle` + 2x `vigor_herb` | Заливает +100 стамины и дает спринт (+25% на 45с). | `HERBS_AND_ALCHEMY.md` |
-| `potion_antidote` | Противоядие | Т2 | Зелье | `water_bottle` + 2x `poison_herb` | Моментально снимает яд и останавливает урон. | `HERBS_AND_ALCHEMY.md` |
-| `potion_ironskin` | Настой каменной кожи | Т2 | Зелье | `water_bottle` + 2x `fire_herb` | +15 Защиты на 60 сек и устойчивость к холоду. | `HERBS_AND_ALCHEMY.md` |
-| `bandage` | Чистый бинт | Т1 | Медицина | 2x Ткань (ручной крафт) | Останавливает кровотечение (Bleed) и лечит +15 HP. | `HERBS_AND_ALCHEMY.md`, `PROGRESSION_SYSTEM.md`, `COMBAT_SYSTEM.md` |
-| `medicine` | Травяная припарка | Т2 | Медицина | 3x Травы + 1x Ткань (верстак) | Глубокое лечение (+45 HP) и снятие токсинов. | `HERBS_AND_ALCHEMY.md`, `PROJECT_MiniLife.md` |
-| `poison` | Склянка с ядом | Т2 | Яд | 4x Ядоцвет (верстак) | Смазывание клинков и наконечников стрел ядом. | `HERBS_AND_ALCHEMY.md`, `PROJECT_MiniLife.md` |
+| `empty_bottle` | Стеклянная / глиняная бутыль | Т2 | Посуда | Обжиг в простой печи (`furnace`) | Многоразовая тара под воду и алхимические растворы. | `HERBS_AND_ALCHEMY.md` |
+| `water_bottle` | Бутыль с чистой водой | Т2 | Напиток | Набор воды из колодца (`well`) | Базовый растворитель для всех зелий и утоление жажды. | `HERBS_AND_ALCHEMY.md` |
+| `bandage` | Бинт | Т2 | Медицина | 2x Ткань (ручной крафт) | Остановка кровотечения (Bleed) и перевязка ран (+15 HP). | `HERBS_AND_ALCHEMY.md`, `PROGRESSION_SYSTEM.md`, `COMBAT_SYSTEM.md` |
+| `medicine` | Травяная припарка | Т2 | Медицина | 3x Травы + 1x Ткань (верстак) | Закрытие тяжелых ран (+35 HP) и остановка кровотечения. | `HERBS_AND_ALCHEMY.md`, `PROJECT_MiniLife.md` |
+| `potion_healing` | Целительный раствор | Т3 | Зелье | `water_bottle` + 2x `healing_herb` на алхимическом столе | Мощное восстановление +45 HP, моментальная остановка кровотечения. | `HERBS_AND_ALCHEMY.md`, `PROGRESSION_SYSTEM.md` |
+| `potion_stamina` | Зелье выносливости | Т3 | Зелье | `water_bottle` + 2x `vigor_herb` на алхимическом столе | Заливает +100 стамины и дает спринт (+25% на 45 сек). | `HERBS_AND_ALCHEMY.md`, `PROGRESSION_SYSTEM.md` |
+| `potion_ironskin` | Настой каменной кожи | Т3 | Зелье | `water_bottle` + 2x `fire_herb` на алхимическом столе | +15 Защиты на 60 сек и устойчивость к холоду. | `HERBS_AND_ALCHEMY.md`, `PROGRESSION_SYSTEM.md` |
 
 ---
 
 ## 11. ПРОВИЗИЯ И ЕДА (FOOD & PROVISIONS)
 
-| ID | Название | Тир | Питательность | Способ получения | Где упоминается в MD |
+| ID | Название | Тир | Питательность и эффект | Способ получения | Где упоминается в MD |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `berries` | Лесные ягоды | Т1 | +10 сытости, +2 HP | Сбор с кустов на равнинах и в тайге. | `WORLD_GENERATION_AND_BIOMES.md`, `PROJECT_MiniLife.md` |
-| `food_raw` | Сырое мясо | Т1 | +12 сытости | Дроп при забое скота и диких животных. | `ANIMALS_AND_FAUNA.md`, `PROJECT_MiniLife.md` |
-| `cooked_food` | Жареное мясо | Т1 | +38 сытости, +10 HP | Обжарка сырого мяса на костре. | `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md`, `PROJECT_MiniLife.md` |
-| `hunters_stew` | Охотничья похлебка | Т2 | +65 сытости, +22 HP | Варка мяса и трав на костре (статус «Сытость»). | `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md` |
-| `bread` | Ржаной хлеб | Т2 | +28 сытости | Выпечка из муки в печи. | `HERBS_AND_ALCHEMY.md`, `PROJECT_MiniLife.md` |
-| `fish` | Свежая рыба | Т1 | +10 сытости | Ловля удочкой или копьем в водоемах. | `ANIMALS_AND_FAUNA.md` |
-| `cooked_fish` | Жареная рыба | Т1 | +30 сытости, +8 HP | Запекание свежей рыбы на углях костра. | `ANIMALS_AND_FAUNA.md` |
-| `milk` | Свежее молоко | Т1 | +15 сытости, снятие дебаффов | Прижизненный сбор с коров в ведро. | `ANIMALS_AND_FAUNA.md` |
-| `egg` | Куриное яйцо | Т1 | +8 сытости | Сбор в курятниках и на птичьих гнездах. | `ANIMALS_AND_FAUNA.md` |
+| `berries` | Лесные ягоды | Т1 | +10 сытости (HP: 0) | Сбор с кустов на равнинах и в тайге. Не лечат HP. | `WORLD_GENERATION_AND_BIOMES.md`, `PROJECT_MiniLife.md` |
+| `food_raw` | Сырое мясо | Т1 | +12 сытости (HP: 0) | Дроп при забое скота и диких животных. | `ANIMALS_AND_FAUNA.md`, `PROJECT_MiniLife.md` |
+| `cooked_food` | Жареное мясо | Т1 | +38 сытости, +10 HP | Обжарка сырого мяса на костре. Единственная еда, лечащая физическое HP. | `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md`, `PROJECT_MiniLife.md` |
+| `hunters_stew` | Охотничья похлебка | Т2 | +65 сытости (HP: 0) | Варка мяса и трав в котелке (накладывает статус «Сытость»). Не лечит HP. | `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md` |
+| `bread` | Ржаной хлеб | Т2 | +28 сытости (HP: 0) | Выпечка из муки и воды в простой печи (`furnace`). Не лечит HP. | `HERBS_AND_ALCHEMY.md`, `PROJECT_MiniLife.md` |
+| `fish` | Свежая рыба | Т1 | +10 сытости (HP: 0) | Ловля удочкой или копьем в водоемах. | `ANIMALS_AND_FAUNA.md` |
+| `cooked_fish` | Жареная рыба | Т1 | +30 сытости (HP: 0) | Запекание свежей рыбы на углях костра. Не лечит HP. | `ANIMALS_AND_FAUNA.md` |
+| `milk` | Свежее молоко | Т1 | +15 сытости (HP: 0) | Прижизненный сбор с коров в ведро. Утоляет жажду. | `ANIMALS_AND_FAUNA.md` |
+| `egg` | Куриное яйцо | Т1 | +8 сытости (HP: 0) | Сбор в курятниках и гнездах птиц. | `ANIMALS_AND_FAUNA.md` |
 
 ---
 
@@ -203,9 +197,8 @@
 
 | ID | Название | Тир | Тип | Функция в экономике | Где упоминается в MD |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `copper_coin` | Медные монеты | Т1-Т5 | Монета | Мелкая разменная монета для нищих и простых припасов. | `ALIFE_AND_ECONOMY.md` |
-| `silver_coin` | Серебряные монеты | Т1-Т5 | Монета | Основная валюта мира: оплата караванов, еды, стрел, наемников. | `ALIFE_AND_ECONOMY.md` |
-| `gold_coin` | Золотые монеты | Т1-Т5 | Монета | Инвестиционная валюта: покупка чертежей, слитков металлов, арбитраж. | `ALIFE_AND_ECONOMY.md` |
+| `silver_coin` | Серебряные монеты | Т1-Т5 | Монета | Общепринятая валюта мира: оплата караванов, припасов, стрел, наемников. | `ALIFE_AND_ECONOMY.md` |
+| `gold_coin` | Золотые монеты | Т1-Т5 | Монета | Высокая валюта: покупка рецептов, слитков ценных металлов, караванные сделки. | `ALIFE_AND_ECONOMY.md` |
 
 ---
 
@@ -218,16 +211,16 @@
 | `wood_door` | Деревянная дверь | Т2 | Интерактивная преграда | 3 Дерева | Закрываемый проход в дом (пропускает только игрока). | `CRAFTING_SYSTEM.md`, `PROJECT_MiniLife.md` |
 | `stone_wall` | Каменная стена | Т2 | Блок стены | 2 Каменных блока | Мощная фортификационная стена против набегов. | `CRAFTING_SYSTEM.md`, `PROJECT_MiniLife.md` |
 | `stone_floor` | Каменная плитка пола | Т2 | Настил пола | 1 Камень | Огнеупорный пол под кузницы и плавильные печи. | `PROJECT_MiniLife.md`, `CRAFTING_SYSTEM.md` |
-| `campfire` | Лагерный костер | Т1 | Ремесленная станция | 3 Дерева | Готовка мяса, варка базовых настоек, свет и обогрев. | `HERBS_AND_ALCHEMY.md`, `CRAFTING_SYSTEM.md`, `PROJECT_MiniLife.md` |
-| `workbench` | Плотницкий верстак | Т2 | Ремесленная станция | 4 Доски | Столярка, пошив одежды, сборка луков и щитов. | `CRAFTING_SYSTEM.md`, `PROGRESSION_SYSTEM.md`, `PROJECT_MiniLife.md` |
-| `furnace` | Глиняно-каменная печь | Т2 | Плавильная станция | 6 Камней | Обжиг кирпича, плавка медной и железной руды. | `CRAFTING_SYSTEM.md`, `PROGRESSION_SYSTEM.md` |
-| `forge` | Кузнечный горн и наковальня | Т3-Т5 | Кузнечная станция | 8 Камня + 2 Железа | Ковка оружия, кольчуг, ламелляров, стрел и лат. | `ARMOR_AND_TIERS.md`, `CRAFTING_SYSTEM.md`, `PROGRESSION_SYSTEM.md` |
-| `research_table` | Стол исследователя | Т2 | Научная станция | 4 Доски + 2 Камня | Открытие древа технологий и квалификационных ступеней. | `PROGRESSION_SYSTEM.md`, `PROJECT_MiniLife.md` |
-| `alchemy_station` | Алхимический стол | Т2 | Алхимическая станция | 4 Доски + 2 Камня + 1 Медь | Профессиональная дистилляция зелий и ядов. | `HERBS_AND_ALCHEMY.md`, `PROJECT_MiniLife.md` |
+| `campfire` | Лагерный костер | Т1 | Ремесленная станция | 3 Дерева | Готовка мяса, варка базовых настоек, свет и обогрев. Бесконечное время горения. | `HERBS_AND_ALCHEMY.md`, `CRAFTING_SYSTEM.md`, `PROJECT_MiniLife.md` |
+| `torch` | Факел (ручной / наземный) | Т1 | Источник света / Блок | 1 Дерево + 1 Ткань | Бесконечное время горения. Держится в руке либо устанавливается на землю. | `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md`, `PROJECT_MiniLife.md` |
+| `workbench` | Плотницкий верстак | Т2 | Ремесленная станция | 4 Доски | Столярка, пошив одежды, сборка охотничьих луков, щитов и простой брони. | `CRAFTING_SYSTEM.md`, `PROGRESSION_SYSTEM.md`, `PROJECT_MiniLife.md` |
+| `furnace` | Простая печь | Т2 | Термическая печь | 6 Камней + 2 Глины | Обжиг кирпича, глиняной посуды, бутылей, выпечка хлеба из муки. | `CRAFTING_SYSTEM.md`, `PROGRESSION_SYSTEM.md` |
+| `ore_smelter` | Плавильная печь для руды | Т2-Т3 | Металлургическая печь | 6 Камней + 4 Глины | Выплавка меди, олова и железной руды в базовые металлические слитки. | `CRAFTING_SYSTEM.md`, `PROGRESSION_SYSTEM.md` |
+| `forge` | Кузнечный горн и наковальня | Т4-Т5 | Кузница высшего тира | 8 Камня + 2 Качественное железо | Переплавка качественного железа (Т4.2) в сталь (Т5), ковка армейских доспехов и оружия. | `ARMOR_AND_TIERS.md`, `CRAFTING_SYSTEM.md`, `PROGRESSION_SYSTEM.md` |
+| `water_mill` | Водяная мельница | Т2 | Производственная постройка | 6 Досок + 4 Камня | Помол выращенной пшеницы в муку на речном течении для связки с печью. | `HERBS_AND_ALCHEMY.md`, `PROJECT_MiniLife.md` |
+| `mechanical_water_mill` | Механическая водяная мельница | Т5 | Гидравлический привод | 6 Досок + 6 Камней + 4 Железа | Гидропривод для кузнечного горна и тяжелого молота тигельной стали. | `PROGRESSION_SYSTEM.md`, `PROJECT_MiniLife.md` |
+| `alchemy_station` | Алхимический стол | Т3 | Алхимическая станция | 4 Доски + 2 Камня + 1 Медь / Бронза | Дистилляция целительного раствора, зелий выносливости и каменной кожи. | `HERBS_AND_ALCHEMY.md`, `PROJECT_MiniLife.md` |
+| `research_table` | Стол исследователя | Т2 | Научная станция | 4 Доски + 2 Камня | Открытие древа технологий и квалификационных ступеней знаний. | `PROGRESSION_SYSTEM.md`, `PROJECT_MiniLife.md` |
 | `storage` | Деревянный сундук | Т2 | Контейнер | 4 Доски | Хранение 24 слотов грузов с поддержкой радиуса автокрафта. | `CRAFTING_SYSTEM.md`, `PROJECT_MiniLife.md` |
-| `iron_vault` | Железный сейф | Т4 | Контейнер | 4 Железа + 2 Доски | Огнеупорный бронированный сундук под редкие слитки. | `CRAFTING_SYSTEM.md` |
-| `bed` | Простая кровать | Т2 | Мебель | 4 Доски + 2 Ткани | Пропуск ночного времени, отдых и снятие усталости. | `PROJECT_MiniLife.md` |
-| `torch` | Напольный факел | Т1 | Источник света | 1 Факел | Стационарное освещение базы и защита от хищников. | `PROJECT_MiniLife.md` |
-| `water_collector` | Водосборник / колодец | Т2 | Бытовое сооружение | 4 Доски + 2 Камня | Сбор дождевой и грунтовой воды для наполнения бутылей. | `HERBS_AND_ALCHEMY.md` |
-| `pit_trap` | Яма-ловушка | Т2 | Ловушка | 3 Дерева | Выкапываемая замаскированная яма. Оглушает врага. | `COMBAT_SYSTEM.md`, `PROJECT_MiniLife.md` |
-| `spike_trap` | Шипованная железная ловушка | Т4 | Ловушка | 2 Железа + 1 Дерево | Скрытые шипы. Наносят 28 урона и вызывают кровотечение. | `COMBAT_SYSTEM.md`, `PROJECT_MiniLife.md` |
+| `bed` | Кровать | Т2 | Мебель | 4 Доски + 2 Ткани | Пропуск ночного времени, отдых и восстановление бодрости. | `PROJECT_MiniLife.md` |
+| `well` | Колодец | Т2 | Водоснабжение | 4 Доски + 4 Камня | Постоянный источник чистой воды для питья, наполнения бутылей и выпечки. | `HERBS_AND_ALCHEMY.md`, `PROJECT_MiniLife.md` |

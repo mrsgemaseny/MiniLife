@@ -21,7 +21,8 @@
 * **Текстиль**: Шерсть (`wool`) -> Ткань (`cloth`) -> Качественная ткань (`quality_cloth`).
 * **Кожа**: Сырая кожа (`raw_leather`) -> Обработанная кожа (`treated_leather`) -> Дубленая качественная кожа (`tanned_leather`).
 * **Руды и Металлы**: Медь (`copper_ore`) + Олово (`tin_ore`) -> Бронзовый слиток (`bronze_ingot`) -> Железная руда (`iron_ore`) -> Железо (`iron_ingot`) -> Качественное кованое железо (`quality_iron`) -> Сталь (`steel_ingot`).
-* **Органика и Зелья**: Травы (`herb`, `healing_herb`, `vigor_herb`, `poison_herb`, `fire_herb`), Еда (`raw_meat`, `cooked_meat`, `bread`).
+* **Органика и Зелья**: Травы (`wild_grass` / `herb`, `healing_herb`, `vigor_herb`, `fire_herb`), Еда (`food_raw`, `cooked_food`, `bread`). Единственная еда, восстанавливающая HP — жареное мясо (`cooked_food`). Ядов в мире не существует.
+* **Ремесленные станции и мельницы**: Простая печь (`furnace`, Т2), плавильная печь для руды (`ore_smelter`, Т2-Т3), кузнечный горн и наковальня (`forge`, Т4-Т5), алхимический стол (`alchemy_station`, Т3), водяная мельница (`water_mill`, Т2) и механическая мельница (`mechanical_water_mill`, Т5).
 
 ---
 
