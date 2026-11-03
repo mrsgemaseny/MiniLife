@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3]
+[gd_scene load_steps=31 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/world.tscn" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/entities/player.tscn" id="2_player"]
@@ -29,6 +29,7 @@
 [ext_resource type="Script" path="res://autoloads/audio_director.gd" id="27_audio"]
 [ext_resource type="Script" path="res://scripts/systems/world/weather_system.gd" id="28_weather"]
 [ext_resource type="Script" path="res://scripts/ui/world_map_ui.gd" id="29_map_ui"]
+[ext_resource type="Script" path="res://scripts/ui/main_menu_ui.gd" id="30_main_menu_ui"]
 
 [sub_resource type="GDScript" id="GDScript_main"]
 script/source = "extends Node2D
@@ -37,6 +38,11 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_dynamic_systems()
 	GameManager.start_new_game(Config.DEFAULT_WORLD_SEED, Config.DEFAULT_SAVE_SLOT)
+	var args: PackedStringArray = OS.get_cmdline_user_args()
+	if not args.has(\"--e2e-smoke\") and not args.has(\"--e2e-full\") and not args.has(\"--render-map\"):
+		var mm: Node = get_node_or_null(\"UILayer/MainMenu\")
+		if mm != null and mm.has_method(\"open_menu\"):
+			mm.call(\"open_menu\")
 
 func _setup_dynamic_systems() -> void:
 	var systems: Node = get_node_or_null(\"Systems\")
@@ -253,3 +259,13 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("29_map_ui")
+
+[node name="MainMenu" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("30_main_menu_ui")

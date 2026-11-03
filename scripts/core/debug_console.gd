@@ -286,9 +286,16 @@ func _test_phase_11_inventory_hotbar_and_dupe_proofing(player: Player) -> void:
 		assert(player.equipment.get_item_id("offhand") == "wooden_shield", "Shield must re-equip to offhand")
 		assert(player.equipment.get_item_id("weapon") == w_before, "Weapon in hand must remain intact")
 
-	for pname in ["inventory", "map", "craft", "build", "quests", "character", "factions", "chronicle", "achievements", "pause"]:
+	for pname in ["inventory", "map", "craft", "build", "quests", "character", "factions", "chronicle", "achievements", "pause", "main_menu"]:
 		SignalBus.ui_panel_requested.emit(pname)
 	SignalBus.ui_close_all_requested.emit()
+
+	var mm_node: Control = get_tree().root.find_child("MainMenu", true, false) as Control
+	if mm_node != null and mm_node.has_method("open_menu"):
+		mm_node.call("open_menu")
+		assert(mm_node.visible, "MainMenuUI must be visible when opened")
+		mm_node.call("close_menu")
+		assert(not mm_node.visible, "MainMenuUI must be hidden when closed")
 
 	var first_npc: Node = get_tree().get_first_node_in_group("npc")
 	if first_npc != null:

@@ -185,9 +185,9 @@
   - Converted `MinimapWidget` to authentic 45-degree isometric rhombus (`Rx=94.0, Ry=47.0`, 2:1 ratio) with vector diamond tile rasterization, dark chiseled iron frame with corner rivets, compass "N", and status pill.
   - Overhauled `WorldMapUI` (`scripts/ui/world_map_ui.gd`): 100% opaque fullscreen window with dark slate wallpaper, framed viewport with `clip_contents = true`, continuous 2x2 px tile coverage eliminating stripes, and cartographic shaded relief for unexplored regions (visible continental topography with river, lake, mountains, and desert contours instead of black voids).
   - Wired `[M]` key and minimap click with smooth pan/zoom, player beacon, POI markers, and coordinate inspector. Static node in `scenes/main.tscn` under `UILayer`.
-- **Battle Brothers & RimWorld Quick/Named Save System (2026-11-03)**:
-  - Quick save `[F5]` and quick load `[F9]` with dedicated screen notifications.
-  - Interactive save/load modal dialogs in `PauseMenuUI`: dark aged timber and bronze aesthetic, manual named saves (`LineEdit`), slot list with `[БЫСТРОЕ]`/`[АВТО]` badges, day/time, gold, hp, and slot deletion `[ ✕ ]`.
-  - 100% exact state restoration: player position, facing direction, active hotbar index, equipment and weapon sprites, 32-slot inventory alignment, research techs (`research.json`), structures (`buildings.json`), and dynamic chunk reloading around player tile.
-  - Phase 12 of automated E2E test suite updated with quick/named saves; 100% passing (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
+- **Main Menu ("Zero Screen") & Pause Navigation (2026-11-03)**:
+  - Atmospheric 16:9 painted background (`assets/sprites/ui/main_menu_bg.jpg`) with twilight mountain pass, ancient pines, abandoned wagon, and campfire embers.
+  - `MainMenuUI` on launch: Continue (loads newest save), New Game, Load Game (save browser), Settings (audio & fullscreen), Tutorial Guide (scrollable survival rules & controls), and Exit.
+  - `PauseMenuUI` updated with direct `[ В ГЛАВНОЕ МЕНЮ ]` return button alongside `[ ВЫЙТИ ИЗ ИГРЫ ]`.
+  - Phase 11 & 12 of automated E2E test suite updated; 100% passing (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `buildings.json`, `research.json`, `chunks/<x>_<y>.json`) + persistent `achievements.json`.

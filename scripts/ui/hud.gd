@@ -44,6 +44,7 @@ var _inspect_details: Label = null
 var _inspect_alpha: float = 0.0
 
 func _ready() -> void:
+	add_to_group("hud")
 	_setup_styled_hud()
 	_connect_signals()
 	update_stat("health", 100.0, 100.0)
