@@ -166,8 +166,8 @@ func _build_battle_brothers_menu() -> void:
 	_main_btn_box.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_main_btn_box.offset_left = 90.0
 	_main_btn_box.offset_right = -90.0
-	_main_btn_box.offset_top = 280.0
-	_main_btn_box.add_theme_constant_override("separation", 9)
+	_main_btn_box.offset_top = 255.0
+	_main_btn_box.add_theme_constant_override("separation", 7)
 	center_hub.add_child(_main_btn_box)
 
 	var resume_btn: Button = _create_bb_button("ПРОДОЛЖИТЬ  [ESC]")
@@ -185,6 +185,16 @@ func _build_battle_brothers_menu() -> void:
 	var opt_btn: Button = _create_bb_button("НАСТРОЙКИ")
 	opt_btn.pressed.connect(_show_options)
 	_main_btn_box.add_child(opt_btn)
+
+	var to_menu_btn: Button = _create_bb_button("В ГЛАВНОЕ МЕНЮ")
+	to_menu_btn.pressed.connect(func():
+		var save_sys: SaveSystem = _find_save_system()
+		if save_sys != null:
+			save_sys.quick_save()
+		close_menu()
+		SignalBus.ui_panel_requested.emit("main_menu")
+	)
+	_main_btn_box.add_child(to_menu_btn)
 
 	var quit_btn: Button = _create_bb_button("ВЫЙТИ ИЗ ИГРЫ")
 	quit_btn.pressed.connect(func():

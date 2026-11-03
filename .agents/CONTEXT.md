@@ -2,7 +2,7 @@
 
 ## Current Operational Focus
 - **Current Operational Focus**: Full Modular Monolith Architecture (Phases 1–15 of `PRODUCTION_ROADMAP.md` Complete).
-- **Master Specification**: `PROJECT_MiniLife.md`, `PROGRESSION_SYSTEM.md`, `WORLD_AND_EXPLORATION.md`, `COMBAT_SYSTEM.md`, `ALIFE_AND_ECONOMY.md`, `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md`, `HERBS_AND_ALCHEMY.md`, `WORLD_GENERATION_AND_BIOMES.md` & `PRODUCTION_ROADMAP.md`.
+- **Master Specification**: `PROJECT_MiniLife.md`, `PROGRESSION_SYSTEM.md`, `ARMOR_AND_TIERS.md`, `WORLD_AND_EXPLORATION.md`, `COMBAT_SYSTEM.md`, `ALIFE_AND_ECONOMY.md`, `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md`, `HERBS_AND_ALCHEMY.md`, `WORLD_GENERATION_AND_BIOMES.md` & `PRODUCTION_ROADMAP.md`.
 - **Repository**: `https://github.com/mrsgemaseny/MiniLife`
 
 ## Recent Accomplishments
