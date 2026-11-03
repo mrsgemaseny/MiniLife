@@ -232,6 +232,10 @@ func _on_player_died() -> void:
 	SignalBus.world_delete_requested.emit(_active_slot)
 
 
+func has_blocking_panels() -> bool:
+	return not _open_blocking_panels.is_empty()
+
+
 func _on_ui_panel_toggled(panel_id: String, is_open: bool, blocks_game: bool) -> void:
 	if not blocks_game:
 		return
@@ -276,6 +280,7 @@ func _register_default_inputs() -> void:
 		"move_right": KEY_D,
 		"interact": KEY_E,
 		"ui_inventory": KEY_I,
+		"ui_map": KEY_M,
 		"ui_craft": KEY_C,
 		"ui_build": KEY_B,
 		"ui_quests": KEY_J,

@@ -178,10 +178,13 @@
   - LMB (`attack`): clicking a placed torch instantly dismantles it (1-click pop-off) and returns to inventory; clicking other player-built structures channels dismantle without wasting stamina on empty swings; ancient ruins remain protected.
   - Enlarged torch sprite (34px) with high-intensity flame and expanded lighting radius (`PointLight2D` texture_scale 2.2).
 - **InventoryUI Armor Slot Closure Bug & Offhand Equip Duplication Fix (2026-11-02)**:
-  - Fixed GDScript 4 loop closure capture in `InventoryUI`: slot clicked/hovered lambdas now explicitly capture `slot_name = k`, preventing `head`, `chest`, and `legs` slots from defaulting to `"weapon"`.
-  - Fixed offhand shield equip dupe: `_on_armor_slot_clicked` strictly passes `slot_override = slot_key` to `eq.equip(c_id, c_dur, slot_key)` with slot type validation, preventing offhand items from routing to the main weapon hand and cloning held weapons.
+  - Fixed GDScript 4 loop closure capture in `InventoryUI`: slot clicked/hovered lambdas explicitly capture `slot_name = k`, preventing slots from defaulting to `"weapon"`.
+  - Fixed offhand shield equip dupe: `_on_armor_slot_clicked` strictly passes `slot_override = slot_key` to `eq.equip(c_id, c_dur, slot_key)` with slot validation.
   - Added non-stackable item protection in `_on_slot_clicked` (`max_stack = 1` for weapons/shields/armor) and fixed `InventoryComponent.remove_item` to clear empty slots with `{}` instead of `remove_at(i)`.
-  - Phase 11 automated E2E test updated and passing 100% cleanly (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
+- **45-Degree Isometric Rhombus Minimap & Full World Map [M] (2026-11-03)**:
+  - Converted `MinimapWidget` to authentic 45-degree isometric rhombus (`Rx=94.0, Ry=47.0`, 2:1 ratio) with vector diamond tile rasterization, eliminating low-res pixel stretch and blur. Dark chiseled iron frame with corner rivets, compass "N", and status pill.
+  - Implemented `WorldMapUI` (`scripts/ui/world_map_ui.gd`): full-screen 45-degree isometric atlas (1024x512 texture for 256x256 territory) with pan/zoom (0.45x..3.5x), player beacon, discovered POI markers, and coordinate inspector.
+  - Wired `[M]` key (`ui_map` in `GameManager` and `main.tscn`) and minimap click to toggle world map.
 - **Weather Particles Canvas Layer Isolation (2026-11-02)**:
   - Fixed rain/fog particles bleeding over UI windows: lowered `WeatherCanvas.layer` from 15 to 2 (`PROCESS_MODE_PAUSABLE`) and explicitly set `UILayer.layer = 20` in `main.tscn`. Rain strictly renders in the world plane underneath interface panels.
 - **Save Format**: JSON + 16x16 chunk deltas (`user://saves/<slot>/meta.json`, `player.json`, `world.json`, `chunks/<x>_<y>.json`) + persistent `user://saves/achievements.json`.

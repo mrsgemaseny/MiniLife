@@ -238,6 +238,22 @@ func get_fog_state(pos: Vector2i) -> FogState:
 	return _fog.get_state(pos) as FogState
 
 
+func get_chunk_pois() -> Dictionary:
+	return _chunk_pois
+
+
+func get_discovered_pois() -> Dictionary:
+	return _discovered_pois
+
+
+func get_fog_system() -> FogOfWarSystem:
+	return _fog
+
+
+func get_terrain() -> TerrainGenerator:
+	return _terrain
+
+
 func update_visibility(player_pos: Vector2) -> void:
 	var center: Vector2i = Config.iso_to_world(player_pos)
 	var changes: Array[Dictionary] = _fog.update_around(center, _vision_radius)

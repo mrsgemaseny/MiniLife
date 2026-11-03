@@ -251,16 +251,16 @@ func _setup_styled_hud() -> void:
 
 	# 5. Subtle controls hint
 	var hint_lbl: Label = Label.new()
-	hint_lbl.text = "[I] Bag  [C] Craft  [B] Build  [J] Quests  [K] Hero  [E] Use  [ESC] Menu"
+	hint_lbl.text = "[I] Bag  [M] Map  [C] Craft  [B] Build  [J] Quests  [K] Hero  [ESC] Menu"
 	hint_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint_lbl.add_theme_font_size_override("font_size", 9)
 	hint_lbl.modulate = Color(0.72, 0.76, 0.82, 0.55)
 	bottom_center_hud.add_child(hint_lbl)
 
-	# Top-Right Minimap Radar
+	# Top-Right Isometric Diamond Radar
 	_minimap = MinimapWidget.new()
 	_minimap.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_minimap.position = Vector2(-196, 10)
+	_minimap.position = Vector2(-228, 12)
 	add_child(_minimap)
 
 	# Smooth World Hover Inspect Card (for trees, rocks, ores, NPCs)

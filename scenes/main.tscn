@@ -68,6 +68,11 @@ func _setup_dynamic_systems() -> void:
 			rt.name = \"ResearchTreeUI\"
 			rt.set_script(load(\"res://scripts/ui/research_tree_ui.gd\"))
 			ui_layer.add_child(rt)
+		if ui_layer.get_node_or_null(\"WorldMapUI\") == null:
+			var wm: Control = Control.new()
+			wm.name = \"WorldMapUI\"
+			wm.set_script(load(\"res://scripts/ui/world_map_ui.gd\"))
+			ui_layer.add_child(wm)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -81,6 +86,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 	if event.is_action_pressed(\"ui_inventory\"):
 		SignalBus.ui_panel_requested.emit(\"inventory\")
+	elif event.is_action_pressed(\"ui_map\") or (event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_M):
+		SignalBus.ui_panel_requested.emit(\"map\")
 	elif event.is_action_pressed(\"ui_craft\"):
 		SignalBus.ui_panel_requested.emit(\"craft\")
 	elif event.is_action_pressed(\"ui_build\") or (event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_B):
@@ -100,8 +107,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		SignalBus.ui_panel_requested.emit(\"chronicle\")
 	elif event.is_action_pressed(\"ui_achievements\"):
 		SignalBus.ui_panel_requested.emit(\"achievements\")
-	elif event.is_action_pressed(\"ui_close\"):
-		SignalBus.ui_close_all_requested.emit()
+	elif event.is_action_pressed(\"ui_close\") or (event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_ESCAPE):
+		if GameManager.has_blocking_panels():
+			SignalBus.ui_close_all_requested.emit()
+		else:
+			SignalBus.ui_panel_requested.emit(\"pause\")
 	elif event.is_action_pressed(\"quick_save\"):
 		SignalBus.save_requested.emit(GameManager.get_active_slot())
 	elif event.is_action_pressed(\"quick_load\"):
