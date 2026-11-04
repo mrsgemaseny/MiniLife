@@ -316,7 +316,19 @@ func interact(interactor: Node) -> void:
 			if pack_inventory != null:
 				SignalBus.notification_posted.emit("Opening pack donkey storage (+12 slots).")
 				var player_tile: Vector2i = Config.iso_to_world(global_position)
-				SignalBus.chest_opened.emit("donkey_pack", player_tile)
+				var smgr: StorageManager = null
+				if BuildingSystem.instance != null:
+					smgr = BuildingSystem.instance.get_storage_manager()
+				if smgr != null:
+					smgr.set_container_title(player_tile, "Pack Donkey Storage")
+					var smgr_inv: InventoryComponent = smgr.get_or_create_container(player_tile)
+					smgr_inv.max_slots = 12
+					smgr_inv.ensure_slots_capacity()
+					for i in range(mini(pack_inventory.slots.size(), smgr_inv.slots.size())):
+						if not pack_inventory.slots[i].is_empty() and smgr_inv.slots[i].is_empty():
+							smgr_inv.slots[i] = pack_inventory.slots[i].duplicate(true)
+					pack_inventory = smgr_inv
+				SignalBus.storage_container_opened.emit("donkey_pack", player_tile)
 		"dog":
 			SignalBus.notification_posted.emit("The faithful dog barks joyfully.")
 		"cat":

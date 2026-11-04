@@ -33,6 +33,7 @@ signal structure_removal_requested(tile_pos: Vector2i, refund_to: Node)
 signal structure_destroyed(structure_id: String, tile_pos: Vector2i)
 signal structure_interacted(structure_id: String, tile_pos: Vector2i, actor: Node)
 signal storage_container_opened(container_uid: String, tile_pos: Vector2i)
+signal chest_opened(container_uid: String, tile_pos: Vector2i)
 signal trap_triggered(trap_id: String, tile_pos: Vector2i, target: Node)
 
 # Crafting, Smelting, Cooking & Repair
@@ -166,3 +167,8 @@ signal ui_close_all_requested()
 signal ui_sound_requested(sound_type: String)
 signal notification_posted(message: String)
 signal debug_command_executed(command_line: String, output_text: String)
+
+func _ready() -> void:
+	chest_opened.connect(func(c_uid: String, t_pos: Vector2i) -> void:
+		storage_container_opened.emit(c_uid, t_pos)
+	)

@@ -427,8 +427,6 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 				"col": chip_col.lightened(randf_range(-0.1, 0.18)),
 				"age": 0.0
 			})
-		if equip != null and held_weapon != "" and randf() < 0.25:
-			equip.damage_weapon(1)
 
 	queue_redraw()
 
@@ -572,6 +570,13 @@ func _deplete_and_grant(harvester: Node) -> void:
 	var xp_val: float = float(_def.get("xp", 12.0))
 	if skills != null:
 		skills.gain_xp(skill_name, xp_val)
+
+	# Tool durability wear: consumed ONLY after the resource node is fully broken/depleted
+	if equip != null:
+		var held_id: String = equip.get_item_id("weapon")
+		if held_id != "":
+			if skill_name == "woodcutting" or skill_name == "mining" or (skill_name == "foraging" and has_blade):
+				equip.damage_weapon(1)
 
 	SignalBus.resource_harvested.emit(primary_item, maxi(total_dropped, 1), tile_pos)
 	SignalBus.resource_node_depleted.emit(tile_pos, node_def_id)
