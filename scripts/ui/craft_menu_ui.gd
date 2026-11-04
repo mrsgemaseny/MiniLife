@@ -13,10 +13,14 @@ var _current_category: String = "all"
 var _category_buttons: Dictionary = {}
 var _selected_recipe_id: String = ""
 var _bg_tex: TextureRect = null
+var _only_craftable: bool = false
+var _only_craftable_btn: Button = null
+var _last_clicked_rid: String = ""
+var _last_click_time: float = 0.0
 
 # Dual-Pane UI Elements
 var _station_label: Label = null
-var _recipe_list_box: VBoxContainer = null
+var _recipe_list_box: HFlowContainer = null
 var _scroll_container: ScrollContainer = null
 
 # Right-hand Workshop Inspector & Anvil
@@ -129,11 +133,13 @@ func _setup_styled_craft_menu() -> void:
 		var cat_hbox: HBoxContainer = HBoxContainer.new()
 		cat_hbox.add_theme_constant_override("separation", 6)
 		var cats: Array[Dictionary] = [
-			{"id": "all", "label": "Все рецепты"},
-			{"id": "tools", "label": "Оружие и орудия"},
+			{"id": "all", "label": "Все"},
+			{"id": "weapons", "label": "Оружие"},
+			{"id": "tools", "label": "Орудия"},
 			{"id": "armor", "label": "Броня и щиты"},
-			{"id": "stations", "label": "Станки и дерево"},
-			{"id": "survival", "label": "Выживание и медицина"}
+			{"id": "materials", "label": "Материалы"},
+			{"id": "building", "label": "Постройки"},
+			{"id": "survival", "label": "Выживание"}
 		]
 		for c in cats:
 			var cid: String = str(c.get("id"))
@@ -159,6 +165,32 @@ func _setup_styled_craft_menu() -> void:
 			)
 			_category_buttons[cid] = cbtn
 			cat_hbox.add_child(cbtn)
+
+		var spacer: Control = Control.new()
+		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cat_hbox.add_child(spacer)
+
+		_only_craftable_btn = Button.new()
+		_only_craftable_btn.toggle_mode = true
+		_only_craftable_btn.button_pressed = _only_craftable
+		_only_craftable_btn.text = " [ ] Доступные для крафта "
+		_only_craftable_btn.add_theme_font_size_override("font_size", 10)
+		var occ_sb: StyleBoxFlat = StyleBoxFlat.new()
+		occ_sb.bg_color = Color(0.14, 0.16, 0.19, 0.95)
+		occ_sb.border_color = Color(0.28, 0.30, 0.36, 1.0)
+		occ_sb.set_border_width_all(1)
+		occ_sb.set_corner_radius_all(3)
+		occ_sb.content_margin_left = 10
+		occ_sb.content_margin_right = 10
+		occ_sb.content_margin_top = 5
+		occ_sb.content_margin_bottom = 5
+		_only_craftable_btn.add_theme_stylebox_override("normal", occ_sb)
+		_only_craftable_btn.toggled.connect(func(pressed: bool):
+			_only_craftable = pressed
+			_pick_default_recipe()
+			refresh()
+		)
+		cat_hbox.add_child(_only_craftable_btn)
 		main_vbox.add_child(cat_hbox)
 
 		var sep: HSeparator = HSeparator.new()
@@ -182,9 +214,10 @@ func _setup_styled_craft_menu() -> void:
 		_scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 		body_hbox.add_child(_scroll_container)
 
-		_recipe_list_box = VBoxContainer.new()
+		_recipe_list_box = HFlowContainer.new()
 		_recipe_list_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_recipe_list_box.add_theme_constant_override("separation", 6)
+		_recipe_list_box.add_theme_constant_override("h_separation", 6)
+		_recipe_list_box.add_theme_constant_override("v_separation", 6)
 		_scroll_container.add_child(_recipe_list_box)
 
 		# Right Pane: Recipe Inspector & Forge Anvil
@@ -508,15 +541,27 @@ func _pick_default_recipe() -> void:
 			return tier_a < tier_b
 		return a < b
 	)
+	var player: Node = get_tree().get_first_node_in_group("player")
+	var available_stations: Array[String] = _get_all_nearby_stations()
 	for rid in sorted_rids:
 		var recipe: Dictionary = _recipes[rid]
 		var out: Dictionary = recipe.get("output", {})
 		var out_id: String = str(out.get("item_id", rid))
 		var item_def: Dictionary = DataRegistry.get_item(out_id)
 		var item_type: String = str(item_def.get("type", ""))
-		if _matches_category(item_type, out_id):
-			_selected_recipe_id = rid
-			return
+		if not _matches_category(item_type, out_id):
+			continue
+		if _only_craftable:
+			var req_tech: String = str(recipe.get("tech_required", ""))
+			var is_tech_unlocked: bool = (req_tech == "" or (ResearchSys.instance != null and ResearchSys.instance.is_researched(req_tech)))
+			var req_station: String = str(recipe.get("station", ""))
+			var station_ok: bool = _is_station_available(req_station, available_stations, rid)
+			var skills_ok: bool = _has_required_skills(player, recipe)
+			var mats_ok: bool = _has_required_materials(player, recipe)
+			if not (station_ok and is_tech_unlocked and skills_ok and mats_ok):
+				continue
+		_selected_recipe_id = rid
+		return
 	if not sorted_rids.is_empty():
 		_selected_recipe_id = str(sorted_rids[0])
 
@@ -536,7 +581,19 @@ func refresh() -> void:
 
 	for cid in _category_buttons:
 		var btn: Button = _category_buttons[cid]
-		btn.modulate = Color(0.95, 0.93, 0.90) if cid == _current_category else Color(0.55, 0.58, 0.64)
+		if cid == _current_category:
+			btn.modulate = Color(1.0, 0.96, 0.88, 1.0)
+		else:
+			btn.modulate = Color(0.55, 0.58, 0.64, 0.85)
+
+	if _only_craftable_btn != null:
+		_only_craftable_btn.button_pressed = _only_craftable
+		if _only_craftable:
+			_only_craftable_btn.text = " [x] Доступные для крафта "
+			_only_craftable_btn.modulate = Color(0.45, 0.85, 0.45, 1.0)
+		else:
+			_only_craftable_btn.text = " [ ] Доступные для крафта "
+			_only_craftable_btn.modulate = Color(0.55, 0.58, 0.64, 0.85)
 
 	var player: Node = get_tree().get_first_node_in_group("player")
 	var available_stations: Array[String] = _get_all_nearby_stations()
@@ -552,21 +609,39 @@ func refresh() -> void:
 		if tier_a != tier_b:
 			return tier_a < tier_b
 
-		# 2. Within same tier: Unlocked recipes before Locked recipes
-		var req_a: String = str(rec_a.get("tech_required", ""))
-		var req_b: String = str(rec_b.get("tech_required", ""))
-		var lock_a: bool = (req_a != "" and ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_a))
-		var lock_b: bool = (req_b != "" and ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_b))
-		if lock_a != lock_b:
-			return not lock_a
+		# 2. Within same tier: Ready to craft (materials + station + tech + skills) first
+		var req_tech_a: String = str(rec_a.get("tech_required", ""))
+		var req_tech_b: String = str(rec_b.get("tech_required", ""))
+		var unlock_a: bool = (req_tech_a == "" or (ResearchSys.instance != null and ResearchSys.instance.is_researched(req_tech_a)))
+		var unlock_b: bool = (req_tech_b == "" or (ResearchSys.instance != null and ResearchSys.instance.is_researched(req_tech_b)))
 
-		# 3. Within same lock state: Ready to craft (has materials) before lacking materials
-		var mats_a: bool = _meets_requirements(player, rec_a)
-		var mats_b: bool = _meets_requirements(player, rec_b)
+		var st_ok_a: bool = _is_station_available(str(rec_a.get("station", "")), available_stations, a)
+		var st_ok_b: bool = _is_station_available(str(rec_b.get("station", "")), available_stations, b)
+
+		var mats_a: bool = _has_required_materials(player, rec_a)
+		var mats_b: bool = _has_required_materials(player, rec_b)
+
+		var sk_a: bool = _has_required_skills(player, rec_a)
+		var sk_b: bool = _has_required_skills(player, rec_b)
+
+		var can_a: bool = unlock_a and st_ok_a and mats_a and sk_a
+		var can_b: bool = unlock_b and st_ok_b and mats_b and sk_b
+		if can_a != can_b:
+			return can_a
+
+		# 3. Unlocked before locked
+		if unlock_a != unlock_b:
+			return unlock_a
+
+		# 4. Station available before missing
+		if st_ok_a != st_ok_b:
+			return st_ok_a
+
+		# 5. Has materials before missing materials
 		if mats_a != mats_b:
 			return mats_a
 
-		# 4. Tie-breaker by output item ID or recipe ID
+		# 6. Alphabetical by output item name / ID
 		var out_a: String = str(rec_a.get("output", {}).get("item_id", a))
 		var out_b: String = str(rec_b.get("output", {}).get("item_id", b))
 		return out_a < out_b
@@ -584,10 +659,6 @@ func refresh() -> void:
 		if not _matches_category(item_type, out_id):
 			continue
 
-		if _selected_recipe_id == rid:
-			found_selected = true
-
-		var item_title: String = str(item_def.get("name", out_id.capitalize()))
 		var req_tech: String = str(recipe.get("tech_required", ""))
 		var is_tech_unlocked: bool = true
 		if req_tech != "":
@@ -598,10 +669,18 @@ func refresh() -> void:
 		var station_ok: bool = _is_station_available(req_station, available_stations, rid)
 		var skills_ok: bool = _has_required_skills(player, recipe)
 		var mats_ok: bool = _has_required_materials(player, recipe)
+
+		if _only_craftable and not (station_ok and is_tech_unlocked and skills_ok and mats_ok):
+			continue
+
+		if _selected_recipe_id == rid:
+			found_selected = true
+
+		var item_title: String = str(item_def.get("name", out_id.capitalize()))
 		var tier: int = _get_recipe_tier(recipe)
 
-		var card: Button = _build_recipe_card(rid, recipe, item_title, out_id, out_count, is_tech_unlocked, req_tech, station_ok, req_station, skills_ok, mats_ok, tier)
-		_recipe_list_box.add_child(card)
+		var slot: Button = _build_recipe_slot(rid, recipe, item_title, out_id, out_count, is_tech_unlocked, req_tech, station_ok, req_station, skills_ok, mats_ok, tier)
+		_recipe_list_box.add_child(slot)
 
 	if not found_selected and not sorted_rids.is_empty():
 		_pick_default_recipe()
@@ -610,66 +689,182 @@ func refresh() -> void:
 
 
 func _build_recipe_card(rid: String, recipe: Dictionary, title: String, out_id: String, out_count: int, is_unlocked: bool, req_tech: String, station_ok: bool, req_station: String, skills_ok: bool, mats_ok: bool, tier: int = 1) -> Button:
+	return _build_recipe_slot(rid, recipe, title, out_id, out_count, is_unlocked, req_tech, station_ok, req_station, skills_ok, mats_ok, tier)
+
+
+func _build_recipe_slot(rid: String, recipe: Dictionary, title: String, out_id: String, out_count: int, is_unlocked: bool, req_tech: String, station_ok: bool, req_station: String, skills_ok: bool, mats_ok: bool, tier: int = 1) -> Button:
 	var btn: Button = Button.new()
-	btn.custom_minimum_size = Vector2(0.0, 46.0)
-	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	btn.icon = IconFactory.get_icon(out_id)
-	btn.expand_icon = true
+	btn.custom_minimum_size = Vector2(50.0, 50.0)
+	btn.mouse_filter = Control.MOUSE_FILTER_STOP
+	btn.clip_contents = true
 
 	var is_selected: bool = (rid == _selected_recipe_id)
+	var can_craft: bool = is_unlocked and station_ok and skills_ok and mats_ok
 
-	var card_sb: StyleBoxFlat = StyleBoxFlat.new()
-	card_sb.set_corner_radius_all(3)
-	card_sb.content_margin_left = 12
-	card_sb.content_margin_right = 12
-	card_sb.content_margin_top = 4
-	card_sb.content_margin_bottom = 4
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.set_corner_radius_all(3)
+	var sb_hover: StyleBoxFlat = StyleBoxFlat.new()
+	sb_hover.set_corner_radius_all(3)
+	var sb_pressed: StyleBoxFlat = StyleBoxFlat.new()
+	sb_pressed.set_corner_radius_all(3)
 
-	var tier_tag: String = "[T%d]" % tier
+	if is_selected:
+		sb.bg_color = Color(0.22, 0.24, 0.28, 0.98)
+		sb.border_color = Color(0.92, 0.82, 0.50, 1.0)
+		sb.set_border_width_all(2)
+		sb_hover.bg_color = Color(0.26, 0.28, 0.33, 1.0)
+		sb_hover.border_color = Color(1.0, 0.90, 0.60, 1.0)
+		sb_hover.set_border_width_all(2)
+	elif can_craft:
+		sb.bg_color = Color(0.14, 0.17, 0.15, 0.95)
+		sb.border_color = Color(0.32, 0.56, 0.34, 0.90)
+		sb.set_border_width_all(1)
+		sb_hover.bg_color = Color(0.18, 0.23, 0.20, 1.0)
+		sb_hover.border_color = Color(0.45, 0.75, 0.48, 1.0)
+		sb_hover.set_border_width_all(2)
+	elif not is_unlocked:
+		sb.bg_color = Color(0.08, 0.08, 0.10, 0.90)
+		sb.border_color = Color(0.32, 0.18, 0.18, 0.80)
+		sb.set_border_width_all(1)
+		sb_hover.bg_color = Color(0.12, 0.12, 0.15, 0.95)
+		sb_hover.border_color = Color(0.48, 0.24, 0.24, 1.0)
+		sb_hover.set_border_width_all(1)
+	elif not station_ok:
+		sb.bg_color = Color(0.12, 0.11, 0.10, 0.90)
+		sb.border_color = Color(0.48, 0.34, 0.20, 0.80)
+		sb.set_border_width_all(1)
+		sb_hover.bg_color = Color(0.16, 0.15, 0.13, 0.95)
+		sb_hover.border_color = Color(0.68, 0.48, 0.25, 1.0)
+		sb_hover.set_border_width_all(1)
+	else:
+		sb.bg_color = Color(0.11, 0.12, 0.14, 0.95)
+		sb.border_color = Color(0.24, 0.26, 0.30, 0.80)
+		sb.set_border_width_all(1)
+		sb_hover.bg_color = Color(0.16, 0.18, 0.21, 1.0)
+		sb_hover.border_color = Color(0.42, 0.46, 0.54, 1.0)
+		sb_hover.set_border_width_all(1)
+
+	sb_pressed.bg_color = Color(0.08, 0.09, 0.10, 1.0)
+	sb_pressed.border_color = Color(0.72, 0.72, 0.78, 1.0)
+	sb_pressed.set_border_width_all(2)
+
+	btn.add_theme_stylebox_override("normal", sb)
+	btn.add_theme_stylebox_override("hover", sb_hover)
+	btn.add_theme_stylebox_override("pressed", sb_pressed)
+	btn.add_theme_stylebox_override("focus", sb_hover)
+
+	# Icon TextureRect
+	var icon_rect: TextureRect = TextureRect.new()
+	icon_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	icon_rect.offset_left = 7.0
+	icon_rect.offset_top = 7.0
+	icon_rect.offset_right = -7.0
+	icon_rect.offset_bottom = -7.0
+	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_rect.texture = IconFactory.get_icon(out_id)
 
 	if not is_unlocked:
-		card_sb.bg_color = Color(0.08, 0.09, 0.11, 0.90)
-		card_sb.border_color = Color(0.32, 0.18, 0.18, 0.85)
-		card_sb.set_border_width_all(1)
-		btn.text = "   %s %s  •  [ЗАКРЫТО: Требует %s]" % [tier_tag, title, req_tech.capitalize().replace("_", " ")]
-		btn.add_theme_color_override("font_color", Color(0.55, 0.52, 0.52, 1.0))
+		icon_rect.modulate = Color(0.35, 0.35, 0.38, 0.45)
 	elif not station_ok:
-		card_sb.bg_color = Color(0.12, 0.11, 0.13, 0.92) if is_selected else Color(0.09, 0.09, 0.11, 0.85)
-		card_sb.border_color = Color(0.60, 0.45, 0.25, 0.90) if is_selected else Color(0.35, 0.28, 0.20, 0.70)
-		card_sb.set_border_width_all(2 if is_selected else 1)
-		btn.text = "   %s %s x%d   —   [ТРЕБУЕТСЯ СТАНОК: %s]" % [tier_tag, title, out_count, _station_name_ru(req_station).to_upper()]
-		btn.add_theme_color_override("font_color", Color(0.78, 0.70, 0.58, 1.0))
-	elif not skills_ok:
-		card_sb.bg_color = Color(0.14, 0.12, 0.10, 0.92) if is_selected else Color(0.10, 0.09, 0.08, 0.86)
-		card_sb.border_color = Color(0.70, 0.46, 0.22, 0.90) if is_selected else Color(0.40, 0.28, 0.16, 0.70)
-		card_sb.set_border_width_all(2 if is_selected else 1)
-		var missing_sk_text: String = _format_required_skills(recipe.get("skill_required", {}))
-		btn.text = "   %s %s x%d   —   [ТРЕБУЕТСЯ НАВЫК: %s]" % [tier_tag, title, out_count, missing_sk_text.to_upper()]
-		btn.add_theme_color_override("font_color", Color(0.88, 0.65, 0.42, 1.0))
-	elif mats_ok:
-		card_sb.bg_color = Color(0.16, 0.18, 0.22, 0.98) if is_selected else Color(0.12, 0.13, 0.16, 0.95)
-		card_sb.border_color = Color(0.42, 0.68, 0.42, 0.95) if is_selected else Color(0.24, 0.28, 0.32, 0.80)
-		card_sb.set_border_width_all(2 if is_selected else 1)
-		btn.text = "   %s %s x%d   —   %s   [ГОТОВО]" % [tier_tag, title, out_count, _format_inputs(recipe.get("inputs", []))]
-		btn.add_theme_color_override("font_color", Color(0.92, 0.90, 0.86, 1.0))
+		icon_rect.modulate = Color(0.65, 0.60, 0.55, 0.70)
+	elif not mats_ok or not skills_ok:
+		icon_rect.modulate = Color(0.85, 0.85, 0.85, 0.85)
 	else:
-		card_sb.bg_color = Color(0.14, 0.15, 0.18, 0.95) if is_selected else Color(0.10, 0.11, 0.13, 0.90)
-		card_sb.border_color = Color(0.48, 0.50, 0.56, 0.90) if is_selected else Color(0.22, 0.24, 0.28, 0.70)
-		card_sb.set_border_width_all(2 if is_selected else 1)
-		btn.text = "   %s %s x%d   —   %s   [НЕТ РЕСУРСОВ]" % [tier_tag, title, out_count, _format_inputs(recipe.get("inputs", []))]
-		btn.add_theme_color_override("font_color", Color(0.70, 0.72, 0.76, 1.0))
+		icon_rect.modulate = Color(1.0, 1.0, 1.0, 1.0)
 
-	btn.add_theme_stylebox_override("normal", card_sb)
-	btn.add_theme_stylebox_override("hover", card_sb)
-	btn.add_theme_stylebox_override("pressed", card_sb)
-	btn.add_theme_font_size_override("font_size", 11)
+	btn.add_child(icon_rect)
+
+	# Yield count badge
+	if out_count > 1:
+		var cnt_lbl: Label = Label.new()
+		cnt_lbl.text = str(out_count)
+		cnt_lbl.add_theme_font_size_override("font_size", 10)
+		cnt_lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+		cnt_lbl.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.95))
+		cnt_lbl.add_theme_constant_override("shadow_offset_x", 1)
+		cnt_lbl.add_theme_constant_override("shadow_offset_y", 1)
+		cnt_lbl.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+		cnt_lbl.offset_left = -22.0
+		cnt_lbl.offset_top = -15.0
+		cnt_lbl.offset_right = -3.0
+		cnt_lbl.offset_bottom = -1.0
+		cnt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		cnt_lbl.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		cnt_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(cnt_lbl)
+
+	# Status dot in top-right corner
+	var status_dot: ColorRect = ColorRect.new()
+	status_dot.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	status_dot.offset_left = -9.0
+	status_dot.offset_top = 3.0
+	status_dot.offset_right = -3.0
+	status_dot.offset_bottom = 9.0
+	status_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	if not is_unlocked:
+		status_dot.color = Color(0.85, 0.25, 0.25, 0.95)
+	elif not station_ok:
+		status_dot.color = Color(0.95, 0.60, 0.20, 0.95)
+	elif can_craft:
+		status_dot.color = Color(0.28, 0.85, 0.38, 0.95)
+	else:
+		status_dot.visible = false
+
+	btn.add_child(status_dot)
+
+	# Tier badge in top-left corner
+	if tier > 1:
+		var t_lbl: Label = Label.new()
+		t_lbl.text = str(tier)
+		t_lbl.add_theme_font_size_override("font_size", 9)
+		t_lbl.add_theme_color_override("font_color", Color(0.70, 0.72, 0.78, 0.85))
+		t_lbl.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.95))
+		t_lbl.add_theme_constant_override("shadow_offset_x", 1)
+		t_lbl.add_theme_constant_override("shadow_offset_y", 1)
+		t_lbl.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		t_lbl.offset_left = 3.0
+		t_lbl.offset_top = 1.0
+		t_lbl.offset_right = 16.0
+		t_lbl.offset_bottom = 14.0
+		t_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(t_lbl)
+
+	# Tooltip
+	var status_text: String = ""
+	if not is_unlocked:
+		status_text = "ЗАКРЫТО: Требует исследование %s" % req_tech.capitalize().replace("_", " ")
+	elif not station_ok:
+		status_text = "ТРЕБУЕТСЯ СТАНОК: %s" % _station_name_ru(req_station)
+	elif not skills_ok:
+		status_text = "ТРЕБУЕТСЯ НАВЫК: %s" % _format_required_skills(recipe.get("skill_required", {}))
+	elif can_craft:
+		status_text = "ГОТОВО К КОВКЕ"
+	else:
+		status_text = "НЕДОСТАТОЧНО МАТЕРИАЛОВ"
+
+	var count_str: String = (" x%d" % out_count) if out_count > 1 else ""
+	btn.tooltip_text = "%s%s [T%d]\n%s" % [title, count_str, tier, status_text]
 
 	var target_rid: String = rid
 	btn.pressed.connect(func():
 		_selected_recipe_id = target_rid
 		refresh()
 	)
+
+	btn.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			var now: float = Time.get_ticks_msec() / 1000.0
+			if _last_clicked_rid == target_rid and (now - _last_click_time) < 0.35:
+				_last_click_time = 0.0
+				_execute_craft(1)
+			else:
+				_last_clicked_rid = target_rid
+				_last_click_time = now
+	)
+
 	return btn
 
 
@@ -863,17 +1058,49 @@ func _execute_craft(multiplier: int) -> void:
 
 
 func _matches_category(item_type: String, item_id: String) -> bool:
-	if _current_category == "all":
-		return true
-	elif _current_category == "tools":
-		return item_type in ["weapon", "tool", "ammo"] or item_id.find("pick") != -1 or item_id.find("axe") != -1
-	elif _current_category == "armor":
-		return item_type in ["armor", "shield"] or item_id.find("shield") != -1 or item_id.find("chainmail") != -1 or item_id.find("tunic") != -1
-	elif _current_category == "stations":
-		return item_type in ["station", "building", "block"] or item_id in ["plank", "cloth", "chest", "bed", "alchemy_station"]
-	elif _current_category == "survival":
-		return item_type in ["consumable", "medicine", "food"] or item_id in ["bandage", "torch", "medicine", "poison", "water_bottle", "empty_bottle"] or item_id.begins_with("potion_")
-	return true
+	match _current_category:
+		"all":
+			return true
+		"weapons":
+			if item_type in ["weapon", "ammo"]:
+				if item_id in ["stone_axe", "bronze_axe", "iron_axe", "steel_axe", "stone_pickaxe", "iron_pickaxe", "bronze_pickaxe", "steel_pickaxe", "hoe", "shears"]:
+					return false
+				return true
+			return item_id.ends_with("_bow") or item_id.ends_with("_sword") or item_id.ends_with("_spear") \
+				or item_id.ends_with("_mace") or item_id.ends_with("_dagger") or item_id.ends_with("_javelin") \
+				or item_id.ends_with("_arrow") or item_id.ends_with("_bolt") or item_id == "war_hammer"
+		"tools":
+			if item_type == "tool":
+				return true
+			return item_id.ends_with("_pickaxe") or item_id.ends_with("_axe") or item_id in ["hoe", "shears", "torch", "fishing_rod"]
+		"armor":
+			if item_type in ["armor", "shield"]:
+				return true
+			return item_id.find("shield") != -1 or item_id.find("chainmail") != -1 or item_id.find("hauberk") != -1 \
+				or item_id.find("helmet") != -1 or item_id.find("greaves") != -1 or item_id.find("boots") != -1 \
+				or item_id.find("gambeson") != -1 or item_id.find("armor") != -1 or item_id.find("tunic") != -1 \
+				or item_id.find("cuirass") != -1 or item_id.find("coif") != -1
+		"materials":
+			if item_type == "material":
+				if item_id in ["campfire", "workbench", "furnace", "forge", "alchemy_station", "water_mill", "chest", "bed"]:
+					return false
+				return true
+			return item_id in ["plank", "stone_masonry", "brick", "copper_ingot", "tin_ingot", "bronze_ingot", \
+				"iron_ingot", "steel_ingot", "tanned_leather", "treated_leather", "cloth", "wool", "charcoal", \
+				"iron_buckle", "leather_strips", "nails", "thread"]
+		"building":
+			if item_type in ["station", "building", "block"]:
+				return true
+			return item_id in ["campfire", "workbench", "furnace", "forge", "alchemy_station", "water_mill", \
+				"mechanical_water_mill", "ore_smelter", "chest", "bed", "wood_wall", "stone_wall", "wood_door", \
+				"wood_floor", "stone_floor", "sign", "fence"]
+		"survival":
+			if item_type in ["consumable", "medicine", "food"]:
+				return true
+			return item_id in ["bandage", "torch", "medicine", "roasted_meat", "cooked_meat", "berry_mash", \
+				"soup", "bread", "water_bottle", "empty_bottle", "poison"] or item_id.begins_with("potion_")
+		_:
+			return true
 
 
 func _has_required_skills(player: Node, recipe: Dictionary) -> bool:
