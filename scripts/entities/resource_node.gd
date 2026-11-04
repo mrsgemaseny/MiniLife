@@ -91,7 +91,9 @@ func get_visual_rect() -> Rect2:
 	if growth_stage == "stump":
 		return Rect2(-10.0, -10.0, 20.0, 18.0)
 	elif growth_stage == "small_tree":
-		return Rect2(-22.0, -50.0, 44.0, 54.0)
+		if node_def_id.find("pine") != -1:
+			return Rect2(-18.0, -44.0, 36.0, 48.0)
+		return Rect2(-24.0, -42.0, 48.0, 46.0)
 	elif node_def_id.find("pine") != -1:
 		return Rect2(-29.0, -68.0, 58.0, 72.0)
 	elif node_def_id.find("tree") != -1 or node_def_id.find("oak") != -1:
@@ -152,13 +154,18 @@ func _draw() -> void:
 		draw_polyline(cut_top, outline_col, 1.2, true)
 		draw_circle(ofs + Vector2(0.0, -5.0), 1.6, secondary_col.darkened(0.20))
 	elif growth_stage == "small_tree":
-		var st_tex: Texture2D = _get_tex("res://assets/sprites/world/growth/tree_small.png")
-		if st_tex != null:
-			draw_texture_rect(st_tex, Rect2(-20.0 + ofs.x, -48.0 + ofs.y, 40.0, 52.0), false)
+		if node_def_id.find("pine") != -1:
+			var pine_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/pine_tree.png")
+			if pine_tex != null:
+				draw_texture_rect(pine_tex, Rect2(-17.0 + ofs.x, -44.0 + ofs.y, 34.0, 46.0), false)
+			else:
+				_draw_procedural_pine(ofs * 0.65, outline_col)
 		else:
-			var oak_fallback: Texture2D = _get_tex("res://assets/sprites/world/resources/oak_tree.png")
-			if oak_fallback != null:
-				draw_texture_rect(oak_fallback, Rect2(-20.0 + ofs.x, -46.0 + ofs.y, 40.0, 50.0), false)
+			var oak_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/oak_tree.png")
+			if oak_tex != null:
+				draw_texture_rect(oak_tex, Rect2(-24.0 + ofs.x, -42.0 + ofs.y, 48.0, 44.0), false)
+			else:
+				_draw_procedural_oak(ofs * 0.65, outline_col, radius * 0.65)
 	elif node_def_id.find("pine") != -1:
 		var pine_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/pine_tree.png")
 		if pine_tex != null:
