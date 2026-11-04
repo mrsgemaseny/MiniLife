@@ -59,6 +59,12 @@ func is_researched(tech_id: String) -> bool:
 	return _researched.has(tech_id)
 
 
+func unlock_tech(tech_id: String) -> void:
+	if not _researched.has(tech_id):
+		_researched.append(tech_id)
+		SignalBus.tech_tree_updated.emit()
+
+
 func can_research(tech_id: String, player: Node) -> Dictionary:
 	if not _techs.has(tech_id):
 		return {"ok": false, "reason": "Неизвестная технология"}

@@ -192,7 +192,7 @@
 		"grid_y": 6,
 		"prerequisites": ["gambeson_crafting"],
 		"costs": { "treated_leather": 6, "cloth": 4 },
-		"unlocks": ["craft_leather_armor", "craft_boiled_leather_cuirass", "craft_leather_helmet", "craft_leather_greaves", "craft_leather_lamellar"]
+		"unlocks": ["craft_leather_armor", "craft_boiled_leather_cuirass", "craft_leather_helmet", "craft_leather_greaves", "craft_leather_lamellar", "craft_leather_boots"]
 	},
 	{
 		"id": "hunting_archery_shields",
@@ -257,7 +257,7 @@
 		"grid_y": 5,
 		"prerequisites": ["bronze_weapons"],
 		"costs": { "bronze_ingot": 8, "treated_leather": 4 },
-		"unlocks": ["forge_bronze_cuirass", "forge_bronze_helmet", "forge_bronze_greaves"]
+		"unlocks": ["forge_bronze_cuirass", "forge_bronze_helmet", "forge_bronze_greaves", "forge_bronze_boots"]
 	},
 	{
 		"id": "bronze_lamellar_crafting",
@@ -348,7 +348,7 @@
 		"grid_y": 6,
 		"prerequisites": ["chainmail_weaving"],
 		"costs": { "iron_ingot": 10, "treated_leather": 6 },
-		"unlocks": ["forge_iron_helmet", "forge_iron_armor", "forge_iron_greaves", "forge_iron_lamellar", "forge_iron_plate_armor"]
+		"unlocks": ["forge_iron_helmet", "forge_iron_armor", "forge_iron_greaves", "forge_iron_lamellar", "forge_iron_plate_armor", "forge_iron_boots", "forge_iron_brigandine"]
 	},
 	{
 		"id": "steel_crucible_smelting",
@@ -387,6 +387,6 @@
 		"grid_y": 4,
 		"prerequisites": ["steel_weapons", "iron_plate_armor"],
 		"costs": { "steel_ingot": 12, "treated_leather": 8 },
-		"unlocks": ["forge_steel_helmet", "forge_steel_cuirass", "forge_steel_brigandine", "forge_steel_plate_armor", "forge_steel_greaves", "craft_arming_doublet"]
+		"unlocks": ["forge_steel_helmet", "forge_steel_cuirass", "forge_steel_brigandine", "forge_steel_plate_armor", "forge_steel_greaves", "craft_arming_doublet", "forge_steel_boots"]
 	}
 ]

@@ -20,6 +20,7 @@ func run_audit() -> Dictionary:
 	_audit_fauna_and_animals(report)
 	_audit_economy_and_arbitrage(report)
 	_audit_farming_system(report)
+	_audit_exit_autosave_and_bronze_craft(report)
 
 	return report
 
@@ -333,14 +334,28 @@ func _audit_fauna_and_animals(report: Dictionary) -> void:
 		report["errors"].append("Fauna: milking cow failed to convert empty_bottle to milk")
 	cow.queue_free()
 
-	# Sheep shearing
+	# Sheep shearing & wool regrowth
 	var sheep: AnimalEntity = AnimalEntity.new()
 	sheep.animal_type = "sheep"
 	p.inventory.add_item("shears", 1)
 	sheep.interact(p)
-	if not p.inventory.has_item("wool", 2):
-		report["errors"].append("Fauna: shearing sheep with shears failed to yield 2 wool")
+	if not p.inventory.has_item("wool", 2) or not sheep.is_sheared:
+		report["errors"].append("Fauna: shearing sheep with shears failed to yield 2 wool or set is_sheared")
 	sheep.queue_free()
+
+	# Animal animations and states: Grazing and Sleeping with Zzz
+	var deer: AnimalEntity = AnimalEntity.new()
+	deer.animal_type = "deer"
+	deer.current_state = AnimalEntity.State.SLEEPING
+	deer._spawn_zzz_particle()
+	if deer._zzz_particles.is_empty():
+		report["errors"].append("Fauna: sleeping animal failed to generate Zzz particle")
+	deer._update_particles(0.1)
+	deer.current_state = AnimalEntity.State.GRAZING
+	deer._spawn_grass_particle()
+	if deer._grass_particles.is_empty():
+		report["errors"].append("Fauna: grazing animal failed to generate grass particle")
+	deer.queue_free()
 
 	# Dog untouchable (0 drop)
 	var dog: AnimalEntity = AnimalEntity.new()
@@ -399,4 +414,45 @@ func _audit_farming_system(report: Dictionary) -> void:
 
 	p.queue_free()
 	farm.queue_free()
+	report["checks_passed"] += 1
+
+func _audit_exit_autosave_and_bronze_craft(report: Dictionary) -> void:
+	# 1. Verify Bronze Pickaxe Craft at Level 0 Smithing with unlocked tech at workbench
+	var rsys: ResearchSystem = ResearchSystem.instance
+	if rsys != null:
+		rsys.unlock_tech("bronze_tools")
+
+	var dummy_player: Player = Player.new()
+	var inv: InventoryComponent = InventoryComponent.new()
+	var skills: SkillsComponent = SkillsComponent.new()
+	dummy_player.inventory = inv
+	dummy_player.skills = skills
+
+	inv.add_item("bronze_ingot", 2)
+	inv.add_item("wood", 2)
+
+	var cs: CraftSystem = CraftSystem.instance
+	if cs == null:
+		cs = CraftSystem.new()
+		dummy_player.add_child(cs)
+
+	var can_check: Dictionary = cs.can_craft("forge_bronze_pickaxe", dummy_player, "workbench")
+	if not bool(can_check.get("ok", false)):
+		report["errors"].append("Craft Audit: Bronze pickaxe craft blocked at workbench with bronze_tools researched: %s" % str(can_check.get("reason")))
+	else:
+		var craft_ok: bool = cs.craft("forge_bronze_pickaxe", dummy_player, "workbench")
+		if not craft_ok or not inv.has_item("bronze_pickaxe", 1):
+			report["errors"].append("Craft Audit: Bronze pickaxe craft did not produce bronze_pickaxe in inventory")
+
+	dummy_player.queue_free()
+
+	# 2. Verify Exit Autosave Functionality
+	if SaveSystem.instance != null:
+		var auto_ok: bool = SaveSystem.instance.autosave_on_exit()
+		if not auto_ok:
+			report["errors"].append("Save Audit: SaveSystem.autosave_on_exit() returned false")
+		var autosave_meta: String = Config.SAVE_ROOT + "autosave/meta.json"
+		if not FileAccess.file_exists(autosave_meta):
+			report["errors"].append("Save Audit: autosave/meta.json was not created by autosave_on_exit()")
+
 	report["checks_passed"] += 1

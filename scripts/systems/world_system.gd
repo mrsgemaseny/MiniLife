@@ -17,6 +17,7 @@ const CHUNK_SCENE: PackedScene = preload("res://scenes/world/chunk.tscn")
 const NPC_SCENE: PackedScene = preload("res://scenes/entities/npc_base.tscn")
 const ENEMY_SCENE: PackedScene = preload("res://scenes/entities/enemy_base.tscn")
 const ResourceNodeClass = preload("res://scripts/entities/resource_node.gd")
+const AnimalEntityClass = preload("res://scripts/entities/animal_entity.gd")
 
 @onready var ground_tile_map: TileMap = $GroundTileMap
 @onready var chunk_container: Node2D = $ChunkContainer
@@ -38,6 +39,7 @@ var _spawned_entities_by_chunk: Dictionary = {}
 var _starter_camp_spawned: bool = false
 var _biome_cache: Dictionary = {}
 var _interior_zone: InteriorZone = null
+var _night_wolf_timer: float = 25.0
 
 
 func _ready() -> void:
@@ -71,6 +73,53 @@ func _process(delta: float) -> void:
 	elif GameManager.is_night():
 		target_col = Color(0.40, 0.40, 0.46, 1.0)
 	modulate = modulate.lerp(target_col, clampf(delta * 2.5, 0.0, 1.0))
+
+	# Dynamic night predator director: increases wolf presence at night
+	if GameManager.is_night():
+		_night_wolf_timer -= delta
+		if _night_wolf_timer <= 0.0:
+			_night_wolf_timer = randf_range(28.0, 48.0)
+			_spawn_night_wolf_pack()
+
+func _is_tile_in_bounds(tpos: Vector2i) -> bool:
+	return tpos.x >= 0 and tpos.y >= 0 and tpos.x < Config.WORLD_SIZE_TILES and tpos.y < Config.WORLD_SIZE_TILES
+
+func _spawn_night_wolf_pack() -> void:
+	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
+	if player == null or not is_instance_valid(player):
+		return
+	var player_tile: Vector2i = Config.iso_to_world(player.global_position)
+	var nearby_wolves: int = 0
+	for node in get_tree().get_nodes_in_group("enemies"):
+		if node is EnemyBase and node.enemy_id == "wolf" and is_instance_valid(node):
+			if (node as Node2D).global_position.distance_to(player.global_position) < 450.0:
+				nearby_wolves += 1
+	if nearby_wolves >= 3:
+		return
+
+	# Pick random angle in dark perimeter ring around player (20..26 tiles)
+	var angle: float = randf() * TAU
+	var dist_tiles: float = randf_range(20.0, 26.0)
+	var spawn_tile: Vector2i = player_tile + Vector2i(roundi(cos(angle) * dist_tiles), roundi(sin(angle) * dist_tiles))
+	if not _is_tile_in_bounds(spawn_tile):
+		return
+	if _terrain.get_biome_at(spawn_tile) == "water":
+		return
+	if _terrain.get_resource_node_at(spawn_tile) != "":
+		return
+
+	var cpos: Vector2i = Config.tile_to_chunk(spawn_tile)
+	if not _loaded_chunks.has(cpos):
+		return
+
+	var wolf: EnemyBase = ENEMY_SCENE.instantiate() as EnemyBase
+	wolf.enemy_id = "wolf"
+	wolf.spawn_uid = "night_wolf_%d_%d_%d" % [spawn_tile.x, spawn_tile.y, int(Time.get_ticks_msec())]
+	wolf.global_position = Config.world_to_iso(spawn_tile)
+	add_child(wolf)
+	if not _spawned_entities_by_chunk.has(cpos):
+		_spawned_entities_by_chunk[cpos] = []
+	_spawned_entities_by_chunk[cpos].append(wolf)
 
 
 func get_biome_cached(tpos: Vector2i) -> String:
@@ -647,59 +696,74 @@ func _spawn_ruin_complex(_chunk_node: Node2D, cpos: Vector2i, poi_data: Dictiona
 
 func _spawn_chunk_inhabitants(cpos: Vector2i, _biome_id: String, _delta: Dictionary) -> void:
 	var spawned_list: Array[Node] = []
-	# [SANDBOX_EXPLORATION_MODE: Temporarily commented out all NPC and enemy spawns for pure Minecraft-style world exploration]
-	# var killed: Array = _delta.get("killed", [])
-	# var origin: Vector2i = Config.chunk_origin(cpos)
-	# var center_chunk: Vector2i = Vector2i(Config.WORLD_SIZE_CHUNKS / 2, Config.WORLD_SIZE_CHUNKS / 2)
-	# var world_center_tile: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
-	#
-	# if cpos == center_chunk:
-	# 	var trader_uid: String = "npc_starter_trader"
-	# 	if not killed.has(trader_uid):
-	# 		var trader: NPCBase = NPC_SCENE.instantiate() as NPCBase
-	# 		trader.npc_id = "merchant_common"
-	# 		trader.spawn_uid = trader_uid
-	# 		trader.global_position = Config.world_to_iso(world_center_tile + Vector2i(3, -1))
-	# 		add_child(trader)
-	# 		spawned_list.append(trader)
-	#
-	# 	var elder_uid: String = "npc_starter_elder"
-	# 	if not killed.has(elder_uid):
-	# 		var elder: NPCBase = NPC_SCENE.instantiate() as NPCBase
-	# 		elder.npc_id = "village_elder"
-	# 		elder.spawn_uid = elder_uid
-	# 		elder.global_position = Config.world_to_iso(world_center_tile + Vector2i(-3, 0))
-	# 		add_child(elder)
-	# 		spawned_list.append(elder)
-	# else:
-	# 	var rng: RandomNumberGenerator = RngService.make_chunk_rng(_seed, cpos, 777)
-	# 	var biome_def: Dictionary = DataRegistry.get_biome(_biome_id)
-	# 	var enemy_pool: Array = biome_def.get("enemy_pool", [])
-	# 	if not enemy_pool.is_empty() and rng.randf() < 0.60:
-	# 		var enemy_uid: String = "enemy_%d_%d_0" % [cpos.x, cpos.y]
-	# 		var etile: Vector2i = origin + Vector2i(rng.randi_range(3, 12), rng.randi_range(3, 12))
-	# 		# Keep starter safe zone (within 22 tiles of world center) free of hostile spawns
-	# 		if not killed.has(enemy_uid) and Config.tile_distance(etile, world_center_tile) > 22:
-	# 			var enemy: EnemyBase = ENEMY_SCENE.instantiate() as EnemyBase
-	# 			enemy.enemy_id = str(enemy_pool[rng.randi() % enemy_pool.size()])
-	# 			enemy.spawn_uid = enemy_uid
-	# 			enemy.global_position = Config.world_to_iso(etile)
-	# 			enemy.visible = (_fog.get_state(etile) == int(FogState.VISIBLE))
-	# 			add_child(enemy)
-	# 			spawned_list.append(enemy)
-	#
-	# 	var npc_pool: Array = biome_def.get("npc_pool", [])
-	# 	if not npc_pool.is_empty() and rng.randf() < 0.35:
-	# 		var npc_uid: String = "npc_%d_%d_0" % [cpos.x, cpos.y]
-	# 		if not killed.has(npc_uid):
-	# 			var npc: NPCBase = NPC_SCENE.instantiate() as NPCBase
-	# 			npc.npc_id = str(npc_pool[rng.randi() % npc_pool.size()])
-	# 			npc.spawn_uid = npc_uid
-	# 			var ntile: Vector2i = origin + Vector2i(rng.randi_range(4, 11), rng.randi_range(4, 11))
-	# 			npc.global_position = Config.world_to_iso(ntile)
-	# 			npc.visible = (_fog.get_state(ntile) != int(FogState.UNEXPLORED))
-	# 			add_child(npc)
-	# 			spawned_list.append(npc)
+	var killed: Array = _delta.get("killed", [])
+	var origin: Vector2i = Config.chunk_origin(cpos)
+	var center_chunk: Vector2i = Vector2i(Config.WORLD_SIZE_CHUNKS / 2, Config.WORLD_SIZE_CHUNKS / 2)
+	var world_center_tile: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
+
+	# Wilderness fauna and predators (Outside starter center camp)
+	if cpos != center_chunk:
+		var rng_fauna: RandomNumberGenerator = RngService.make_chunk_rng(_seed, cpos, 888)
+
+		# 1. Ultra-rare animal spawn (ANIMALS_AND_FAUNA.md: Cow, Sheep, Chicken, Donkey, Horse, Deer, Hare, Boar, Bear, Dog, Cat)
+		# 8.5% chance per 16x16 chunk guarantees sparse, authentic wilderness encounters without crowding
+		if rng_fauna.randf() < 0.085:
+			var animal_uid: String = "animal_%d_%d" % [cpos.x, cpos.y]
+			if not killed.has(animal_uid):
+				var atile: Vector2i = origin + Vector2i(rng_fauna.randi_range(3, 12), rng_fauna.randi_range(3, 12))
+				var b_at: String = _terrain.get_biome_at(atile)
+				if b_at != "water" and _terrain.get_resource_node_at(atile) == "" and _is_tile_in_bounds(atile):
+					var chosen_animal: String = "hare"
+					match _biome_id:
+						"plains":
+							chosen_animal = ["cow", "sheep", "chicken", "hare", "horse", "dog"][rng_fauna.randi() % 6]
+						"forest":
+							chosen_animal = ["deer", "hare", "boar", "bear", "chicken"][rng_fauna.randi() % 5]
+						"mountains":
+							chosen_animal = ["sheep", "donkey", "bear", "hare"][rng_fauna.randi() % 4]
+						"desert":
+							chosen_animal = ["donkey", "hare", "dog"][rng_fauna.randi() % 3]
+						"swamp":
+							chosen_animal = ["boar", "hare", "cow"][rng_fauna.randi() % 3]
+						_:
+							chosen_animal = "hare"
+
+					var animal: AnimalEntity = AnimalEntityClass.new()
+					animal.animal_type = chosen_animal
+					animal.global_position = Config.world_to_iso(atile)
+					add_child(animal)
+					spawned_list.append(animal)
+
+		# 2. Night wolf predator packs (Significantly more wolves spawn at night)
+		if _biome_id in ["forest", "plains", "mountains", "swamp"]:
+			var wolf_rng: RandomNumberGenerator = RngService.make_chunk_rng(_seed, cpos, 999)
+			var is_night: bool = GameManager.is_night()
+			# At night, wolf presence is quadrupled (22% vs 4% daytime)
+			var wolf_spawn_chance: float = 0.22 if is_night else 0.04
+			if wolf_rng.randf() < wolf_spawn_chance:
+				var wolf_uid: String = "wolf_%d_%d_0" % [cpos.x, cpos.y]
+				var wtile: Vector2i = origin + Vector2i(wolf_rng.randi_range(3, 12), wolf_rng.randi_range(3, 12))
+				# Safe starter camp zone (> 20 tiles away)
+				if not killed.has(wolf_uid) and Config.tile_distance(wtile, world_center_tile) > 20:
+					if _terrain.get_biome_at(wtile) != "water" and _terrain.get_resource_node_at(wtile) == "":
+						var wolf: EnemyBase = ENEMY_SCENE.instantiate() as EnemyBase
+						wolf.enemy_id = "wolf"
+						wolf.spawn_uid = wolf_uid
+						wolf.global_position = Config.world_to_iso(wtile)
+						add_child(wolf)
+						spawned_list.append(wolf)
+
+						# Chance for an accompanying pack mate at night
+						if is_night and wolf_rng.randf() < 0.45:
+							var wolf_uid2: String = "wolf_%d_%d_1" % [cpos.x, cpos.y]
+							var wtile2: Vector2i = wtile + Vector2i(wolf_rng.randi_range(-2, 2), wolf_rng.randi_range(-2, 2))
+							if not killed.has(wolf_uid2) and _is_tile_in_bounds(wtile2) and _terrain.get_biome_at(wtile2) != "water":
+								var wolf2: EnemyBase = ENEMY_SCENE.instantiate() as EnemyBase
+								wolf2.enemy_id = "wolf"
+								wolf2.spawn_uid = wolf_uid2
+								wolf2.global_position = Config.world_to_iso(wtile2)
+								add_child(wolf2)
+								spawned_list.append(wolf2)
 
 	_spawned_entities_by_chunk[cpos] = spawned_list
 

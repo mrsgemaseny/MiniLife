@@ -24,9 +24,12 @@ func _on_melee_attack_requested(attacker: Node2D, origin: Vector2, direction: Ve
 	if attacker.is_in_group("enemies"):
 		groups = ["player"]
 
+	var ordered_target: Node2D = weapon_stats.get("ordered_target") as Node2D
 	for grp in groups:
 		for n in get_tree().get_nodes_in_group(grp):
 			if n is Node2D and n != attacker and is_instance_valid(n):
+				if is_instance_valid(ordered_target) and n != ordered_target:
+					continue
 				if n.has_method("is_alive") and not bool(n.call("is_alive")):
 					continue
 				if MeleeResolver.is_target_in_melee_arc(origin, direction, (n as Node2D).global_position, max_range):

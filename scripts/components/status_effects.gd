@@ -6,6 +6,8 @@ signal effect_expired(effect: String)
 signal effect_damage_tick(damage: float, damage_type: String)
 
 const EFFECT_RULES: Dictionary = {
+	"sprint_boost": {"duration": 45.0, "tick_interval": 0.0, "damage": 0.0, "speed_mult": 1.25, "blocks_attack": false},
+	"ironskin": {"duration": 60.0, "tick_interval": 0.0, "damage": 0.0, "speed_mult": 1.0, "blocks_attack": false},
 	"burning": {"duration": 5.0, "tick_interval": 1.0, "damage": 4.0, "damage_type": "fire", "speed_mult": 1.0, "blocks_attack": false},
 	"poisoned": {"duration": 10.0, "tick_interval": 2.0, "damage": 3.0, "damage_type": "poison", "speed_mult": 0.9, "blocks_attack": false},
 	"frozen": {"duration": 3.0, "tick_interval": 0.0, "damage": 0.0, "damage_type": "cold", "speed_mult": 0.5, "blocks_attack": false},
@@ -22,6 +24,10 @@ var _active: Dictionary = {}
 
 
 func apply(effect: String, duration: float = -1.0, intensity: float = 1.0) -> void:
+	if effect in ["poisoned", "infected"] or (effect == "frozen" and has_effect("ironskin")):
+		return
+	if effect == "ironskin":
+		remove("frozen")
 	if not EFFECT_RULES.has(effect):
 		return
 	var rule: Dictionary = EFFECT_RULES[effect]

@@ -27,6 +27,7 @@ var _insp_desc_lbl: Label = null
 var _insp_stats_lbl: Label = null
 var _insp_station_lbl: Label = null
 var _insp_tech_lbl: Label = null
+var _insp_skill_lbl: Label = null
 var _insp_mats_box: VBoxContainer = null
 var _insp_craft1_btn: Button = null
 var _insp_craft5_btn: Button = null
@@ -283,6 +284,12 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 	_insp_tech_lbl.modulate = Color(0.70, 0.73, 0.80, 1.0)
 	vb.add_child(_insp_tech_lbl)
 
+	_insp_skill_lbl = Label.new()
+	_insp_skill_lbl.text = "Навык: Не требуется"
+	_insp_skill_lbl.add_theme_font_size_override("font_size", 10)
+	_insp_skill_lbl.modulate = Color(0.70, 0.73, 0.80, 1.0)
+	vb.add_child(_insp_skill_lbl)
+
 	var mats_title: Label = Label.new()
 	mats_title.text = "ТРЕБУЕМЫЕ МАТЕРИАЛЫ:"
 	mats_title.add_theme_font_size_override("font_size", 10)
@@ -408,6 +415,33 @@ func _station_name_ru(station_id: String) -> String:
 		"alchemy_station": return "Алхимический стол"
 		"water_mill": return "Мельница"
 		_: return station_id.capitalize()
+
+
+func _skill_name_ru(skill_id: String) -> String:
+	match skill_id:
+		"smithing": return "Кузнечное дело"
+		"crafting": return "Ремесло"
+		"construction": return "Строительство"
+		"cooking": return "Кулинария"
+		"alchemy": return "Алхимия"
+		"medicine": return "Медицина"
+		"mining": return "Горное дело"
+		"woodcutting": return "Лесозаготовка"
+		"survival": return "Выживание"
+		"trading": return "Торговля"
+		"persuasion": return "Убеждение"
+		"melee": return "Ближний бой"
+		"ranged": return "Стрельба"
+		"defense": return "Защита"
+		_: return skill_id.capitalize()
+
+
+func _format_required_skills(req_skills: Dictionary) -> String:
+	var parts: PackedStringArray = PackedStringArray()
+	for s in req_skills:
+		var name_ru: String = _skill_name_ru(str(s))
+		parts.append("%s %d" % [name_ru, int(req_skills[s])])
+	return ", ".join(parts)
 
 
 func close_panel() -> void:
@@ -562,10 +596,11 @@ func refresh() -> void:
 
 		var req_station: String = str(recipe.get("station", ""))
 		var station_ok: bool = _is_station_available(req_station, available_stations, rid)
-		var mats_ok: bool = _meets_requirements(player, recipe)
+		var skills_ok: bool = _has_required_skills(player, recipe)
+		var mats_ok: bool = _has_required_materials(player, recipe)
 		var tier: int = _get_recipe_tier(recipe)
 
-		var card: Button = _build_recipe_card(rid, recipe, item_title, out_id, out_count, is_tech_unlocked, req_tech, station_ok, req_station, mats_ok, tier)
+		var card: Button = _build_recipe_card(rid, recipe, item_title, out_id, out_count, is_tech_unlocked, req_tech, station_ok, req_station, skills_ok, mats_ok, tier)
 		_recipe_list_box.add_child(card)
 
 	if not found_selected and not sorted_rids.is_empty():
@@ -574,7 +609,7 @@ func refresh() -> void:
 	_update_inspector(player)
 
 
-func _build_recipe_card(rid: String, recipe: Dictionary, title: String, out_id: String, out_count: int, is_unlocked: bool, req_tech: String, station_ok: bool, req_station: String, mats_ok: bool, tier: int = 1) -> Button:
+func _build_recipe_card(rid: String, recipe: Dictionary, title: String, out_id: String, out_count: int, is_unlocked: bool, req_tech: String, station_ok: bool, req_station: String, skills_ok: bool, mats_ok: bool, tier: int = 1) -> Button:
 	var btn: Button = Button.new()
 	btn.custom_minimum_size = Vector2(0.0, 46.0)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -603,8 +638,15 @@ func _build_recipe_card(rid: String, recipe: Dictionary, title: String, out_id: 
 		card_sb.bg_color = Color(0.12, 0.11, 0.13, 0.92) if is_selected else Color(0.09, 0.09, 0.11, 0.85)
 		card_sb.border_color = Color(0.60, 0.45, 0.25, 0.90) if is_selected else Color(0.35, 0.28, 0.20, 0.70)
 		card_sb.set_border_width_all(2 if is_selected else 1)
-		btn.text = "   %s %s x%d   —   [ТРЕБУЕТСЯ: %s]" % [tier_tag, title, out_count, _station_name_ru(req_station).to_upper()]
+		btn.text = "   %s %s x%d   —   [ТРЕБУЕТСЯ СТАНОК: %s]" % [tier_tag, title, out_count, _station_name_ru(req_station).to_upper()]
 		btn.add_theme_color_override("font_color", Color(0.78, 0.70, 0.58, 1.0))
+	elif not skills_ok:
+		card_sb.bg_color = Color(0.14, 0.12, 0.10, 0.92) if is_selected else Color(0.10, 0.09, 0.08, 0.86)
+		card_sb.border_color = Color(0.70, 0.46, 0.22, 0.90) if is_selected else Color(0.40, 0.28, 0.16, 0.70)
+		card_sb.set_border_width_all(2 if is_selected else 1)
+		var missing_sk_text: String = _format_required_skills(recipe.get("skill_required", {}))
+		btn.text = "   %s %s x%d   —   [ТРЕБУЕТСЯ НАВЫК: %s]" % [tier_tag, title, out_count, missing_sk_text.to_upper()]
+		btn.add_theme_color_override("font_color", Color(0.88, 0.65, 0.42, 1.0))
 	elif mats_ok:
 		card_sb.bg_color = Color(0.16, 0.18, 0.22, 0.98) if is_selected else Color(0.12, 0.13, 0.16, 0.95)
 		card_sb.border_color = Color(0.42, 0.68, 0.42, 0.95) if is_selected else Color(0.24, 0.28, 0.32, 0.80)
@@ -708,6 +750,30 @@ func _update_inspector(player: Node) -> void:
 		_insp_mats_box.remove_child(ch)
 		ch.queue_free()
 
+	var skills: SkillsComponent = player.get("skills") as SkillsComponent if player != null else null
+	var req_skills: Dictionary = recipe.get("skill_required", {})
+	var skills_ok: bool = true
+	if _insp_skill_lbl != null:
+		if req_skills.is_empty():
+			_insp_skill_lbl.text = "Навык: Не требуется"
+			_insp_skill_lbl.modulate = Color(0.70, 0.74, 0.80)
+		else:
+			var skill_strs: PackedStringArray = PackedStringArray()
+			for s in req_skills:
+				var needed_lvl: int = int(req_skills[s])
+				var cur_lvl: int = skills.get_level(str(s)) if skills != null else 0
+				var ok: bool = (cur_lvl >= needed_lvl)
+				if not ok:
+					skills_ok = false
+				skill_strs.append("%s Ур. %d [%s: у вас %d]" % [
+					_skill_name_ru(str(s)),
+					needed_lvl,
+					"ДОСТИГНУТ" if ok else "НЕ ДОСТИГНУТ",
+					cur_lvl
+				])
+			_insp_skill_lbl.text = "Навык: " + " | ".join(skill_strs)
+			_insp_skill_lbl.modulate = Color(0.52, 0.78, 0.50) if skills_ok else Color(0.85, 0.45, 0.35)
+
 	var inv: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
 	var all_mats_ok: bool = true
 	for inp in recipe.get("inputs", []):
@@ -741,14 +807,16 @@ func _update_inspector(player: Node) -> void:
 			_insp_mats_box.add_child(mat_row)
 
 	var is_tech_unlocked: bool = (req_tech == "" or (ResearchSys.instance != null and ResearchSys.instance.is_researched(req_tech)))
-	var can_forge: bool = is_tech_unlocked and station_ok and all_mats_ok
+	var can_forge: bool = is_tech_unlocked and station_ok and skills_ok and all_mats_ok
 
 	_insp_craft1_btn.disabled = not can_forge
 	_insp_craft5_btn.disabled = not can_forge
 	if not is_tech_unlocked:
 		_insp_craft1_btn.text = "[ТРЕБУЕТСЯ ИССЛЕДОВАНИЕ]"
 	elif not station_ok:
-		_insp_craft1_btn.text = "[ТРЕБУЕТСЯ: %s]" % _station_name_ru(req_station).to_upper()
+		_insp_craft1_btn.text = "[ТРЕБУЕТСЯ СТАНОК: %s]" % _station_name_ru(req_station).to_upper()
+	elif not skills_ok:
+		_insp_craft1_btn.text = "[ТРЕБУЕТСЯ НАВЫК: %s]" % _format_required_skills(req_skills).to_upper()
 	elif not all_mats_ok:
 		_insp_craft1_btn.text = "[НЕДОСТАТОЧНО РЕСУРСОВ]"
 	else:
@@ -762,11 +830,13 @@ func _execute_craft(multiplier: int) -> void:
 	var recipe: Dictionary = _recipes.get(_selected_recipe_id, {})
 	var req_tech: String = str(recipe.get("tech_required", ""))
 	if req_tech != "" and ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_tech):
+		SignalBus.notification_posted.emit("Крафт заблокирован: Требуется исследование " + req_tech.capitalize())
 		return
 
 	var req_station: String = str(recipe.get("station", ""))
 	var available_stations: Array[String] = _get_all_nearby_stations()
 	if not _is_station_available(req_station, available_stations, _selected_recipe_id):
+		SignalBus.notification_posted.emit("Крафт заблокирован: Требуется станок " + _station_name_ru(req_station))
 		return
 
 	var station_to_pass: String = _active_station
@@ -776,11 +846,19 @@ func _execute_craft(multiplier: int) -> void:
 				station_to_pass = st
 				break
 
-	var cs: CraftSystem = CraftSystem.new()
+	var cs: CraftSystem = CraftSystem.instance
+	if cs == null:
+		cs = get_tree().root.find_child("CraftSystem", true, false) as CraftSystem
+	var crafted_count: int = 0
 	for _step in range(multiplier):
-		if not cs.can_craft(_selected_recipe_id, player, station_to_pass).get("ok", false):
+		var check: Dictionary = cs.can_craft(_selected_recipe_id, player, station_to_pass) if cs != null else {"ok": true}
+		if not bool(check.get("ok", false)):
+			if crafted_count == 0:
+				var reason: String = str(check.get("reason", "Не удалось создать"))
+				SignalBus.notification_posted.emit("Крафт невозможен: " + reason)
 			break
 		SignalBus.craft_requested.emit(_selected_recipe_id, player, station_to_pass)
+		crafted_count += 1
 	refresh()
 
 
@@ -798,14 +876,20 @@ func _matches_category(item_type: String, item_id: String) -> bool:
 	return true
 
 
-func _meets_requirements(player: Node, recipe: Dictionary) -> bool:
+func _has_required_skills(player: Node, recipe: Dictionary) -> bool:
+	if player == null:
+		return false
+	var skills: SkillsComponent = player.get("skills") as SkillsComponent
+	if skills == null:
+		return false
+	return skills.meets_requirements(recipe.get("skill_required", {}))
+
+
+func _has_required_materials(player: Node, recipe: Dictionary) -> bool:
 	if player == null:
 		return false
 	var inv: InventoryComponent = player.get("inventory") as InventoryComponent
-	var skills: SkillsComponent = player.get("skills") as SkillsComponent
-	if inv == null or skills == null:
-		return false
-	if not skills.meets_requirements(recipe.get("skill_required", {})):
+	if inv == null:
 		return false
 
 	var ptile: Vector2i = Vector2i.ZERO
@@ -826,6 +910,10 @@ func _meets_requirements(player: Node, recipe: Dictionary) -> bool:
 			if p_cnt + c_cnt < needed:
 				return false
 	return true
+
+
+func _meets_requirements(player: Node, recipe: Dictionary) -> bool:
+	return _has_required_skills(player, recipe) and _has_required_materials(player, recipe)
 
 
 func _format_inputs(inputs: Array) -> String:

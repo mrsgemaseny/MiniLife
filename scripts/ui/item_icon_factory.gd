@@ -217,7 +217,8 @@ static func get_icon(item_id: String) -> ImageTexture:
 		var raw_img: Image = _load_raw_image(sp_path)
 		if raw_img != null:
 			var icon_img: Image = raw_img.duplicate() as Image
-			icon_img.resize(36, 36, Image.INTERPOLATE_LANCZOS)
+			# Keep source detail for large inventory and crafting previews.
+			# TextureRect and button layouts already scale icons to their display size.
 			var ext_tex: ImageTexture = ImageTexture.create_from_image(icon_img)
 			_icon_cache[item_id] = ext_tex
 			return ext_tex

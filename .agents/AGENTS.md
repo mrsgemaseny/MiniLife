@@ -4,6 +4,7 @@
 3. ARCHITECTURE CONTEXT: Re-read .agents/AGENTS.md, .agents/CONTEXT.md, and PROJECT_MiniLife.md immediately upon encountering uncertainty, complex refactoring, or test failures.
 4. ATOMIC EDITS: For existing files, use ONLY edit_file with concise surgical diff blocks. NEVER overwrite entire existing files with write_file.
 5. SIGNAL BUS ISOLATION: Systems MUST communicate exclusively via `SignalBus` (`autoloads/signal_bus.gd`). Direct cross-system references are strictly forbidden.
+6. LOCKED FILES INVARIANT: STRICTLY FORBIDDEN to overwrite, revert, delete, or modify any files registered in `LOCKED_FILES.md` (all 73 equipment sprites, visual art references, ConsumableUse, ItemActionComponent, target-lock combat navigation in Player/CombatSystem, and locked data configurations).
 </CRITICAL_INSTRUCTIONS>
 
 ## Role & Project Guidelines — MiniLife (USSR: Untitled Sandbox Survival RPG)

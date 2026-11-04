@@ -42,6 +42,28 @@ func _ready() -> void:
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		perform_exit_autosave()
+
+
+func perform_exit_autosave() -> void:
+	if _state != State.PLAYING and _state != State.PAUSED:
+		return
+	if is_dead():
+		return
+	var save_sys: Node = null
+	var SS = load("res://scripts/systems/save_system.gd")
+	if SS != null and SS.instance != null:
+		save_sys = SS.instance
+	if save_sys == null and get_tree() != null:
+		save_sys = get_tree().get_first_node_in_group("save_system")
+	if save_sys != null and save_sys.has_method("autosave_on_exit"):
+		save_sys.call("autosave_on_exit")
+	else:
+		SignalBus.save_requested.emit(_active_slot)
+
+
 func _process(delta: float) -> void:
 	if _state != State.PLAYING:
 		return

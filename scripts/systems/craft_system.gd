@@ -1,8 +1,11 @@
 class_name CraftSystem
 extends Node
 
+static var instance: CraftSystem = null
+
 
 func _ready() -> void:
+	instance = self
 	SignalBus.craft_requested.connect(_on_craft_requested)
 
 
@@ -55,7 +58,13 @@ func can_craft(recipe_id: String, crafter: Node, active_station: String = "") ->
 	var skills: SkillsComponent = crafter.get("skills") as SkillsComponent
 	var req_skills: Dictionary = recipe.get("skill_required", {})
 	if skills != null and not skills.meets_requirements(req_skills):
-		return {"ok": false, "reason": "Insufficient skill level"}
+		var missing_parts: PackedStringArray = PackedStringArray()
+		for sk in req_skills:
+			var req_lvl: int = int(req_skills[sk])
+			var cur_lvl: int = skills.get_level(str(sk))
+			if cur_lvl < req_lvl:
+				missing_parts.append("%s Lv.%d (you have %d)" % [str(sk).capitalize(), req_lvl, cur_lvl])
+		return {"ok": false, "reason": "Requires skill: " + ", ".join(missing_parts)}
 
 	var inv: InventoryComponent = crafter.get("inventory") as InventoryComponent
 	if inv == null:

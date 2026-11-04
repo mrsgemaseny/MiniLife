@@ -771,7 +771,7 @@
 			"weapon_archetype": "war_pick",
 			"armor_penetration": 0.40
 		},
-		"visual": { "sprite": "items/war_hammer.png", "color": "#7e8894" },
+		"visual": { "sprite": "items/iron_war_pick.png", "color": "#7e8894" },
 		"craft_requirements": { "iron_ingot": 3, "wood": 2 },
 		"craft_station": "forge",
 		"skill_required": { "smithing": 18 }
@@ -2150,5 +2150,20 @@
 		"craft_requirements": { "wood": 1, "herb": 1 },
 		"craft_station": "",
 		"skill_required": {}
+	},
+	{
+		"id": "iron_brigandine",
+		"name": "Riveted Iron Brigandine",
+		"type": "armor",
+		"equip_slot": "chest",
+		"weight": 9.0,
+		"value": 180,
+		"stackable": false,
+		"durability": 200,
+		"stats": { "defense": 27 },
+		"visual": { "sprite": "items/iron_brigandine.png", "color": "#79523e" },
+		"craft_requirements": { "iron_ingot": 5, "treated_leather": 3 },
+		"craft_station": "forge",
+		"skill_required": { "smithing": 24 }
 	}
 ]

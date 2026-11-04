@@ -1,0 +1,125 @@
+{
+  "generator": "built-in image_gen",
+  "reference": "assets/references/armor_style_reference.png",
+  "grid": [
+    4,
+    4
+  ],
+  "sheets": [
+    {
+      "sheet": 1,
+      "file": "sheet_1.png",
+      "ids": [
+        "stone_sword",
+        "stone_dagger",
+        "stone_axe",
+        "wooden_club",
+        "wooden_spear",
+        "bronze_sword",
+        "bronze_dagger",
+        "bronze_axe",
+        "bronze_spear",
+        "iron_sword",
+        "iron_dagger",
+        "iron_axe",
+        "iron_spear",
+        "war_hammer",
+        "steel_sword",
+        "steel_dagger"
+      ],
+      "source": "C:\\Users\\murat\\.codex\\generated_images\\01a1a4e0-cbcb-7032-bd86-4a978f3e7dbe\\exec-2f7bbde1-c12b-4432-84c1-3c75f4fcc016.png",
+      "prompt": "Generate 4x4 transparent medieval weapon atlas matching armor reference. Bold dark contours, muted earthy materials, faceted hand-painted shading, upper-left lighting. Row-major: stone_sword stone_dagger stone_axe wooden_club wooden_spear bronze_sword bronze_dagger bronze_axe bronze_spear iron_sword iron_dagger iron_axe iron_spear war_hammer steel_sword steel_dagger"
+    },
+    {
+      "sheet": 2,
+      "file": "sheet_2.png",
+      "ids": [
+        "steel_axe",
+        "steel_war_pick",
+        "primitive_bow",
+        "hunting_bow",
+        "heavy_crossbow",
+        "javelins",
+        "arrow",
+        "bronze_arrow",
+        "iron_arrow",
+        "iron_bolt",
+        "steel_arrow",
+        "stone_pickaxe",
+        "bronze_pickaxe",
+        "iron_pickaxe",
+        "steel_pickaxe",
+        "torch"
+      ],
+      "source": "C:\\Users\\murat\\.codex\\generated_images\\01a1a4e0-cbcb-7032-bd86-4a978f3e7dbe\\exec-ef5c8599-ed75-4a0d-b369-31241d67c93e.png",
+      "prompt": "Generate a square production game sprite atlas, EXACTLY 4 columns x 4 rows, equal cells. STYLE reference only: match hand-painted medieval equipment illustration, bold black outline, chunky readable silhouettes, faceted shading, muted iron grey, ochre bronze, brown leather and burgundy fabric, subtle wear. Transparent real alpha background. No text, labels, borders, grid lines, human bodies, floor shadows. Upper-left lighting. One complete item/set per cell with 12% clear padding; never cross cell boundaries. Slight three-quarter view. Row 1: steel battle axe; steel war pick with pointed beak; primitive simple wooden bow with string; reinforced hunting recurve bow with string. Row 2: heavy crossbow with iron bow and wooden stock; bundle of three stone-tipped throwing javelins; bundle of three primitive stone-tipped arrows WITHOUT feathers; bundle of three bronze-tipped arrows. Row 3: bundle of three iron arrows with feathers; bundle of three short iron crossbow bolts; bundle of three steel bodkin arrows with feathers; stone pickaxe lashed to wooden shaft. Row 4: bronze pickaxe; iron pickaxe; steel pickaxe; lit cloth-wrapped wooden torch with compact orange flame."
+    },
+    {
+      "sheet": 3,
+      "file": "sheet_3.png",
+      "ids": [
+        "fishing_rod",
+        "shears",
+        "wooden_shield",
+        "iron_shield",
+        "wool_hood",
+        "leather_helmet",
+        "bronze_helmet",
+        "chainmail_coif",
+        "iron_helmet",
+        "steel_helmet",
+        "wool_shirt",
+        "gambeson",
+        "simple_chainmail",
+        "quality_clothing",
+        "arming_doublet",
+        "leather_armor"
+      ],
+      "source": "C:\\Users\\murat\\.codex\\generated_images\\01a1a4e0-cbcb-7032-bd86-4a978f3e7dbe\\exec-28a2244d-737a-4868-ae75-214c16266980.png",
+      "prompt": "Generate a square production game sprite atlas, EXACTLY 4 columns x 4 rows, equal cells. STYLE reference only: match hand-painted medieval equipment illustration, bold black outline, chunky readable silhouettes, faceted shading, muted iron grey, ochre bronze, brown leather and burgundy fabric, subtle wear. Transparent real alpha background. No text, labels, borders, grid lines, human bodies, floor shadows. Upper-left lighting. One complete item/set per cell with 12% clear padding; never cross cell boundaries. Slight three-quarter view. Row 1: wooden fishing rod with coiled line and hook fully contained in cell; medieval iron spring shears; round wooden plank shield with metal rim and boss; iron reinforced kite shield. Row 2: brown wool hood; brown leather helmet with cheek guards; ochre bronze Corinthian helmet; iron chainmail coif hood. Row 3: iron sallet helmet; steel armet helmet with closed visor; plain brown wool long-sleeve tunic with belt; beige quilted gambeson coat. Row 4: short iron chainmail shirt with belt; burgundy noble tailored clothing tunic with belt; cream quilted arming doublet with leather ties; primitive rawhide leather vest with bone fastenings. Clothing shown as empty wearable garments, black empty neck openings, no head or limbs."
+    },
+    {
+      "sheet": 4,
+      "file": "sheet_4.png",
+      "ids": [
+        "boiled_leather_cuirass",
+        "leather_lamellar",
+        "bronze_cuirass",
+        "bronze_lamellar",
+        "iron_hauberk",
+        "iron_lamellar",
+        "iron_scale_armor",
+        "iron_armor",
+        "iron_plate_armor",
+        "steel_cuirass",
+        "steel_brigandine",
+        "steel_plate_armor",
+        "iron_brigandine"
+      ],
+      "source": "C:\\Users\\murat\\.codex\\generated_images\\01a1a4e0-cbcb-7032-bd86-4a978f3e7dbe\\exec-0a063178-08d8-4127-8fe6-8c836f2e698f.png",
+      "prompt": "Generate a square production game sprite atlas, EXACTLY 4 columns x 4 rows, equal cells. STYLE reference only: match hand-painted medieval equipment illustration, bold black outline, chunky readable silhouettes, faceted shading, muted iron grey, ochre bronze, brown leather and burgundy fabric, subtle wear. Transparent real alpha background. No text, labels, borders, grid lines, human bodies, floor shadows. Upper-left lighting. One complete item/set per cell with 12% clear padding; never cross cell boundaries. Slight three-quarter view. All sixteen cells are torso armor in precisely the reference armor style and view, broad shoulders, black empty collar opening, belted waist, flared skirt; no heads, bodies or feet. Row 1: molded boiled-brown-leather cuirass; laced brown leather lamellar armor; bronze anatomical muscle cuirass with burgundy pteruges skirt; ochre bronze lamellar armor. Row 2: long heavy iron chainmail hauberk; iron rectangular lamellar armor on brown leather; overlapping iron scale armor; simple solid iron breastplate with segmented shoulder guards. Row 3: riveted rectangular iron plate armor with plated skirt; refined steel solid ridged cuirass with shoulder guards; burgundy velvet brigandine with rows of steel rivets; full steel articulated plate torso armor with arms and gauntlets and plated skirt. Row 4: brown leather brigandine with iron rivets and chainmail sleeves; alternate reinforced iron breastplate; alternate short chainmail shirt; alternate leather lamellar armor. First thirteen cells are distinct deliverable items. Last three are style variants, still fill all sixteen cells."
+    },
+    {
+      "sheet": 5,
+      "file": "sheet_5.png",
+      "ids": [
+        "wool_wraps",
+        "leather_greaves",
+        "bronze_greaves",
+        "iron_greaves",
+        "steel_greaves",
+        "leather_boots",
+        "bronze_boots",
+        "iron_boots",
+        "steel_boots",
+        "iron_war_pick"
+      ],
+      "source": "C:\\Users\\murat\\.codex\\generated_images\\01a1a4e0-cbcb-7032-bd86-4a978f3e7dbe\\exec-2cfd195f-9d2b-42a3-8fd9-81dad4d9914d.png",
+      "prompt": "Generate a square production game sprite atlas, EXACTLY 4 columns x 4 rows, equal cells. STYLE reference only: match hand-painted medieval equipment illustration, bold black outline, chunky readable silhouettes, faceted shading, muted iron grey, ochre bronze, brown leather and burgundy fabric, subtle wear. Transparent real alpha background. No text, labels, borders, grid lines, human bodies, floor shadows. Upper-left lighting. One complete item/set per cell with 12% clear padding; never cross cell boundaries. Slight three-quarter view. Row 1: pair of wool leg wraps covering empty shins and feet; pair of laced leather greaves; pair of bronze anatomical greaves; pair of iron greaves. Row 2: pair of articulated steel greaves with knee guards and sabatons; pair of leather boots; pair of bronze armored boots; pair of iron armored boots. Row 3: pair of steel armored boots; iron war pick with pointed beak and hammer poll; alternate wooden spear; alternate heavy crossbow. Row 4: alternate round wooden shield; alternate iron kite shield; alternate plain wool tunic; alternate quilted gambeson. No human legs or body visible; boots/greaves are empty wearable objects. Every pair stays entirely in one cell."
+    }
+  ],
+  "aliases": {
+    "spear": "wooden_spear",
+    "crossbow": "heavy_crossbow"
+  }
+}

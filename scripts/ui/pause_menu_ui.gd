@@ -188,9 +188,7 @@ func _build_battle_brothers_menu() -> void:
 
 	var to_menu_btn: Button = _create_bb_button("В ГЛАВНОЕ МЕНЮ")
 	to_menu_btn.pressed.connect(func():
-		var save_sys: SaveSystem = _find_save_system()
-		if save_sys != null:
-			save_sys.quick_save()
+		GameManager.perform_exit_autosave()
 		close_menu()
 		SignalBus.ui_panel_requested.emit("main_menu")
 	)
@@ -198,6 +196,7 @@ func _build_battle_brothers_menu() -> void:
 
 	var quit_btn: Button = _create_bb_button("ВЫЙТИ ИЗ ИГРЫ")
 	quit_btn.pressed.connect(func():
+		GameManager.perform_exit_autosave()
 		get_tree().quit()
 	)
 	_main_btn_box.add_child(quit_btn)

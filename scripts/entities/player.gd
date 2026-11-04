@@ -233,7 +233,9 @@ func _physics_process(delta: float) -> void:
 			_current_mining_target.cancel_harvest()
 		_current_mining_target = null
 
-	if not is_mining_channel:
+	if _read_movement_input() != Vector2.ZERO or is_mining_channel or _is_holding_ranged():
+		_locked_target = null
+	if not is_mining_channel and not status_effects.is_action_blocked():
 		_tick_auto_attack(delta)
 
 	health_comp.tick_regen(delta)
@@ -245,6 +247,8 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var input_dir: Vector2 = _read_movement_input()
+	if input_dir == Vector2.ZERO:
+		input_dir = _attack_order_movement()
 	if input_dir.length_squared() > 0.0:
 		if not _is_charging_bow and not is_mining_channel:
 			facing_direction = facing_direction.lerp(input_dir.normalized(), clampf(delta * 16.0, 0.0, 1.0)).normalized()
@@ -318,13 +322,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 
 	if event.is_action_pressed("attack"):
+		if _is_holding_ranged():
+			_locked_target = null
+			_start_bow_charge()
+			get_viewport().set_input_as_handled()
+			return
 		var enemy_target: Node2D = _get_enemy_under_cursor()
 		if enemy_target != null:
 			_locked_target = enemy_target
+			queue_redraw()
 			SignalBus.notification_posted.emit("Target focused: " + (str(enemy_target.get("display_name")) if "display_name" in enemy_target else "Enemy"))
 			get_viewport().set_input_as_handled()
 			return
 
+		_locked_target = null
 		var struct_under_cursor: StructureEntity = _get_structure_under_cursor()
 		if struct_under_cursor != null:
 			if not struct_under_cursor.is_player_built:
@@ -350,8 +361,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			_start_bow_charge()
 		elif _is_holding_consumable():
 			use_held_consumable()
-		else:
-			perform_attack()
 	elif event.is_action_released("attack"):
 		if _is_charging_bow:
 			_release_bow_shot()
@@ -496,46 +505,34 @@ func _release_bow_shot() -> void:
 	_lunge_offset = facing_direction * 11.0 if is_jav else -facing_direction * 4.0
 	queue_redraw()
 
+func _has_attack_order() -> bool:
+	if not is_instance_valid(_locked_target):
+		_locked_target = null
+		return false
+	if not _locked_target.is_visible_in_tree() or (_locked_target.has_method("is_alive") and not bool(_locked_target.call("is_alive"))):
+		_locked_target = null
+		return false
+	return true
+
+func _attack_order_movement() -> Vector2:
+	if _is_holding_ranged() or _is_holding_consumable() or not _has_attack_order():
+		return Vector2.ZERO
+	var reach: float = float(equipment.get_weapon_stats().get("range_px", Config.MELEE_RANGE))
+	var offset: Vector2 = _locked_target.global_position - global_position
+	if offset.length() > reach * 0.85:
+		return offset.normalized()
+	velocity = _knockback_velocity
+	return Vector2.ZERO
+
 func _tick_auto_attack(_delta: float) -> void:
-	if _attack_cooldown > 0.0 or is_dead or GameManager.is_paused():
+	if _attack_cooldown > 0.0 or is_dead or GameManager.is_paused() or status_effects.is_action_blocked():
 		return
-	if _is_holding_bow() or _is_charging_bow or _is_holding_consumable():
-		return
-	if _current_mining_target != null:
+	if _is_holding_ranged() or _is_charging_bow or _is_holding_consumable() or not _has_attack_order():
 		return
 	if stats.stamina < Config.STAMINA_COST_ATTACK:
 		return
-
-	var w_stats: Dictionary = equipment.get_weapon_stats()
-	var attack_range_px: float = float(w_stats.get("range_px", Config.MELEE_RANGE))
-
-	var target: Node2D = null
-	if _locked_target != null and is_instance_valid(_locked_target):
-		if _locked_target.has_method("is_alive") and not bool(_locked_target.call("is_alive")):
-			_locked_target = null
-		else:
-			var d: float = global_position.distance_to(_locked_target.global_position)
-			if d <= attack_range_px:
-				target = _locked_target
-			elif d > attack_range_px * 2.5:
-				_locked_target = null
-
-	if target == null:
-		var enemies: Array[Node] = get_tree().get_nodes_in_group("enemies")
-		if enemies.is_empty():
-			enemies = get_tree().get_nodes_in_group("enemy")
-		var closest_dist: float = attack_range_px
-		for e in enemies:
-			if e is Node2D and is_instance_valid(e) and e != self:
-				if e.has_method("is_alive") and not bool(e.call("is_alive")):
-					continue
-				var dist: float = global_position.distance_to((e as Node2D).global_position)
-				if dist <= closest_dist:
-					closest_dist = dist
-					target = e as Node2D
-
-	if target != null:
-		facing_direction = (target.global_position - global_position).normalized()
+	var reach: float = float(equipment.get_weapon_stats().get("range_px", Config.MELEE_RANGE))
+	if global_position.distance_to(_locked_target.global_position) <= reach:
 		perform_attack()
 
 
@@ -555,7 +552,7 @@ func _get_enemy_under_cursor() -> Node2D:
 
 
 func perform_attack() -> void:
-	if _attack_cooldown > 0.0:
+	if _attack_cooldown > 0.0 or is_dead or status_effects.is_action_blocked():
 		return
 	if _is_holding_ranged():
 		_start_bow_charge()
@@ -580,7 +577,7 @@ func perform_attack() -> void:
 	var aim_dir: Vector2 = (target_world - global_position).normalized()
 	if aim_dir.length_squared() > 0.01:
 		facing_direction = aim_dir
-	_lunge_offset = facing_direction * 10.5
+	_lunge_offset = facing_direction * 4.0
 	queue_redraw()
 
 	var is_ranged: bool = str(w_stats.get("range", "melee")) == "ranged"
@@ -596,6 +593,8 @@ func perform_attack() -> void:
 		equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
 		return
 
+	if _has_attack_order():
+		w_stats["ordered_target"] = _locked_target
 	# SignalBus Melee Combat Dispatch (Decoupled from MeleeResolver)
 	SignalBus.melee_attack_requested.emit(self, global_position, facing_direction, w_stats)
 
@@ -1192,60 +1191,45 @@ func _draw() -> void:
 	var shadow_scale: float = 1.0 - (-bob_y * 0.03)
 	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(_lunge_offset.x, _lunge_offset.y + 3.0), 12.0 * shadow_scale, 6.0 * shadow_scale), Color(0.0, 0.0, 0.0, 0.38))
 
-	# Traveller Cloak / Cape behind torso (billows with walk & lunge)
-	var cape_sway: float = -sway_x * 1.4 - _lunge_offset.x * 0.25
-	var cape_pts: PackedVector2Array = PackedVector2Array([
-		body_ofs + Vector2(-7.0, -22.0),
-		body_ofs + Vector2(7.0, -22.0),
-		body_ofs + Vector2(9.5 + cape_sway, -5.0 - bob_y * 0.4),
-		body_ofs + Vector2(-9.5 + cape_sway, -5.0 - bob_y * 0.4)
-	])
-	draw_colored_polygon(cape_pts, Color(0.24, 0.27, 0.22))
-	draw_polyline(cape_pts, outline_col, 1.3, true)
-
-	# Boots & Trousers with alternating RimWorld stride
-	var legs_id: String = equipment.get_item_id("legs") if equipment != null else ""
-	var pant_col: Color = Color(0.32, 0.28, 0.22) if legs_id.is_empty() else Color(0.45, 0.34, 0.22)
-	var boot_col: Color = Color(0.24, 0.16, 0.10)
-	var left_leg_y: float = minf(0.0, stride)
-	var right_leg_y: float = minf(0.0, -stride)
-	draw_rect(Rect2(body_ofs.x - 5.5, body_ofs.y - 10.0 + left_leg_y * 0.5, 4.5, 7.0), pant_col, true)
-	draw_rect(Rect2(body_ofs.x + 1.0, body_ofs.y - 10.0 + right_leg_y * 0.5, 4.5, 7.0), pant_col, true)
-	draw_rect(Rect2(body_ofs.x - 6.0 - stride * 0.3, body_ofs.y - 4.0 + left_leg_y, 5.0, 5.0), boot_col, true)
-	draw_rect(Rect2(body_ofs.x + 1.0 + stride * 0.3, body_ofs.y - 4.0 + right_leg_y, 5.0, 5.0), boot_col, true)
-
-	# Tunic / Chainmail / Leather Armor
+	# Cardinal body views are independent of precise projectile aim.
+	var side: bool = absf(facing_direction.x) > absf(facing_direction.y)
+	var north: bool = not side and facing_direction.y < 0.0
+	var look_x: float = signf(facing_direction.x) if side else 0.0
+	var torso_width: float = 13.0 if side else 18.0
 	var chest_id: String = equipment.get_item_id("chest") if equipment != null else ""
-	var torso_col: Color = Color(0.54, 0.36, 0.20)
-	if chest_id.find("chainmail") != -1 or chest_id.find("iron") != -1:
+	var torso_col := Color(0.54, 0.36, 0.20)
+	if chest_id.contains("chainmail") or chest_id.contains("iron") or chest_id.contains("steel"):
 		torso_col = Color(0.62, 0.66, 0.72)
-	elif chest_id.find("leather") != -1:
+	elif chest_id.contains("leather"):
 		torso_col = Color(0.48, 0.31, 0.17)
-	# Sleeves with arm swing
-	draw_rect(Rect2(body_ofs.x - 9.5, body_ofs.y - 21.0 - stride * 0.35, 3.5, 9.0), Color(0.72, 0.66, 0.56), true)
-	draw_rect(Rect2(body_ofs.x + 6.0, body_ofs.y - 21.0 + stride * 0.35, 3.5, 9.0), Color(0.72, 0.66, 0.56), true)
-	# Main torso
-	draw_rect(Rect2(body_ofs.x - 6.5, body_ofs.y - 22.0, 13.0, 13.0), torso_col, true)
-	draw_rect(Rect2(body_ofs.x - 6.5, body_ofs.y - 22.0, 13.0, 13.0), outline_col, false, 1.4)
-	# Belt & Brass Buckle
-	draw_rect(Rect2(body_ofs.x - 6.5, body_ofs.y - 12.5, 13.0, 2.5), Color(0.20, 0.14, 0.09), true)
-	draw_rect(Rect2(body_ofs.x - 1.5, body_ofs.y - 13.0, 3.0, 3.2), Color(0.88, 0.72, 0.24), true)
-
-	# Head, Hair, Eyes (slightly delayed secondary bob)
-	var head_ofs: Vector2 = body_ofs + Vector2(facing_direction.x * 1.2, bob_y * 0.18)
-	var skin_col: Color = Color(0.91, 0.76, 0.62)
-	draw_circle(head_ofs + Vector2(0.0, -28.0), 6.8, outline_col)
-	draw_circle(head_ofs + Vector2(0.0, -28.0), 5.8, skin_col)
-	draw_circle(head_ofs + Vector2(-2.0 + facing_direction.x * 0.8, -28.0), 0.9, Color(0.14, 0.12, 0.10))
-	draw_circle(head_ofs + Vector2(2.0 + facing_direction.x * 0.8, -28.0), 0.9, Color(0.14, 0.12, 0.10))
+	var torso_rect := Rect2(body_ofs + Vector2(-torso_width * 0.5, -23.0), Vector2(torso_width, 21.0))
+	draw_style_box(_pawn_body_style(torso_col, outline_col), torso_rect)
+	if not north:
+		draw_line(body_ofs + Vector2(-torso_width * 0.5 + 1.0, -8.0), body_ofs + Vector2(torso_width * 0.5 - 1.0, -8.0), Color(0.23, 0.17, 0.12), 2.0)
+		if not side:
+			draw_rect(Rect2(body_ofs + Vector2(-1.5, -9.0), Vector2(3.0, 3.0)), Color(0.85, 0.69, 0.30))
+	var head_center: Vector2 = body_ofs + Vector2(look_x * 1.5, -30.0)
+	var skin_col := Color(0.91, 0.76, 0.62)
+	var hair_col := Color(0.34, 0.22, 0.13)
+	draw_circle(head_center, 11.0, outline_col)
+	draw_circle(head_center, 9.6, hair_col if north else skin_col)
+	if not north:
+		if side:
+			draw_circle(head_center + Vector2(look_x * 9.0, 1.0), 2.2, skin_col)
+			draw_circle(head_center + Vector2(look_x * 5.5, -0.5), 1.0, outline_col)
+		else:
+			draw_circle(head_center + Vector2(-3.5, 0.0), 1.0, outline_col)
+			draw_circle(head_center + Vector2(3.5, 0.0), 1.0, outline_col)
 	var head_id: String = equipment.get_item_id("head") if equipment != null else ""
 	if not head_id.is_empty():
-		draw_arc(head_ofs + Vector2(0.0, -29.0), 6.2, PI, TAU, 12, Color(0.64, 0.68, 0.74), 3.4)
-	else:
-		draw_arc(head_ofs + Vector2(0.0, -29.5), 5.8, PI * 0.92, TAU * 1.04, 12, Color(0.36, 0.23, 0.13), 3.6)
+		draw_arc(head_center + Vector2(0.0, -1.0), 9.0, PI, TAU, 16, Color(0.64, 0.68, 0.74), 4.0)
+	elif not north:
+		draw_arc(head_center + Vector2(0.0, -1.0), 8.7, PI, TAU, 16, hair_col, 4.0)
+	if is_instance_valid(_locked_target):
+		draw_arc(to_local(_locked_target.global_position), 14.0, 0.0, TAU, 24, Color(0.95, 0.30, 0.20, 0.8), 1.5)
 
 	# Weapon and Shield in Hands with Fixed Stance Angle, Direction Revert & Slash Arc
-	var is_facing_left: bool = (facing_direction.x < -0.05)
+	var is_facing_left: bool = side and look_x < 0.0
 	var rot_dir: float = -1.0 if is_facing_left else 1.0
 
 	# Fixed hand and shield anchor positions
@@ -1287,37 +1271,10 @@ func _draw() -> void:
 			base_angle = -deg_to_rad(28.0) * rot_dir
 			anchor_rect = Rect2(-6.0, -18.0, 24.0, 24.0)
 
-		var swing_angle_ofs: float = 0.0
-		if is_javelin and _is_charging_bow:
-			var charge_ratio: float = clampf(_bow_charge_time / MAX_BOW_CHARGE_TIME, 0.0, 1.0)
-			# Hand raised over shoulder, cocked back for throw
-			hand_pos = body_ofs + Vector2(-hand_x * 0.3, -17.0) - facing_direction * (5.0 + charge_ratio * 7.5)
-			# Javelin tilts horizontal, ready to throw along facing direction
-			base_angle = facing_direction.angle() if not is_facing_left else (facing_direction.angle() + PI)
-			swing_angle_ofs = -deg_to_rad(10.0) * (1.0 - charge_ratio) * rot_dir
-		elif is_bow and _is_charging_bow:
-			var charge_ratio: float = clampf(_bow_charge_time / MAX_BOW_CHARGE_TIME, 0.0, 1.0)
-			hand_pos = body_ofs + Vector2(hand_x, -13.0) + facing_direction * 2.0
-			swing_angle_ofs = -charge_ratio * deg_to_rad(22.0) * rot_dir
-		elif _swing_timer > 0.0:
-			var prog: float = 1.0 - (_swing_timer / maxf(0.01, _swing_duration))
-			var eased: float = 1.0 - pow(1.0 - prog, 3.0)
-			if is_javelin:
-				# Throwing follow-through: hand thrusts forward along facing direction
-				hand_pos = body_ofs + Vector2(hand_x, -14.0) + facing_direction * (eased * 10.0)
-				base_angle = facing_direction.angle() if not is_facing_left else (facing_direction.angle() + PI)
-				swing_angle_ofs = lerpf(deg_to_rad(25.0), -deg_to_rad(15.0), eased) * rot_dir
-			elif is_bow:
-				# Bow draw string back and snap
-				swing_angle_ofs = -sin(prog * PI) * deg_to_rad(18.0) * rot_dir
-			else:
-				# Wind-up over shoulder (-45 deg), then slash forward down (+65 deg)
-				swing_angle_ofs = lerpf(-deg_to_rad(45.0), deg_to_rad(65.0), eased) * rot_dir
-		else:
-			# Natural walking weapon sway
-			swing_angle_ofs = sin(_walk_phase) * deg_to_rad(3.5) * _walk_blend * rot_dir
-
-		var final_rot: float = base_angle + swing_angle_ofs
+		# Rigid equipment follows the whole-body attack pulse.
+		if _is_charging_bow:
+			hand_pos += facing_direction * 3.0
+		var final_rot: float = base_angle
 		var weapon_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left else Vector2(1.0, 1.0)
 
 		# If charging javelin, draw procedural large spear in hand
@@ -1417,15 +1374,12 @@ func _draw() -> void:
 				draw_texture_rect(held_tex, Rect2(-7.0, -7.0, 14.0, 14.0), false)
 				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	# RimWorld-style Smooth Weapon Slash Trail (Melee weapons only)
-	if _swing_timer > 0.0 and not (equipment != null and (equipment.get_item_id("weapon").find("bow") != -1 or equipment.get_item_id("weapon").find("crossbow") != -1)):
-		var prog: float = 1.0 - (_swing_timer / maxf(0.01, _swing_duration))
-		var alpha: float = sin(prog * PI) * 0.85
-		var center_arc: Vector2 = body_ofs + Vector2(0.0, -14.0)
-		var trail_start: float = -PI * 0.70 if is_facing_left else -PI * 0.30
-		var trail_sweep: float = -PI * 0.65 if is_facing_left else PI * 0.65
-		var cur_sweep: float = trail_start + trail_sweep * prog
-		var arc_min: float = minf(trail_start, cur_sweep)
-		var arc_max: float = maxf(trail_start, cur_sweep)
-		draw_arc(center_arc, 26.0, arc_min, arc_max, 16, Color(1.0, 0.92, 0.58, alpha), 3.6)
-		draw_arc(center_arc, 22.0, arc_min, arc_max, 12, Color(1.0, 0.98, 0.88, alpha * 0.75), 1.8)
+
+
+func _pawn_body_style(fill: Color, outline: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = outline
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(3)
+	return style

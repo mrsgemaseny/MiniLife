@@ -3,11 +3,14 @@ extends Node
 
 const SCHEMA_VERSION: int = 1
 
+static var instance: SaveSystem = null
+
 var _active_slot: String = Config.DEFAULT_SAVE_SLOT
 var _dirty_chunks: Dictionary = {}
 
 
 func _ready() -> void:
+	instance = self
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("save_system")
 	SignalBus.game_started.connect(_on_game_started)
@@ -23,6 +26,18 @@ func _ready() -> void:
 static func slot_exists(slot: String) -> bool:
 	var meta_path: String = _slot_dir(slot) + "meta.json"
 	return FileAccess.file_exists(meta_path)
+
+
+func autosave_on_exit() -> bool:
+	if GameManager.is_dead():
+		return false
+	var slot: String = GameManager.get_active_slot()
+	if slot.is_empty():
+		slot = Config.DEFAULT_SAVE_SLOT
+	# Save to the current active slot and keep a redundant copy in "autosave"
+	var ok1: bool = save_slot(slot, "Автосохранение при выходе")
+	var ok2: bool = save_slot("autosave", "Автосохранение при выходе")
+	return ok1 or ok2
 
 
 func quick_save() -> bool:

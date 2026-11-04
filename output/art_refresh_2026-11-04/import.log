@@ -1,0 +1,254 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Инициализация проекта (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Сканирование структуры файлов…[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Загрузка глобальных имен классов…[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Проверка GDExtensions…[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Создание скриптов автозагрузки…[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Инициализация плагинов…[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Начало сканирование файлов…[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1m_update_scan_actions[22m | Started Сканирование действий… (74 steps)[39m[0m
+[   0% ] [90m[1m_update_scan_actions[22m | armor_style_reference.png[39m[0m
+[   1% ] [90m[1m_update_scan_actions[22m | arming_doublet.png[39m[0m
+[   2% ] [90m[1m_update_scan_actions[22m | arrow.png[39m[0m
+[   4% ] [90m[1m_update_scan_actions[22m | boiled_leather_cuirass.png[39m[0m
+[   5% ] [90m[1m_update_scan_actions[22m | bronze_arrow.png[39m[0m
+[   6% ] [90m[1m_update_scan_actions[22m | bronze_axe.png[39m[0m
+[   8% ] [90m[1m_update_scan_actions[22m | bronze_boots.png[39m[0m
+[   9% ] [90m[1m_update_scan_actions[22m | bronze_cuirass.png[39m[0m
+[  10% ] [90m[1m_update_scan_actions[22m | bronze_dagger.png[39m[0m
+[  12% ] [90m[1m_update_scan_actions[22m | bronze_greaves.png[39m[0m
+[  13% ] [90m[1m_update_scan_actions[22m | bronze_helmet.png[39m[0m
+[  14% ] [90m[1m_update_scan_actions[22m | bronze_lamellar.png[39m[0m
+[  16% ] [90m[1m_update_scan_actions[22m | bronze_pickaxe.png[39m[0m
+[  17% ] [90m[1m_update_scan_actions[22m | bronze_spear.png[39m[0m
+[  18% ] [90m[1m_update_scan_actions[22m | bronze_sword.png[39m[0m
+[  20% ] [90m[1m_update_scan_actions[22m | chainmail_coif.png[39m[0m
+[  21% ] [90m[1m_update_scan_actions[22m | crossbow.png[39m[0m
+[  22% ] [90m[1m_update_scan_actions[22m | fishing_rod.png[39m[0m
+[  24% ] [90m[1m_update_scan_actions[22m | gambeson.png[39m[0m
+[  25% ] [90m[1m_update_scan_actions[22m | heavy_crossbow.png[39m[0m
+[  26% ] [90m[1m_update_scan_actions[22m | hunting_bow.png[39m[0m
+[  28% ] [90m[1m_update_scan_actions[22m | iron_armor.png[39m[0m
+[  29% ] [90m[1m_update_scan_actions[22m | iron_arrow.png[39m[0m
+[  30% ] [90m[1m_update_scan_actions[22m | iron_axe.png[39m[0m
+[  32% ] [90m[1m_update_scan_actions[22m | iron_bolt.png[39m[0m
+[  33% ] [90m[1m_update_scan_actions[22m | iron_boots.png[39m[0m
+[  34% ] [90m[1m_update_scan_actions[22m | iron_brigandine.png[39m[0m
+[  36% ] [90m[1m_update_scan_actions[22m | iron_dagger.png[39m[0m
+[  37% ] [90m[1m_update_scan_actions[22m | iron_greaves.png[39m[0m
+[  38% ] [90m[1m_update_scan_actions[22m | iron_hauberk.png[39m[0m
+[  40% ] [90m[1m_update_scan_actions[22m | iron_helmet.png[39m[0m
+[  41% ] [90m[1m_update_scan_actions[22m | iron_lamellar.png[39m[0m
+[  42% ] [90m[1m_update_scan_actions[22m | iron_pickaxe.png[39m[0m
+[  44% ] [90m[1m_update_scan_actions[22m | iron_plate_armor.png[39m[0m
+[  45% ] [90m[1m_update_scan_actions[22m | iron_scale_armor.png[39m[0m
+[  46% ] [90m[1m_update_scan_actions[22m | iron_shield.png[39m[0m
+[  48% ] [90m[1m_update_scan_actions[22m | iron_spear.png[39m[0m
+[  49% ] [90m[1m_update_scan_actions[22m | iron_sword.png[39m[0m
+[  50% ] [90m[1m_update_scan_actions[22m | iron_war_pick.png[39m[0m
+[  52% ] [90m[1m_update_scan_actions[22m | javelins.png[39m[0m
+[  53% ] [90m[1m_update_scan_actions[22m | leather_armor.png[39m[0m
+[  54% ] [90m[1m_update_scan_actions[22m | leather_boots.png[39m[0m
+[  56% ] [90m[1m_update_scan_actions[22m | leather_greaves.png[39m[0m
+[  57% ] [90m[1m_update_scan_actions[22m | leather_helmet.png[39m[0m
+[  58% ] [90m[1m_update_scan_actions[22m | leather_lamellar.png[39m[0m
+[  60% ] [90m[1m_update_scan_actions[22m | primitive_bow.png[39m[0m
+[  61% ] [90m[1m_update_scan_actions[22m | quality_clothing.png[39m[0m
+[  62% ] [90m[1m_update_scan_actions[22m | shears.png[39m[0m
+[  64% ] [90m[1m_update_scan_actions[22m | simple_chainmail.png[39m[0m
+[  65% ] [90m[1m_update_scan_actions[22m | spear.png[39m[0m
+[  66% ] [90m[1m_update_scan_actions[22m | steel_arrow.png[39m[0m
+[  68% ] [90m[1m_update_scan_actions[22m | steel_axe.png[39m[0m
+[  69% ] [90m[1m_update_scan_actions[22m | steel_boots.png[39m[0m
+[  70% ] [90m[1m_update_scan_actions[22m | steel_brigandine.png[39m[0m
+[  72% ] [90m[1m_update_scan_actions[22m | steel_cuirass.png[39m[0m
+[  73% ] [90m[1m_update_scan_actions[22m | steel_dagger.png[39m[0m
+[  74% ] [90m[1m_update_scan_actions[22m | steel_greaves.png[39m[0m
+[  76% ] [90m[1m_update_scan_actions[22m | steel_helmet.png[39m[0m
+[  77% ] [90m[1m_update_scan_actions[22m | steel_pickaxe.png[39m[0m
+[  78% ] [90m[1m_update_scan_actions[22m | steel_plate_armor.png[39m[0m
+[  80% ] [90m[1m_update_scan_actions[22m | steel_sword.png[39m[0m
+[  81% ] [90m[1m_update_scan_actions[22m | steel_war_pick.png[39m[0m
+[  82% ] [90m[1m_update_scan_actions[22m | stone_axe.png[39m[0m
+[  84% ] [90m[1m_update_scan_actions[22m | stone_dagger.png[39m[0m
+[  85% ] [90m[1m_update_scan_actions[22m | stone_pickaxe.png[39m[0m
+[  86% ] [90m[1m_update_scan_actions[22m | stone_sword.png[39m[0m
+[  88% ] [90m[1m_update_scan_actions[22m | torch.png[39m[0m
+[  89% ] [90m[1m_update_scan_actions[22m | war_hammer.png[39m[0m
+[  90% ] [90m[1m_update_scan_actions[22m | wooden_club.png[39m[0m
+[  92% ] [90m[1m_update_scan_actions[22m | wooden_shield.png[39m[0m
+[  93% ] [90m[1m_update_scan_actions[22m | wooden_spear.png[39m[0m
+[  94% ] [90m[1m_update_scan_actions[22m | wool_hood.png[39m[0m
+[  96% ] [90m[1m_update_scan_actions[22m | wool_shirt.png[39m[0m
+[  97% ] [90m[1m_update_scan_actions[22m | wool_wraps.png[39m[0m
+[92m[ DONE ][39m [1m_update_scan_actions[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started Импорт или повторный импорт ассетов (74 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[   1% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[   2% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[   4% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[   5% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[   6% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[   8% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[   9% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  10% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  12% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  13% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  14% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  16% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  17% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  18% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  20% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  21% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  22% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  24% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  25% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  26% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  28% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  29% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  30% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  32% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  33% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  34% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  36% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  37% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  38% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  40% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  41% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  42% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  44% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  45% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  46% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  48% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  49% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  50% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  52% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  53% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  54% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  56% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  57% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  58% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  60% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  61% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  62% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  64% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  65% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  66% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  68% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  69% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  70% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  72% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  73% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  74% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  76% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  77% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  78% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  80% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  81% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  82% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  84% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  85% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  86% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  88% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  89% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  90% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  92% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  93% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  94% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  96% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[  97% ] [90m[1mreimport[22m | Подготовка файлов к повторному импорту…[39m[0m
+[   0% ] [90m[1mreimport[22m | Выполнение предимпортных операций…[39m[0m
+[   0% ] [90m[1mreimport[22m | steel_cuirass.png[39m[0m
+[   1% ] [90m[1mreimport[22m | steel_brigandine.png[39m[0m
+[   2% ] [90m[1mreimport[22m | steel_boots.png[39m[0m
+[   4% ] [90m[1mreimport[22m | steel_axe.png[39m[0m
+[   5% ] [90m[1mreimport[22m | steel_arrow.png[39m[0m
+[   6% ] [90m[1mreimport[22m | spear.png[39m[0m
+[   8% ] [90m[1mreimport[22m | simple_chainmail.png[39m[0m
+[   9% ] [90m[1mreimport[22m | shears.png[39m[0m
+[  10% ] [90m[1mreimport[22m | quality_clothing.png[39m[0m
+[  12% ] [90m[1mreimport[22m | primitive_bow.png[39m[0m
+[  13% ] [90m[1mreimport[22m | leather_lamellar.png[39m[0m
+[  14% ] [90m[1mreimport[22m | leather_helmet.png[39m[0m
+[  16% ] [90m[1mreimport[22m | leather_greaves.png[39m[0m
+[  17% ] [90m[1mreimport[22m | leather_boots.png[39m[0m
+[  18% ] [90m[1mreimport[22m | leather_armor.png[39m[0m
+[  20% ] [90m[1mreimport[22m | javelins.png[39m[0m
+[  21% ] [90m[1mreimport[22m | iron_war_pick.png[39m[0m
+[  22% ] [90m[1mreimport[22m | iron_sword.png[39m[0m
+[  24% ] [90m[1mreimport[22m | wool_wraps.png[39m[0m
+[  25% ] [90m[1mreimport[22m | wool_shirt.png[39m[0m
+[  26% ] [90m[1mreimport[22m | wool_hood.png[39m[0m
+[  28% ] [90m[1mreimport[22m | wooden_spear.png[39m[0m
+[  29% ] [90m[1mreimport[22m | wooden_shield.png[39m[0m
+[  30% ] [90m[1mreimport[22m | wooden_club.png[39m[0m
+[  32% ] [90m[1mreimport[22m | war_hammer.png[39m[0m
+[  33% ] [90m[1mreimport[22m | torch.png[39m[0m
+[  34% ] [90m[1mreimport[22m | stone_sword.png[39m[0m
+[  36% ] [90m[1mreimport[22m | stone_pickaxe.png[39m[0m
+[  37% ] [90m[1mreimport[22m | stone_dagger.png[39m[0m
+[  38% ] [90m[1mreimport[22m | stone_axe.png[39m[0m
+[  40% ] [90m[1mreimport[22m | steel_war_pick.png[39m[0m
+[  41% ] [90m[1mreimport[22m | steel_sword.png[39m[0m
+[  42% ] [90m[1mreimport[22m | steel_plate_armor.png[39m[0m
+[  44% ] [90m[1mreimport[22m | steel_pickaxe.png[39m[0m
+[  45% ] [90m[1mreimport[22m | steel_helmet.png[39m[0m
+[  46% ] [90m[1mreimport[22m | steel_greaves.png[39m[0m
+[  48% ] [90m[1mreimport[22m | steel_dagger.png[39m[0m
+[  49% ] [90m[1mreimport[22m | fishing_rod.png[39m[0m
+[  50% ] [90m[1mreimport[22m | crossbow.png[39m[0m
+[  52% ] [90m[1mreimport[22m | chainmail_coif.png[39m[0m
+[  53% ] [90m[1mreimport[22m | bronze_sword.png[39m[0m
+[  54% ] [90m[1mreimport[22m | bronze_spear.png[39m[0m
+[  56% ] [90m[1mreimport[22m | bronze_pickaxe.png[39m[0m
+[  57% ] [90m[1mreimport[22m | bronze_lamellar.png[39m[0m
+[  58% ] [90m[1mreimport[22m | bronze_helmet.png[39m[0m
+[  60% ] [90m[1mreimport[22m | bronze_greaves.png[39m[0m
+[  61% ] [90m[1mreimport[22m | bronze_dagger.png[39m[0m
+[  62% ] [90m[1mreimport[22m | bronze_cuirass.png[39m[0m
+[  64% ] [90m[1mreimport[22m | bronze_boots.png[39m[0m
+[  65% ] [90m[1mreimport[22m | bronze_axe.png[39m[0m
+[  66% ] [90m[1mreimport[22m | bronze_arrow.png[39m[0m
+[  68% ] [90m[1mreimport[22m | boiled_leather_cuirass.png[39m[0m
+[  69% ] [90m[1mreimport[22m | arrow.png[39m[0m
+[  70% ] [90m[1mreimport[22m | arming_doublet.png[39m[0m
+[  72% ] [90m[1mreimport[22m | armor_style_reference.png[39m[0m
+[  73% ] [90m[1mreimport[22m | iron_spear.png[39m[0m
+[  74% ] [90m[1mreimport[22m | iron_shield.png[39m[0m
+[  76% ] [90m[1mreimport[22m | iron_scale_armor.png[39m[0m
+[  77% ] [90m[1mreimport[22m | iron_plate_armor.png[39m[0m
+[  78% ] [90m[1mreimport[22m | iron_pickaxe.png[39m[0m
+[  80% ] [90m[1mreimport[22m | iron_lamellar.png[39m[0m
+[  81% ] [90m[1mreimport[22m | iron_helmet.png[39m[0m
+[  82% ] [90m[1mreimport[22m | iron_hauberk.png[39m[0m
+[  84% ] [90m[1mreimport[22m | iron_greaves.png[39m[0m
+[  85% ] [90m[1mreimport[22m | iron_dagger.png[39m[0m
+[  86% ] [90m[1mreimport[22m | iron_brigandine.png[39m[0m
+[  88% ] [90m[1mreimport[22m | iron_boots.png[39m[0m
+[  89% ] [90m[1mreimport[22m | iron_bolt.png[39m[0m
+[  90% ] [90m[1mreimport[22m | iron_axe.png[39m[0m
+[  92% ] [90m[1mreimport[22m | iron_arrow.png[39m[0m
+[  93% ] [90m[1mreimport[22m | iron_armor.png[39m[0m
+[  94% ] [90m[1mreimport[22m | hunting_bow.png[39m[0m
+[  96% ] [90m[1mreimport[22m | heavy_crossbow.png[39m[0m
+[  97% ] [90m[1mreimport[22m | gambeson.png[39m[0m
+[  98% ] [90m[1mreimport[22m | Завершение импорта активов…[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started Импорт или повторный импорт ассетов (74 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | Выполнение операций после реимпорта…[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Загрузка редактора (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Загрузка макета редактора…[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Загрузка док-панели…[39m[0m
+[  33% ] [90m[1mloading_editor_layout[22m | Повторное открытие сцен…[39m[0m
+[  50% ] [90m[1mloading_editor_layout[22m | Загрузка макета центрального редактора…[39m[0m
+[  66% ] [90m[1mloading_editor_layout[22m | Загрузка макета окна плагина…[39m[0m
+[  83% ] [90m[1mloading_editor_layout[22m | Макет редактора готов.[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m

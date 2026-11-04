@@ -199,6 +199,7 @@ func _build_main_menu() -> void:
 
 	var quit_btn: Button = _create_bb_button("ВЫХОД")
 	quit_btn.pressed.connect(func():
+		GameManager.perform_exit_autosave()
 		get_tree().quit()
 	)
 	_main_btn_box.add_child(quit_btn)

@@ -2,7 +2,9 @@
 
 ## Current Operational Focus
 - **Current Operational Focus**: Full Modular Monolith Architecture (Phases 1–15 of `PRODUCTION_ROADMAP.md` Complete).
-- **Master Specification**: `PROJECT_MiniLife.md`, `PROGRESSION_SYSTEM.md`, `ARMOR_AND_TIERS.md`, `ITEMS_CATALOG.md`, `WORLD_AND_EXPLORATION.md`, `COMBAT_SYSTEM.md`, `ALIFE_AND_ECONOMY.md`, `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md`, `HERBS_AND_ALCHEMY.md`, `WORLD_GENERATION_AND_BIOMES.md` & `PRODUCTION_ROADMAP.md`.
+- **CRITICAL INVARIANT — LOCKED FILES (2026-11-04)**: All 73 equipment sprites, visual references (`ART_STYLE_REFERENCE.md`, `assets/references/armor_style_reference.png`), `ConsumableUse`, `ItemActionComponent`, target-lock combat navigation in `Player`/`CombatSystem`, and data configurations registered in `LOCKED_FILES.md` are STRICTLY PROTECTED. Never modify, overwrite, delete or revert them under any circumstances.
+- **Crafting UX & Exit Autosave (2026-11-04)**: Resolved crafting lock on bronze tools; removed unattainable smithing 8 gate for entry-level bronze gear; added skill inspection row in `CraftMenuUI` and fixed false `[НЕТ РЕСУРСОВ]` label; integrated synchronous `autosave_on_exit()` in `SaveSystem`, `GameManager` (`NOTIFICATION_WM_CLOSE_REQUEST`), and `PauseMenuUI`/`MainMenuUI` quit buttons.
+- **Master Specification**: `LOCKED_FILES.md`, `PROJECT_MiniLife.md`, `PROGRESSION_SYSTEM.md`, `ARMOR_AND_TIERS.md`, `ITEMS_CATALOG.md`, `WORLD_AND_EXPLORATION.md`, `COMBAT_SYSTEM.md`, `ALIFE_AND_ECONOMY.md`, `ANIMALS_AND_FAUNA.md`, `CRAFTING_SYSTEM.md`, `HERBS_AND_ALCHEMY.md`, `WORLD_GENERATION_AND_BIOMES.md` & `PRODUCTION_ROADMAP.md`.
 - **Repository**: `https://github.com/mrsgemaseny/MiniLife`
 
 ## Recent Accomplishments
