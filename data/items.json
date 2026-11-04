@@ -2165,5 +2165,20 @@
 		"craft_requirements": { "iron_ingot": 5, "treated_leather": 3 },
 		"craft_station": "forge",
 		"skill_required": { "smithing": 24 }
+	},
+	{
+		"id": "pack_saddle",
+		"name": "Pack Saddle",
+		"type": "material",
+		"weight": 2.5,
+		"value": 45,
+		"stackable": true,
+		"max_stack": 16,
+		"durability": -1,
+		"stats": {},
+		"visual": { "sprite": "items/treated_leather.png", "color": "#7a431d" },
+		"craft_requirements": { "treated_leather": 2, "wood": 2 },
+		"craft_station": "workbench",
+		"skill_required": { "crafting": 2 }
 	}
 ]

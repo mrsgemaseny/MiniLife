@@ -1229,5 +1229,14 @@
 		"output": { "item_id": "iron_brigandine", "count": 1 },
 		"skill_required": { "smithing": 24 },
 		"xp_reward": { "smithing": 40 }
+	},
+	{
+		"id": "craft_pack_saddle",
+		"station": "workbench",
+		"tech_required": "carpentry_planks",
+		"inputs": [{ "item_id": "treated_leather", "count": 2 }, { "item_id": "wood", "count": 2 }],
+		"output": { "item_id": "pack_saddle", "count": 1 },
+		"skill_required": { "crafting": 2 },
+		"xp_reward": { "crafting": 15 }
 	}
 ]

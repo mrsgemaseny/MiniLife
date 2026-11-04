@@ -622,6 +622,25 @@ func _test_phase_13_master_contracts(player: Player) -> void:
 	assert(player.inventory.has_item("wool", 2), "Player must have received sheared wool from sheep")
 	sheep.queue_free()
 
+	# Wild vs Pack Donkey verification
+	var donkey: CharacterBody2D = AnimalEntityClass.new()
+	donkey.set("animal_type", "donkey")
+	add_child(donkey)
+	assert(bool(donkey.get("has_pack")) == false, "Wild donkey must spawn without pack")
+	assert(str(donkey.get("display_name")) == "Donkey", "Wild donkey must have display_name Donkey")
+	assert(donkey.get("pack_inventory") == null, "Wild donkey must have null pack_inventory")
+	# Interaction without materials fails to equip
+	donkey.call("interact", player)
+	assert(bool(donkey.get("has_pack")) == false, "Donkey must remain unpacked when player lacks leather/saddle")
+	# Interaction with treated leather equips pack
+	player.inventory.add_item("treated_leather", 2)
+	donkey.call("interact", player)
+	assert(bool(donkey.get("has_pack")) == true, "Donkey must be equipped with pack")
+	assert(str(donkey.get("display_name")) == "Pack Donkey", "Equipped donkey must be Pack Donkey")
+	assert(donkey.get("pack_inventory") != null, "Equipped donkey must have pack inventory")
+	assert(player.inventory.get_item_count("treated_leather") == 0, "Treated leather must be consumed to equip donkey pack")
+	donkey.queue_free()
+
 	print("[E2E Phase 13] OK (Zero Clutter, Layered Armor, Progression L1-L11, Caravan 5-Trip ROI, Fauna verified)")
 
 

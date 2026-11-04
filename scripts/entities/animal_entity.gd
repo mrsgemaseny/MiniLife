@@ -11,6 +11,7 @@ enum State { IDLE, WANDER, GRAZING, SLEEPING, FLEE }
 @export var move_speed: float = 45.0
 @export var stats: StatsComponent
 @export var pack_inventory: InventoryComponent
+@export var has_pack: bool = false
 
 var current_state: State = State.IDLE
 var is_permanently_dead: bool = false
@@ -63,14 +64,17 @@ func _init_animal_type() -> void:
 			stats.health = 20.0
 			move_speed = 50.0
 		"donkey":
-			display_name = "Pack Donkey"
+			display_name = "Pack Donkey" if has_pack else "Donkey"
 			stats.set_max("health", 100.0)
 			stats.health = 100.0
 			move_speed = 55.0
-			if pack_inventory == null:
-				pack_inventory = InventoryComponent.new()
-				pack_inventory.max_slots = 12
-				pack_inventory.ensure_slots_capacity()
+			if has_pack:
+				if pack_inventory == null:
+					pack_inventory = InventoryComponent.new()
+					pack_inventory.max_slots = 12
+					pack_inventory.ensure_slots_capacity()
+			else:
+				pack_inventory = null
 		"horse":
 			display_name = "Riding Horse"
 			stats.set_max("health", 120.0)
@@ -269,6 +273,15 @@ func _lay_egg() -> void:
 	if get_parent() != null:
 		get_parent().add_child(bag)
 
+func _equip_pack_saddle() -> void:
+	has_pack = true
+	display_name = "Pack Donkey"
+	if pack_inventory == null:
+		pack_inventory = InventoryComponent.new()
+		pack_inventory.max_slots = 12
+		pack_inventory.ensure_slots_capacity()
+	queue_redraw()
+
 func interact(interactor: Node) -> void:
 	if is_permanently_dead:
 		return
@@ -312,23 +325,51 @@ func interact(interactor: Node) -> void:
 			player_inv.add_item("egg", 1)
 			SignalBus.notification_posted.emit("Gathered fresh egg (+1 Egg).")
 		"donkey":
-			# Open donkey pack storage
-			if pack_inventory != null:
-				SignalBus.notification_posted.emit("Opening pack donkey storage (+12 slots).")
-				var player_tile: Vector2i = Config.iso_to_world(global_position)
-				var smgr: StorageManager = null
-				if BuildingSystem.instance != null:
-					smgr = BuildingSystem.instance.get_storage_manager()
-				if smgr != null:
-					smgr.set_container_title(player_tile, "Pack Donkey Storage")
-					var smgr_inv: InventoryComponent = smgr.get_or_create_container(player_tile)
-					smgr_inv.max_slots = 12
-					smgr_inv.ensure_slots_capacity()
-					for i in range(mini(pack_inventory.slots.size(), smgr_inv.slots.size())):
-						if not pack_inventory.slots[i].is_empty() and smgr_inv.slots[i].is_empty():
-							smgr_inv.slots[i] = pack_inventory.slots[i].duplicate(true)
-					pack_inventory = smgr_inv
-				SignalBus.storage_container_opened.emit("donkey_pack", player_tile)
+			if not has_pack:
+				# Wild donkey: player must equip pack saddle or suitable materials first
+				if player_inv.has_item("pack_saddle", 1):
+					player_inv.remove_item("pack_saddle", 1)
+					_equip_pack_saddle()
+					SignalBus.notification_posted.emit("Equipped Pack Saddle on donkey (+12 storage slots).")
+				elif player_inv.has_item("treated_leather", 2):
+					player_inv.remove_item("treated_leather", 2)
+					_equip_pack_saddle()
+					SignalBus.notification_posted.emit("Equipped Treated Leather pack bags on donkey (+12 storage slots).")
+				elif player_inv.has_item("tanned_leather", 1):
+					player_inv.remove_item("tanned_leather", 1)
+					_equip_pack_saddle()
+					SignalBus.notification_posted.emit("Equipped Tanned Leather pack bags on donkey (+12 storage slots).")
+				elif player_inv.has_item("cloth", 2) and player_inv.has_item("wood", 2):
+					player_inv.remove_item("cloth", 2)
+					player_inv.remove_item("wood", 2)
+					_equip_pack_saddle()
+					SignalBus.notification_posted.emit("Crafted pack harness from Cloth and Wood (+12 storage slots).")
+				else:
+					SignalBus.notification_posted.emit("Wild Donkey. Needs Pack Saddle, Treated Leather (2x), or Cloth (2x) + Wood (2x) to equip bags.")
+				return
+
+			# Open donkey pack storage (only when equipped)
+			if pack_inventory == null:
+				pack_inventory = InventoryComponent.new()
+				pack_inventory.max_slots = 12
+				pack_inventory.ensure_slots_capacity()
+
+			SignalBus.notification_posted.emit("Opening pack donkey storage (+12 slots).")
+			var player_tile: Vector2i = Config.iso_to_world(global_position)
+			var smgr: StorageManager = null
+			if BuildingSystem.instance != null:
+				smgr = BuildingSystem.instance.get_storage_manager()
+			if smgr != null:
+				smgr.set_container_title(player_tile, "Pack Donkey Storage")
+				var smgr_inv: InventoryComponent = smgr.get_or_create_container(player_tile)
+				smgr_inv.max_slots = 12
+				smgr_inv.ensure_slots_capacity()
+				for i in range(mini(pack_inventory.slots.size(), smgr_inv.slots.size())):
+					if not pack_inventory.slots[i].is_empty() and smgr_inv.slots[i].is_empty():
+						smgr_inv.slots[i] = pack_inventory.slots[i].duplicate(true)
+				pack_inventory = smgr_inv
+			SignalBus.storage_container_opened.emit("donkey_pack", player_tile)
+			SignalBus.chest_opened.emit("donkey_pack", player_tile)
 		"dog":
 			SignalBus.notification_posted.emit("The faithful dog barks joyfully.")
 		"cat":
@@ -576,9 +617,10 @@ func _draw() -> void:
 			draw_rect(d_rect, d_fur, true)
 			draw_rect(d_rect, outline_col, false, 1.3)
 
-			# Pack saddlebag
-			draw_rect(Rect2(-5.0 * flip - 3.0, -17.0 + walk_bob, 10.0, 8.0), Color(0.48, 0.30, 0.16), true)
-			draw_rect(Rect2(-5.0 * flip - 3.0, -17.0 + walk_bob, 10.0, 8.0), outline_col, false, 1.1)
+			# Pack saddlebag (only rendered if player equipped pack saddle)
+			if has_pack:
+				draw_rect(Rect2(-5.0 * flip - 3.0, -17.0 + walk_bob, 10.0, 8.0), Color(0.48, 0.30, 0.16), true)
+				draw_rect(Rect2(-5.0 * flip - 3.0, -17.0 + walk_bob, 10.0, 8.0), outline_col, false, 1.1)
 
 			# Head and Long Ears
 			var dhead_y: float = -21.0 + walk_bob + head_eat_y
