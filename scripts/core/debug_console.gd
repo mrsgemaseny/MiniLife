@@ -250,6 +250,28 @@ func _test_phase_6_combat_aiming_and_ballistics(player: Player) -> void:
 	bandit_mob.queue_free()
 	raider_mob.queue_free()
 
+	# 4. Point-Blank Projectile Hit Verification (Bow shot at attacking wolf in close range)
+	var wolf_target: EnemyBase = EnemyBase.new()
+	wolf_target.enemy_id = "wolf"
+	wolf_target.global_position = player.global_position + Vector2(28.0, 0.0)
+	add_child(wolf_target)
+	wolf_target.stats.max_health = 40.0
+	wolf_target.stats.health = 40.0
+
+	var proj: ProjectileEntity = ProjectileEntity.new()
+	proj.global_position = player.global_position + Vector2(0.0, -12.0)
+	proj.direction = Vector2.RIGHT
+	proj.speed = Config.PROJECTILE_SPEED
+	proj.damage = 18.0
+	proj.shooter = player
+	add_child(proj)
+
+	proj._process(0.016)
+	assert(wolf_target.stats.health < 40.0, "Point-blank arrow must reliably hit wolf in close quarters")
+	wolf_target.queue_free()
+	if is_instance_valid(proj):
+		proj.queue_free()
+
 	print("[E2E Phase 6] OK (Directional Shields, Flanking, Armor Pen & Faction AI verified)")
 
 

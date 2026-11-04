@@ -160,8 +160,6 @@ static func _resolve_sprite_path(id: String) -> String:
 		return "res://assets/sprites/items/stone.png"
 	if id == "feather":
 		return "res://assets/sprites/items/wool.png"
-	if id == "silver_ore":
-		return "res://assets/sprites/items/iron_ore.png"
 
 	# 3. Weapons and tools keywords
 	if id.find("club") != -1:
@@ -288,6 +286,17 @@ static func _draw_item_art(img: Image, id: String) -> void:
 		var scol: Color = Color(0.56, 0.60, 0.65) if id.find("stone") != -1 else Color(0.36, 0.38, 0.44)
 		_fill_circle(img, Vector2i(16, 18), 9, scol, out)
 		_fill_circle(img, Vector2i(13, 14), 6, scol.lightened(0.18), Color(0, 0, 0, 0))
+	elif id == "silver_ore" or id.find("silver_ore") != -1:
+		# Gleaming metallic silver ore with brilliant specular facets
+		_fill_circle(img, Vector2i(16, 17), 9, Color(0.75, 0.80, 0.88), out)
+		_fill_circle(img, Vector2i(13, 14), 5, Color(0.92, 0.95, 1.0), Color(0, 0, 0, 0))
+		_fill_circle(img, Vector2i(19, 18), 3, Color(0.85, 0.89, 0.96), Color(0, 0, 0, 0))
+		_fill_circle(img, Vector2i(12, 13), 2, Color(1.0, 1.0, 1.0), Color(0, 0, 0, 0))
+	elif id == "tin_ore" or id.find("tin_ore") != -1:
+		# Matte gray slate-like cassiterite tin ore
+		_fill_circle(img, Vector2i(16, 17), 9, Color(0.46, 0.52, 0.58), out)
+		_fill_circle(img, Vector2i(14, 14), 5, Color(0.60, 0.66, 0.72), Color(0, 0, 0, 0))
+		_fill_circle(img, Vector2i(18, 19), 3, Color(0.36, 0.40, 0.46), Color(0, 0, 0, 0))
 	elif id.find("iron") != -1 or id.find("copper") != -1 or id.find("ingot") != -1:
 		var mcol: Color = Color(0.82, 0.52, 0.28) if id.find("copper") != -1 else Color(0.74, 0.80, 0.88)
 		if id.find("ingot") != -1:

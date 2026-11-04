@@ -49,44 +49,78 @@ func _process(delta: float) -> void:
 				return
 		return
 
+	var prev_pos: Vector2 = global_position
 	var step: float = speed * delta
 	global_position += direction * step
 	_distance_travelled += step
 
 	var progress: float = clampf(_distance_travelled / maxf(1.0, max_range), 0.0, 1.0)
-	var arc_apex: float = 24.0 * clampf(max_range / 300.0, 0.4, 1.2)
-	_current_altitude = maxf(0.0, (1.0 - progress) * 12.0 + sin(progress * PI) * arc_apex)
+	# Flat trajectory: subtle ballistic arc (3.5px for arrows, 5.0px for javelins)
+	var arc_apex: float = 3.5 if projectile_type == "arrow" else 5.0
+	_current_altitude = maxf(0.0, 12.0 * (1.0 - progress * progress * 0.95) + sin(progress * PI) * arc_apex)
 
-	# Smooth ballistic flight direction (tangent of ground velocity + vertical altitude change)
-	var d_alt: float = -12.0 / max_range + (PI / max_range) * arc_apex * cos(progress * PI)
-	var screen_vec: Vector2 = direction + Vector2(0.0, -d_alt * 0.6)
+	# Ballistic flight direction tangent (almost straight forward, slight descent at tail end)
+	var d_alt: float = -20.0 * progress / max_range + (PI / max_range) * arc_apex * cos(progress * PI)
+	var screen_vec: Vector2 = direction + Vector2(0.0, -d_alt * 0.25)
 	if screen_vec.length_squared() > 0.01:
 		_flight_dir = screen_vec.normalized()
 
 	queue_redraw()
 
-	# Check combatant hits
-	var tip_world: Vector2 = global_position + Vector2(0.0, -_current_altitude)
+	var prev_tip: Vector2 = prev_pos + Vector2(0.0, -_current_altitude)
+	var current_tip: Vector2 = global_position + Vector2(0.0, -_current_altitude)
+
+	# Check combatant hits with continuous collision segment and point-blank detection
+	var hit_radius: float = 34.0 if projectile_type == "javelin" else 26.0
+	var closest_hit_node: Node2D = null
+	var closest_dist: float = 99999.0
+
 	for node in get_tree().get_nodes_in_group("combatant"):
 		if node == shooter or not (node is Node2D):
 			continue
 		var n2d: Node2D = node as Node2D
 		if not n2d.is_visible_in_tree():
 			continue
-		var target_center: Vector2 = n2d.global_position + Vector2(0.0, -14.0)
-		var hit_radius: float = 28.0 if projectile_type == "javelin" else 22.0
-		if tip_world.distance_to(target_center) <= hit_radius:
-			SignalBus.arrow_impacted.emit(tip_world, "flesh")
-			SignalBus.damage_requested.emit(node, damage, damage_type, shooter)
-			queue_free()
-			return
+		if n2d.has_method("is_alive") and not bool(n2d.call("is_alive")):
+			continue
+
+		# Target hit-center (wolf/beast torso at -10px, humanoid at -14px)
+		var center_y: float = -10.0 if (n2d.is_in_group("enemy") or n2d.is_in_group("animal") or n2d.is_in_group("fauna")) else -14.0
+		var target_center: Vector2 = n2d.global_position + Vector2(0.0, center_y)
+
+		# 1. Point-blank guarantee: if target is within 55px of shooter along firing direction, guarantee hit!
+		if shooter != null and is_instance_valid(shooter) and shooter is Node2D:
+			var s2d: Node2D = shooter as Node2D
+			var to_target: Vector2 = target_center - (s2d.global_position + Vector2(0.0, -12.0))
+			var dist_to_shooter: float = to_target.length()
+			if dist_to_shooter <= 55.0:
+				var forward_dot: float = to_target.normalized().dot(direction)
+				if forward_dot > 0.30 and _distance_travelled <= 58.0:
+					if dist_to_shooter < closest_dist:
+						closest_dist = dist_to_shooter
+						closest_hit_node = n2d
+						continue
+
+		# 2. Continuous ray segment check
+		var seg_dist: float = _dist_to_segment(target_center, prev_tip, current_tip)
+		if seg_dist <= hit_radius:
+			var d_proj: float = prev_tip.distance_to(target_center)
+			if d_proj < closest_dist:
+				closest_dist = d_proj
+				closest_hit_node = n2d
+
+	if closest_hit_node != null:
+		SignalBus.arrow_impacted.emit(current_tip, "flesh")
+		SignalBus.damage_requested.emit(closest_hit_node, damage, damage_type, shooter)
+		queue_free()
+		return
 
 	if _distance_travelled >= max_range:
 		_is_stuck = true
 		_current_altitude = 0.0
 		SignalBus.arrow_impacted.emit(global_position, "ground")
 		# Natural landing angle into the ground along shot direction
-		var land_vec: Vector2 = direction + Vector2(0.0, 0.55 if projectile_type == "javelin" else 0.45)
+		var land_vec: Vector2 = direction + Vector2(0.0, 0.40 if projectile_type == "javelin" else 0.30)
 		_flight_dir = land_vec.normalized()
 		queue_redraw()
 
@@ -131,6 +165,16 @@ func _draw() -> void:
 		var perp: Vector2 = Vector2(-_flight_dir.y, _flight_dir.x) * 2.4
 		var f_pos: Vector2 = tail + _flight_dir * 2.0
 		draw_line(f_pos - perp, f_pos + perp, Color(0.95, 0.95, 0.98, 0.90), 1.6)
+
+
+func _dist_to_segment(p: Vector2, a: Vector2, b: Vector2) -> float:
+	var ab: Vector2 = b - a
+	var l2: float = ab.length_squared()
+	if l2 < 0.0001:
+		return p.distance_to(a)
+	var t: float = clampf((p - a).dot(ab) / l2, 0.0, 1.0)
+	return p.distance_to(a + ab * t)
+
 
 
 

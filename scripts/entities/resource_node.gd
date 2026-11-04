@@ -205,17 +205,22 @@ func _draw() -> void:
 		else:
 			_draw_procedural_rock(ofs, outline_col, radius)
 	elif node_def_id.find("tin") != -1:
-		var tin_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/ore_silver_galena.png")
+		# Cassiterite dark slate tin deposit (clearly distinguished from gleaming silver)
+		var tin_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/boulder_slate.png")
 		if tin_tex == null:
 			tin_tex = _get_tex("res://assets/sprites/world/resources/boulder_limestone.png")
 		if tin_tex != null:
-			draw_texture_rect(tin_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false, Color(0.85, 0.90, 0.95))
+			draw_texture_rect(tin_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false, Color(0.70, 0.75, 0.82))
 		else:
 			_draw_procedural_rock(ofs, outline_col, radius)
 	elif node_def_id.find("silver") != -1:
+		# Brilliant gleaming silver ore vein with specular metallic highlights
 		var silver_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/ore_silver_galena.png")
 		if silver_tex != null:
-			draw_texture_rect(silver_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false)
+			draw_texture_rect(silver_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false, Color(1.10, 1.14, 1.20))
+			draw_circle(ofs + Vector2(-6.0, -17.0), 1.6, Color(1.0, 1.0, 1.0, 0.95))
+			draw_circle(ofs + Vector2(5.0, -23.0), 1.3, Color(1.0, 1.0, 1.0, 0.90))
+			draw_circle(ofs + Vector2(10.0, -13.0), 1.5, Color(1.0, 1.0, 1.0, 0.95))
 		else:
 			_draw_procedural_rock(ofs, outline_col, radius)
 	elif node_def_id.find("crystal") != -1 or node_def_id.find("gem") != -1:
