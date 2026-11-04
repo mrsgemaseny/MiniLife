@@ -282,7 +282,7 @@ func _test_phase_7_continuous_harvesting_and_ecology(player: Player) -> void:
 	player.select_hotbar_slot(1) # slot 1 is stone_pickaxe
 	var can_mine_pine: Dictionary = pine_node.can_harvest(player)
 	assert(not bool(can_mine_pine.get("ok", false)), "Pickaxe must NOT chop pine tree")
-	player.inventory.set_slot(0, "stone_axe", 1, {"durability": 70})
+	player.inventory.set_slot(0, {"item_id": "stone_axe", "count": 1, "durability": 70})
 	player.select_hotbar_slot(0) # slot 0 is stone_axe
 	var can_chop_pine: Dictionary = pine_node.can_harvest(player)
 	assert(bool(can_chop_pine.get("ok", false)), "Axe must be able to chop pine tree")
