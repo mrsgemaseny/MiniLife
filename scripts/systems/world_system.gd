@@ -734,12 +734,11 @@ func _spawn_chunk_inhabitants(cpos: Vector2i, _biome_id: String, _delta: Diction
 					add_child(animal)
 					spawned_list.append(animal)
 
-		# 2. Night wolf predator packs (Significantly more wolves spawn at night)
+		# 2. Wild wolves (Non-aggressive ambient fauna)
 		if _biome_id in ["forest", "plains", "mountains", "swamp"]:
 			var wolf_rng: RandomNumberGenerator = RngService.make_chunk_rng(_seed, cpos, 999)
 			var is_night: bool = GameManager.is_night()
-			# At night, wolf presence is quadrupled (22% vs 4% daytime)
-			var wolf_spawn_chance: float = 0.22 if is_night else 0.04
+			var wolf_spawn_chance: float = 0.05 if is_night else 0.02
 			if wolf_rng.randf() < wolf_spawn_chance:
 				var wolf_uid: String = "wolf_%d_%d_0" % [cpos.x, cpos.y]
 				var wtile: Vector2i = origin + Vector2i(wolf_rng.randi_range(3, 12), wolf_rng.randi_range(3, 12))
@@ -752,18 +751,6 @@ func _spawn_chunk_inhabitants(cpos: Vector2i, _biome_id: String, _delta: Diction
 						wolf.global_position = Config.world_to_iso(wtile)
 						add_child(wolf)
 						spawned_list.append(wolf)
-
-						# Chance for an accompanying pack mate at night
-						if is_night and wolf_rng.randf() < 0.45:
-							var wolf_uid2: String = "wolf_%d_%d_1" % [cpos.x, cpos.y]
-							var wtile2: Vector2i = wtile + Vector2i(wolf_rng.randi_range(-2, 2), wolf_rng.randi_range(-2, 2))
-							if not killed.has(wolf_uid2) and _is_tile_in_bounds(wtile2) and _terrain.get_biome_at(wtile2) != "water":
-								var wolf2: EnemyBase = ENEMY_SCENE.instantiate() as EnemyBase
-								wolf2.enemy_id = "wolf"
-								wolf2.spawn_uid = wolf_uid2
-								wolf2.global_position = Config.world_to_iso(wtile2)
-								add_child(wolf2)
-								spawned_list.append(wolf2)
 
 	_spawned_entities_by_chunk[cpos] = spawned_list
 

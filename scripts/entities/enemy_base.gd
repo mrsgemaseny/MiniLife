@@ -61,6 +61,11 @@ func _apply_enemy_definition() -> void:
 	attack_damage = float(_enemy_def.get("damage", _enemy_def.get("attack_damage", attack_damage)))
 	attack_cooldown = float(_enemy_def.get("attack_cooldown", attack_cooldown))
 
+	# Wolves are non-aggressive fauna: attacks and damage completely disabled
+	if enemy_id == "wolf" or enemy_id.find("wolf") != -1:
+		attack_damage = 0.0
+		aggro_range = 0.0
+
 func _physics_process(delta: float) -> void:
 	if is_permanently_dead or GameManager.is_paused():
 		return
@@ -91,6 +96,15 @@ func _tick_fsm(delta: float) -> void:
 			velocity = _wander_dir * (move_speed * 0.35)
 			if sim_tier == SimulationBubble.Tier.FULL:
 				move_and_slide()
+
+			# Wolves never chase or attack player; they evade if approached closely
+			if enemy_id == "wolf" or enemy_id.find("wolf") != -1:
+				if target_entity != null and global_position.distance_to(target_entity.global_position) <= 55.0:
+					velocity = (global_position - target_entity.global_position).normalized() * (move_speed * 0.70)
+					if sim_tier == SimulationBubble.Tier.FULL:
+						move_and_slide()
+				return
+
 			if target_entity != null and global_position.distance_to(target_entity.global_position) <= aggro_range:
 				current_state = State.CHASE
 		State.CHASE:
@@ -160,7 +174,7 @@ func _tick_fsm(delta: float) -> void:
 					global_position += velocity * delta
 		State.ATTACK:
 			velocity = Vector2.ZERO
-			if target_entity == null:
+			if target_entity == null or enemy_id == "wolf" or enemy_id.find("wolf") != -1 or attack_damage <= 0.0:
 				current_state = State.PATROL
 				return
 			var dist: float = global_position.distance_to(target_entity.global_position)
@@ -185,8 +199,14 @@ func take_damage(amount: float, _damage_type: String = "physical", source: Node 
 		return
 	stats.modify("health", -amount)
 	if source is Node2D:
-		target_entity = source as Node2D
-		current_state = State.CHASE
+		if enemy_id == "wolf" or enemy_id.find("wolf") != -1:
+			# Wolves flee in panic when hit rather than attacking back
+			current_state = State.PATROL
+			velocity = (global_position - (source as Node2D).global_position).normalized() * move_speed
+			move_and_slide()
+		else:
+			target_entity = source as Node2D
+			current_state = State.CHASE
 	queue_redraw()
 	if stats.health <= 0.0:
 		_handle_death(source)

@@ -137,3 +137,17 @@
   - Визуальная сверка подтвердила полное соответствие 2D-стилистике проекта.
   - Все 13 фаз E2E комплекса Godot пройдены с кодом 0 (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
   - Защищенные файлы из `LOCKED_FILES.md` не нарушены.
+
+## Эталонные спрайты фауны в стиле 2D-пешек RimWorld (3×3 на белом фоне) (2026-11-04)
+
+- **Коррекция визуального канона по эталонам папки `Downloads/01a1a4e0-cbcb-7032-bd86-4a978f3e7dbe`**:
+  - Отказ от реалистичных 4K-картин и тёмных фонов в пользу канонической 2D-стилистики RimWorld (плоские лаконичные пешки, чистый белый изолированный фон `#FFFFFF`, жирный черный контур, высокая читаемость в изометрии/сверху).
+- **Сформированные эталонные листы**:
+  1. `assets/references/rimworld_animals_domestic_3x3.png`:
+     - Сетка 3×3: Dairy Cow, Sheep, Pig, Chicken/Rooster, Horse, Pack Donkey, Deer/Stag, Moose, Hare/Rabbit.
+  2. `assets/references/rimworld_animals_predators_3x3.png`:
+     - Сетка 3×3: Timber Wolf, Warg/Direwolf, Brown Bear, Wild Boar, Red Fox, Hunting Dog, Domestic Cat, Megaspider, River Fish.
+  - Копии сохранены в `output/fauna_rimworld_2026-11-04/`.
+- **Верификация**:
+  - Headless E2E тест пройден на 100% (`E2E_ALL_SYSTEMS_VERIFIED_OK`).
+  - Файлы из `LOCKED_FILES.md` защищены и не изменялись.
