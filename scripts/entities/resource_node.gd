@@ -333,8 +333,11 @@ func can_harvest(harvester: Node) -> Dictionary:
 	var is_axe: bool = held_weapon.find("axe") != -1 and not is_pick
 	var pick_tier: int = get_pickaxe_tier(held_weapon)
 
-	var is_rock: bool = (node_def_id.find("stone") != -1 or node_def_id.find("rock") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("ore") != -1 or node_def_id.find("deposit") != -1 or node_def_id.find("vein") != -1)
-	var is_tree: bool = (node_def_id.find("tree") != -1 or node_def_id.find("oak") != -1 or node_def_id.find("pine") != -1 or growth_stage == "small_tree")
+	var node_skill: String = str(_def.get("skill", ""))
+	var node_pref_tool: String = str(_def.get("preferred_tool", ""))
+
+	var is_rock: bool = (node_skill == "mining" or node_pref_tool == "pickaxe" or (node_skill == "" and (node_def_id.find("stone") != -1 or node_def_id.find("rock") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("vein") != -1 or node_def_id.find("deposit") != -1)))
+	var is_tree: bool = not is_rock and (node_skill == "woodcutting" or node_pref_tool == "axe" or node_def_id.find("tree") != -1 or node_def_id.find("pine") != -1 or node_def_id.find("oak") != -1 or growth_stage == "small_tree")
 
 	if is_rock:
 		if not is_pick or pick_tier < 1:
@@ -371,8 +374,11 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 	var held_weapon: String = equip.get_item_id("weapon") if equip != null else ""
 	var pick_tier: int = get_pickaxe_tier(held_weapon)
 
-	var is_rock: bool = (node_def_id.find("stone") != -1 or node_def_id.find("rock") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("ore") != -1 or node_def_id.find("deposit") != -1 or node_def_id.find("vein") != -1)
-	var is_tree: bool = (node_def_id.find("tree") != -1 or node_def_id.find("oak") != -1 or node_def_id.find("pine") != -1 or growth_stage == "small_tree")
+	var node_skill: String = str(_def.get("skill", ""))
+	var node_pref_tool: String = str(_def.get("preferred_tool", ""))
+
+	var is_rock: bool = (node_skill == "mining" or node_pref_tool == "pickaxe" or (node_skill == "" and (node_def_id.find("stone") != -1 or node_def_id.find("rock") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("vein") != -1 or node_def_id.find("deposit") != -1)))
+	var is_tree: bool = not is_rock and (node_skill == "woodcutting" or node_pref_tool == "axe" or node_def_id.find("tree") != -1 or node_def_id.find("pine") != -1 or node_def_id.find("oak") != -1 or growth_stage == "small_tree")
 	var is_plant: bool = (node_def_id.find("grass") != -1 or node_def_id.find("herb") != -1 or node_def_id.find("flower") != -1)
 	var is_bush: bool = (node_def_id.find("bush") != -1 or node_def_id.find("berry") != -1 or node_def_id.find("mushroom") != -1)
 

@@ -275,6 +275,18 @@ func _test_phase_7_continuous_harvesting_and_ecology(player: Player) -> void:
 	assert(not DataRegistry.get_item("torch").is_empty(), "Torch item definition missing")
 	assert(not DataRegistry.get_recipe("craft_torch").is_empty(), "Torch recipe missing")
 
+	# Pine Tree Harvesting Verification
+	var pine_node: ResourceNode = ResourceNode.new()
+	pine_node.node_def_id = "forest_pine"
+	add_child(pine_node)
+	player.equipment.equip("stone_pickaxe", 70, "weapon")
+	var can_mine_pine: Dictionary = pine_node.can_harvest(player)
+	assert(not bool(can_mine_pine.get("ok", false)), "Pickaxe must NOT chop pine tree")
+	player.equipment.equip("stone_axe", 70, "weapon")
+	var can_chop_pine: Dictionary = pine_node.can_harvest(player)
+	assert(bool(can_chop_pine.get("ok", false)), "Axe must be able to chop pine tree")
+	pine_node.queue_free()
+
 	# Pickaxe Tier Requirement Rules (Iron requires Bronze Pickaxe; Gold/Silver require Iron Pickaxe)
 	assert(player.inventory.has_item("stone_axe", 1), "Player must start with stone_axe")
 	assert(player.inventory.has_item("stone_pickaxe", 1), "Player must start with stone_pickaxe")
