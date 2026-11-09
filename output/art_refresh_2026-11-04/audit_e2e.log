@@ -1,0 +1,58 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+
+=======================================================
+[E2E_SUITE] STARTING EXHAUSTIVE 13-PHASE INTEGRATION SUITE
+=======================================================
+[E2E Phase 1] Core Invariants, World Seed & Audio Director Engine...
+[E2E Phase 1] OK (Seed, Iso Math, 17 SFX verified)
+[E2E Phase 2] World Generation, Chunks & POI Hand-Crafted Ruins...
+[E2E Phase 2] OK (Ruins, Chunks, Interiors verified)
+[E2E Phase 3] Fog of War Caching & 3-Tier Simulation Bubble...
+[E2E Phase 3] OK (Fog caching & Bubble stepping verified)
+[E2E Phase 4] Unified Health & Armor, Hunger/Stamina & Permadeath Invariants...
+[E2E Phase 4] OK (Unified Health & Armor, Hunger Regeneration, Hungry debuffs verified)
+[E2E Phase 5] 18 Skills & Milestone Perks System...
+[E2E Phase 5] OK (18 Skills, XP Scaling, Leveling verified)
+[E2E Phase 6] Combat Aiming, Directional Shields, Faction AI & Auto-Attack...
+[E2E Phase 6] OK (Directional Shields, Flanking, Armor Pen & Faction AI verified)
+[E2E Phase 7] Minecraft-style Harvesting & Tree-Only Ecology Regrowth...
+E2E_FAILURE: Pickaxe must NOT chop pine tree
+E2E_FAILURE: Axe must be able to chop pine tree
+E2E_FAILURE: Player must start with stone_pickaxe
+E2E_FAILURE: Bronze pickaxe must be able to mine iron ore
+E2E_FAILURE: Iron pickaxe must be able to mine gold ore
+[E2E Phase 7] OK (Continuous Harvest, Starter Tools & Pickaxe Tier Restrictions verified)
+[E2E Phase 8] Crafting System & 3-Slot Thermal Furnace Smelting...
+CraftMenuUI node found: true
+E2E_FAILURE: All catalog recipes must remain visible at workbench
+E2E_FAILURE: Wood should decrease by 1
+Craft Plank Test: wood before=5 after=5, planks before=0 after=0
+E2E_FAILURE: Planks should increase by 2
+[E2E Phase 8] OK (Recipes, Crafting Signal & Furnace Station verified)
+[E2E Phase 9] Scholar's Research Codex & Stone Aesthetic Invariants...
+[E2E Phase 9] OK (Research Tree DAG & Stone Codex verified)
+[E2E Phase 10] Building System, Snapping & YSort/Z-Index Invariants...
+[E2E Phase 10] OK (BuildingSystem, In-Hand Placement & Dismantle verified)
+[E2E Phase 11] Inventory, Hotbar Mirroring & Duplication Prevention...
+[E2E Phase 11] OK (Hotbar Mirroring & Dupe-Proofing verified)
+[E2E Phase 12] Delta-Chunk Save/Load Persistence & Weather System...
+[E2E Phase 12] OK (Weather, Delta Chunks, QuickSave & Named Save/Load verified)
+[E2E Phase 13] Master Specifications: Comprehensive Audit (All Researches, Crafts, Tiers, Lvl & Systems)...
+ERROR:   [AUDIT ERROR] Progression: L2 did not advance to L3 after completing all tools + furnace
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _test_phase_13_master_contracts (res://scripts/core/debug_console.gd:594)
+       [1] _run_e2e_exhaustive_suite (res://scripts/core/debug_console.gd:84)
+ERROR:   [AUDIT ERROR] Craft Audit: Bronze pickaxe craft blocked at workbench with bronze_tools researched: Соберите 30 ресурсов руками, чтобы открыть ручной крафт
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _test_phase_13_master_contracts (res://scripts/core/debug_console.gd:594)
+       [1] _run_e2e_exhaustive_suite (res://scripts/core/debug_console.gd:84)
+E2E_FAILURE: Comprehensive audit failed with 2 errors
+  [AUDIT PASSED] All 11 core subsystem suites cleanly validated.
+[E2E Phase 13] OK (Zero Clutter, Layered Armor, Progression L1-L11, Caravan 5-Trip ROI, Fauna verified)
+=======================================================
+[E2E_SUITE] 13 PHASES EXECUTED; CHECKING RESULTS
+=======================================================
+E2E_FAILED: 9 failed checks

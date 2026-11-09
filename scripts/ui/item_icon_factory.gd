@@ -8,6 +8,14 @@ static var _world_sprite_cache: Dictionary = {}
 
 
 static func _resolve_sprite_path(id: String) -> String:
+	# Explicit item artwork is authoritative; the ID filename is only a fallback.
+	var definition: Dictionary = DataRegistry.get_item(id)
+	var visual: Dictionary = definition.get("visual", {})
+	var declared: String = str(visual.get("sprite", ""))
+	if not declared.is_empty():
+		var declared_path: String = "res://assets/sprites/" + declared
+		if FileAccess.file_exists(ProjectSettings.globalize_path(declared_path)) or ResourceLoader.exists(declared_path):
+			return declared_path
 	# 1. Direct match in assets/sprites/items/
 	var direct_path: String = "res://assets/sprites/items/" + id + ".png"
 	var abs_direct: String = ProjectSettings.globalize_path(direct_path)

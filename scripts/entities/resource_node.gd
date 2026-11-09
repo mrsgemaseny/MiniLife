@@ -88,6 +88,8 @@ static func _get_tex(path: String) -> Texture2D:
 
 
 func get_visual_rect() -> Rect2:
+	if node_def_id == "clay_bank":
+		return Rect2(-22.0, -20.0, 44.0, 26.0)
 	if growth_stage == "stump":
 		return Rect2(-10.0, -10.0, 20.0, 18.0)
 	elif growth_stage == "small_tree":
@@ -130,19 +132,11 @@ func _draw() -> void:
 	var outline_col: Color = Color(0.08, 0.09, 0.11, 0.92)
 	var secondary_col: Color = Color.from_string(str(_def.get("trunk_color", "#5c4028")), Color(0.36, 0.25, 0.16))
 
-	# Ground shadow firmly anchored under the resource base
-	var is_plant_node: bool = (node_def_id.find("grass") != -1 or node_def_id.find("herb") != -1 or node_def_id.find("flower") != -1)
-	var is_bush_node: bool = (node_def_id.find("berry") != -1 or node_def_id.find("bush") != -1)
-	var shadow_y: float = 3.0 if is_plant_node else 4.0
-	if is_bush_node:
-		# Bushes (berry_bush.png) already contain a natural organic shadow baked into the sprite
-		pass
-	elif is_plant_node:
-		draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, shadow_y), radius * 0.55, radius * 0.28), Color(0.0, 0.0, 0.0, 0.12))
-	else:
-		draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, shadow_y), radius * 1.25, radius * 0.62), Color(0.0, 0.0, 0.0, 0.36))
-
-	if growth_stage == "stump":
+	if node_def_id == "clay_bank":
+		var clay: Texture2D = _get_tex("res://assets/sprites/items/clay.png")
+		if clay != null:
+			draw_texture_rect(clay, Rect2(-22.0 + ofs.x, -20.0 + ofs.y, 44.0, 26.0), false)
+	elif growth_stage == "stump":
 		var stump_pts: PackedVector2Array = PackedVector2Array([
 			ofs + Vector2(-6.0, 4.0), ofs + Vector2(-5.0, -5.0),
 			ofs + Vector2(5.0, -5.0), ofs + Vector2(6.0, 4.0)
@@ -205,22 +199,17 @@ func _draw() -> void:
 		else:
 			_draw_procedural_rock(ofs, outline_col, radius)
 	elif node_def_id.find("tin") != -1:
-		# Cassiterite dark slate tin deposit (clearly distinguished from gleaming silver)
-		var tin_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/boulder_slate.png")
-		if tin_tex == null:
-			tin_tex = _get_tex("res://assets/sprites/world/resources/boulder_limestone.png")
+		# Cassiterite has its own pale matrix and dark crystals, distinct from plain slate.
+		var tin_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/ore_tin_cassiterite.png")
 		if tin_tex != null:
-			draw_texture_rect(tin_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false, Color(0.70, 0.75, 0.82))
+			draw_texture_rect(tin_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false)
 		else:
 			_draw_procedural_rock(ofs, outline_col, radius)
 	elif node_def_id.find("silver") != -1:
 		# Brilliant gleaming silver ore vein with specular metallic highlights
 		var silver_tex: Texture2D = _get_tex("res://assets/sprites/world/resources/ore_silver_galena.png")
 		if silver_tex != null:
-			draw_texture_rect(silver_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false, Color(1.10, 1.14, 1.20))
-			draw_circle(ofs + Vector2(-6.0, -17.0), 1.6, Color(1.0, 1.0, 1.0, 0.95))
-			draw_circle(ofs + Vector2(5.0, -23.0), 1.3, Color(1.0, 1.0, 1.0, 0.90))
-			draw_circle(ofs + Vector2(10.0, -13.0), 1.5, Color(1.0, 1.0, 1.0, 0.95))
+			draw_texture_rect(silver_tex, Rect2(-24.0 + ofs.x, -30.0 + ofs.y, 48.0, 36.0), false)
 		else:
 			_draw_procedural_rock(ofs, outline_col, radius)
 	elif node_def_id.find("crystal") != -1 or node_def_id.find("gem") != -1:
@@ -332,6 +321,8 @@ func get_pickaxe_tier(weapon_id: String) -> int:
 func can_harvest(harvester: Node) -> Dictionary:
 	if harvester == null:
 		return {"ok": false, "reason": "No harvester"}
+	if _can_gather_loose(harvester):
+		return {"ok": true, "reason": ""}
 	var equip: EquipmentComponent = harvester.get("equipment") as EquipmentComponent
 	var held_weapon: String = equip.get_item_id("weapon") if equip != null else ""
 	var is_pick: bool = held_weapon.find("pickaxe") != -1
@@ -344,6 +335,8 @@ func can_harvest(harvester: Node) -> Dictionary:
 	var is_rock: bool = (node_skill == "mining" or node_pref_tool == "pickaxe" or (node_skill == "" and (node_def_id.find("stone") != -1 or node_def_id.find("rock") != -1 or node_def_id.find("boulder") != -1 or node_def_id.find("vein") != -1 or node_def_id.find("deposit") != -1)))
 	var is_tree: bool = not is_rock and (node_skill == "woodcutting" or node_pref_tool == "axe" or node_def_id.find("tree") != -1 or node_def_id.find("pine") != -1 or node_def_id.find("oak") != -1 or growth_stage == "small_tree")
 
+	if (is_rock or is_tree) and ProgressionSystem.instance != null and not ProgressionSystem.instance.can_harvest_with_tools():
+		return {"ok": false, "reason": "Сначала соберите 30 ресурсов руками"}
 	if is_rock:
 		if not is_pick or pick_tier < 1:
 			return {"ok": false, "reason": "Requires a pickaxe to mine stone and ores!"}
@@ -365,7 +358,16 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 	if harvester == null:
 		return false
 	_decay_timer = 0.0
-
+	if _can_gather_loose(harvester):
+		harvest_progress += delta
+		if harvest_progress >= 1.0:
+			harvest_progress = 0.0
+			var item: String = "wood" if str(_def.get("skill", "")) == "woodcutting" else "stone"
+			var inv: InventoryComponent = harvester.get("inventory") as InventoryComponent
+			if inv != null and inv.can_fit_item(item, 1):
+				inv.add_item(item, 1)
+				SignalBus.resource_harvested.emit(item, 1, tile_pos)
+		return false
 	var check: Dictionary = can_harvest(harvester)
 	if not bool(check.get("ok", false)):
 		cancel_harvest()
@@ -443,7 +445,7 @@ func harvest_channel(harvester: Node, delta: float) -> bool:
 
 
 func is_forageable() -> bool:
-	return node_def_id.find("herb") != -1 or node_def_id.find("grass") != -1 or node_def_id.find("berry") != -1 or node_def_id.find("bush") != -1 or node_def_id.find("flower") != -1
+	return node_def_id == "clay_bank" or node_def_id.find("herb") != -1 or node_def_id.find("grass") != -1 or node_def_id.find("berry") != -1 or node_def_id.find("bush") != -1 or node_def_id.find("flower") != -1
 
 
 func interact(harvester: Node) -> void:
@@ -551,9 +553,8 @@ func _deplete_and_grant(harvester: Node) -> void:
 			has_blade = true
 
 	var is_flora: bool = node_def_id.find("herb") != -1 or node_def_id == "wild_grass" or node_def_id == "wild_berry_bush"
+	var overflow: Array = []
 
-	var total_dropped: int = 0
-	var primary_item: String = "wood"
 	for drop in _def.get("drops", []):
 		if drop is Dictionary:
 			var item_id: String = str(drop.get("item_id", "wood"))
@@ -561,9 +562,13 @@ func _deplete_and_grant(harvester: Node) -> void:
 			var max_c: int = int(drop.get("max", 2))
 			var cnt: int = max_c if (has_blade and is_flora) else randi_range(min_c, maxi(min_c, max_c))
 			if cnt > 0 and inv != null:
-				inv.add_item(item_id, cnt)
-				total_dropped += cnt
-				primary_item = item_id
+				var received: int = inv.add_item(item_id, cnt)
+				if received > 0:
+					SignalBus.resource_harvested.emit(item_id, received, tile_pos)
+				if received < cnt:
+					overflow.append({"item_id": item_id, "count": cnt - received, "durability": -1})
+	if not overflow.is_empty():
+		SignalBus.loot_bag_spawned.emit(global_position, overflow, 0)
 
 	# Knife herbalism bonus: 30% chance for extra wheat_seeds when harvesting flora
 	if has_blade and is_flora and inv != null:
@@ -583,7 +588,6 @@ func _deplete_and_grant(harvester: Node) -> void:
 			if skill_name == "woodcutting" or skill_name == "mining" or (skill_name == "foraging" and has_blade):
 				equip.damage_weapon(1)
 
-	SignalBus.resource_harvested.emit(primary_item, maxi(total_dropped, 1), tile_pos)
 	SignalBus.resource_node_depleted.emit(tile_pos, node_def_id)
 	queue_free()
 
@@ -594,3 +598,13 @@ func _ensure_collision() -> void:
 	for child in get_children():
 		if child is CollisionShape2D:
 			(child as CollisionShape2D).disabled = true
+
+
+func _can_gather_loose(harvester: Node) -> bool:
+	if harvester == null:
+		return false
+	var eq: EquipmentComponent = harvester.get("equipment") as EquipmentComponent
+	if eq != null and not eq.get_item_id("weapon").is_empty():
+		return false
+	# Gather fallen branches / loose stones without felling or mining the node.
+	return str(_def.get("skill", "")) == "woodcutting" or node_def_id == "stone_boulder"

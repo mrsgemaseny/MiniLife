@@ -1,5 +1,18 @@
 [
 	{
+		"id": "clay_bank",
+		"name": "Riverbank Clay",
+		"biome": "swamp",
+		"hits": 1,
+		"required_tool": "",
+		"preferred_tool": "",
+		"skill": "foraging",
+		"xp": 8.0,
+		"regrows": false,
+		"radius": 16.0,
+		"drops": [{"item_id": "clay", "min": 3, "max": 5}]
+	},
+	{
 		"id": "oak_tree",
 		"name": "Frontier Tree",
 		"biome": "plains",

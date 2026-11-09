@@ -1,0 +1,4 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+CRAFT_PRECHECK: { "ok": true, "reason": "" }
+TIMED_CRAFT_OK: delay, cancellation, batch costs, damage interruption

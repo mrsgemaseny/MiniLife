@@ -3,16 +3,18 @@ extends Node
 # Grid & Isometric Geometry
 const DEFAULT_WORLD_SEED: int = 42819
 const CHUNK_SIZE: int = 16
-const TILE_SIZE: Vector2i = Vector2i(64, 32)
-const HALF_TILE: Vector2i = Vector2i(32, 16)
-const WORLD_SIZE_CHUNKS: int = 16
-const WORLD_SIZE_TILES: int = WORLD_SIZE_CHUNKS * CHUNK_SIZE
+const TILE_SIZE: Vector2i = Vector2i(48, 48)
+const HALF_TILE: Vector2i = Vector2i(24, 24)
+const MAP_PROJECTION: String = "orthogonal_v1"
+const WORLD_SIZE_TILES: int = 1000
+const WORLD_SIZE_CHUNKS: int = (WORLD_SIZE_TILES + CHUNK_SIZE - 1) / CHUNK_SIZE
+var TERRAIN_GEOGRAPHY_SIZE: int = WORLD_SIZE_TILES
 const CHUNK_LOAD_RADIUS: int = 2
 const BORDER_MOUNTAIN_THICKNESS: int = 4
 
 # Simulation & Time
 const AUTOSAVE_INTERVAL: float = 300.0
-const SECONDS_PER_GAME_HOUR: float = 15.0
+const SECONDS_PER_GAME_HOUR: float = 60.0
 const HOURS_PER_DAY: int = 24
 const START_HOUR: float = 6.0
 const DAY_START_HOUR: float = 6.0
@@ -93,17 +95,12 @@ enum QualityTier { POOR = 0, NORMAL = 1, GOOD = 2, MASTERWORK = 3 }
 
 
 static func world_to_iso(tile_pos: Vector2i) -> Vector2:
-	var x: float = float(tile_pos.x - tile_pos.y) * float(HALF_TILE.x)
-	var y: float = float(tile_pos.x + tile_pos.y) * float(HALF_TILE.y)
-	return Vector2(x, y)
+	# Legacy API name retained; the active map projection is now orthogonal.
+	return Vector2(tile_pos) * Vector2(TILE_SIZE)
 
 
 static func iso_to_world(screen_pos: Vector2) -> Vector2i:
-	var u: float = screen_pos.x / float(HALF_TILE.x)
-	var v: float = screen_pos.y / float(HALF_TILE.y)
-	var tx: float = (u + v) * 0.5
-	var ty: float = (v - u) * 0.5
-	return Vector2i(roundi(tx), roundi(ty))
+	return Vector2i(roundi(screen_pos.x / TILE_SIZE.x), roundi(screen_pos.y / TILE_SIZE.y))
 
 
 static func tile_to_chunk(tile_pos: Vector2i) -> Vector2i:

@@ -36,7 +36,6 @@ func _connect_signals() -> void:
 	SignalBus.faction_rep_change_requested.connect(change_reputation)
 	SignalBus.faction_join_requested.connect(join_faction)
 	SignalBus.npc_killed.connect(_on_npc_killed)
-	SignalBus.day_passed.connect(_on_day_passed)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
 

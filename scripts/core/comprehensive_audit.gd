@@ -18,7 +18,7 @@ func run_audit() -> Dictionary:
 	_audit_progression_and_levels(report)
 	_audit_craft_stations_and_chest_pull(report)
 	_audit_fauna_and_animals(report)
-	_audit_economy_and_arbitrage(report)
+	_audit_economy_and_currency(report)
 	_audit_farming_system(report)
 	_audit_exit_autosave_and_bronze_craft(report)
 
@@ -366,27 +366,35 @@ func _audit_fauna_and_animals(report: Dictionary) -> void:
 	p.queue_free()
 	report["checks_passed"] += 1
 
-func _audit_economy_and_arbitrage(report: Dictionary) -> void:
+func _audit_economy_and_currency(report: Dictionary) -> void:
 	var car: CaravanSystem = CaravanSystem.new()
-	car._init_settlements()
 
 	var rate_v = car.get_exchange_rate(null)
-	if rate_v != 15:
-		report["errors"].append("Economy Arbitrage: village exchange rate must be 15, got %d" % rate_v)
+	if rate_v != CurrencyPolicy.SILVER_PER_GOLD:
+		report["errors"].append("Economy: exchange rate differs from canonical rate")
 
 	var city_mock: Node = Node.new()
 	city_mock.set_meta("is_in_city", true)
 	var rate_c = car.get_exchange_rate(city_mock)
-	if rate_c != 25:
-		report["errors"].append("Economy Arbitrage: city exchange rate must be 25, got %d" % rate_c)
+	if rate_c != rate_v:
+		report["errors"].append("Economy: regional currency arbitrage must not exist")
 	city_mock.queue_free()
 
-	# Caravan 5-trip ROI rule
-	var city_settle = car.settlements["city_ironford"]
-	for i in range(5):
-		car.record_caravan_trip("city_ironford", true)
-	if not city_settle.is_roi_achieved or city_settle.caravan_trips < 5:
-		report["errors"].append("Economy Arbitrage: city caravan did not achieve full ROI on 5 trips")
+	var wallet: InventoryComponent = InventoryComponent.new()
+	wallet.gold = 2
+	if not CurrencyPolicy.exchange(wallet, false, 1) or not CurrencyPolicy.exchange(wallet, true, 1) or wallet.gold != 2 or wallet.silver != 0:
+		report["errors"].append("Economy: exchanging currency twice changed total wealth")
+	var market: AlifeSettlement = AlifeSettlement.new()
+	market.food = 1.0
+	market.market_funds = 1000
+	var before: int = CurrencyPolicy.total_value(wallet) + market.market_funds
+	var purchase: Dictionary = MarketTrade.execute(market, wallet, "bread", 1, true)
+	if not bool(purchase["ok"]) or market.food != 0.0 or wallet.count_of("bread") != 1:
+		report["errors"].append("Economy: buying did not transfer finite market stock")
+	if CurrencyPolicy.total_value(wallet) + market.market_funds != before:
+		report["errors"].append("Economy: market purchase did not conserve currency")
+	if bool(MarketTrade.execute(market, wallet, "bread", 1, true)["ok"]):
+		report["errors"].append("Economy: empty market created an item")
 
 	car.queue_free()
 	report["checks_passed"] += 1
@@ -430,6 +438,10 @@ func _audit_exit_autosave_and_bronze_craft(report: Dictionary) -> void:
 
 	inv.add_item("bronze_ingot", 2)
 	inv.add_item("wood", 2)
+	var bench: StructureEntity = StructureEntity.new()
+	bench.structure_id = "workbench"
+	(Engine.get_main_loop() as SceneTree).root.add_child(bench)
+	bench.global_position = dummy_player.global_position
 
 	var cs: CraftSystem = CraftSystem.instance
 	if cs == null:
@@ -444,6 +456,7 @@ func _audit_exit_autosave_and_bronze_craft(report: Dictionary) -> void:
 		if not craft_ok or not inv.has_item("bronze_pickaxe", 1):
 			report["errors"].append("Craft Audit: Bronze pickaxe craft did not produce bronze_pickaxe in inventory")
 
+	bench.free()
 	dummy_player.queue_free()
 
 	# 2. Verify Exit Autosave Functionality

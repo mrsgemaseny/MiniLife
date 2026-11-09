@@ -13,6 +13,11 @@ func _ready() -> void:
 	SignalBus.save_data_requested.connect(func(_bundle: Dictionary) -> void: cancel())
 	SignalBus.save_data_loaded.connect(func(_bundle: Dictionary) -> void: cancel())
 
+func _unhandled_input(event: InputEvent) -> void:
+	if remaining > 0.0 and event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		cancel()
+		get_viewport().set_input_as_handled()
+
 func begin(label: String, seconds: float, completion: Callable, stamina_cost: float = 0.0) -> bool:
 	if remaining > 0.0:
 		return false
@@ -39,7 +44,7 @@ func advance(delta: float) -> void:
 	if remaining <= 0.0 or GameManager.is_paused():
 		return
 	var actor: Node2D = get_parent() as Node2D
-	if not actor.is_alive() or actor.global_position.distance_to(_origin) > 3.0 or Input.get_vector("move_left", "move_right", "move_up", "move_down") != Vector2.ZERO:
+	if not bool(actor.call("is_alive")) or actor.global_position.distance_to(_origin) > 3.0 or Input.get_vector("move_left", "move_right", "move_up", "move_down") != Vector2.ZERO:
 		cancel()
 		return
 	var stats: StatsComponent = actor.get("stats") as StatsComponent

@@ -1,0 +1,16 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCRIPT ERROR: Parse Error: Identifier "MarketPricing" not declared in the current scope.
+   at: GDScript::reload (res://autoloads/world_simulation.gd:218)
+SCRIPT ERROR: Parse Error: Identifier "MarketTrade" not declared in the current scope.
+   at: GDScript::reload (res://autoloads/world_simulation.gd:249)
+ERROR: Failed to load script "res://autoloads/world_simulation.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+ERROR: Failed to instantiate an autoload, script 'res://autoloads/world_simulation.gd' does not inherit from 'Node'.
+   at: start (main/main.cpp:4535)
+SCRIPT ERROR: Parse Error: Identifier "MarketPricing" not declared in the current scope.
+   at: GDScript::reload (res://scripts/ui/trade_menu_ui.gd:169)
+SCRIPT ERROR: Parse Error: Identifier "MarketPricing" not declared in the current scope.
+   at: GDScript::reload (res://scripts/ui/trade_menu_ui.gd:196)
+ERROR: Failed to load script "res://scripts/ui/trade_menu_ui.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

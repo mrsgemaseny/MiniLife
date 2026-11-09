@@ -2,6 +2,8 @@ class_name DataRegistry
 extends Node
 
 const TABLE_FILES: Dictionary = {
+	"settlement_templates": "settlement_templates.json",
+	"npc_name_pools": "npc_name_pools.json",
 	"items": "items.json",
 	"recipes": "recipes.json",
 	"structures": "structures.json",

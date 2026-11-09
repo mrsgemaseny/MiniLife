@@ -244,6 +244,7 @@ func _setup_styled_build_menu() -> void:
 
 
 func open_panel() -> void:
+	SignalBus.ui_close_all_requested.emit()
 	visible = true
 	refresh()
 	SignalBus.ui_panel_toggled.emit(PANEL_ID, true, true)
@@ -289,7 +290,7 @@ func refresh() -> void:
 
 		var req_tech: String = str(def.get("tech_required", ""))
 		var is_tech_unlocked: bool = true
-		if req_tech != "":
+		if req_tech != "" and not GameManager.sandbox_for(player):
 			if ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_tech):
 				is_tech_unlocked = false
 
@@ -337,6 +338,8 @@ func refresh() -> void:
 			btn.add_theme_color_override("font_color", Color(0.45, 0.48, 0.54, 1.0))
 		elif can_build:
 			btn.text = "   %s   —   Ресурсы: %s  [ГОТОВО]" % [sname, _format_materials(mats)]
+			if GameManager.sandbox_for(player):
+				btn.text = sname + " — INFINITE VIRTUAL RESOURCES [READY]"
 			btn.add_theme_color_override("font_color", Color(0.92, 0.90, 0.86, 1.0))
 		else:
 			btn.text = "   %s   —   Ресурсы: %s  [НЕ ХВАТАЕТ]" % [sname, _format_materials(mats)]
@@ -364,7 +367,7 @@ func _update_detail_panel(player: Node) -> void:
 	var req_tech: String = str(def.get("tech_required", ""))
 
 	var is_tech_unlocked: bool = true
-	if req_tech != "":
+	if req_tech != "" and not GameManager.sandbox_for(player):
 		if ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_tech):
 			is_tech_unlocked = false
 	var can_build: bool = is_tech_unlocked and _has_materials(player, mats)
@@ -376,6 +379,8 @@ func _update_detail_panel(player: Node) -> void:
 	if _detail_category != null:
 		_detail_category.text = "Категория: Базовая инфраструктура" if req_tech.is_empty() else ("Требует исследования: %s" % req_tech.capitalize().replace("_", " "))
 		_detail_category.modulate = Color(0.60, 0.63, 0.68) if is_tech_unlocked else Color(0.75, 0.45, 0.42)
+		if GameManager.sandbox_for(player):
+			_detail_category.text = "God mode: all blueprints available"
 	if _detail_desc != null:
 		_detail_desc.text = str(def.get("description", "Стационарное сооружение выживания. Устанавливается на подготовленной расчищенной территории базы."))
 	if _detail_mats != null:
@@ -388,6 +393,8 @@ func _update_detail_panel(player: Node) -> void:
 				var cur_c: int = inv.count_of(mid) if inv != null else 0
 				mat_lines.append("• %s: %d / %d" % [mid.capitalize(), cur_c, req_c])
 		_detail_mats.text = "Необходимые материалы:\n" + "\n".join(mat_lines)
+		if GameManager.sandbox_for(player):
+			_detail_mats.text = "INFINITE VIRTUAL RESOURCES\nNo materials consumed from inventory."
 		_detail_mats.modulate = Color(0.88, 0.89, 0.92) if can_build else Color(0.75, 0.77, 0.82)
 
 	if _detail_action_btn != null:
@@ -404,6 +411,8 @@ func _update_detail_panel(player: Node) -> void:
 
 
 func _has_materials(player: Node, mats: Array) -> bool:
+	if GameManager.sandbox_for(player):
+		return true
 	if player == null:
 		return false
 	var inv: InventoryComponent = player.get("inventory") as InventoryComponent

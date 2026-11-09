@@ -43,6 +43,7 @@ func _ready() -> void:
 	visible = false
 	_recipes = GameManager.load_json_indexed("recipes.json")
 	_setup_styled_craft_menu()
+	SurvivalTheme.apply_to(self)
 	SignalBus.ui_panel_requested.connect(_on_panel_requested)
 	SignalBus.ui_close_all_requested.connect(close_panel)
 	SignalBus.craft_station_opened.connect(_on_craft_station_opened)
@@ -243,9 +244,17 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 	insp_panel.add_theme_stylebox_override("panel", isb)
 	parent.add_child(insp_panel)
 
+	var inspector_layout: VBoxContainer = VBoxContainer.new()
+	inspector_layout.add_theme_constant_override("separation", 10)
+	insp_panel.add_child(inspector_layout)
+	var details_scroll: ScrollContainer = ScrollContainer.new()
+	details_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	details_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	inspector_layout.add_child(details_scroll)
 	var vb: VBoxContainer = VBoxContainer.new()
+	vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vb.add_theme_constant_override("separation", 10)
-	insp_panel.add_child(vb)
+	details_scroll.add_child(vb)
 
 	var hdr_lbl: Label = Label.new()
 	hdr_lbl.text = "ПАРАМЕТРЫ И НАКОВАЛЬНЯ"
@@ -280,6 +289,7 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 	top_hbox.add_child(title_box)
 
 	_insp_title_lbl = Label.new()
+	_insp_title_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_insp_title_lbl.text = "Выберите рецепт"
 	_insp_title_lbl.add_theme_font_size_override("font_size", 14)
 	_insp_title_lbl.modulate = Color(0.92, 0.90, 0.86)
@@ -305,24 +315,29 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 	vb.add_child(info_sep)
 
 	_insp_stats_lbl = Label.new()
+	_insp_stats_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_insp_stats_lbl.text = ""
 	_insp_stats_lbl.add_theme_font_size_override("font_size", 10)
 	_insp_stats_lbl.modulate = Color(0.85, 0.86, 0.90)
 	vb.add_child(_insp_stats_lbl)
 
 	_insp_station_lbl = Label.new()
+	_insp_station_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_insp_station_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_insp_station_lbl.text = "Станок: Ручной крафт"
 	_insp_station_lbl.add_theme_font_size_override("font_size", 10)
 	_insp_station_lbl.modulate = Color(0.70, 0.73, 0.80, 1.0)
 	vb.add_child(_insp_station_lbl)
 
 	_insp_tech_lbl = Label.new()
+	_insp_tech_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_insp_tech_lbl.text = "Исследование: Не требуется"
 	_insp_tech_lbl.add_theme_font_size_override("font_size", 10)
 	_insp_tech_lbl.modulate = Color(0.70, 0.73, 0.80, 1.0)
 	vb.add_child(_insp_tech_lbl)
 
 	_insp_skill_lbl = Label.new()
+	_insp_skill_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_insp_skill_lbl.text = "Навык: Не требуется"
 	_insp_skill_lbl.add_theme_font_size_override("font_size", 10)
 	_insp_skill_lbl.modulate = Color(0.70, 0.73, 0.80, 1.0)
@@ -342,7 +357,7 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 	# Action Buttons (Forged Iron Action Buttons)
 	var action_hbox: HBoxContainer = HBoxContainer.new()
 	action_hbox.add_theme_constant_override("separation", 10)
-	vb.add_child(action_hbox)
+	inspector_layout.add_child(action_hbox)
 
 	var btn_sb: StyleBoxFlat = StyleBoxFlat.new()
 	btn_sb.bg_color = Color(0.18, 0.20, 0.24, 1.0)
@@ -351,6 +366,7 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 	btn_sb.set_corner_radius_all(3)
 
 	_insp_craft1_btn = Button.new()
+	_insp_craft1_btn.clip_text = true
 	_insp_craft1_btn.text = "СКОВАТЬ x1"
 	_insp_craft1_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_insp_craft1_btn.custom_minimum_size = Vector2(0.0, 32.0)
@@ -361,6 +377,7 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 	action_hbox.add_child(_insp_craft1_btn)
 
 	_insp_craft5_btn = Button.new()
+	_insp_craft5_btn.clip_text = true
 	_insp_craft5_btn.text = "СКОВАТЬ x5"
 	_insp_craft5_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_insp_craft5_btn.custom_minimum_size = Vector2(0.0, 32.0)
@@ -372,8 +389,12 @@ func _build_inspector_panel(parent: HBoxContainer) -> void:
 
 
 func open_panel(station_id: String = "") -> void:
+	if station_id == "" and ProgressionSystem.instance != null and not ProgressionSystem.instance.can_open_craft_menu():
+		SignalBus.notification_posted.emit("Соберите 30 ресурсов руками: ручной крафт откроется на уровне 2")
+		return
 	if station_id == "":
 		station_id = _detect_nearby_station()
+	SignalBus.ui_close_all_requested.emit()
 	_active_station = station_id
 	visible = true
 	_pick_default_recipe()
@@ -402,46 +423,18 @@ func _detect_nearby_station() -> String:
 
 
 func _get_all_nearby_stations() -> Array[String]:
-	var result: Array[String] = []
-	if _active_station != "":
-		result.append(_active_station)
 	var player: Node = get_tree().get_first_node_in_group("player")
-	if player == null or not (player is Node2D):
-		return result
-	var ptile: Vector2i = Config.iso_to_world((player as Node2D).global_position)
-	for node in get_tree().get_nodes_in_group("craft_station"):
-		if node is Node2D and node.has_method("get_station_id"):
-			var st_id: String = str(node.call("get_station_id"))
-			if st_id != "":
-				var stile: Vector2i = Config.iso_to_world((node as Node2D).global_position)
-				if Config.tile_distance(ptile, stile) <= 3 and not (st_id in result):
-					result.append(st_id)
-	return result
+	return ProductionRequirements.nearby(get_tree(), player)
 
 
 func _is_station_available(req_station: String, available_stations: Array[String], recipe_id: String = "") -> bool:
-	if req_station == "":
+	if GameManager.debug_god_mode:
 		return true
-	if req_station in available_stations:
-		return true
-	# Forge can fulfill all workbench recipes
-	if req_station == "workbench" and ("forge" in available_stations):
-		return true
-	# Workbench can craft bronze gear directly
-	if req_station == "forge" and ("workbench" in available_stations) and recipe_id.find("bronze") != -1:
-		return true
-	# Brewing stations compatibility
-	if req_station in ["campfire", "alchemy_station"]:
-		for st in available_stations:
-			if st in ["campfire", "alchemy_station"]:
-				return true
-	# Mills compatibility
-	if req_station == "water_mill" and ("mechanical_water_mill" in available_stations):
-		return true
-	# Smelters compatibility
-	if req_station == "furnace" and ("ore_smelter" in available_stations):
-		return true
-	return false
+	var recipe: Dictionary = _recipes.get(recipe_id, {"station": req_station})
+	return ProductionRequirements.missing(recipe, available_stations).is_empty()
+
+func _recipe_station_names(recipe_id: String) -> String:
+	return ProductionRequirements.describe(_recipes.get(recipe_id, {}))
 
 
 func _station_name_ru(station_id: String) -> String:
@@ -737,7 +730,7 @@ func _update_single_slot(btn: Button, player: Node, available_stations: Array[St
 	var is_selected: bool = (rid == _selected_recipe_id)
 
 	var req_tech: String = str(recipe.get("tech_required", ""))
-	var is_unlocked: bool = (req_tech == "" or (ResearchSys.instance != null and ResearchSys.instance.is_researched(req_tech)))
+	var is_unlocked: bool = (GameManager.debug_god_mode or req_tech == "" or (ResearchSys.instance != null and ResearchSys.instance.is_researched(req_tech)))
 	var req_station: String = str(recipe.get("station", ""))
 	var station_ok: bool = _is_station_available(req_station, available_stations, rid)
 	var skills_ok: bool = _has_required_skills(player, recipe)
@@ -823,7 +816,7 @@ func _update_single_slot(btn: Button, player: Node, available_stations: Array[St
 	if not is_unlocked:
 		status_text = "ЗАКРЫТО: Требует исследование %s" % req_tech.capitalize().replace("_", " ")
 	elif not station_ok:
-		status_text = "ТРЕБУЕТСЯ СТАНОК: %s" % _station_name_ru(req_station)
+		status_text = "Requires: %s" % _recipe_station_names(rid)
 	elif not skills_ok:
 		status_text = "ТРЕБУЕТСЯ НАВЫК: %s" % _format_required_skills(recipe.get("skill_required", {}))
 	elif can_craft:
@@ -897,7 +890,7 @@ func _filter_slots() -> void:
 
 		if _only_craftable:
 			var req_tech: String = str(recipe.get("tech_required", ""))
-			var is_unlocked: bool = (req_tech == "" or (ResearchSys.instance != null and ResearchSys.instance.is_researched(req_tech)))
+			var is_unlocked: bool = (GameManager.debug_god_mode or req_tech == "" or (ResearchSys.instance != null and ResearchSys.instance.is_researched(req_tech)))
 			var req_station: String = str(recipe.get("station", ""))
 			var station_ok: bool = _is_station_available(req_station, available_stations, rid)
 			var skills_ok: bool = _has_required_skills(player, recipe)
@@ -1003,7 +996,7 @@ func _update_inspector(player: Node) -> void:
 		_insp_station_lbl.text = "Станок: Ручной крафт (без станка)"
 		_insp_station_lbl.modulate = Color(0.70, 0.74, 0.80)
 	else:
-		var st_disp_name: String = _station_name_ru(req_station)
+		var st_disp_name: String = _recipe_station_names(_selected_recipe_id)
 		if station_ok:
 			_insp_station_lbl.text = "Станок: %s  [ДОСТУПЕН]" % st_disp_name
 			_insp_station_lbl.modulate = Color(0.52, 0.78, 0.50)
@@ -1024,6 +1017,9 @@ func _update_inspector(player: Node) -> void:
 				tech_name = str(tdef.get("name", tech_name))
 		_insp_tech_lbl.text = "Исследование: %s  [%s]" % [tech_name, "ИЗУЧЕНО" if is_tech_done else "ЗАКРЫТО"]
 		_insp_tech_lbl.modulate = Color(0.52, 0.78, 0.50) if is_tech_done else Color(0.85, 0.38, 0.38)
+		if GameManager.sandbox_for(player):
+			_insp_tech_lbl.text = "Research: " + tech_name + " [GOD MODE: AVAILABLE]"
+			_insp_tech_lbl.modulate = Color(0.52, 0.78, 0.50)
 
 	# Build Materials Checklist
 	for ch in _insp_mats_box.get_children():
@@ -1032,9 +1028,12 @@ func _update_inspector(player: Node) -> void:
 
 	var skills: SkillsComponent = player.get("skills") as SkillsComponent if player != null else null
 	var req_skills: Dictionary = recipe.get("skill_required", {})
-	var skills_ok: bool = true
+	var skills_ok: bool = _has_required_skills(player, recipe)
 	if _insp_skill_lbl != null:
-		if req_skills.is_empty():
+		if GameManager.sandbox_for(player):
+			_insp_skill_lbl.text = "Skills: GOD MODE — no level requirements"
+			_insp_skill_lbl.modulate = Color(0.52, 0.78, 0.50)
+		elif req_skills.is_empty():
 			_insp_skill_lbl.text = "Навык: Не требуется"
 			_insp_skill_lbl.modulate = Color(0.70, 0.74, 0.80)
 		else:
@@ -1055,15 +1054,20 @@ func _update_inspector(player: Node) -> void:
 			_insp_skill_lbl.modulate = Color(0.52, 0.78, 0.50) if skills_ok else Color(0.85, 0.45, 0.35)
 
 	var inv: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
-	var all_mats_ok: bool = true
+	var material_plan: Dictionary = _material_plan(player, recipe)
+	var all_mats_ok: bool = bool(material_plan.get("ok", false))
+	var source_response: Dictionary = {}
+	if player is Node2D:
+		SignalBus.crafting_sources_queried.emit(Config.iso_to_world(player.global_position), source_response)
 	for inp in recipe.get("inputs", []):
 		if inp is Dictionary:
 			var mat_id: String = str(inp.get("item_id", ""))
 			var needed: int = int(inp.get("count", 1))
 			var have: int = inv.get_item_count(mat_id) if inv != null else 0
-			var has_enough: bool = (have >= needed)
-			if not has_enough:
-				all_mats_ok = false
+			for source in source_response.get("inventories", []):
+				if source is InventoryComponent and source != inv:
+					have += source.get_item_count(mat_id)
+			var has_enough: bool = GameManager.sandbox_for(player) or have >= needed
 
 			var mat_def: Dictionary = DataRegistry.get_item(mat_id)
 			var mat_name: String = str(mat_def.get("name", mat_id.capitalize()))
@@ -1080,13 +1084,15 @@ func _update_inspector(player: Node) -> void:
 
 			var m_lbl: Label = Label.new()
 			m_lbl.text = "%s: %d / %d" % [mat_name, have, needed]
+			if GameManager.sandbox_for(player):
+				m_lbl.text = mat_name + ": infinite (virtual)"
 			m_lbl.add_theme_font_size_override("font_size", 10)
 			m_lbl.modulate = Color(0.55, 0.78, 0.52, 1.0) if has_enough else Color(0.85, 0.38, 0.38, 1.0)
 			mat_row.add_child(m_lbl)
 
 			_insp_mats_box.add_child(mat_row)
 
-	var is_tech_unlocked: bool = (req_tech == "" or (ResearchSys.instance != null and ResearchSys.instance.is_researched(req_tech)))
+	var is_tech_unlocked: bool = (GameManager.sandbox_for(player) or req_tech == "" or (ResearchSys.instance != null and ResearchSys.instance.is_researched(req_tech)))
 	var can_forge: bool = is_tech_unlocked and station_ok and skills_ok and all_mats_ok
 
 	_insp_craft1_btn.disabled = not can_forge
@@ -1094,13 +1100,14 @@ func _update_inspector(player: Node) -> void:
 	if not is_tech_unlocked:
 		_insp_craft1_btn.text = "[ТРЕБУЕТСЯ ИССЛЕДОВАНИЕ]"
 	elif not station_ok:
-		_insp_craft1_btn.text = "[ТРЕБУЕТСЯ СТАНОК: %s]" % _station_name_ru(req_station).to_upper()
+		_insp_craft1_btn.text = "[REQUIRES WORKSHOP]"
 	elif not skills_ok:
 		_insp_craft1_btn.text = "[ТРЕБУЕТСЯ НАВЫК: %s]" % _format_required_skills(req_skills).to_upper()
 	elif not all_mats_ok:
-		_insp_craft1_btn.text = "[НЕДОСТАТОЧНО РЕСУРСОВ]"
+		_insp_craft1_btn.text = "[CHECK MATERIALS / FREE SLOTS]"
 	else:
 		_insp_craft1_btn.text = "СКОВАТЬ x1"
+	_insp_craft1_btn.tooltip_text = str(material_plan.get("reason", ""))
 
 
 func _execute_craft(multiplier: int) -> void:
@@ -1109,40 +1116,17 @@ func _execute_craft(multiplier: int) -> void:
 		return
 	var recipe: Dictionary = _recipes.get(_selected_recipe_id, {})
 	var req_tech: String = str(recipe.get("tech_required", ""))
-	if req_tech != "" and ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_tech):
+	if not GameManager.sandbox_for(player) and req_tech != "" and ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_tech):
 		SignalBus.notification_posted.emit("Крафт заблокирован: Требуется исследование " + req_tech.capitalize())
 		return
 
 	var req_station: String = str(recipe.get("station", ""))
 	var available_stations: Array[String] = _get_all_nearby_stations()
 	if not _is_station_available(req_station, available_stations, _selected_recipe_id):
-		SignalBus.notification_posted.emit("Крафт заблокирован: Требуется станок " + _station_name_ru(req_station))
+		SignalBus.notification_posted.emit("Requires: " + _recipe_station_names(_selected_recipe_id))
 		return
 
-	var station_to_pass: String = _active_station
-	if station_to_pass == "" or not _is_station_available(req_station, [station_to_pass], _selected_recipe_id):
-		for st in available_stations:
-			if _is_station_available(req_station, [st], _selected_recipe_id):
-				station_to_pass = st
-				break
-
-	var cs: CraftSystem = CraftSystem.instance
-	if cs == null:
-		cs = get_tree().root.find_child("CraftSystem", true, false) as CraftSystem
-	var crafted_count: int = 0
-	for _step in range(multiplier):
-		var check: Dictionary = cs.can_craft(_selected_recipe_id, player, station_to_pass) if cs != null else {"ok": true}
-		if not bool(check.get("ok", false)):
-			if crafted_count == 0:
-				var reason: String = str(check.get("reason", "Не удалось создать"))
-				SignalBus.notification_posted.emit("Крафт невозможен: " + reason)
-			break
-		SignalBus.craft_requested.emit(_selected_recipe_id, player, station_to_pass)
-		crafted_count += 1
-	if _only_craftable:
-		_filter_slots()
-	else:
-		_update_all_slots_visual()
+	SignalBus.craft_batch_requested.emit(_selected_recipe_id, player, _active_station, maxi(1, multiplier))
 
 
 func _matches_category(item_type: String, item_id: String) -> bool:
@@ -1192,6 +1176,8 @@ func _matches_category(item_type: String, item_id: String) -> bool:
 
 
 func _has_required_skills(player: Node, recipe: Dictionary) -> bool:
+	if GameManager.sandbox_for(player):
+		return true
 	if player == null:
 		return false
 	var skills: SkillsComponent = player.get("skills") as SkillsComponent
@@ -1201,30 +1187,14 @@ func _has_required_skills(player: Node, recipe: Dictionary) -> bool:
 
 
 func _has_required_materials(player: Node, recipe: Dictionary) -> bool:
-	if player == null:
-		return false
-	var inv: InventoryComponent = player.get("inventory") as InventoryComponent
-	if inv == null:
-		return false
+	return bool(_material_plan(player, recipe).get("ok", false))
 
-	var ptile: Vector2i = Vector2i.ZERO
-	if player is Node2D:
-		ptile = Config.iso_to_world((player as Node2D).global_position)
-	var storage_mgr: StorageManager = null
-	if BuildingSystem.instance != null:
-		storage_mgr = BuildingSystem.instance.get_storage_manager()
 
-	for inp in recipe.get("inputs", []):
-		if inp is Dictionary:
-			var item_id: String = str(inp.get("item_id", ""))
-			var needed: int = int(inp.get("count", 1))
-			var p_cnt: int = inv.get_item_count(item_id)
-			var c_cnt: int = 0
-			if storage_mgr != null and p_cnt < needed:
-				c_cnt = storage_mgr.count_item_in_radius(ptile, item_id, 4)
-			if p_cnt + c_cnt < needed:
-				return false
-	return true
+func _material_plan(player: Node, recipe: Dictionary) -> Dictionary:
+	var result: Dictionary = {}
+	if is_instance_valid(player):
+		SignalBus.craft_materials_queried.emit(recipe, player, result)
+	return result
 
 
 func _meets_requirements(player: Node, recipe: Dictionary) -> bool:

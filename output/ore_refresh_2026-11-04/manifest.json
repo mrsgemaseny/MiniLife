@@ -1,0 +1,23 @@
+{
+  "generator": "built-in image_gen",
+  "prompt": "Use case: stylized-concept. Generate a square 4 by 4 sprite atlas with EXACTLY 16 equal cells, one isolated object per cell, consistent 12 percent empty padding. True transparent alpha background. This is production art for MiniLife, a medieval isometric survival RPG. Style reference image is STYLE ONLY: thick dark hand-inked outlines, chunky irregular rock silhouettes, restrained hand-painted faceted highlights, earthy muted palette, no pixel art, no photorealism. Do NOT draw ANY cast shadow, ground shadow, contact shadow, ambient shadow halo, drop shadow, ground patch, floor, pedestal or background inside any cell. Object form may have faceted shading ON THE ROCK ONLY; every pixel outside the mineral silhouette must be fully transparent. NO text, labels, grid lines, numbers, interface, glow or watermark.\nRead cells strictly left to right, top to bottom.\nROW 1 world deposits: (1) iron hematite deposit: broad low rugged grey-brown boulder with unmistakable brick-red rust masses and red ochre seams, NO silver veins; (2) rich iron deposit: taller jagged deep reddish-brown hematite boulder, dense dark rusty red mineral lumps, NO silver veins; (3) copper deposit: squat craggy dark rock, orange copper vein bands and restrained green turquoise malachite crust; (4) tin cassiterite deposit: pale sandy granite outcrop with clusters of distinct BLACK-BROWN short angular prismatic crystals, contrasting tan matrix, NO bright silver veins.\nROW 2 world deposits: (1) coal deposit: wide layered broken coal mound made of matte near-black angular slabs, a few grey edge highlights, no metallic ore; (2) silver galena deposit: deep charcoal stone crossed by narrow cool SILVER-WHITE metallic veins and small cubic silver crystals, not rusty, not tin; (3) gold quartz deposit: white ivory quartz outcrop embedded with irregular warm ochre-gold nuggets and thin gold seams, restrained natural gold; (4) ordinary stone boulder: plain muted grey granite WITHOUT metallic minerals.\nROW 3 inventory chunks, smaller mined fragments and NOT whole boulders: (1) iron ore chunk with red rust hematite core and ochre matrix; (2) copper ore chunk orange copper and green patina; (3) tin ore chunk of pale tan stone containing dark brown cassiterite crystals; (4) coal: two or three layered matte black broken coal fragments.\nROW 4 inventory chunks: (1) silver ore: charcoal fragment with silver-white metallic seam and cubic crystals; (2) gold ore: ivory quartz fragment with ochre-gold inclusions; (3) plain rough grey stone fragment; (4) charcoal: bundle of three black charred WOOD pieces with visible wood grain, distinct from mineral coal.\nWorld deposits have slight top-down three-quarter isometric view and broad grounded silhouettes, but NO ground or shadows. Inventory items use matching material design. Distinguish all six mineral types by both shape and colour. All 16 cells exactly equal width and height; each entire object fits its own cell.",
+  "sheet": "ore_sheet_4x4.png",
+  "targets": [
+    "world/resources/ore_iron_vein.png",
+    "world/resources/ore_iron_rich.png",
+    "world/resources/ore_copper_vein.png",
+    "world/resources/ore_tin_cassiterite.png",
+    "world/resources/ore_coal_deposit.png",
+    "world/resources/ore_silver_galena.png",
+    "world/resources/ore_gold_quartz.png",
+    null,
+    "items/iron_ore.png",
+    "items/copper_ore.png",
+    "items/tin_ore.png",
+    "items/coal.png",
+    "items/silver_ore.png",
+    "items/gold_ore.png",
+    null,
+    "items/charcoal.png"
+  ]
+}

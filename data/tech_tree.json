@@ -8,9 +8,20 @@
 		"description": "Thermal cooking of raw meats, drying fish and boiling spring water to prevent sickness.",
 		"grid_x": 0,
 		"grid_y": 0,
-		"prerequisites": ["primitive_hearth"],
-		"costs": { "wood": 4, "stone": 2 },
-		"unlocks": ["cook_meat", "cook_fish", "bake_bread", "craft_water_bottle"]
+		"prerequisites": [
+			"primitive_hearth"
+		],
+		"costs": {
+			"wood": 4,
+			"stone": 2
+		},
+		"unlocks": [
+			"cook_meat",
+			"cook_hunters_stew",
+			"cook_fish",
+			"bake_bread"
+		],
+		"min_level": 2
 	},
 	{
 		"id": "primitive_hearth",
@@ -21,9 +32,15 @@
 		"description": "Assemble stone hearths and thermal kilns to contain sustained heat.",
 		"grid_x": 0,
 		"grid_y": 1,
-		"prerequisites": ["stone_harvesting"],
-		"costs": { "stone": 6, "wood": 3 },
-		"unlocks": ["campfire", "furnace"]
+		"prerequisites": [
+			"stone_harvesting"
+		],
+		"costs": {
+			"stone": 6,
+			"wood": 3
+		},
+		"unlocks": [],
+		"min_level": 2
 	},
 	{
 		"id": "stone_harvesting",
@@ -34,9 +51,14 @@
 		"description": "Gathering heavy river stones and chipping sharp flint wedges for hearth construction.",
 		"grid_x": 0,
 		"grid_y": 2,
-		"prerequisites": ["herbs_gathering"],
-		"costs": { "herb": 4 },
-		"unlocks": []
+		"prerequisites": [
+			"herbs_gathering"
+		],
+		"costs": {
+			"herb": 4
+		},
+		"unlocks": [],
+		"min_level": 2
 	},
 	{
 		"id": "herbs_gathering",
@@ -49,7 +71,10 @@
 		"grid_y": 3,
 		"prerequisites": [],
 		"costs": {},
-		"unlocks": ["craft_cloth", "craft_bandage"]
+		"unlocks": [
+			"craft_medicine"
+		],
+		"min_level": 2
 	},
 	{
 		"id": "wood_harvesting",
@@ -60,9 +85,14 @@
 		"description": "Breaking dried timber branches and gathering dense heartwood for construction.",
 		"grid_x": 0,
 		"grid_y": 4,
-		"prerequisites": ["herbs_gathering"],
-		"costs": { "herb": 4 },
-		"unlocks": ["craft_torch"]
+		"prerequisites": [
+			"herbs_gathering"
+		],
+		"costs": {
+			"herb": 4
+		},
+		"unlocks": [],
+		"min_level": 2
 	},
 	{
 		"id": "plank_crafting",
@@ -73,9 +103,17 @@
 		"description": "Splitting thick tree trunks into flat building planks and assembling woodcrafter workbenches.",
 		"grid_x": 0,
 		"grid_y": 5,
-		"prerequisites": ["wood_harvesting"],
-		"costs": { "wood": 4 },
-		"unlocks": ["craft_plank", "workbench", "craft_wooden_club", "craft_wooden_spear"]
+		"prerequisites": [
+			"wood_harvesting"
+		],
+		"costs": {
+			"wood": 4
+		},
+		"unlocks": [
+			"craft_fishing_rod",
+			"craft_pack_saddle"
+		],
+		"min_level": 3
 	},
 	{
 		"id": "primitive_archery",
@@ -86,9 +124,19 @@
 		"description": "Bending resilient ash wood staves into short hunting bows and carving fletched arrows.",
 		"grid_x": 0,
 		"grid_y": 6,
-		"prerequisites": ["plank_crafting"],
-		"costs": { "plank": 4, "cloth": 2 },
-		"unlocks": ["craft_primitive_bow", "craft_arrows", "craft_javelins"]
+		"prerequisites": [
+			"plank_crafting"
+		],
+		"costs": {
+			"plank": 4,
+			"cloth": 2
+		},
+		"unlocks": [
+			"craft_arrows",
+			"craft_primitive_bow",
+			"craft_javelins"
+		],
+		"min_level": 3
 	},
 	{
 		"id": "wool_clothing",
@@ -99,35 +147,64 @@
 		"description": "Weaving carded sheep wool into soft shirts, protective coifs and leg wraps.",
 		"grid_x": 0,
 		"grid_y": 7,
-		"prerequisites": ["plank_crafting"],
-		"costs": { "cloth": 4, "wood": 2 },
-		"unlocks": ["craft_wool_shirt", "craft_wool_hood", "craft_wool_wraps", "craft_cloth_from_wool"]
+		"prerequisites": [
+			"plank_crafting"
+		],
+		"costs": {
+			"cloth": 4,
+			"wood": 2
+		},
+		"unlocks": [
+			"craft_cloth_from_wool",
+			"craft_shears",
+			"craft_wool_hood",
+			"craft_wool_shirt",
+			"craft_wool_wraps"
+		],
+		"min_level": 3
 	},
 	{
 		"id": "stone_tools",
 		"name": "Stone Tools",
-		"tier": 2,
-		"tier_label": "TIER II",
+		"tier": 1,
+		"tier_label": "TIER I",
 		"icon": "stone_pickaxe",
 		"description": "Lashing chipped stone heads to hardwood handles for mineral quarrying and wood felling.",
 		"grid_x": 1,
 		"grid_y": 0,
-		"prerequisites": ["food_roasting"],
-		"costs": { "stone": 6, "wood": 4 },
-		"unlocks": ["craft_stone_axe", "craft_stone_pickaxe"]
+		"prerequisites": [
+			"food_roasting"
+		],
+		"costs": {
+			"stone": 6,
+			"wood": 4
+		},
+		"unlocks": [
+			"craft_hoe"
+		],
+		"min_level": 2
 	},
 	{
 		"id": "stone_weapons",
 		"name": "Stone Weapons",
-		"tier": 2,
-		"tier_label": "TIER II",
+		"tier": 1,
+		"tier_label": "TIER I",
 		"icon": "stone_sword",
 		"description": "Knapping flint razor edges to fashion lethal stone daggers and heavy stone cleavers.",
 		"grid_x": 1,
 		"grid_y": 1,
-		"prerequisites": ["stone_tools"],
-		"costs": { "stone": 6, "wood": 3 },
-		"unlocks": ["craft_stone_sword", "craft_stone_dagger"]
+		"prerequisites": [
+			"stone_tools"
+		],
+		"costs": {
+			"stone": 6,
+			"wood": 3
+		},
+		"unlocks": [
+			"craft_stone_sword",
+			"craft_stone_dagger"
+		],
+		"min_level": 2
 	},
 	{
 		"id": "material_refinement",
@@ -138,9 +215,17 @@
 		"description": "Tanning raw pelts into durable leather and boiling pitch for reinforced building joinery.",
 		"grid_x": 1,
 		"grid_y": 2,
-		"prerequisites": ["food_roasting"],
-		"costs": { "wood": 6, "cloth": 4 },
-		"unlocks": ["craft_treated_leather", "craft_quality_cloth"]
+		"prerequisites": [
+			"food_roasting"
+		],
+		"costs": {
+			"wood": 6,
+			"raw_leather": 2
+		},
+		"unlocks": [
+			"craft_treated_leather"
+		],
+		"min_level": 4
 	},
 	{
 		"id": "construction_carpentry",
@@ -151,9 +236,19 @@
 		"description": "Interlocking squared logs to construct solid wooden cabins, barred doors and storage chests.",
 		"grid_x": 1,
 		"grid_y": 3,
-		"prerequisites": ["material_refinement"],
-		"costs": { "plank": 8, "wood": 4 },
-		"unlocks": ["wood_wall", "wood_door", "wood_floor", "storage", "bed"]
+		"prerequisites": [
+			"material_refinement"
+		],
+		"costs": {
+			"plank": 8,
+			"wood": 4
+		},
+		"unlocks": [
+			"craft_wood_wall",
+			"craft_wood_floor",
+			"craft_wood_door"
+		],
+		"min_level": 4
 	},
 	{
 		"id": "construction_masonry",
@@ -164,9 +259,22 @@
 		"description": "Mortaring dressed stone blocks into raid-proof defensive ramparts and paved floors.",
 		"grid_x": 1,
 		"grid_y": 4,
-		"prerequisites": ["construction_carpentry"],
-		"costs": { "stone": 10, "plank": 4 },
-		"unlocks": ["stone_wall", "stone_floor", "smelt_brick", "craft_stone_masonry"]
+		"prerequisites": [
+			"construction_carpentry"
+		],
+		"costs": {
+			"stone": 10,
+			"plank": 4
+		},
+		"unlocks": [
+			"craft_stone_wall",
+			"craft_stone_floor",
+			"craft_stone_masonry",
+			"smelt_brick",
+			"wall",
+			"water_mill"
+		],
+		"min_level": 4
 	},
 	{
 		"id": "gambeson_crafting",
@@ -177,9 +285,17 @@
 		"description": "Layered wool quilting to craft absorbent gambeson tunics, padded chausses and quilted coifs.",
 		"grid_x": 1,
 		"grid_y": 5,
-		"prerequisites": ["material_refinement"],
-		"costs": { "cloth": 6, "treated_leather": 2 },
-		"unlocks": ["craft_gambeson"]
+		"prerequisites": [
+			"material_refinement"
+		],
+		"costs": {
+			"cloth": 6,
+			"wool": 2
+		},
+		"unlocks": [
+			"craft_gambeson"
+		],
+		"min_level": 4
 	},
 	{
 		"id": "leather_armor_crafting",
@@ -190,9 +306,21 @@
 		"description": "Hardening boiled leather cuirasses, sturdy greaves and supple riding boots.",
 		"grid_x": 1,
 		"grid_y": 6,
-		"prerequisites": ["gambeson_crafting"],
-		"costs": { "treated_leather": 6, "cloth": 4 },
-		"unlocks": ["craft_leather_armor", "craft_boiled_leather_cuirass", "craft_leather_helmet", "craft_leather_greaves", "craft_leather_lamellar", "craft_leather_boots"]
+		"prerequisites": [
+			"material_refinement"
+		],
+		"costs": {
+			"raw_leather": 6,
+			"cloth": 4
+		},
+		"unlocks": [
+			"craft_leather_armor",
+			"craft_leather_helmet",
+			"craft_boiled_leather_cuirass",
+			"craft_leather_greaves",
+			"craft_leather_boots"
+		],
+		"min_level": 4
 	},
 	{
 		"id": "hunting_archery_shields",
@@ -203,9 +331,18 @@
 		"description": "Steam-bent yew longbows and heavy wooden heater shields to deflect hostile arrows.",
 		"grid_x": 1,
 		"grid_y": 7,
-		"prerequisites": ["material_refinement"],
-		"costs": { "plank": 6, "treated_leather": 2 },
-		"unlocks": ["craft_hunting_bow", "craft_wooden_shield"]
+		"prerequisites": [
+			"material_refinement"
+		],
+		"costs": {
+			"plank": 6,
+			"raw_leather": 2
+		},
+		"unlocks": [
+			"craft_hunting_bow",
+			"craft_wooden_shield"
+		],
+		"min_level": 4
 	},
 	{
 		"id": "clay_ore_smelter",
@@ -216,9 +353,18 @@
 		"description": "High-temperature clay bloomeries and blacksmith forges for alloy metallurgy.",
 		"grid_x": 2,
 		"grid_y": 2,
-		"prerequisites": ["construction_masonry"],
-		"costs": { "stone": 12, "coal": 4 },
-		"unlocks": ["forge", "smelt_bronze_ingot"]
+		"prerequisites": [
+			"construction_masonry"
+		],
+		"costs": {
+			"stone": 12,
+			"charcoal": 4
+		},
+		"unlocks": [
+			"smelt_bronze_ingot",
+			"ore_smelter"
+		],
+		"min_level": 5
 	},
 	{
 		"id": "bronze_tools",
@@ -229,9 +375,18 @@
 		"description": "Casting copper-tin alloy into razor axes and durable bronze mining picks.",
 		"grid_x": 2,
 		"grid_y": 3,
-		"prerequisites": ["clay_ore_smelter"],
-		"costs": { "bronze_ingot": 4, "wood": 4 },
-		"unlocks": ["forge_bronze_pickaxe", "forge_bronze_axe"]
+		"prerequisites": [
+			"clay_ore_smelter"
+		],
+		"costs": {
+			"bronze_ingot": 4,
+			"wood": 4
+		},
+		"unlocks": [
+			"forge_bronze_pickaxe",
+			"forge_bronze_axe"
+		],
+		"min_level": 5
 	},
 	{
 		"id": "bronze_weapons",
@@ -242,9 +397,20 @@
 		"description": "Hammering ductile bronze blades, long war spears and cast bronze arrowhead heads.",
 		"grid_x": 2,
 		"grid_y": 4,
-		"prerequisites": ["bronze_tools"],
-		"costs": { "bronze_ingot": 6, "wood": 2 },
-		"unlocks": ["forge_bronze_sword", "forge_bronze_dagger", "forge_bronze_spear", "craft_bronze_arrow"]
+		"prerequisites": [
+			"bronze_tools"
+		],
+		"costs": {
+			"bronze_ingot": 6,
+			"wood": 2
+		},
+		"unlocks": [
+			"forge_bronze_spear",
+			"forge_bronze_sword",
+			"forge_bronze_dagger",
+			"craft_bronze_arrow"
+		],
+		"min_level": 5
 	},
 	{
 		"id": "bronze_armor",
@@ -255,9 +421,20 @@
 		"description": "Embossing solid bronze bell cuirasses, riveted greaves and crest helmets.",
 		"grid_x": 2,
 		"grid_y": 5,
-		"prerequisites": ["bronze_weapons"],
-		"costs": { "bronze_ingot": 8, "treated_leather": 4 },
-		"unlocks": ["forge_bronze_cuirass", "forge_bronze_helmet", "forge_bronze_greaves", "forge_bronze_boots"]
+		"prerequisites": [
+			"bronze_weapons"
+		],
+		"costs": {
+			"bronze_ingot": 8,
+			"treated_leather": 4
+		},
+		"unlocks": [
+			"forge_bronze_cuirass",
+			"forge_bronze_helmet",
+			"forge_bronze_greaves",
+			"forge_bronze_boots"
+		],
+		"min_level": 5
 	},
 	{
 		"id": "bronze_lamellar_crafting",
@@ -268,9 +445,19 @@
 		"description": "Lacing hundreds of individual bronze scales with leather cords over boiled cuirasses.",
 		"grid_x": 2,
 		"grid_y": 6,
-		"prerequisites": ["bronze_armor", "leather_armor_crafting"],
-		"costs": { "bronze_ingot": 8, "treated_leather": 6 },
-		"unlocks": ["forge_bronze_lamellar"]
+		"prerequisites": [
+			"bronze_armor",
+			"leather_armor_crafting"
+		],
+		"costs": {
+			"bronze_ingot": 8,
+			"treated_leather": 6
+		},
+		"unlocks": [
+			"craft_leather_lamellar",
+			"forge_bronze_lamellar"
+		],
+		"min_level": 5
 	},
 	{
 		"id": "iron_smelting",
@@ -281,9 +468,19 @@
 		"description": "Smelting iron bog ore in charcoal bloomeries into pure malleable iron billets.",
 		"grid_x": 3,
 		"grid_y": 1,
-		"prerequisites": ["clay_ore_smelter"],
-		"costs": { "iron_ore": 6, "coal": 6 },
-		"unlocks": ["smelt_iron_ingot", "craft_quality_iron"]
+		"prerequisites": [
+			"bronze_tools"
+		],
+		"costs": {
+			"iron_ore": 6,
+			"coal": 6
+		},
+		"unlocks": [
+			"craft_quality_iron",
+			"smelt_iron_ingot",
+			"forge"
+		],
+		"min_level": 5
 	},
 	{
 		"id": "iron_tools",
@@ -294,9 +491,18 @@
 		"description": "Hard-wearing iron quarry pickaxes and woodman double-bit axes.",
 		"grid_x": 3,
 		"grid_y": 2,
-		"prerequisites": ["iron_smelting"],
-		"costs": { "iron_ingot": 4, "wood": 3 },
-		"unlocks": ["forge_iron_pickaxe", "forge_iron_axe"]
+		"prerequisites": [
+			"iron_smelting"
+		],
+		"costs": {
+			"iron_ingot": 4,
+			"wood": 3
+		},
+		"unlocks": [
+			"forge_iron_axe",
+			"forge_iron_pickaxe"
+		],
+		"min_level": 6
 	},
 	{
 		"id": "iron_weapons",
@@ -307,9 +513,22 @@
 		"description": "Tempered broadswords, narrow armor-piercing daggers, heavy spears and iron-rimmed shields.",
 		"grid_x": 3,
 		"grid_y": 3,
-		"prerequisites": ["iron_tools"],
-		"costs": { "iron_ingot": 6, "wood": 2 },
-		"unlocks": ["forge_iron_sword", "forge_iron_dagger", "forge_iron_spear", "forge_iron_shield"]
+		"prerequisites": [
+			"iron_tools"
+		],
+		"costs": {
+			"iron_ingot": 6,
+			"wood": 2
+		},
+		"unlocks": [
+			"forge_iron_sword",
+			"forge_iron_dagger",
+			"forge_iron_shield",
+			"forge_iron_spear",
+			"forge_iron_arrow",
+			"spike_trap"
+		],
+		"min_level": 6
 	},
 	{
 		"id": "heavy_crossbow_and_hammers",
@@ -320,9 +539,21 @@
 		"description": "Sunder shields with crushing war hammers, chekan war picks (40% armor pen) and heavy crossbows.",
 		"grid_x": 3,
 		"grid_y": 4,
-		"prerequisites": ["iron_weapons"],
-		"costs": { "iron_ingot": 6, "plank": 4, "coal": 3 },
-		"unlocks": ["forge_war_hammer", "forge_iron_war_pick", "forge_heavy_crossbow", "forge_iron_bolt"]
+		"prerequisites": [
+			"iron_weapons"
+		],
+		"costs": {
+			"iron_ingot": 6,
+			"plank": 4,
+			"coal": 3
+		},
+		"unlocks": [
+			"forge_war_hammer",
+			"forge_iron_war_pick",
+			"forge_heavy_crossbow",
+			"forge_iron_bolt"
+		],
+		"min_level": 6
 	},
 	{
 		"id": "chainmail_weaving",
@@ -333,9 +564,21 @@
 		"description": "Drawing iron wire and riveting thousands of interlocking rings into hauberks and coifs.",
 		"grid_x": 3,
 		"grid_y": 5,
-		"prerequisites": ["iron_weapons"],
-		"costs": { "iron_ingot": 8, "cloth": 6 },
-		"unlocks": ["forge_chainmail_coif", "forge_simple_chainmail", "forge_iron_hauberk", "forge_iron_scale_armor", "forge_iron_chainmail"]
+		"prerequisites": [
+			"iron_weapons"
+		],
+		"costs": {
+			"iron_ingot": 8,
+			"cloth": 6
+		},
+		"unlocks": [
+			"forge_chainmail_coif",
+			"forge_iron_chainmail",
+			"forge_simple_chainmail",
+			"forge_iron_hauberk",
+			"forge_iron_scale_armor"
+		],
+		"min_level": 6
 	},
 	{
 		"id": "iron_plate_armor",
@@ -346,9 +589,23 @@
 		"description": "Forging heavy iron plate cuirasses, nasal helms, greaves and articulated scale harnesses.",
 		"grid_x": 3,
 		"grid_y": 6,
-		"prerequisites": ["chainmail_weaving"],
-		"costs": { "iron_ingot": 10, "treated_leather": 6 },
-		"unlocks": ["forge_iron_helmet", "forge_iron_armor", "forge_iron_greaves", "forge_iron_lamellar", "forge_iron_plate_armor", "forge_iron_boots", "forge_iron_brigandine"]
+		"prerequisites": [
+			"chainmail_weaving"
+		],
+		"costs": {
+			"iron_ingot": 10,
+			"treated_leather": 6
+		},
+		"unlocks": [
+			"forge_iron_greaves",
+			"forge_iron_armor",
+			"forge_iron_plate_armor",
+			"forge_iron_lamellar",
+			"forge_iron_helmet",
+			"forge_iron_great_helm",
+			"forge_iron_boots"
+		],
+		"min_level": 6
 	},
 	{
 		"id": "steel_crucible_smelting",
@@ -359,9 +616,17 @@
 		"description": "Sealed ceramic crucible smelting blending quality iron with coal carbon into high-carbon steel.",
 		"grid_x": 4,
 		"grid_y": 2,
-		"prerequisites": ["iron_smelting"],
-		"costs": { "iron_ingot": 8, "coal": 8 },
-		"unlocks": ["craft_steel_ingot"]
+		"prerequisites": [
+			"iron_plate_armor"
+		],
+		"costs": {
+			"iron_ingot": 8,
+			"coal": 8
+		},
+		"unlocks": [
+			"craft_steel_ingot"
+		],
+		"min_level": 9
 	},
 	{
 		"id": "steel_weapons",
@@ -372,9 +637,23 @@
 		"description": "Masterwork swords, razor steel daggers, colossal battle axes and plate-piercing steel war picks.",
 		"grid_x": 4,
 		"grid_y": 3,
-		"prerequisites": ["steel_crucible_smelting"],
-		"costs": { "steel_ingot": 8, "wood": 2 },
-		"unlocks": ["forge_steel_sword", "forge_steel_dagger", "forge_steel_axe", "forge_steel_war_pick", "forge_steel_arrow", "forge_steel_pickaxe"]
+		"prerequisites": [
+			"steel_crucible_smelting"
+		],
+		"costs": {
+			"steel_ingot": 8,
+			"wood": 2
+		},
+		"unlocks": [
+			"forge_steel_pickaxe",
+			"forge_steel_axe",
+			"forge_steel_sword",
+			"forge_steel_dagger",
+			"forge_steel_war_pick",
+			"forge_steel_arrow",
+			"mechanical_water_mill"
+		],
+		"min_level": 9
 	},
 	{
 		"id": "steel_plate_armor",
@@ -385,8 +664,94 @@
 		"description": "Pinnacle of medieval protection: arming doublets, steel brigandines and full gothic plate armor.",
 		"grid_x": 4,
 		"grid_y": 4,
-		"prerequisites": ["steel_weapons", "iron_plate_armor"],
-		"costs": { "steel_ingot": 12, "treated_leather": 8 },
-		"unlocks": ["forge_steel_helmet", "forge_steel_cuirass", "forge_steel_brigandine", "forge_steel_plate_armor", "forge_steel_greaves", "craft_arming_doublet", "forge_steel_boots"]
+		"prerequisites": [
+			"steel_weapons",
+			"iron_plate_armor"
+		],
+		"costs": {
+			"steel_ingot": 12,
+			"treated_leather": 8
+		},
+		"unlocks": [
+			"forge_steel_cuirass",
+			"forge_steel_helmet",
+			"forge_steel_greaves",
+			"forge_steel_plate_armor",
+			"forge_steel_brigandine",
+			"forge_steel_boots"
+		],
+		"min_level": 9
+	},
+	{
+		"id": "advanced_materials",
+		"name": "Advanced Textiles & Tanning",
+		"tier": 4,
+		"tier_label": "TIER IV",
+		"icon": "tanned_leather",
+		"description": "Quality cloth and tanned leather for iron-age equipment.",
+		"grid_x": 3,
+		"grid_y": 8,
+		"prerequisites": [
+			"iron_smelting",
+			"material_refinement"
+		],
+		"costs": {
+			"cloth": 6,
+			"treated_leather": 4
+		},
+		"min_level": 6,
+		"unlocks": [
+			"craft_quality_cloth",
+			"craft_tanned_leather",
+			"craft_quality_clothing",
+			"craft_arming_doublet"
+		]
+	},
+	{
+		"id": "herbalism_medicine",
+		"name": "Herbalism & Medicine",
+		"tier": 1,
+		"tier_label": "TIER I",
+		"icon": "bandage",
+		"description": "Clean bandages and herbal poultices.",
+		"grid_x": 0,
+		"grid_y": 8,
+		"min_level": 3,
+		"prerequisites": [
+			"herbs_gathering"
+		],
+		"costs": {
+			"herb": 6,
+			"cloth": 2
+		},
+		"unlocks": [
+			"craft_medicine"
+		]
+	},
+	{
+		"id": "alchemical_elixirs",
+		"name": "Alchemy & Elixirs",
+		"tier": 3,
+		"tier_label": "TIER III",
+		"icon": "potion_healing",
+		"description": "Build a brewing table and prepare medicinal elixirs.",
+		"grid_x": 2,
+		"grid_y": 8,
+		"min_level": 5,
+		"prerequisites": [
+			"herbalism_medicine",
+			"clay_ore_smelter"
+		],
+		"costs": {
+			"herb": 8,
+			"copper_ore": 2
+		},
+		"unlocks": [
+			"alchemy_station",
+			"craft_alchemy_station",
+			"brew_potion_healing",
+			"brew_potion_stamina",
+			"brew_potion_ironskin"
+		]
 	}
 ]

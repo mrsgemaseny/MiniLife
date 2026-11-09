@@ -1,0 +1,5 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 596.49 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3050 Laptop GPU
+
+LARGE_WORLD_SCENE_PASS: {"frame_median_ms":17.957,"frame_p95_ms":27.358,"physical_npcs":0,"resident_chunks":25,"startup_ms":1236.968,"static_memory_mb":111.997026443481} isolated_save_slot=__large_world_validation_5958586
+ERROR: 1 RID allocations of type 'N5GLES37TextureE' were leaked at exit.

@@ -15,6 +15,38 @@ func _ready() -> void:
 	SignalBus.hour_passed.connect(_on_hour_passed)
 	SignalBus.game_event_triggered.connect(_on_external_event_triggered)
 	SignalBus.boss_defeated.connect(_on_boss_defeated)
+	SignalBus.game_started.connect(_on_game_started)
+	SignalBus.save_data_requested.connect(_on_save_data_requested)
+	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
+
+func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
+	if is_new:
+		_cooldowns.clear()
+		_current_day = 1
+		_endgame = EndgameDirector.new()
+
+func _on_save_data_requested(bundle: Dictionary) -> void:
+	var world: Dictionary = bundle.get("world", {})
+	world["story_events"] = {
+		"day": _current_day,
+		"cooldowns": _cooldowns.duplicate(),
+		"defeated_bosses": _endgame.defeated_bosses.duplicate(),
+		"stronghold_unlocked": _endgame.stronghold_unlocked,
+		"game_won": _endgame.game_won,
+	}
+	bundle["world"] = world
+
+func _on_save_data_loaded(bundle: Dictionary) -> void:
+	var world: Dictionary = bundle.get("world", {})
+	var saved: Dictionary = world.get("story_events", {})
+	_current_day = int(saved.get("day", GameManager.get_day()))
+	_cooldowns = saved.get("cooldowns", {}).duplicate()
+	_endgame = EndgameDirector.new()
+	_endgame.defeated_bosses.assign(saved.get("defeated_bosses", []))
+	_endgame.stronghold_unlocked = bool(saved.get("stronghold_unlocked", false))
+	var player: Dictionary = bundle.get("player", {})
+	var progression: Dictionary = player.get("progression", {})
+	_endgame.game_won = bool(saved.get("game_won", progression.get("endgame_completed", false)))
 
 func _on_day_passed(day: int) -> void:
 	_current_day = day
@@ -143,7 +175,6 @@ func _on_boss_defeated(boss_id: String, _world_pos: Vector2) -> void:
 	if bool(res.get("unlocked_stronghold", false)):
 		var stronghold_tile: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2 + 24, Config.WORLD_SIZE_TILES / 2 - 24)
 		SignalBus.endgame_stronghold_revealed.emit(stronghold_tile)
-		SignalBus.notification_posted.emit("Alpha Wolf slain! The Warlord Stronghold has been revealed.")
 	if bool(res.get("victory", false)):
 		SignalBus.endgame_victory_achieved.emit()
 		SignalBus.achievement_unlock_requested.emit("boss_slayer")

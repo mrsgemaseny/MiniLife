@@ -2,6 +2,7 @@ class_name TerrainGenerator
 extends RefCounted
 
 var _seed: int = 1337
+var _geography_size: int = Config.WORLD_SIZE_TILES
 var _elevation_noise: FastNoiseLite = FastNoiseLite.new()
 var _moisture_noise: FastNoiseLite = FastNoiseLite.new()
 var _forest_noise: FastNoiseLite = FastNoiseLite.new()
@@ -15,6 +16,7 @@ func _init(world_seed: int = 1337) -> void:
 
 func setup(world_seed: int) -> void:
 	_seed = world_seed
+	_geography_size = Config.TERRAIN_GEOGRAPHY_SIZE
 
 	# Elevation noise: broad continental gradients
 	_elevation_noise.seed = world_seed
@@ -64,7 +66,7 @@ func get_warped_pos(pos: Vector2i) -> Vector2:
 
 
 func get_river_center_x(ny: float) -> float:
-	var w_size: float = float(Config.WORLD_SIZE_TILES)
+	var w_size: float = float(_geography_size)
 	if ny < -0.05 or ny > 0.85:
 		return -9999.0
 	var progress: float = clampf((ny - 0.02) / 0.70, 0.0, 1.0)
@@ -76,14 +78,14 @@ func get_river_center_x(ny: float) -> float:
 
 
 func get_distance_to_river_at(pos: Vector2i) -> float:
-	var w_size: float = float(Config.WORLD_SIZE_TILES)
+	var w_size: float = float(_geography_size)
 	var ny: float = float(pos.y) / w_size
 	var rx: float = get_river_center_x(ny)
 	return absf(float(pos.x) - rx)
 
 
 func get_elevation_at(pos: Vector2i) -> float:
-	var w_size: float = float(Config.WORLD_SIZE_TILES)
+	var w_size: float = float(_geography_size)
 	var warped: Vector2 = get_warped_pos(pos)
 	var mtn_center: Vector2 = Vector2(w_size * 0.24, w_size * 0.12)
 	var dist_mtn: float = warped.distance_to(mtn_center)
@@ -96,7 +98,7 @@ func get_biome_at(pos: Vector2i) -> String:
 	if is_border_mountain(pos):
 		return "mountains"
 
-	var w_size: float = float(Config.WORLD_SIZE_TILES)
+	var w_size: float = float(_geography_size)
 	var warped: Vector2 = get_warped_pos(pos)
 	var ny: float = float(pos.y) / w_size
 
@@ -173,22 +175,28 @@ func get_resource_node_at(pos: Vector2i) -> String:
 	if is_border_mountain(pos):
 		return ""
 
-	var center: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
+	var center: Vector2i = Vector2i(_geography_size / 2, _geography_size / 2)
 	if Config.tile_distance(pos, center) <= 4:
 		return ""
 
 	var biome_id: String = get_biome_at(pos)
 	if biome_id == "water":
 		return ""
+	# Stable thinning leaves walking space between resource silhouettes.
+	var density: float = 0.45 if biome_id in ["mountains", "snow"] else 0.75
+	if RngService.make_tile_rng(_seed, pos, 1709).randf() > density:
+		return ""
 
 	var elev: float = get_elevation_at(pos)
 	var dist_river: float = get_distance_to_river_at(pos)
-	var w_size: float = float(Config.WORLD_SIZE_TILES)
+	var w_size: float = float(_geography_size)
 	var lake_se_center: Vector2 = Vector2(w_size * 0.74, w_size * 0.76)
 	var dist_lake_se: float = Vector2(float(pos.x), float(pos.y)).distance_to(lake_se_center)
 
 	# 1. TIN ORE (Alluvial riverbank and lake shore deposits — gravel beds near water)
 	var is_water_shore: bool = (dist_river >= 2.4 and dist_river <= 8.5) or (dist_lake_se >= w_size * 0.055 and dist_lake_se <= w_size * 0.055 + 7.0)
+	if (is_water_shore or biome_id == "swamp") and RngService.make_tile_rng(_seed, pos, 911).randf() < 0.065:
+		return "clay_bank"
 	if is_water_shore and biome_id != "water":
 		var tin_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 909)
 		if tin_rng.randf() < 0.042:
@@ -201,49 +209,61 @@ func get_resource_node_at(pos: Vector2i) -> String:
 			return "gold_quartz_vein"
 
 	# 3. MOUNTAINS (Rocky Foothills vs High Cliffs)
-	# Copper and Tin spawn in rocky foothills; Iron and Coal in high cliffs
+	# Iron, Tin, Copper, and Coal across slopes; Silver is strictly rare precious ore
 	if biome_id == "mountains":
 		var mtn_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 202)
 		var mtn_roll: float = mtn_rng.randf()
 		if elev < 0.52:
-			# Rocky foothills: Copper and Tin deposits around stone outcrops, pines
-			if mtn_roll < 0.028:
-				return "copper_vein"
-			elif mtn_roll < 0.054:
+			# Rocky foothills: Iron, Tin, Copper, Coal, pines, boulders
+			if mtn_roll < 0.035:
+				return "iron_vein"
+			elif mtn_roll < 0.065:
 				return "tin_vein"
 			elif mtn_roll < 0.095:
+				return "copper_vein"
+			elif mtn_roll < 0.125:
+				return "coal_deposit"
+			elif mtn_roll < 0.165:
 				return "forest_pine"
-			elif mtn_roll < 0.120:
+			elif mtn_roll < 0.190:
 				return "stone_boulder"
-			elif mtn_roll < 0.135:
+			elif mtn_roll < 0.195:
+				return "silver_vein"
+			elif mtn_roll < 0.210:
 				return "wild_berry_bush"
-			elif mtn_roll < 0.150:
+			elif mtn_roll < 0.225:
 				return "vigor_herb"
 		else:
-			# High rocky cliffs: rare Iron, Silver, Coal, minimal Boulders, zero trees
-			if mtn_roll < 0.012:
+			# High rocky cliffs: abundant Iron, Tin, Copper, Coal, very rare Silver (0.5%), zero trees
+			if mtn_roll < 0.050:
 				return "iron_vein"
-			elif mtn_roll < 0.022:
-				return "silver_vein"
-			elif mtn_roll < 0.046:
+			elif mtn_roll < 0.080:
+				return "tin_vein"
+			elif mtn_roll < 0.105:
+				return "copper_vein"
+			elif mtn_roll < 0.145:
 				return "coal_deposit"
-			elif mtn_roll < 0.076:
+			elif mtn_roll < 0.150:
+				return "silver_vein"
+			elif mtn_roll < 0.180:
 				return "stone_boulder"
-			elif mtn_roll < 0.091:
+			elif mtn_roll < 0.195:
 				return "vigor_herb"
 		return ""
 
-	# 4. SNOW PEAKS (High frozen ridges: very rare iron/silver, sparse boulders, alpine vigor herbs)
+	# 4. SNOW PEAKS (High frozen ridges: Iron, Coal, rare Silver, boulders, alpine vigor herbs)
 	if biome_id == "snow":
 		var snow_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 303)
 		var snow_roll: float = snow_rng.randf()
-		if snow_roll < 0.006:
+		if snow_roll < 0.025:
 			return "iron_vein"
-		elif snow_roll < 0.012:
+		elif snow_roll < 0.045:
+			return "coal_deposit"
+		elif snow_roll < 0.050:
 			return "silver_vein"
-		elif snow_roll < 0.024:
+		elif snow_roll < 0.065:
 			return "vigor_herb"
-		elif snow_roll < 0.038:
+		elif snow_roll < 0.080:
 			return "stone_boulder"
 		return ""
 

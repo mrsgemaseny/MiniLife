@@ -40,8 +40,7 @@ static func build_isometric_tileset() -> TileSet:
 
 	var tex: ImageTexture = ImageTexture.create_from_image(img)
 	var ts: TileSet = TileSet.new()
-	ts.tile_shape = TileSet.TILE_SHAPE_ISOMETRIC
-	ts.tile_layout = TileSet.TILE_LAYOUT_DIAMOND_DOWN
+	ts.tile_shape = TileSet.TILE_SHAPE_SQUARE
 	ts.tile_size = Config.TILE_SIZE
 
 	var source: TileSetAtlasSource = TileSetAtlasSource.new()
@@ -69,7 +68,7 @@ static func _rasterize_iso_diamond(img: Image, ox: int, oy: int, w: int, h: int,
 		for px in range(w):
 			var dx: float = absf((float(px) + 0.5) - hw) / hw
 			var dy: float = absf((float(py) + 0.5) - hh) / hh
-			var manhattan: float = dx + dy
+			var manhattan: float = maxf(dx, dy)
 			if manhattan <= 1.0:
 				var pixel_col: Color = base_col
 				if manhattan >= 0.90:

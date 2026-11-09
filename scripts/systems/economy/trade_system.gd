@@ -7,7 +7,7 @@ func _ready() -> void:
 	SignalBus.trade_transaction_requested.connect(_on_trade_transaction_requested)
 
 func _on_trade_transaction_requested(trader: Node, item_id: String, count: int, is_buying: bool) -> void:
-	if count <= 0 or item_id.is_empty():
+	if count <= 0 or item_id.is_empty() or not is_instance_valid(trader):
 		return
 	var player: Node = get_tree().get_first_node_in_group("player")
 	if player == null:
@@ -33,6 +33,23 @@ func _on_trade_transaction_requested(trader: Node, item_id: String, count: int, 
 		memory_mult = (trader.get("memory") as MemoryComponent).get_price_discount_multiplier()
 
 	var skill_mod: float = clampf(float(trading_level + persuasion_level) * 0.004, 0.0, 0.30)
+	var managed: Dictionary = {}
+	SignalBus.alife_trade_requested.emit(trader, player_inv, item_id, count, is_buying, skill_mod, memory_mult, managed)
+	if bool(managed.get("handled", false)):
+		if bool(managed.get("ok", false)):
+			var traded: int = int(managed["count"])
+			var amount: int = int(managed["amount"])
+			if skills_comp != null:
+				skills_comp.gain_xp("trading", float(traded) * 4.0)
+			if trader != null and trader.get("memory") is MemoryComponent:
+				(trader.get("memory") as MemoryComponent).record_trade_silver(int(managed["silver_value"]), GameManager.get_day())
+			var id: String = str(trader.get("npc_id")) if trader != null and "npc_id" in trader else "trader"
+			var gold_equivalent: int = int(managed["silver_value"]) / CurrencyPolicy.SILVER_PER_GOLD
+			SignalBus.trade_completed.emit(id, -gold_equivalent if is_buying else gold_equivalent)
+			SignalBus.notification_posted.emit("%s %d x %s for %d %s." % ["Bought" if is_buying else "Sold", traded, str(item_def.get("name", item_id)), amount, str(managed["currency"])])
+		else:
+			SignalBus.notification_posted.emit(str(managed.get("error", "Trade unavailable.")))
+		return
 
 	if is_buying:
 		var unit_price: int = maxi(1, int(round(float(base_value) * (1.25 - skill_mod) * memory_mult)))

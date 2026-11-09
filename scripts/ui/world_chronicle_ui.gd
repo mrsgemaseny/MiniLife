@@ -17,6 +17,8 @@ func _ready() -> void:
 	SignalBus.chronicle_snapshot_loaded.connect(_on_snapshot_loaded)
 	SignalBus.chronicle_entry_added.connect(func(e: Dictionary) -> void:
 		_entries.push_front(e)
+		if _entries.size() > EventJournal.MAX_ENTRIES:
+			_entries.resize(EventJournal.MAX_ENTRIES)
 		if visible:
 			refresh()
 	)

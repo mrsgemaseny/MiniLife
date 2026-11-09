@@ -12,6 +12,8 @@ var _autosave_elapsed: float = 0.0
 var _player_world_pos: Vector2 = Vector2.ZERO
 var _open_blocking_panels: Dictionary = {}
 var _paused_by_ui: bool = false
+var _paused_by_focus: bool = false
+var _application_focused: bool = true
 var _selected_class: String = Config.DEFAULT_CLASS
 var _selected_traits: Array[String] = ["iron_will", "quick_learner", "night_owl"]
 
@@ -19,6 +21,66 @@ var _selected_traits: Array[String] = ["iron_will", "quick_learner", "night_owl"
 var debug_god_mode: bool = false
 var debug_fast_time: bool = false
 var debug_reveal_map: bool = false
+const GOD_CODE: String = "11349562"
+var _god_code_buffer: String = ""
+var _god_code_last_msec: int = 0
+var _god_normal_max_health: float = 100.0
+
+func sandbox_for(actor: Node) -> bool:
+	return debug_god_mode and is_instance_valid(actor) and actor.is_in_group("player")
+
+func _input(event: InputEvent) -> void:
+	if not event is InputEventKey or not event.pressed or event.echo:
+		return
+	var focus: Control = get_viewport().gui_get_focus_owner()
+	if _state != State.PLAYING or focus is LineEdit or focus is TextEdit or event.ctrl_pressed or event.alt_pressed or event.meta_pressed:
+		_god_code_buffer = ""
+		return
+	var key: int = event.keycode
+	var digit: int = key - KEY_0 if key >= KEY_0 and key <= KEY_9 else (key - KEY_KP_0 if key >= KEY_KP_0 and key <= KEY_KP_9 else -1)
+	if digit < 0:
+		_god_code_buffer = ""
+		return
+	var now: int = Time.get_ticks_msec()
+	if now - _god_code_last_msec > 3000:
+		_god_code_buffer = ""
+	_god_code_last_msec = now
+	_god_code_buffer += str(digit)
+	while not GOD_CODE.begins_with(_god_code_buffer):
+		_god_code_buffer = _god_code_buffer.substr(1)
+	if _god_code_buffer == GOD_CODE:
+		_god_code_buffer = ""
+		debug_god_mode = not debug_god_mode
+		_sync_god_health()
+		SignalBus.tech_tree_updated.emit()
+		SignalBus.notification_posted.emit("GOD MODE ON — virtual resources, free research, 99999 HP" if debug_god_mode else "GOD MODE OFF")
+		get_viewport().set_input_as_handled()
+
+func _sync_god_health() -> void:
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if not is_instance_valid(player):
+		return
+	var stats: StatsComponent = player.get("stats") as StatsComponent
+	var health: HealthComponent = player.get("health_comp") as HealthComponent
+	if stats == null or health == null:
+		return
+	if debug_god_mode:
+		if stats.max_health != 99999.0:
+			_god_normal_max_health = stats.max_health
+		if stats.max_health != 99999.0:
+			stats.set_max("health", 99999.0)
+		if stats.health != 99999.0:
+			stats.modify("health", 99999.0)
+		if health.maximum != 99999.0:
+			health.set_max(99999.0)
+		if health.current != 99999.0:
+			health.heal(99999.0)
+		for stat: String in ["hunger", "blood", "stamina"]:
+			if stats.get_value(stat) < stats.get_max(stat):
+				stats.modify(stat, stats.get_max(stat))
+	elif stats.max_health == 99999.0:
+		stats.set_max("health", _god_normal_max_health)
+		health.set_max(_god_normal_max_health)
 
 
 func _ready() -> void:
@@ -45,6 +107,31 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
 		perform_exit_autosave()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_on_application_focus_lost()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		_on_application_focus_gained()
+
+
+func _on_application_focus_lost() -> void:
+	_application_focused = false
+	# Own only a pause introduced here; never take over an existing menu/manual pause.
+	if _state == State.PLAYING and not get_tree().paused:
+		pause()
+		_paused_by_focus = true
+
+
+func _on_application_focus_gained() -> void:
+	_application_focused = true
+	if not _paused_by_focus:
+		return
+	_paused_by_focus = false
+	if _state != State.PAUSED:
+		return
+	if has_blocking_panels():
+		_paused_by_ui = true
+	else:
+		resume()
 
 
 func perform_exit_autosave() -> void:
@@ -65,6 +152,8 @@ func perform_exit_autosave() -> void:
 
 
 func _process(delta: float) -> void:
+	if _state in [State.PLAYING, State.PAUSED]:
+		_sync_god_health()
 	if _state != State.PLAYING:
 		return
 	_playtime_sec += delta
@@ -95,6 +184,9 @@ func _tick_autosave(delta: float) -> void:
 
 
 func start_new_game(new_seed: int, slot: String = Config.DEFAULT_SAVE_SLOT) -> void:
+	debug_god_mode = false
+	_god_code_buffer = ""
+	Config.TERRAIN_GEOGRAPHY_SIZE = Config.WORLD_SIZE_TILES
 	_world_seed = new_seed
 	_active_slot = slot
 	_day = 1
@@ -103,16 +195,19 @@ func start_new_game(new_seed: int, slot: String = Config.DEFAULT_SAVE_SLOT) -> v
 	_autosave_elapsed = 0.0
 	_open_blocking_panels.clear()
 	_paused_by_ui = false
+	_paused_by_focus = false
 	_state = State.PLAYING
 	get_tree().paused = false
 	SignalBus.world_delete_requested.emit(slot)
 	SignalBus.game_started.emit(_world_seed, _active_slot, true)
+	SignalBus.save_requested.emit(_active_slot)
 
 
 func resume_loaded_game() -> void:
 	_autosave_elapsed = 0.0
 	_open_blocking_panels.clear()
 	_paused_by_ui = false
+	_paused_by_focus = false
 	_state = State.PLAYING
 	get_tree().paused = false
 	SignalBus.game_started.emit(_world_seed, _active_slot, false)
@@ -173,6 +268,7 @@ func is_dead() -> bool:
 
 
 func pause() -> void:
+	_paused_by_focus = false
 	if _state != State.PLAYING:
 		return
 	_state = State.PAUSED
@@ -183,6 +279,12 @@ func pause() -> void:
 func resume() -> void:
 	if _state != State.PAUSED:
 		return
+	if not _application_focused:
+		_paused_by_focus = true
+		return
+	if has_blocking_panels():
+		return
+	_paused_by_focus = false
 	_state = State.PLAYING
 	get_tree().paused = false
 	SignalBus.game_paused.emit(false)
@@ -245,6 +347,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		var k: InputEventKey = event as InputEventKey
 		if k.keycode == KEY_F5 or k.physical_keycode == KEY_F5:
+			if _state not in [State.PLAYING, State.PAUSED] or _open_blocking_panels.has("main_menu"):
+				SignalBus.notification_posted.emit("Start or load a world before saving.")
+				get_viewport().set_input_as_handled()
+				return
 			var save_sys: Node = get_tree().get_first_node_in_group("save_system")
 			if save_sys == null:
 				save_sys = get_tree().root.find_child("SaveSystem", true, false)
@@ -300,17 +406,23 @@ func _on_ui_panel_toggled(panel_id: String, is_open: bool, blocks_game: bool) ->
 func _on_save_data_requested(bundle: Dictionary) -> void:
 	bundle["meta"] = {
 		"schema_version": 1,
+		"map_projection": Config.MAP_PROJECTION,
 		"seed": _world_seed,
 		"slot": _active_slot,
 		"day": _day,
 		"hour": _hour,
 		"playtime": _playtime_sec,
+		"god_mode": debug_god_mode,
+		"god_normal_max_health": _god_normal_max_health,
 		"saved_at": Time.get_datetime_string_from_system(true)
 	}
 
 
 func _on_save_data_loaded(bundle: Dictionary) -> void:
 	var meta: Dictionary = bundle.get("meta", {})
+	debug_god_mode = bool(meta.get("god_mode", false))
+	_god_normal_max_health = float(meta.get("god_normal_max_health", 100.0))
+	_god_code_buffer = ""
 	_world_seed = int(meta.get("seed", 1337))
 	_active_slot = str(meta.get("slot", Config.DEFAULT_SAVE_SLOT))
 	_day = int(meta.get("day", 1))
@@ -325,6 +437,7 @@ func _register_default_inputs() -> void:
 		"move_left": KEY_A,
 		"move_right": KEY_D,
 		"interact": KEY_E,
+		"use_item": KEY_F,
 		"ui_inventory": KEY_I,
 		"ui_map": KEY_M,
 		"ui_craft": KEY_C,

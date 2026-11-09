@@ -1,0 +1,1018 @@
+{
+	"assets": {
+		"adventurer_chest": {
+			"anchor": "bottom_center",
+			"region": [
+				962,
+				989,
+				264,
+				224
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/adventurer_chest.tres"
+		},
+		"anvil_stump": {
+			"anchor": "bottom_center",
+			"region": [
+				44,
+				40,
+				250,
+				270
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/anvil_stump.tres"
+		},
+		"apple_basket": {
+			"anchor": "bottom_center",
+			"region": [
+				343,
+				310,
+				257,
+				301
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/apple_basket.tres"
+		},
+		"balance_scales": {
+			"anchor": "bottom_center",
+			"region": [
+				976,
+				645,
+				253,
+				283
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/balance_scales.tres"
+		},
+		"beehive": {
+			"anchor": "bottom_center",
+			"region": [
+				358,
+				311,
+				217,
+				306
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/beehive.tres"
+		},
+		"bell_shrine": {
+			"anchor": "bottom_center",
+			"region": [
+				757,
+				742,
+				329,
+				326
+			],
+			"sheet": "town_buildings",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/bell_shrine.tres"
+		},
+		"bread_basket": {
+			"anchor": "bottom_center",
+			"region": [
+				649,
+				310,
+				268,
+				303
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/bread_basket.tres"
+		},
+		"broken_arch": {
+			"anchor": "bottom_center",
+			"region": [
+				13,
+				39,
+				300,
+				272
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/broken_arch.tres"
+		},
+		"broken_bridge": {
+			"anchor": "bottom_center",
+			"region": [
+				945,
+				992,
+				304,
+				217
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/broken_bridge.tres"
+		},
+		"broken_cart": {
+			"anchor": "bottom_center",
+			"region": [
+				945,
+				78,
+				298,
+				228
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/broken_cart.tres"
+		},
+		"broken_column": {
+			"anchor": "bottom_center",
+			"region": [
+				360,
+				49,
+				237,
+				262
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/broken_column.tres"
+		},
+		"broken_pottery": {
+			"anchor": "bottom_center",
+			"region": [
+				630,
+				389,
+				315,
+				206
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/broken_pottery.tres"
+		},
+		"broken_weapon_rack": {
+			"anchor": "bottom_center",
+			"region": [
+				630,
+				972,
+				315,
+				237
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/broken_weapon_rack.tres"
+		},
+		"bronze_stack": {
+			"anchor": "bottom_center",
+			"region": [
+				22,
+				980,
+				285,
+				225
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/bronze_stack.tres"
+		},
+		"campfire_ring": {
+			"anchor": "bottom_center",
+			"region": [
+				656,
+				57,
+				254,
+				228
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/campfire_ring.tres"
+		},
+		"caravan_wagon": {
+			"anchor": "bottom_center",
+			"region": [
+				380,
+				780,
+				301,
+				279
+			],
+			"sheet": "town_buildings",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/caravan_wagon.tres"
+		},
+		"cargo_crates": {
+			"anchor": "bottom_center",
+			"region": [
+				35,
+				38,
+				267,
+				272
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/cargo_crates.tres"
+		},
+		"cargo_handcart": {
+			"anchor": "bottom_center",
+			"region": [
+				28,
+				661,
+				289,
+				268
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/cargo_handcart.tres"
+		},
+		"carpenter_chest": {
+			"anchor": "bottom_center",
+			"region": [
+				14,
+				944,
+				294,
+				285
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/carpenter_chest.tres"
+		},
+		"cauldron_ladle": {
+			"anchor": "bottom_center",
+			"region": [
+				964,
+				979,
+				282,
+				250
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/cauldron_ladle.tres"
+		},
+		"charcoal_bucket": {
+			"anchor": "bottom_center",
+			"region": [
+				999,
+				60,
+				219,
+				250
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/charcoal_bucket.tres"
+		},
+		"chicken_coop": {
+			"anchor": "bottom_center",
+			"region": [
+				23,
+				33,
+				259,
+				278
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/chicken_coop.tres"
+		},
+		"chopping_block": {
+			"anchor": "bottom_center",
+			"region": [
+				985,
+				343,
+				229,
+				249
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/chopping_block.tres"
+		},
+		"cloth_bolts": {
+			"anchor": "bottom_center",
+			"region": [
+				957,
+				62,
+				290,
+				248
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/cloth_bolts.tres"
+		},
+		"cooking_tripod": {
+			"anchor": "bottom_center",
+			"region": [
+				966,
+				21,
+				254,
+				264
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/cooking_tripod.tres"
+		},
+		"cottage": {
+			"anchor": "bottom_center",
+			"region": [
+				39,
+				48,
+				308,
+				303
+			],
+			"sheet": "town_buildings",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/cottage.tres"
+		},
+		"direction_signpost": {
+			"anchor": "bottom_center",
+			"region": [
+				688,
+				647,
+				189,
+				266
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/direction_signpost.tres"
+		},
+		"discarded_armor": {
+			"anchor": "bottom_center",
+			"region": [
+				14,
+				1007,
+				278,
+				199
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/discarded_armor.tres"
+		},
+		"expedition_tent": {
+			"anchor": "bottom_center",
+			"region": [
+				20,
+				35,
+				273,
+				261
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/expedition_tent.tres"
+		},
+		"farm_wheelbarrow": {
+			"anchor": "bottom_center",
+			"region": [
+				966,
+				974,
+				277,
+				251
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/farm_wheelbarrow.tres"
+		},
+		"feeding_trough": {
+			"anchor": "bottom_center",
+			"region": [
+				344,
+				80,
+				267,
+				231
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/feeding_trough.tres"
+		},
+		"fence_gate": {
+			"anchor": "bottom_center",
+			"region": [
+				969,
+				84,
+				266,
+				201
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/fence_gate.tres"
+		},
+		"firewood_stack": {
+			"anchor": "bottom_center",
+			"region": [
+				653,
+				378,
+				264,
+				197
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/firewood_stack.tres"
+		},
+		"fish_tub": {
+			"anchor": "bottom_center",
+			"region": [
+				958,
+				310,
+				277,
+				308
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/fish_tub.tres"
+		},
+		"fishing_kit": {
+			"anchor": "bottom_center",
+			"region": [
+				20,
+				654,
+				258,
+				259
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/fishing_kit.tres"
+		},
+		"forge_bellows": {
+			"anchor": "bottom_center",
+			"region": [
+				324,
+				11,
+				310,
+				299
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/forge_bellows.tres"
+		},
+		"fur_bedroll": {
+			"anchor": "bottom_center",
+			"region": [
+				338,
+				74,
+				262,
+				193
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/fur_bedroll.tres"
+		},
+		"gatehouse": {
+			"anchor": "bottom_center",
+			"region": [
+				1086,
+				755,
+				335,
+				312
+			],
+			"sheet": "town_buildings",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/gatehouse.tres"
+		},
+		"grain_quern": {
+			"anchor": "bottom_center",
+			"region": [
+				973,
+				376,
+				254,
+				233
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/grain_quern.tres"
+		},
+		"grain_sacks": {
+			"anchor": "bottom_center",
+			"region": [
+				646,
+				51,
+				281,
+				259
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/grain_sacks.tres"
+		},
+		"granary": {
+			"anchor": "bottom_center",
+			"region": [
+				40,
+				404,
+				294,
+				310
+			],
+			"sheet": "town_buildings",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/granary.tres"
+		},
+		"hay_bale": {
+			"anchor": "bottom_center",
+			"region": [
+				658,
+				81,
+				241,
+				215
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/hay_bale.tres"
+		},
+		"herb_basket": {
+			"anchor": "bottom_center",
+			"region": [
+				363,
+				973,
+				205,
+				253
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/herb_basket.tres"
+		},
+		"herb_drying_rack": {
+			"anchor": "bottom_center",
+			"region": [
+				640,
+				620,
+				290,
+				302
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/herb_drying_rack.tres"
+		},
+		"herb_mortar": {
+			"anchor": "bottom_center",
+			"region": [
+				352,
+				620,
+				230,
+				298
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/herb_mortar.tres"
+		},
+		"hot_crucible": {
+			"anchor": "bottom_center",
+			"region": [
+				634,
+				72,
+				264,
+				238
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/hot_crucible.tres"
+		},
+		"iron_stack": {
+			"anchor": "bottom_center",
+			"region": [
+				328,
+				979,
+				285,
+				228
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/iron_stack.tres"
+		},
+		"kindling_block": {
+			"anchor": "bottom_center",
+			"region": [
+				978,
+				671,
+				259,
+				257
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/kindling_block.tres"
+		},
+		"lean_to": {
+			"anchor": "bottom_center",
+			"region": [
+				16,
+				967,
+				289,
+				255
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/lean_to.tres"
+		},
+		"linen_rack": {
+			"anchor": "bottom_center",
+			"region": [
+				649,
+				670,
+				276,
+				255
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/linen_rack.tres"
+		},
+		"loom": {
+			"anchor": "bottom_center",
+			"region": [
+				345,
+				645,
+				257,
+				279
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/loom.tres"
+		},
+		"map_compass": {
+			"anchor": "bottom_center",
+			"region": [
+				952,
+				677,
+				273,
+				228
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/map_compass.tres"
+		},
+		"market_stall": {
+			"anchor": "bottom_center",
+			"region": [
+				1114,
+				71,
+				301,
+				280
+			],
+			"sheet": "town_buildings",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/market_stall.tres"
+		},
+		"masonry_blocks": {
+			"anchor": "bottom_center",
+			"region": [
+				32,
+				620,
+				262,
+				300
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/masonry_blocks.tres"
+		},
+		"meat_drying_rack": {
+			"anchor": "bottom_center",
+			"region": [
+				19,
+				356,
+				282,
+				236
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/meat_drying_rack.tres"
+		},
+		"medicine_chest": {
+			"anchor": "bottom_center",
+			"region": [
+				340,
+				676,
+				260,
+				229
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/medicine_chest.tres"
+		},
+		"medicine_jars": {
+			"anchor": "bottom_center",
+			"region": [
+				963,
+				620,
+				269,
+				307
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/medicine_jars.tres"
+		},
+		"merchant_shop": {
+			"anchor": "bottom_center",
+			"region": [
+				388,
+				47,
+				309,
+				304
+			],
+			"sheet": "town_buildings",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/merchant_shop.tres"
+		},
+		"old_signpost": {
+			"anchor": "bottom_center",
+			"region": [
+				56,
+				655,
+				203,
+				265
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/old_signpost.tres"
+		},
+		"old_vault": {
+			"anchor": "bottom_center",
+			"region": [
+				323,
+				988,
+				307,
+				215
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/old_vault.tres"
+		},
+		"plank_bundle": {
+			"anchor": "bottom_center",
+			"region": [
+				641,
+				966,
+				289,
+				241
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/plank_bundle.tres"
+		},
+		"pottery_set": {
+			"anchor": "bottom_center",
+			"region": [
+				651,
+				975,
+				252,
+				242
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/pottery_set.tres"
+		},
+		"produce_basket": {
+			"anchor": "bottom_center",
+			"region": [
+				35,
+				970,
+				249,
+				246
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/produce_basket.tres"
+		},
+		"rain_barrel": {
+			"anchor": "bottom_center",
+			"region": [
+				661,
+				340,
+				234,
+				283
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/rain_barrel.tres"
+		},
+		"roofed_well": {
+			"anchor": "bottom_center",
+			"region": [
+				63,
+				778,
+				260,
+				289
+			],
+			"sheet": "town_buildings",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/roofed_well.tres"
+		},
+		"ruined_tower": {
+			"anchor": "bottom_center",
+			"region": [
+				954,
+				638,
+				285,
+				292
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/ruined_tower.tres"
+		},
+		"ruined_wall": {
+			"anchor": "bottom_center",
+			"region": [
+				327,
+				311,
+				273,
+				284
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/ruined_wall.tres"
+		},
+		"ruined_well": {
+			"anchor": "bottom_center",
+			"region": [
+				16,
+				311,
+				279,
+				296
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/ruined_well.tres"
+		},
+		"sarcophagus": {
+			"anchor": "bottom_center",
+			"region": [
+				945,
+				387,
+				297,
+				214
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/sarcophagus.tres"
+		},
+		"sawhorse_plank": {
+			"anchor": "bottom_center",
+			"region": [
+				329,
+				960,
+				286,
+				263
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/sawhorse_plank.tres"
+		},
+		"sealed_barrels": {
+			"anchor": "bottom_center",
+			"region": [
+				347,
+				58,
+				261,
+				252
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/sealed_barrels.tres"
+		},
+		"seedling_pots": {
+			"anchor": "bottom_center",
+			"region": [
+				341,
+				969,
+				249,
+				246
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/seedling_pots.tres"
+		},
+		"sewing_basket": {
+			"anchor": "bottom_center",
+			"region": [
+				970,
+				310,
+				267,
+				310
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/sewing_basket.tres"
+		},
+		"smith_tool_rack": {
+			"anchor": "bottom_center",
+			"region": [
+				23,
+				310,
+				289,
+				310
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/smith_tool_rack.tres"
+		},
+		"smith_workshop": {
+			"anchor": "bottom_center",
+			"region": [
+				736,
+				36,
+				324,
+				312
+			],
+			"sheet": "town_buildings",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/smith_workshop.tres"
+		},
+		"spinning_wheel": {
+			"anchor": "bottom_center",
+			"region": [
+				42,
+				657,
+				236,
+				275
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/spinning_wheel.tres"
+		},
+		"stable": {
+			"anchor": "bottom_center",
+			"region": [
+				1100,
+				432,
+				325,
+				267
+			],
+			"sheet": "town_buildings",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/stable.tres"
+		},
+		"standing_stone": {
+			"anchor": "bottom_center",
+			"region": [
+				321,
+				643,
+				309,
+				272
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/standing_stone.tres"
+		},
+		"stitching_frame": {
+			"anchor": "bottom_center",
+			"region": [
+				350,
+				310,
+				269,
+				310
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/stitching_frame.tres"
+		},
+		"stone_chest": {
+			"anchor": "bottom_center",
+			"region": [
+				636,
+				88,
+				309,
+				213
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/stone_chest.tres"
+		},
+		"stone_hatch": {
+			"anchor": "bottom_center",
+			"region": [
+				630,
+				644,
+				292,
+				282
+			],
+			"sheet": "ruin_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/stone_hatch.tres"
+		},
+		"tanning_rack": {
+			"anchor": "bottom_center",
+			"region": [
+				660,
+				310,
+				266,
+				310
+			],
+			"sheet": "workshop_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/tanning_rack.tres"
+		},
+		"tavern": {
+			"anchor": "bottom_center",
+			"region": [
+				724,
+				406,
+				346,
+				311
+			],
+			"sheet": "town_buildings",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/tavern.tres"
+		},
+		"tent_bundle": {
+			"anchor": "bottom_center",
+			"region": [
+				317,
+				667,
+				298,
+				253
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/tent_bundle.tres"
+		},
+		"trader_chest": {
+			"anchor": "bottom_center",
+			"region": [
+				29,
+				310,
+				275,
+				306
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/trader_chest.tres"
+		},
+		"travel_packs": {
+			"anchor": "bottom_center",
+			"region": [
+				643,
+				660,
+				285,
+				252
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/travel_packs.tres"
+		},
+		"travel_toolkit": {
+			"anchor": "bottom_center",
+			"region": [
+				644,
+				971,
+				273,
+				263
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/travel_toolkit.tres"
+		},
+		"watchtower": {
+			"anchor": "bottom_center",
+			"region": [
+				437,
+				374,
+				287,
+				345
+			],
+			"sheet": "town_buildings",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/watchtower.tres"
+		},
+		"waterskin_cup": {
+			"anchor": "bottom_center",
+			"region": [
+				335,
+				356,
+				257,
+				231
+			],
+			"sheet": "camp_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/waterskin_cup.tres"
+		},
+		"wattle_fence": {
+			"anchor": "bottom_center",
+			"region": [
+				645,
+				1013,
+				278,
+				178
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/wattle_fence.tres"
+		},
+		"wheat_sheaves": {
+			"anchor": "bottom_center",
+			"region": [
+				39,
+				311,
+				219,
+				308
+			],
+			"sheet": "farm_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/wheat_sheaves.tres"
+		},
+		"wool_bales": {
+			"anchor": "bottom_center",
+			"region": [
+				969,
+				959,
+				270,
+				253
+			],
+			"sheet": "trade_props",
+			"texture": "res://assets/sprites/expansion/settlements_2026_11_04/regions/wool_bales.tres"
+		}
+	},
+	"generator": "built-in imagegen",
+	"style": "simplified isometric colony props, dark outlines, earthy palette, no ground shadows"
+}

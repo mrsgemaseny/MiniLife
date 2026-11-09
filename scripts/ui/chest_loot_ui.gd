@@ -22,6 +22,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	_build_ui()
+	SurvivalTheme.ignore_pointer(_tooltip_panel)
 	SignalBus.storage_container_opened.connect(_on_container_opened)
 	SignalBus.ui_close_all_requested.connect(close_panel)
 	SignalBus.inventory_changed.connect(func(_ent: Node, _snap: Dictionary) -> void:
@@ -224,6 +225,7 @@ func _build_floating_tooltip() -> void:
 
 
 func _on_container_opened(_container_uid: String, tile_pos: Vector2i) -> void:
+	SignalBus.ui_close_all_requested.emit()
 	_current_tile = tile_pos
 	visible = true
 	_refresh_display()

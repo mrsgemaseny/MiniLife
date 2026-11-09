@@ -201,6 +201,19 @@ func save_slot(slot: String, display_name: String = "") -> bool:
 	if bundle.has("research") and not (bundle["research"] as Dictionary).is_empty():
 		_write_json(base_dir + "research.json", bundle["research"])
 
+	# Direct furnace persistence (fuel, input ores, smelting progress, outputs)
+	var furnaces_data: Dictionary = bundle.get("furnaces", {})
+	if furnaces_data.is_empty():
+		var fsys_save: FurnaceSystem = FurnaceSystem.instance
+		if fsys_save == null:
+			fsys_save = get_tree().root.find_child("FurnaceSystem", true, false) as FurnaceSystem
+		if fsys_save != null:
+			furnaces_data = fsys_save._furnaces.duplicate(true)
+	# Persist an empty collection too: otherwise a removed last furnace returns
+	# from the previous on-disk snapshot when this slot is loaded again.
+	if not _write_json(base_dir + "furnaces.json", furnaces_data):
+		return false
+
 	for key in _dirty_chunks:
 		var cpos: Vector2i = Config.key_to_vec2i(str(key))
 		save_chunk(cpos, _dirty_chunks[key])
@@ -220,8 +233,11 @@ func load_slot(slot: String) -> bool:
 	var world_data: Dictionary = _read_json(base_dir + "world.json")
 	var buildings_data: Dictionary = _read_json(base_dir + "buildings.json")
 	var research_data: Dictionary = _read_json(base_dir + "research.json")
+	var furnaces_data: Dictionary = _read_json(base_dir + "furnaces.json")
 
 	var loaded_seed: int = int(world_data.get("world_seed", Config.DEFAULT_WORLD_SEED))
+	# Expand legacy saves without stretching their existing rivers, lakes and biomes.
+	Config.TERRAIN_GEOGRAPHY_SIZE = int(world_data.get("terrain_geography_size", 256))
 	GameManager._world_seed = loaded_seed
 	GameManager.set_day_and_hour(int(meta.get("day", 1)), float(meta.get("hour", Config.START_HOUR)))
 
@@ -232,8 +248,10 @@ func load_slot(slot: String) -> bool:
 		"player": player_data,
 		"world": world_data,
 		"buildings": buildings_data,
-		"research": research_data
+		"research": research_data,
+		"furnaces": furnaces_data
 	}
+	preload("res://scripts/core/map_projection_migration.gd").migrate_bundle(bundle)
 	SignalBus.save_data_loaded.emit(bundle)
 
 	# Direct fallback calls to ensure state is cleanly restored regardless of tree pause status
@@ -263,6 +281,15 @@ func load_slot(slot: String) -> bool:
 				rsys._researched.append(str(tid))
 			SignalBus.tech_tree_updated.emit()
 
+	if not furnaces_data.is_empty():
+		var fsys: FurnaceSystem = FurnaceSystem.instance
+		if fsys == null:
+			fsys = get_tree().root.find_child("FurnaceSystem", true, false) as FurnaceSystem
+		if fsys != null:
+			fsys._furnaces = furnaces_data.duplicate(true)
+			for fid in fsys._furnaces:
+				fsys.furnace_updated.emit(fid)
+
 	GameManager.resume_loaded_game()
 	SignalBus.game_loaded.emit()
 	return true
@@ -275,7 +302,9 @@ func save_chunk(pos: Vector2i, delta: Dictionary) -> void:
 			DirAccess.remove_absolute(chunk_path)
 		return
 	DirAccess.make_dir_recursive_absolute(_slot_dir(_active_slot) + "chunks")
-	_write_json(chunk_path, delta)
+	var saved_delta: Dictionary = delta.duplicate(true)
+	saved_delta["map_projection"] = Config.MAP_PROJECTION
+	_write_json(chunk_path, saved_delta)
 
 
 func load_chunk(pos: Vector2i) -> Dictionary:
@@ -285,7 +314,7 @@ func load_chunk(pos: Vector2i) -> Dictionary:
 	var chunk_path: String = _chunk_file_path(_active_slot, pos)
 	if not FileAccess.file_exists(chunk_path):
 		return {}
-	return _read_json(chunk_path)
+	return preload("res://scripts/core/map_projection_migration.gd").migrate_chunk(_read_json(chunk_path))
 
 
 func save_achievements(data: Dictionary) -> void:

@@ -2,11 +2,18 @@ class_name WorldMapUI
 extends Control
 
 # Full-Screen Interactive Isometric World Map (45-degree Rhombus Atlas)
-# Complete pan/zoom, high-clarity 256x256 territory rasterization, POI tracking, and player beacon.
+# Fixed-resolution atlas sampling for the 1000x1000 local map, incremental fog updates and player beacon.
 
 const PANEL_ID: String = "map"
-const MAP_TEX_W: int = 1024
+const MAP_TEX_W: int = 512
 const MAP_TEX_H: int = 512
+const MAP_SAMPLES: int = 256
+const MAP_TILE_SCALE: float = float(MAP_SAMPLES) / Config.WORLD_SIZE_TILES
+var _map_seed: int = -1
+var _map_row: int = MAP_SAMPLES
+var _map_column: int = 0
+var _map_terrain: TerrainGenerator
+var _dirty_samples: Dictionary = {}
 
 var _map_image: Image = null
 var _map_texture: ImageTexture = null
@@ -21,6 +28,10 @@ var _explore_label: Label = null
 var _status_label: Label = null
 var _hovered_tile: Vector2i = Vector2i(-1, -1)
 var _hovered_poi: String = ""
+var _politics_enabled: bool = false
+var _political_settlements: Array = []
+var _political_territory: Array = []
+var _political_armies: Array = []
 
 
 func _ready() -> void:
@@ -43,10 +54,13 @@ func _ready() -> void:
 
 	SignalBus.ui_panel_requested.connect(_on_panel_requested)
 	SignalBus.ui_close_all_requested.connect(close_panel)
-	SignalBus.fog_batch_updated.connect(func(_b: Array) -> void:
-		if visible:
-			_rebuild_world_map_texture()
+	SignalBus.fog_batch_updated.connect(func(changes: Array) -> void:
+		for change: Dictionary in changes:
+			var tile: Vector2i = change["pos"]
+			_dirty_samples[Vector2i(clampi(int(tile.x * MAP_TILE_SCALE), 0, MAP_SAMPLES - 1), clampi(int(tile.y * MAP_TILE_SCALE), 0, MAP_SAMPLES - 1))] = true
 	)
+	SignalBus.game_started.connect(func(_seed: int, _slot: String, _new: bool): _map_seed = -1)
+	SignalBus.fog_snapshot_loaded.connect(func(_tiles: Array): _map_seed = -1)
 	SignalBus.player_tile_changed.connect(func(_p: Vector2i) -> void:
 		if visible and _map_canvas != null:
 			_map_canvas.queue_redraw()
@@ -88,6 +102,8 @@ func toggle_panel() -> void:
 
 func open_panel() -> void:
 	visible = true
+	if _politics_enabled:
+		_refresh_political_layer()
 	_rebuild_world_map_texture()
 	call_deferred("center_on_player")
 	refresh()
@@ -106,7 +122,7 @@ func refresh() -> void:
 	if world_sys != null and _explore_label != null:
 		var fog_sys: FogOfWarSystem = world_sys.get_fog_system()
 		var pct: int = fog_sys.compute_exploration_percent() if fog_sys != null else 0
-		_explore_label.text = "Исследовано: %d%% • Семя: %d" % [pct, Config.DEFAULT_WORLD_SEED]
+		_explore_label.text = "Исследовано: %d%% • Семя: %d" % [pct, GameManager.get_world_seed()]
 	if _map_canvas != null:
 		_map_canvas.queue_redraw()
 
@@ -115,8 +131,8 @@ func center_on_player() -> void:
 	if _map_canvas == null:
 		return
 	var ptile: Vector2i = GameManager.get_player_tile()
-	var player_px: float = 512.0 + float(ptile.x - ptile.y) * 2.0
-	var player_py: float = float(ptile.x + ptile.y) * 1.0
+	var player_px: float = float(ptile.x) * 2.0 * MAP_TILE_SCALE
+	var player_py: float = float(ptile.y) * 2.0 * MAP_TILE_SCALE
 	var c_sz: Vector2 = _map_canvas.size
 	if c_sz.x < 100.0 or c_sz.y < 100.0:
 		c_sz = get_viewport_rect().size - Vector2(56.0, 140.0)
@@ -157,48 +173,59 @@ func _get_cartographic_biome_color(bname: String) -> Color:
 func _rebuild_world_map_texture() -> void:
 	if _map_image == null:
 		return
+	var seed_value: int = GameManager.get_world_seed()
+	if _map_seed != seed_value:
+		_map_seed = seed_value
+		_map_row = 0
+		_map_column = 0
+		_map_terrain = TerrainGenerator.new(seed_value)
+		_map_image.fill(Color.TRANSPARENT)
+
+func _process(_delta: float) -> void:
+	if not visible or _map_image == null or _map_terrain == null:
+		return
 	var world_sys: WorldSystem = get_tree().get_first_node_in_group("world_system") as WorldSystem
 	if world_sys == null:
 		return
-
-	# Transparent background around the 45-degree diamond
-	_map_image.fill(Color(0.04, 0.05, 0.06, 0.0))
-
-	# Iterate 256x256 world tiles and rasterize 45-degree isometric diamond
-	for ty in range(Config.WORLD_SIZE_TILES):
-		for tx in range(Config.WORLD_SIZE_TILES):
-			var tpos: Vector2i = Vector2i(tx, ty)
-			var bname: String = world_sys.get_biome_cached(tpos)
-			var fstate: int = int(world_sys.get_fog_state(tpos))
-
-			var base_col: Color = _get_cartographic_biome_color(bname)
-			var col: Color = base_col
-
-			if fstate == int(Config.FogState.UNEXPLORED):
-				# Shaded relief topography: muted dark antique tint showing world geography without an empty black void
-				col = base_col.darkened(0.55)
-				col = col.lerp(Color(0.09, 0.10, 0.13, 1.0), 0.45)
-			elif fstate == int(Config.FogState.VISITED):
-				col = base_col.darkened(0.18)
-			else:
-				# Fully explored / visible: full crisp saturation
-				col = base_col
-
-			var px: int = 512 + (tx - ty) * 2
-			var py: int = tx + ty
-			if px < 0 or px >= MAP_TEX_W - 1 or py < 0 or py >= MAP_TEX_H - 1:
-				continue
-
-			# Fill 2x2 footprint for solid continuous coverage without gaps
-			_map_image.set_pixel(px, py, col)
-			_map_image.set_pixel(px + 1, py, col)
-			var shadow_col: Color = col.darkened(0.10)
-			_map_image.set_pixel(px, py + 1, shadow_col)
-			_map_image.set_pixel(px + 1, py + 1, shadow_col)
-
-	_map_texture.update(_map_image)
-	if _map_canvas != null:
+	var deadline: int = Time.get_ticks_usec() + 4000
+	var changed: bool = false
+	while _map_row < MAP_SAMPLES and Time.get_ticks_usec() < deadline:
+		_paint_sample(Vector2i(_map_column, _map_row), world_sys, false)
+		_map_column += 1
+		if _map_column == MAP_SAMPLES:
+			_map_column = 0
+			_map_row += 1
+		changed = true
+	if _map_row == MAP_SAMPLES:
+		for sample: Vector2i in _dirty_samples.keys():
+			if Time.get_ticks_usec() >= deadline:
+				break
+			_paint_sample(sample, world_sys, true)
+			_dirty_samples.erase(sample)
+			changed = true
+	if changed:
+		_map_texture.update(_map_image)
 		_map_canvas.queue_redraw()
+
+func _paint_sample(sample: Vector2i, world_sys: WorldSystem, aggregate_fog: bool) -> void:
+	var tile := Vector2i(int(sample.x / MAP_TILE_SCALE), int(sample.y / MAP_TILE_SCALE))
+	var color: Color = _get_cartographic_biome_color(_map_terrain.get_biome_at(tile))
+	var state: int = int(world_sys.get_fog_state(tile))
+	if aggregate_fog:
+		var end := Vector2i(mini(Config.WORLD_SIZE_TILES, ceili((sample.x + 1) / MAP_TILE_SCALE)), mini(Config.WORLD_SIZE_TILES, ceili((sample.y + 1) / MAP_TILE_SCALE)))
+		for x: int in range(tile.x, end.x):
+			for y: int in range(tile.y, end.y):
+				state = maxi(state, int(world_sys.get_fog_state(Vector2i(x, y))))
+	if state == int(Config.FogState.UNEXPLORED):
+		color = color.darkened(0.55).lerp(Color(0.09, 0.10, 0.13), 0.45)
+	elif state == int(Config.FogState.VISITED):
+		color = color.darkened(0.18)
+	var px: int = sample.x * 2
+	var py: int = sample.y * 2
+	_map_image.set_pixel(px, py, color)
+	_map_image.set_pixel(px + 1, py, color)
+	_map_image.set_pixel(px, py + 1, color.darkened(0.10))
+	_map_image.set_pixel(px + 1, py + 1, color.darkened(0.10))
 
 
 func _build_ui_layout() -> void:
@@ -269,7 +296,7 @@ func _build_ui_layout() -> void:
 	title_vbox.add_child(title)
 
 	var subtitle: Label = Label.new()
-	subtitle.text = "Изометрический атлас исследованных земель • Ромб 45°"
+	subtitle.text = "World atlas — north up, square grid"
 	subtitle.add_theme_font_size_override("font_size", 10)
 	subtitle.modulate = Color(0.60, 0.64, 0.70, 1.0)
 	title_vbox.add_child(subtitle)
@@ -325,6 +352,19 @@ func _build_ui_layout() -> void:
 	center_btn.add_theme_stylebox_override("hover", _make_mc_btn_style(true))
 	center_btn.pressed.connect(center_on_player)
 	btm.add_child(center_btn)
+
+	var politics_btn: Button = Button.new()
+	politics_btn.text = " ФРАКЦИИ "
+	politics_btn.tooltip_text = "Владельцы, осады и замеченные маршруты армий"
+	politics_btn.toggle_mode = true
+	politics_btn.toggled.connect(func(enabled: bool) -> void:
+		_politics_enabled = enabled
+		_map_canvas.tooltip_text = ""
+		if enabled:
+			_refresh_political_layer()
+		_map_canvas.queue_redraw()
+	)
+	btm.add_child(politics_btn)
 
 	var zoom_in_btn: Button = Button.new()
 	zoom_in_btn.text = " + ПРИБЛИЗИТЬ "
@@ -395,23 +435,110 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 
 		# Compute tile coordinates under mouse
 		var local_px: Vector2 = (mm.position - _pan_offset) / _zoom
-		var iso_u: float = (local_px.x - 512.0) * 0.5
-		var iso_v: float = local_px.y
-		var tx: int = roundi((iso_v + iso_u) * 0.5)
-		var ty: int = roundi((iso_v - iso_u) * 0.5)
+		var tx: int = roundi(local_px.x / (2.0 * MAP_TILE_SCALE))
+		var ty: int = roundi(local_px.y / (2.0 * MAP_TILE_SCALE))
 
 		if tx >= 0 and tx < Config.WORLD_SIZE_TILES and ty >= 0 and ty < Config.WORLD_SIZE_TILES:
 			_hovered_tile = Vector2i(tx, ty)
+			_map_canvas.tooltip_text = ""
 			var world_sys: WorldSystem = get_tree().get_first_node_in_group("world_system") as WorldSystem
 			if world_sys != null and _status_label != null:
 				var fstate: int = int(world_sys.get_fog_state(_hovered_tile))
 				var bname: String = world_sys.get_biome_cached(_hovered_tile).capitalize()
 				var fog_str: String = "Исследовано" if fstate != int(Config.FogState.UNEXPLORED) else "Туман войны"
 				_status_label.text = "Курсор: (%d, %d) • Биом: %s • [%s]" % [tx, ty, bname, fog_str]
+				if _politics_enabled:
+					_update_political_hover()
 		else:
 			_hovered_tile = Vector2i(-1, -1)
+			_map_canvas.tooltip_text = ""
 			if _status_label != null:
 				_status_label.text = "Курсор: За пределами мира"
+
+
+func _refresh_political_layer() -> void:
+	var snapshot: Dictionary = {}
+	SignalBus.alife_political_map_queried.emit(snapshot)
+	_political_settlements = snapshot.get("settlements", [])
+	_political_territory = snapshot.get("territory", [])
+	_political_armies = snapshot.get("armies", [])
+
+
+func _update_political_hover() -> void:
+	var radius: float = 18.0 / _zoom
+	for entry: Dictionary in _political_settlements:
+		var coords: Array = entry["tile"]
+		if Vector2(_hovered_tile).distance_to(Vector2(coords[0], coords[1])) > radius:
+			continue
+		var state: String = ""
+		if int(entry["status"]) in [AlifeSettlement.Status.RAZED, AlifeSettlement.Status.RUINS]:
+			state = " • руины"
+		if not entry["fronts"].is_empty():
+			state += " • фронт: " + ", ".join(entry["fronts"])
+		var day: int = int(float(entry["observed_hour"]) / 24.0) + 1
+		_status_label.text = "%s • %s%s • сведения за день %d" % [entry["name"], entry["faction"], state, day]
+		var rumor: Dictionary = entry.get("rumor", {})
+		_map_canvas.tooltip_text = "" if rumor.is_empty() else "Слух из %s: %s" % [rumor["source"], rumor["content"]]
+		return
+
+
+func _draw_political_layer() -> void:
+	var scale_px: float = 2.0 * MAP_TILE_SCALE * _zoom
+	var chunk_px: float = Config.CHUNK_SIZE * scale_px
+	var colors_by_chunk: Dictionary = {}
+	for entry: Dictionary in _political_territory:
+		var coords: Array = entry["chunk"]
+		var chunk: Vector2i = Vector2i(coords[0], coords[1])
+		var start: Vector2 = _pan_offset + Vector2(chunk) * chunk_px
+		var bounds: Rect2 = Rect2(start, Vector2.ONE * chunk_px)
+		var color: Color = Color.from_string(entry["color"], Color.GRAY)
+		colors_by_chunk[chunk] = color
+		var district: bool = bool(entry.get("district", true))
+		_map_canvas.draw_rect(bounds, Color(color, 0.45 if district else 0.25))
+	for chunk: Vector2i in colors_by_chunk:
+		var color: Color = colors_by_chunk[chunk]
+		var nw: Vector2 = _pan_offset + Vector2(chunk) * chunk_px
+		var ne: Vector2 = nw + Vector2(chunk_px, 0)
+		var sw: Vector2 = nw + Vector2(0, chunk_px)
+		var se: Vector2 = nw + Vector2.ONE * chunk_px
+		var border: Color = Color(color.lightened(0.2), 0.8)
+		if colors_by_chunk.get(chunk + Vector2i.UP) != color:
+			_map_canvas.draw_line(nw, ne, border)
+		if colors_by_chunk.get(chunk + Vector2i.DOWN) != color:
+			_map_canvas.draw_line(sw, se, border)
+		if colors_by_chunk.get(chunk + Vector2i.LEFT) != color:
+			_map_canvas.draw_line(nw, sw, border)
+		if colors_by_chunk.get(chunk + Vector2i.RIGHT) != color:
+			_map_canvas.draw_line(ne, se, border)
+	for track: Dictionary in _political_armies:
+		var color: Color = Color.from_string(track["color"], Color.GRAY)
+		var previous: Vector2 = Vector2.ZERO
+		var started: bool = false
+		for sample: Dictionary in track["points"]:
+			var coords: Array = sample["tile"]
+			var point: Vector2 = _pan_offset + Vector2(coords[0], coords[1]) * scale_px
+			if started and bool(sample["joined"]):
+				_map_canvas.draw_line(previous, point, color, 2.0, true)
+			_map_canvas.draw_circle(point, 2.5, color)
+			previous = point
+			started = true
+		if started:
+			var marker: PackedVector2Array = PackedVector2Array([previous + Vector2(0, -8), previous + Vector2(6, 4), previous + Vector2(-6, 4)])
+			_map_canvas.draw_colored_polygon(marker, color)
+			_map_canvas.draw_string(ThemeDB.fallback_font, previous + Vector2(8, 8), str(track["faction"]), HORIZONTAL_ALIGNMENT_LEFT, -1.0, 10, Color.WHITE)
+	for entry: Dictionary in _political_settlements:
+		var coords: Array = entry["tile"]
+		var point: Vector2 = _pan_offset + Vector2(coords[0], coords[1]) * (2.0 * MAP_TILE_SCALE * _zoom)
+		var faction_color: Color = Color.from_string(entry["color"], Color.GRAY)
+		if int(entry["status"]) in [AlifeSettlement.Status.RAZED, AlifeSettlement.Status.RUINS]:
+			faction_color = Color.GRAY
+		_map_canvas.draw_circle(point, 7.0, Color("18191e"))
+		_map_canvas.draw_circle(point, 5.0, faction_color)
+		if not entry["fronts"].is_empty():
+			_map_canvas.draw_arc(point, 10.0, 0.0, TAU, 20, Color("ef6262"), 2.0, true)
+		if entry.has("rumor"):
+			_map_canvas.draw_circle(point + Vector2(6, -6), 3.0, Color("f4c565"))
+		_map_canvas.draw_string(ThemeDB.fallback_font, point + Vector2(9, -8), str(entry["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1.0, 11, Color.WHITE)
 
 
 func _draw_canvas() -> void:
@@ -430,11 +557,11 @@ func _draw_canvas() -> void:
 
 	# 2. Diamond World Perimeter Line (45-degree Rhombus border)
 	var world_diamond: PackedVector2Array = PackedVector2Array([
+		Vector2(0.0, 0.0),
 		Vector2(512.0, 0.0),
-		Vector2(1024.0, 256.0),
 		Vector2(512.0, 512.0),
-		Vector2(0.0, 256.0),
-		Vector2(512.0, 0.0)
+		Vector2(0.0, 512.0),
+		Vector2(0.0, 0.0)
 	])
 	_map_canvas.draw_polyline(world_diamond, Color(0.55, 0.60, 0.70, 0.95), 2.0 / _zoom, true)
 
@@ -451,13 +578,17 @@ func _draw_canvas() -> void:
 
 	for cpos in chunk_pois:
 		var pinfo: Dictionary = chunk_pois[cpos]
+		if bool(pinfo.get("district", false)):
+			continue
+		if _politics_enabled and pinfo.has("settlement_id"):
+			continue
 		var ptile: Vector2i = pinfo.get("tile_pos", Vector2i.ZERO)
 		var pkey: String = Config.vec2i_to_key(ptile)
 		var is_discovered: bool = disc_pois.has(pkey) or (world_sys.get_fog_state(ptile) != WorldSystem.FogState.UNEXPLORED)
 
 		if is_discovered:
-			var px: float = 512.0 + float(ptile.x - ptile.y) * 2.0
-			var py: float = float(ptile.x + ptile.y) * 1.0
+			var px: float = float(ptile.x) * 2.0 * MAP_TILE_SCALE
+			var py: float = float(ptile.y) * 2.0 * MAP_TILE_SCALE
 			var screen_pt: Vector2 = _pan_offset + Vector2(px, py) * _zoom
 
 			# POI Diamond Icon
@@ -468,6 +599,9 @@ func _draw_canvas() -> void:
 			_map_canvas.draw_polyline(poi_loop, Color(0.12, 0.14, 0.18, 1.0), 1.5, true)
 
 			var poi_name: String = str(pinfo.get("poi_id", "")).replace("_", " ").capitalize()
+			poi_name = str(pinfo.get("name", poi_name))
+			if pinfo.get("poi_id") == "dungeon":
+				poi_name = str(DataRegistry.get_poi("dungeon").get("name", poi_name))
 			if ThemeDB.fallback_font != null and _zoom >= 0.8:
 				_map_canvas.draw_string(
 					ThemeDB.fallback_font,
@@ -479,10 +613,13 @@ func _draw_canvas() -> void:
 					Color(0.92, 0.90, 0.86, 1.0)
 				)
 
+	if _politics_enabled:
+		_draw_political_layer()
+
 	# 4. Player Marker & Beacon
 	var ptile: Vector2i = GameManager.get_player_tile()
-	var player_px: float = 512.0 + float(ptile.x - ptile.y) * 2.0
-	var player_py: float = float(ptile.x + ptile.y) * 1.0
+	var player_px: float = float(ptile.x) * 2.0 * MAP_TILE_SCALE
+	var player_py: float = float(ptile.y) * 2.0 * MAP_TILE_SCALE
 	var player_screen: Vector2 = _pan_offset + Vector2(player_px, player_py) * _zoom
 
 	# Pulsing beacon ring
@@ -507,15 +644,15 @@ func _draw_canvas() -> void:
 
 	# 5. Cardinal Direction Labels at the 4 World Tips
 	if ThemeDB.fallback_font != null:
-		var n_pos: Vector2 = _pan_offset + Vector2(512.0, 0.0) * _zoom
-		var e_pos: Vector2 = _pan_offset + Vector2(1024.0, 256.0) * _zoom
-		var s_pos: Vector2 = _pan_offset + Vector2(512.0, 512.0) * _zoom
+		var n_pos: Vector2 = _pan_offset + Vector2(256.0, 0.0) * _zoom
+		var e_pos: Vector2 = _pan_offset + Vector2(512.0, 256.0) * _zoom
+		var s_pos: Vector2 = _pan_offset + Vector2(256.0, 512.0) * _zoom
 		var w_pos: Vector2 = _pan_offset + Vector2(0.0, 256.0) * _zoom
 
-		_map_canvas.draw_string(ThemeDB.fallback_font, n_pos + Vector2(-40.0, -8.0), "СЕВЕР (0, 0)", HORIZONTAL_ALIGNMENT_CENTER, 80.0, 10, Color(0.70, 0.74, 0.80))
-		_map_canvas.draw_string(ThemeDB.fallback_font, e_pos + Vector2(10.0, 4.0), "ВОСТОК (255, 0)", HORIZONTAL_ALIGNMENT_LEFT, 110.0, 10, Color(0.70, 0.74, 0.80))
-		_map_canvas.draw_string(ThemeDB.fallback_font, s_pos + Vector2(-50.0, 18.0), "ЮГ (255, 255)", HORIZONTAL_ALIGNMENT_CENTER, 100.0, 10, Color(0.70, 0.74, 0.80))
-		_map_canvas.draw_string(ThemeDB.fallback_font, w_pos + Vector2(-115.0, 4.0), "ЗАПАД (0, 255)", HORIZONTAL_ALIGNMENT_RIGHT, 110.0, 10, Color(0.70, 0.74, 0.80))
+		_map_canvas.draw_string(ThemeDB.fallback_font, n_pos + Vector2(-40.0, -8.0), "СЕВЕР", HORIZONTAL_ALIGNMENT_CENTER, 80.0, 10, Color(0.70, 0.74, 0.80))
+		_map_canvas.draw_string(ThemeDB.fallback_font, e_pos + Vector2(10.0, 4.0), "ВОСТОК", HORIZONTAL_ALIGNMENT_LEFT, 110.0, 10, Color(0.70, 0.74, 0.80))
+		_map_canvas.draw_string(ThemeDB.fallback_font, s_pos + Vector2(-50.0, 18.0), "ЮГ", HORIZONTAL_ALIGNMENT_CENTER, 100.0, 10, Color(0.70, 0.74, 0.80))
+		_map_canvas.draw_string(ThemeDB.fallback_font, w_pos + Vector2(-115.0, 4.0), "ЗАПАД", HORIZONTAL_ALIGNMENT_RIGHT, 110.0, 10, Color(0.70, 0.74, 0.80))
 
 
 func _make_mc_btn_style(hover: bool = false) -> StyleBoxFlat:

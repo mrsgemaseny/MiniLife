@@ -111,7 +111,7 @@ func _process(delta: float) -> void:
 
 	if closest_hit_node != null:
 		SignalBus.arrow_impacted.emit(current_tip, "flesh")
-		SignalBus.damage_requested.emit(closest_hit_node, damage, damage_type, shooter)
+		SignalBus.projectile_hit_confirmed.emit(closest_hit_node, damage, damage_type, shooter if is_instance_valid(shooter) else null)
 		queue_free()
 		return
 
@@ -130,13 +130,6 @@ func _draw() -> void:
 	var is_jav: bool = (projectile_type == "javelin")
 	var proj_len: float = JAVELIN_LENGTH if is_jav else ARROW_LENGTH
 	var tail: Vector2 = tip - _flight_dir * proj_len
-
-	# 1. Ground shadow while airborne
-	if not _is_stuck and _current_altitude > 1.5:
-		var shadow_alpha: float = clampf(0.35 * (1.0 - _current_altitude / 55.0), 0.06, 0.35)
-		var s_tail: Vector2 = -direction * (proj_len * 0.45)
-		var s_tip: Vector2 = direction * (proj_len * 0.35)
-		draw_line(s_tail, s_tip, Color(0.0, 0.0, 0.0, shadow_alpha), 2.8 if is_jav else 1.8)
 
 	if is_jav:
 		# Massive throwing spear (~4x arrow size)

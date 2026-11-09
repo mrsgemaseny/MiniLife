@@ -5,10 +5,10 @@ extends Control
 # Features crisp vector diamond rasterization, high-clarity biome rendering, and click-to-open map.
 
 const RADAR_RADIUS: int = 12
-const DISPLAY_RX: float = 94.0
-const DISPLAY_RY: float = 47.0
+const DISPLAY_RX: float = 60.0
+const DISPLAY_RY: float = 60.0
 
-var _center_tile: Vector2i = Vector2i(128, 128)
+var _center_tile: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
 var _dirty: bool = true
 var _is_interior: bool = false
 var _interior_zone_id: String = ""
@@ -71,7 +71,7 @@ func _rebuild_radar_cache() -> void:
 	_cached_pois.clear()
 	_dirty = false
 
-	var center: Vector2 = Vector2(108.0, 56.0)
+	var center: Vector2 = Vector2(108.0, 70.0)
 	var step_x: float = DISPLAY_RX / float(RADAR_RADIUS * 2)
 	var step_y: float = DISPLAY_RY / float(RADAR_RADIUS * 2)
 
@@ -87,14 +87,14 @@ func _rebuild_radar_cache() -> void:
 			for rx in range(rw):
 				var dx: int = rx - rw / 2
 				var dy: int = ry - rh / 2
-				var iso_x: float = float(dx - dy) * step_x * 2.2
-				var iso_y: float = float(dx + dy) * step_y * 2.2
+				var iso_x: float = float(dx) * step_x * 2.2
+				var iso_y: float = float(dy) * step_y * 2.2
 				var pt: Vector2 = center + Vector2(iso_x, iso_y)
 				var is_wall: bool = (rx == 0 or rx == rw - 1 or ry == 0 or ry == rh - 1)
 				if is_wall and Vector2i(rx, ry) == exit_ofs:
 					is_wall = false
 				var col: Color = wall_col if is_wall else floor_col
-				var poly: PackedVector2Array = IsoMath.diamond_polygon(pt, step_x * 2.25, step_y * 2.25)
+				var poly: PackedVector2Array = IsoMath.cell_polygon(pt, step_x * 1.1, step_y * 1.1)
 				_cached_tiles.append({"poly": poly, "col": col})
 		return
 
@@ -124,10 +124,10 @@ func _rebuild_radar_cache() -> void:
 					bcol.a = 0.98
 				col = bcol
 
-			var iso_x: float = float(dx - dy) * step_x * 1.95
-			var iso_y: float = float(dx + dy) * step_y * 1.95
+			var iso_x: float = float(dx) * step_x * 1.95
+			var iso_y: float = float(dy) * step_y * 1.95
 			var pt: Vector2 = center + Vector2(iso_x, iso_y)
-			var poly: PackedVector2Array = IsoMath.diamond_polygon(pt, step_x * 2.02, step_y * 2.02)
+			var poly: PackedVector2Array = IsoMath.cell_polygon(pt, step_x * 0.98, step_y * 0.98)
 			_cached_tiles.append({"poly": poly, "col": col})
 
 	# Gather POIs within radar radius
@@ -138,8 +138,8 @@ func _rebuild_radar_cache() -> void:
 		var diff: Vector2i = ptile - _center_tile
 		if absi(diff.x) + absi(diff.y) <= RADAR_RADIUS:
 			if world_sys.get_fog_state(ptile) != WorldSystem.FogState.UNEXPLORED:
-				var iso_x: float = float(diff.x - diff.y) * step_x * 1.95
-				var iso_y: float = float(diff.x + diff.y) * step_y * 1.95
+				var iso_x: float = float(diff.x) * step_x * 1.95
+				var iso_y: float = float(diff.y) * step_y * 1.95
 				_cached_pois.append({
 					"pos": center + Vector2(iso_x, iso_y),
 					"id": str(pinfo.get("poi_id", ""))
@@ -150,12 +150,12 @@ func _draw() -> void:
 	if _dirty:
 		_rebuild_radar_cache()
 
-	var center: Vector2 = Vector2(108.0, 56.0)
+	var center: Vector2 = Vector2(108.0, 70.0)
 	var rx: float = DISPLAY_RX
 	var ry: float = DISPLAY_RY
 
 	# 1. Outer Dark Slate Diamond Shadow & Background
-	var shadow_poly: PackedVector2Array = IsoMath.diamond_polygon(center, rx + 4.0, ry + 2.0)
+	var shadow_poly: PackedVector2Array = IsoMath.cell_polygon(center, rx + 4.0, ry + 2.0)
 	draw_colored_polygon(shadow_poly, Color(0.04, 0.05, 0.07, 0.96))
 
 	# 2. Draw Cached Vector Isometric Tiles (Razor-sharp, no pixel blur)
@@ -164,12 +164,12 @@ func _draw() -> void:
 
 	# 3. Outer Diamond Weathered Iron Frame (Strict anti-deslop: no bright gold)
 	var frame_col: Color = Color(0.48, 0.52, 0.60, 0.95) if _is_hovered else Color(0.30, 0.34, 0.40, 0.90)
-	var frame_poly: PackedVector2Array = IsoMath.diamond_polygon(center, rx, ry)
+	var frame_poly: PackedVector2Array = IsoMath.cell_polygon(center, rx, ry)
 	var frame_loop: PackedVector2Array = frame_poly.duplicate()
 	frame_loop.append(frame_poly[0])
 	draw_polyline(frame_loop, frame_col, 2.0, true)
 
-	var inner_poly: PackedVector2Array = IsoMath.diamond_polygon(center, rx - 2.0, ry - 1.0)
+	var inner_poly: PackedVector2Array = IsoMath.cell_polygon(center, rx - 2.0, ry - 1.0)
 	var inner_loop: PackedVector2Array = inner_poly.duplicate()
 	inner_loop.append(inner_poly[0])
 	draw_polyline(inner_loop, Color(0.18, 0.20, 0.25, 0.70), 1.0, true)

@@ -9,7 +9,16 @@ var _failed_quests: Dictionary = {}
 func _ready() -> void:
 	_quests_defs = DataRegistry.get_table("quests")
 	_connect_signals()
-	call_deferred("_start_initial_quest")
+	SignalBus.game_started.connect(_on_game_started)
+
+func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
+	if not is_new:
+		return
+	_active_quests.clear()
+	_completed_quests.clear()
+	_failed_quests.clear()
+	_start_initial_quest()
+	_emit_snapshot()
 
 func _start_initial_quest() -> void:
 	if _active_quests.is_empty() and _completed_quests.is_empty():
@@ -204,4 +213,6 @@ func _on_save_data_loaded(bundle: Dictionary) -> void:
 	_active_quests = q.get("active", {}).duplicate(true)
 	_completed_quests = q.get("completed", {}).duplicate(true)
 	_failed_quests = q.get("failed", {}).duplicate(true)
+	if not w.has("quests"):
+		_start_initial_quest()
 	_emit_snapshot()

@@ -10,6 +10,7 @@ func _ready() -> void:
 	_projectile_layer = ProjectileSystem.new()
 	add_child(_projectile_layer)
 	SignalBus.damage_requested.connect(_on_damage_requested)
+	SignalBus.projectile_hit_confirmed.connect(_on_damage_requested.bind(true))
 	SignalBus.status_apply_requested.connect(_on_status_apply_requested)
 	SignalBus.melee_attack_requested.connect(_on_melee_attack_requested)
 
@@ -25,6 +26,8 @@ func _on_melee_attack_requested(attacker: Node2D, origin: Vector2, direction: Ve
 		groups = ["player"]
 
 	var ordered_target: Node2D = weapon_stats.get("ordered_target") as Node2D
+	if is_instance_valid(ordered_target):
+		groups = ["combatant"]
 	for grp in groups:
 		for n in get_tree().get_nodes_in_group(grp):
 			if n is Node2D and n != attacker and is_instance_valid(n):
@@ -33,7 +36,8 @@ func _on_melee_attack_requested(attacker: Node2D, origin: Vector2, direction: Ve
 				if n.has_method("is_alive") and not bool(n.call("is_alive")):
 					continue
 				if MeleeResolver.is_target_in_melee_arc(origin, direction, (n as Node2D).global_position, max_range):
-					targets.append(n)
+					if not targets.has(n):
+						targets.append(n)
 
 	if targets.is_empty():
 		return
@@ -91,14 +95,15 @@ func apply_knockback(target: Node, source: Node, strength: float = Config.KNOCKB
 	target.call("apply_knockback", dir * strength)
 
 
-func _on_damage_requested(target: Node, amount: float, damage_type: String, source: Node) -> void:
+func _on_damage_requested(target: Node, amount: float, damage_type: String, source: Node, confirmed_projectile_hit: bool = false) -> void:
 	if target == null or not is_instance_valid(target):
 		return
 	if target.has_method("is_alive") and not bool(target.call("is_alive")):
 		return
-	if source != null and damage_type == "physical":
+	if source != null and damage_type == "physical" and not confirmed_projectile_hit:
 		var hit_chance: float = MeleeResolver.compute_hit_chance(source, target)
 		if randf() > hit_chance:
+			_float_feedback(target, "ПРОМАХ", Color.GRAY)
 			return
 
 	var armor_pen: float = 0.0
@@ -114,7 +119,7 @@ func _on_damage_requested(target: Node, amount: float, damage_type: String, sour
 					target_eq.damage_shield(1)
 			if "stats" in target and target.get("stats") is StatsComponent:
 				(target.get("stats") as StatsComponent).modify("stamina", -12.0)
-			SignalBus.notification_posted.emit("Blocked by shield!")
+			_float_feedback(target, "БЛОК", Color.SKY_BLUE)
 			return
 
 		if bool(block_res.get("flanking", false)):
@@ -132,6 +137,7 @@ func _on_damage_requested(target: Node, amount: float, damage_type: String, sour
 
 	var valid_type: String = damage_type if DAMAGE_TYPES.has(damage_type) else "physical"
 	var final_damage: float = resolve_damage(final_dmg, valid_type, target, armor_pen)
+	_float_feedback(target, str(roundi(final_damage)), Color.SALMON)
 	if target.has_method("take_damage"):
 		target.call("take_damage", final_damage, valid_type, source)
 	if source != null and valid_type == "physical":
@@ -146,3 +152,21 @@ func _on_status_apply_requested(target: Node, effect: String, duration: float, i
 	if target.has_method("apply_status"):
 		target.call("apply_status", effect, duration, intensity)
 		SignalBus.status_effect_applied.emit(target, effect, duration)
+
+func _float_feedback(target: Node, message: String, color: Color) -> void:
+	if not target is Node2D:
+		return
+	var label := Label.new()
+	label.text = message
+	label.modulate = color
+	label.add_theme_font_size_override("font_size", 17)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 4)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.z_index = 100
+	get_tree().current_scene.add_child(label)
+	label.global_position = target.global_position + Vector2(-15, -62)
+	var tween := label.create_tween().set_parallel(true)
+	tween.tween_property(label, "position:y", label.position.y - 30.0, 0.85)
+	tween.tween_property(label, "modulate:a", 0.0, 0.85)
+	tween.chain().tween_callback(label.queue_free)

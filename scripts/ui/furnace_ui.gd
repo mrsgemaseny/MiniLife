@@ -36,8 +36,16 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	_build_ui()
+	SurvivalTheme.ignore_pointer(_tooltip_panel)
 	SignalBus.furnace_opened.connect(open_furnace)
 	SignalBus.ui_close_all_requested.connect(close_furnace)
+	SignalBus.save_data_requested.connect(func(_bundle: Dictionary) -> void: _return_cursor_stack_to_player())
+	SignalBus.save_data_loaded.connect(func(_bundle: Dictionary) -> void:
+		_cursor_stack.clear()
+		close_furnace())
+	SignalBus.structure_destroyed.connect(func(id: String, tile: Vector2i) -> void:
+		if visible and id == "furnace" and tile == _tile_pos:
+			close_furnace())
 	if FurnaceSys.instance != null:
 		FurnaceSys.instance.furnace_updated.connect(_on_furnace_updated)
 	SignalBus.inventory_changed.connect(func(_ent, _snap):
@@ -83,11 +91,12 @@ func _process(_delta: float) -> void:
 
 
 func open_furnace(furnace_id: String, tile_pos: Vector2i) -> void:
+	SignalBus.ui_close_all_requested.emit()
 	_active_furnace_id = furnace_id
 	_tile_pos = tile_pos
 	visible = true
 	refresh()
-	SignalBus.ui_panel_toggled.emit(PANEL_ID, true, true)
+	SignalBus.ui_panel_toggled.emit(PANEL_ID, true, false)
 
 
 func close_furnace() -> void:
@@ -97,7 +106,7 @@ func close_furnace() -> void:
 	_hide_tooltip()
 	_active_furnace_id = ""
 	visible = false
-	SignalBus.ui_panel_toggled.emit(PANEL_ID, false, true)
+	SignalBus.ui_panel_toggled.emit(PANEL_ID, false, false)
 
 
 func _build_ui() -> void:
@@ -350,27 +359,24 @@ func _build_ui() -> void:
 	right_col.add_child(r_vbox)
 
 	var r_title: Label = Label.new()
-	r_title.text = "СПРАВОЧНИК МЕТАЛЛУРГИИ"
+	r_title.text = "KILN RECIPES"
 	r_title.add_theme_font_size_override("font_size", 12)
 	r_title.modulate = Color(0.85, 0.86, 0.90)
 	r_vbox.add_child(r_title)
 
 	var r_desc: Label = Label.new()
-	r_desc.text = "Смешивайте компоненты в верхних отсеках: Медь + Олово дают Бронзу, а Железо + Уголь дают Сталь. В нижний отсек загружайте топливо."
+	r_desc.text = "Fire clay, cook food or make charcoal. Add fuel below. Metal ores require an Ore Smelter; refined iron and steel require a Forge. Recipe quantities match the crafting catalogue."
 	r_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	r_desc.add_theme_font_size_override("font_size", 10)
 	r_desc.modulate = Color(0.60, 0.63, 0.68)
 	r_vbox.add_child(r_desc)
 
-	var recipes_list: Array[Dictionary] = [
-		{"in1": "copper_ore", "in2": "tin_ore", "out": "bronze_ingot", "time": "3.6 сек", "fuel": "Уголь / Дерево"},
-		{"in1": "iron_ingot", "in2": "coal", "out": "steel_ingot", "time": "4.5 сек", "fuel": "Уголь"},
-		{"in1": "iron_ore", "in2": "coal", "out": "quality_iron", "time": "3.8 сек", "fuel": "Уголь / Дерево"},
-		{"in1": "iron_ore", "in2": "", "out": "iron_ingot", "time": "3.6 сек", "fuel": "Уголь / Дерево"},
-		{"in1": "wood", "in2": "", "out": "coal", "time": "2.4 сек", "fuel": "Дерево (пиролиз)"},
-		{"in1": "clay", "in2": "", "out": "brick", "time": "3.0 сек", "fuel": "Уголь / Дерево"},
-		{"in1": "raw_meat", "in2": "", "out": "cooked_food", "time": "2.0 сек", "fuel": "Любое топливо"}
-	]
+	var recipes_list: Array[Dictionary] = []
+	for id in ThermalRecipes.IDS:
+		var recipe: Dictionary = DataRegistry.get_recipe(id)
+		var inputs: Array = recipe.get("inputs", [])
+		if inputs.size() == 1:
+			recipes_list.append({"in1": str(inputs[0]["item_id"]), "out": str(recipe["output"]["item_id"]), "time": "%d input -> %d output / %.1fs" % [int(inputs[0]["count"]), int(recipe["output"]["count"]), ProductionRequirements.duration(recipe)], "fuel": "Fuel required"})
 	for r in recipes_list:
 		var r_card: PanelContainer = PanelContainer.new()
 		var card_sb: StyleBoxFlat = StyleBoxFlat.new()
@@ -902,7 +908,12 @@ func _return_cursor_stack_to_player() -> void:
 		return
 	var player: Node = get_tree().get_first_node_in_group("player")
 	var inv: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
-	if inv != null:
-		inv.add_item(str(_cursor_stack.get("item_id", "")), int(_cursor_stack.get("count", 1)))
+	var item: String = str(_cursor_stack.get("item_id", ""))
+	var count: int = int(_cursor_stack.get("count", 0))
+	var durability: int = int(_cursor_stack.get("durability", -1))
+	var added: int = inv.add_item(item, count, durability) if inv != null else 0
+	if added < count:
+		var position: Vector2 = player.global_position if player is Node2D else Config.world_to_iso(_tile_pos)
+		SignalBus.loot_bag_spawned.emit(position, [{"item_id": item, "count": count - added, "durability": durability}], 0)
 	_cursor_stack = {}
 	_update_cursor_display()

@@ -15,6 +15,9 @@ func _ready() -> void:
 	SignalBus.quest_failed.connect(_on_quest_failed)
 	SignalBus.npc_killed.connect(_on_npc_killed)
 	SignalBus.faction_joined.connect(_on_faction_joined)
+	SignalBus.alife_event_published.connect(_on_alife_event_published)
+	SignalBus.local_rumor_heard.connect(func(source: String, content: String) -> void:
+		record_entry("rumor", "%s: %s" % [source, content]))
 	SignalBus.chronicle_snapshot_requested.connect(_on_snapshot_requested)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
@@ -41,6 +44,7 @@ func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
 	if is_new:
 		_entries.clear()
 		record_entry("world", "Awakened on the frontier.")
+		_on_snapshot_requested()
 
 
 func _on_game_event_triggered(event_id: String) -> void:
@@ -72,6 +76,19 @@ func _on_faction_joined(faction: String) -> void:
 	record_entry("faction", "Swore allegiance to " + faction + ".")
 
 
+func _on_alife_event_published(row: Dictionary) -> void:
+	var event: AlifeWorldEvent = AlifeWorldEvent.from_dict(row)
+	if not event.participants.has("player"):
+		if Config.tile_distance(event.location, GameManager.get_player_tile()) > 18:
+			return
+		var tile: Dictionary = {}
+		SignalBus.world_tile_queried.emit(event.location, tile)
+		if int(tile.get("fog_state", 0)) != WorldSystem.FogState.VISIBLE:
+			return
+	var label: String = event.event_type.replace("_", " ").capitalize()
+	record_entry("world", "%s at (%d, %d)." % [label, event.location.x, event.location.y])
+
+
 func _on_snapshot_requested() -> void:
 	SignalBus.chronicle_snapshot_loaded.emit(get_entries())
 
@@ -88,3 +105,6 @@ func _on_save_data_loaded(bundle: Dictionary) -> void:
 	for item in w.get("chronicle", []):
 		if item is Dictionary:
 			_entries.append(item.duplicate())
+			if _entries.size() >= MAX_ENTRIES:
+				break
+	_on_snapshot_requested()

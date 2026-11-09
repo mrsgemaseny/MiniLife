@@ -1,0 +1,7 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+RUIN_DENSITY_PASS seed=42819 ruins=4
+RUIN_DENSITY_PASS seed=1 ruins=5
+RUIN_DENSITY_PASS seed=42 ruins=5
+RUIN_DENSITY_PASS seed=12345 ruins=2
+RUIN_DENSITY_PASS seed=98765 ruins=4

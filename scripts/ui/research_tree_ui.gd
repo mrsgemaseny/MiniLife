@@ -566,7 +566,7 @@ func _update_inspector_display(player: Node) -> void:
 				var cur_cnt: int = inv.count_of(str(mat_id)) if inv != null else 0
 				if cur_cnt < req_cnt:
 					all_met = false
-				var mat_name: String = str(mat_id).capitalize().replace("_", " ")
+				var mat_name: String = preload("res://scripts/ui/material_labels.gd").describe(str(mat_id))
 				if mat_id == "herb": mat_name = "Трава"
 				elif mat_id == "wood": mat_name = "Дерево"
 				elif mat_id == "stone": mat_name = "Камень"
@@ -577,6 +577,9 @@ func _update_inspector_display(player: Node) -> void:
 			_insp_cost_lbl.modulate = Color(0.55, 0.90, 0.60) if all_met else Color(0.92, 0.45, 0.42)
 
 	# Update Action Button
+	if GameManager.sandbox_for(player) and not is_done and _insp_cost_lbl != null:
+		_insp_cost_lbl.text = "God mode: free research — virtual resources"
+		_insp_cost_lbl.modulate = Color(0.55, 0.90, 0.60)
 	if _insp_research_btn != null:
 		_insp_research_btn.modulate = Color.WHITE
 		if is_done:

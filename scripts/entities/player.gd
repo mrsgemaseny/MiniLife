@@ -1,6 +1,8 @@
 class_name Player
 extends CharacterBody2D
 
+const PawnArt = preload("res://scripts/entities/pawn_raster_art.gd")
+
 const IconFactory = preload("res://scripts/ui/item_icon_factory.gd")
 
 @export var stats: StatsComponent
@@ -34,12 +36,16 @@ var _last_fired_projectile_id: String = "arrow"
 var _harvest_swing_timer: float = 0.0
 var _current_mining_target: ResourceNode = null
 var _locked_target: Node2D = null
+var _order_path: Array[Vector2i] = []
+var _order_path_goal := Vector2i(-99999, -99999)
+var _order_path_refresh: int = 0
 
 func _ready() -> void:
 	add_to_group("player")
 	add_to_group("combatant")
 	y_sort_enabled = true
 	_ensure_components()
+	add_child(FieldToolsComponent.new())
 	_connect_component_signals()
 	_connect_bus_signals()
 	_setup_torch_light()
@@ -56,14 +62,15 @@ func _ready() -> void:
 
 func _grant_starter_kit() -> void:
 	if inventory != null:
-		inventory.set_slot(0, {"item_id": "stone_axe", "count": 1, "durability": 65})
-		inventory.set_slot(1, {"item_id": "stone_pickaxe", "count": 1, "durability": 70})
+		for id: String in ["stone_axe", "stone_pickaxe"]:
+			if not inventory.has_item(id, 1):
+				inventory.add_item(id, 1)
 	active_hotbar_index = 0
 	sync_weapon_from_active_slot()
 	SignalBus.inventory_changed.emit(self, inventory.snapshot() if inventory != null else {})
 
 func _physics_process(delta: float) -> void:
-	if is_dead or GameManager.is_paused():
+	if is_dead or GameManager.is_paused() or not get_tree().get_nodes_in_group("enemy_inspect").is_empty():
 		return
 
 	var needs_redraw: bool = false
@@ -150,7 +157,7 @@ func _physics_process(delta: float) -> void:
 
 	# Continuous Minecraft-style Resource Harvesting & Structure Dismantling
 	var is_mining_channel: bool = false
-	var is_attack_pressed: bool = Input.is_action_pressed("attack") and not _is_holding_ranged() and not is_dead and not GameManager.is_paused()
+	var is_attack_pressed: bool = not bool(get_meta("world_input_blocked", false)) and not bool(get_meta("build_mode_active", false)) and not bool(get_meta("item_action_busy", false)) and Input.is_action_pressed("attack") and not _is_holding_ranged() and not is_dead and not GameManager.is_paused()
 
 	if is_attack_pressed:
 		var mouse_world: Vector2 = get_global_mouse_position()
@@ -158,41 +165,11 @@ func _physics_process(delta: float) -> void:
 		var candidate_struct: StructureEntity = null
 		var best_dist: float = Config.MELEE_RANGE
 
-		# 1. Check for player structures under cursor
-		candidate_struct = _get_structure_under_cursor()
-		if candidate_struct != null and not candidate_struct.is_player_built:
-			candidate_struct = null
-
-		# 2. Check for resource nodes under cursor if no structure targeted
-		if candidate_struct == null:
-			var harvestables: Array[Node] = get_tree().get_nodes_in_group("harvestable")
-			var best_score: float = 99999.0
-			var mouse_tile: Vector2i = Config.iso_to_world(mouse_world)
-
-			for node in harvestables:
-				if node is ResourceNode and (node as ResourceNode).is_visible_in_tree():
-					var rn: ResourceNode = node as ResourceNode
-					var dist_to_player: float = rn.global_position.distance_to(global_position)
-					# Allow reaching if player is within harvest reach
-					if dist_to_player <= Config.INTERACT_RANGE:
-						var hit: bool = false
-						var mouse_dist: float = 9999.0
-						if rn.has_method("contains_point") and bool(rn.call("contains_point", mouse_world)):
-							hit = true
-							var v_center: Vector2 = rn.global_position + (rn.call("get_visual_rect") as Rect2).get_center()
-							mouse_dist = mouse_world.distance_to(v_center)
-						else:
-							var base_dist: float = rn.global_position.distance_to(mouse_world)
-							if base_dist <= 52.0 or rn.tile_pos == mouse_tile:
-								hit = true
-								mouse_dist = base_dist
-
-						if hit:
-							# Strongly prioritize resource directly under cursor, break ties by player proximity
-							var score: float = mouse_dist + dist_to_player * 0.05
-							if score < best_score:
-								best_score = score
-								candidate_res = rn
+		var selected: Node2D = InteractionPicker.pick_dismantle(get_tree(), mouse_world) if Input.is_key_pressed(KEY_CTRL) else InteractionPicker.pick(get_tree(), mouse_world, self)
+		if selected is StructureEntity and InteractionPicker.in_reach(self,selected) and Input.is_key_pressed(KEY_CTRL) and selected.is_player_built:
+			candidate_struct = selected as StructureEntity
+		elif selected is ResourceNode and InteractionPicker.in_reach(self,selected):
+			candidate_res = selected as ResourceNode
 
 		if candidate_struct != null:
 			if _current_mining_target != null and is_instance_valid(_current_mining_target):
@@ -233,9 +210,9 @@ func _physics_process(delta: float) -> void:
 			_current_mining_target.cancel_harvest()
 		_current_mining_target = null
 
-	if _read_movement_input() != Vector2.ZERO or is_mining_channel or _is_holding_ranged():
+	if _read_movement_input() != Vector2.ZERO or is_mining_channel:
 		_locked_target = null
-	if not is_mining_channel and not status_effects.is_action_blocked():
+	if not is_mining_channel and not status_effects.is_action_blocked() and not bool(get_meta("build_mode_active", false)) and not bool(get_meta("world_input_blocked", false)):
 		_tick_auto_attack(delta)
 
 	health_comp.tick_regen(delta)
@@ -247,11 +224,13 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var input_dir: Vector2 = _read_movement_input()
-	if input_dir == Vector2.ZERO:
+	if input_dir == Vector2.ZERO and (bool(get_meta("item_action_busy", false)) or bool(get_meta("world_input_blocked", false))):
+		velocity = _knockback_velocity
+	if input_dir == Vector2.ZERO and not bool(get_meta("item_action_busy", false)) and not bool(get_meta("build_mode_active", false)) and not bool(get_meta("world_input_blocked", false)):
 		input_dir = _attack_order_movement()
 	if input_dir.length_squared() > 0.0:
 		if not _is_charging_bow and not is_mining_channel:
-			facing_direction = facing_direction.lerp(input_dir.normalized(), clampf(delta * 16.0, 0.0, 1.0)).normalized()
+			facing_direction = input_dir.normalized()
 		var speed_mult: float = traits.get_modifier("move_speed")
 		speed_mult *= status_effects.get_speed_multiplier()
 		speed_mult *= inventory.get_encumbrance_speed_multiplier()
@@ -265,7 +244,7 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		GameManager.set_player_world_pos(global_position)
 
-		_walk_phase += delta * 14.0
+		_walk_phase += velocity.length() * delta * 0.065
 		_walk_blend = move_toward(_walk_blend, 1.0, delta * 8.0)
 		_step_dust_timer -= delta
 		if _step_dust_timer <= 0.0:
@@ -298,7 +277,17 @@ func _physics_process(delta: float) -> void:
 		queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if bool(get_meta("world_input_blocked", false)):
+		return
+	if bool(get_meta("build_mode_active", false)) and (event.is_action_pressed("attack") or event.is_action_pressed("interact") or event is InputEventMouseButton):
+		return
+	if bool(get_meta("item_action_busy", false)) and event.is_action_pressed("attack"):
+		return
 	if is_dead or GameManager.is_paused():
+		return
+	if event.is_action_pressed("use_item"):
+		use_slot_item(active_hotbar_index)
+		get_viewport().set_input_as_handled()
 		return
 
 	# Hotbar selection via numeric keys [1-8]
@@ -322,13 +311,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 
 	if event.is_action_pressed("attack"):
-		if _is_holding_ranged():
+		if _is_holding_ranged() and _get_enemy_under_cursor() == null:
 			_locked_target = null
 			_start_bow_charge()
 			get_viewport().set_input_as_handled()
 			return
 		var enemy_target: Node2D = _get_enemy_under_cursor()
 		if enemy_target != null:
+			_is_charging_bow = false
+			_bow_charge_time = 0.0
+			_order_path_refresh = 0
 			_locked_target = enemy_target
 			queue_redraw()
 			SignalBus.notification_posted.emit("Target focused: " + (str(enemy_target.get("display_name")) if "display_name" in enemy_target else "Enemy"))
@@ -338,6 +330,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_locked_target = null
 		var struct_under_cursor: StructureEntity = _get_structure_under_cursor()
 		if struct_under_cursor != null:
+			if not Input.is_key_pressed(KEY_CTRL):
+				perform_interact(false)
+				get_viewport().set_input_as_handled()
+				return
 			if not struct_under_cursor.is_player_built:
 				SignalBus.notification_posted.emit("This ancient structure cannot be dismantled.")
 				get_viewport().set_input_as_handled()
@@ -365,19 +361,24 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _is_charging_bow:
 			_release_bow_shot()
 	elif event.is_action_pressed("interact") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT):
-		if _has_direct_interactable_under_cursor():
-			perform_interact()
-		elif _is_holding_placeable_block():
-			if not _try_place_block_from_hand():
-				perform_interact()
-		else:
-			perform_interact()
+		var target: Node2D = InteractionPicker.pick(get_tree(), get_global_mouse_position(), self)
+		if target != null and target.is_in_group("combatant") and event is InputEventMouseButton:
+			preload("res://scripts/ui/enemy_inspect.gd").show_target(self, target)
+		elif target != null:
+			perform_interact(false)
+		elif _is_holding_placeable_block() and event is InputEventMouseButton:
+			_try_place_block_from_hand()
+		elif not event is InputEventMouseButton:
+			perform_interact(true)
+		get_viewport().set_input_as_handled()
 
 func _read_movement_input() -> Vector2:
+	if bool(get_meta("world_input_blocked", false)):
+		return Vector2.ZERO
 	var dir: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if dir.length_squared() == 0.0:
 		return Vector2.ZERO
-	return Vector2(dir.x, dir.y * 0.5).normalized()
+	return dir.normalized()
 
 func get_last_fired_projectile_id() -> String:
 	return _last_fired_projectile_id
@@ -455,6 +456,8 @@ func _release_bow_shot() -> void:
 		return
 
 	stats.modify("stamina", -stam_cost)
+	# Snapshot the fired weapon before consuming its final stack item.
+	var w_stats: Dictionary = equipment.get_weapon_stats().duplicate(true)
 
 	# Consumption of ammo
 	if is_jav:
@@ -474,7 +477,6 @@ func _release_bow_shot() -> void:
 		_last_fired_projectile_id = "arrow"
 		inventory.remove_item("arrow", 1)
 
-	var w_stats: Dictionary = equipment.get_weapon_stats()
 	var base_dmg: float = float(w_stats.get("damage", 22.0 if is_jav else 16.0))
 	var skill_lvl: int = skills.get_level("ranged")
 	var scaled_dmg: float = base_dmg * (1.0 + float(skill_lvl) * Config.SKILL_DAMAGE_BONUS_PER_LEVEL) * (0.35 + 0.65 * charge_ratio)
@@ -502,7 +504,7 @@ func _release_bow_shot() -> void:
 	_attack_cooldown = 0.35 if is_jav else 0.28
 	_swing_duration = 0.22 if is_jav else 0.18
 	_swing_timer = _swing_duration
-	_lunge_offset = facing_direction * 11.0 if is_jav else -facing_direction * 4.0
+	_lunge_offset = facing_direction * 3.0 if is_jav else -facing_direction * 2.0
 	queue_redraw()
 
 func _has_attack_order() -> bool:
@@ -515,46 +517,56 @@ func _has_attack_order() -> bool:
 	return true
 
 func _attack_order_movement() -> Vector2:
-	if _is_holding_ranged() or _is_holding_consumable() or not _has_attack_order():
+	if _is_holding_consumable() or not _has_attack_order():
 		return Vector2.ZERO
-	var reach: float = float(equipment.get_weapon_stats().get("range_px", Config.MELEE_RANGE))
+	var reach: float = minf(42.0, float(equipment.get_weapon_stats().get("range_px", Config.MELEE_RANGE)))
 	var offset: Vector2 = _locked_target.global_position - global_position
 	if offset.length() > reach * 0.85:
-		return offset.normalized()
+		var goal: Vector2i = Config.iso_to_world(_locked_target.global_position)
+		var now: int = Time.get_ticks_msec()
+		if goal != _order_path_goal or now >= _order_path_refresh:
+			_order_path_goal = goal
+			_order_path_refresh = now + 500
+			_order_path = preload("res://scripts/core/combat_navigation.gd").find_path(Config.iso_to_world(global_position), goal, _order_tile_passable)
+		while not _order_path.is_empty() and global_position.distance_to(Config.world_to_iso(_order_path[0])) < 5.0:
+			_order_path.pop_front()
+		if not _order_path.is_empty():
+			return (Config.world_to_iso(_order_path[0]) - global_position).normalized()
+		if Config.iso_to_world(global_position) == goal:
+			return offset.normalized()
+		return Vector2.ZERO
 	velocity = _knockback_velocity
 	return Vector2.ZERO
 
+func _order_tile_passable(tile: Vector2i) -> bool:
+	var result: Dictionary = {}
+	SignalBus.world_tile_queried.emit(tile, result)
+	return bool(result.get("passable", true))
+
 func _tick_auto_attack(_delta: float) -> void:
+	if bool(get_meta("item_action_busy", false)):
+		return
 	if _attack_cooldown > 0.0 or is_dead or GameManager.is_paused() or status_effects.is_action_blocked():
 		return
-	if _is_holding_ranged() or _is_charging_bow or _is_holding_consumable() or not _has_attack_order():
+	if _is_charging_bow or _is_holding_consumable() or not _has_attack_order():
 		return
 	if stats.stamina < Config.STAMINA_COST_ATTACK:
 		return
-	var reach: float = float(equipment.get_weapon_stats().get("range_px", Config.MELEE_RANGE))
+	var reach: float = minf(42.0, float(equipment.get_weapon_stats().get("range_px", Config.MELEE_RANGE)))
 	if global_position.distance_to(_locked_target.global_position) <= reach:
 		perform_attack()
 
 
 func _get_enemy_under_cursor() -> Node2D:
-	var mouse_world: Vector2 = get_global_mouse_position()
-	var enemies: Array[Node] = get_tree().get_nodes_in_group("enemies")
-	if enemies.is_empty():
-		enemies = get_tree().get_nodes_in_group("enemy")
-	for e in enemies:
-		if e is Node2D and is_instance_valid(e) and e != self:
-			if e.has_method("is_alive") and not bool(e.call("is_alive")):
-				continue
-			var dist: float = (e as Node2D).global_position.distance_to(mouse_world)
-			if dist <= 36.0:
-				return e as Node2D
+	var target: Node2D = InteractionPicker.pick(get_tree(), get_global_mouse_position(), self)
+	if target != null and target.is_in_group("combatant") and (not target.has_method("is_alive") or bool(target.call("is_alive"))):
+		return target
 	return null
-
 
 func perform_attack() -> void:
 	if _attack_cooldown > 0.0 or is_dead or status_effects.is_action_blocked():
 		return
-	if _is_holding_ranged():
+	if _is_holding_ranged() and not _has_attack_order():
 		_start_bow_charge()
 		return
 	if stats.stamina < Config.STAMINA_COST_ATTACK:
@@ -580,7 +592,7 @@ func perform_attack() -> void:
 	_lunge_offset = facing_direction * 4.0
 	queue_redraw()
 
-	var is_ranged: bool = str(w_stats.get("range", "melee")) == "ranged"
+	var is_ranged: bool = str(w_stats.get("range", "melee")) == "ranged" and not _has_attack_order()
 	if is_ranged:
 		if not inventory.has_item("arrow", 1):
 			SignalBus.notification_posted.emit("Out of arrows!")
@@ -594,32 +606,28 @@ func perform_attack() -> void:
 		return
 
 	if _has_attack_order():
+		if _is_holding_ranged():
+			w_stats = {"damage": 5.0, "range_px": Config.MELEE_RANGE}
 		w_stats["ordered_target"] = _locked_target
 	# SignalBus Melee Combat Dispatch (Decoupled from MeleeResolver)
 	SignalBus.melee_attack_requested.emit(self, global_position, facing_direction, w_stats)
 
-func perform_interact() -> void:
-	var player_tile: Vector2i = Config.iso_to_world(global_position)
-	var mouse_world: Vector2 = get_global_mouse_position()
+func perform_interact(allow_nearest: bool = true) -> void:
+	interact_at(get_global_mouse_position(), allow_nearest)
 
-	var best_node: Node2D = null
-	var best_score: float = 9999.0
-
-	for node in get_tree().get_nodes_in_group("interactable"):
-		if node is Node2D and (node as Node2D).is_visible_in_tree():
-			var n2d: Node2D = node as Node2D
-			var target_tile: Vector2i = Config.iso_to_world(n2d.global_position)
-			var tile_dist: int = Config.tile_distance(player_tile, target_tile)
-			if tile_dist <= 3:
-				var mouse_dist: float = n2d.global_position.distance_to(mouse_world)
-				# Strongly prioritize the object under or closest to mouse cursor
-				var score: float = float(tile_dist) * 15.0 + (0.0 if mouse_dist <= 36.0 else mouse_dist * 0.15)
-				if score < best_score:
-					best_score = score
-					best_node = n2d
-
-	if best_node != null and best_node.has_method("interact"):
-		best_node.call("interact", self)
+func interact_at(world_point: Vector2, allow_nearest: bool = false) -> void:
+	if is_dead or GameManager.is_paused() or bool(get_meta("item_action_busy", false)):
+		return
+	var target: Node2D = InteractionPicker.pick(get_tree(), world_point, self)
+	if target == null and allow_nearest:
+		target = InteractionPicker.nearest(get_tree(), self)
+	if target == null:
+		return
+	if not InteractionPicker.in_reach(self, target):
+		SignalBus.notification_posted.emit("Too far away. Move closer to the selected object.")
+		return
+	if target.is_in_group("interactable") and target.has_method("interact"):
+		target.call("interact", self)
 
 func _get_held_placeable_structure() -> String:
 	if inventory == null:
@@ -635,45 +643,12 @@ func _is_holding_placeable_block() -> bool:
 	return _get_held_placeable_structure() != ""
 
 func _get_structure_under_cursor() -> StructureEntity:
-	var mouse_world: Vector2 = get_global_mouse_position()
-	var mouse_tile: Vector2i = Config.iso_to_world(mouse_world)
-	var structures: Array[Node] = get_tree().get_nodes_in_group("structures")
-	var best_struct: StructureEntity = null
-	var best_dist: float = 9999.0
-
-	for node in structures:
-		if node is StructureEntity and (node as StructureEntity).is_visible_in_tree():
-			var se: StructureEntity = node as StructureEntity
-			var dist_to_player: float = se.global_position.distance_to(global_position)
-			if dist_to_player > Config.INTERACT_RANGE:
-				continue
-			var h_px: float = float(se._def.get("height_px", 16.0))
-			var visual_center: Vector2 = se.global_position + Vector2(0.0, -h_px * 0.45)
-			var dist_to_mouse: float = visual_center.distance_to(mouse_world)
-			var is_tile_match: bool = (se.tile_pos == mouse_tile)
-			var is_floor: bool = se.structure_id in ["floor", "stone_floor"]
-			var threshold: float = 24.0 if is_floor else 36.0
-
-			if (is_tile_match or dist_to_mouse <= threshold) and dist_to_mouse < best_dist:
-				if best_struct != null and not (best_struct.structure_id in ["floor", "stone_floor"]) and is_floor:
-					continue
-				best_dist = dist_to_mouse
-				best_struct = se
-	return best_struct
+	var target: Node2D = InteractionPicker.pick_dismantle(get_tree(), get_global_mouse_position()) if Input.is_key_pressed(KEY_CTRL) else InteractionPicker.pick(get_tree(), get_global_mouse_position(), self)
+	return target as StructureEntity if target is StructureEntity and InteractionPicker.in_reach(self,target) else null
 
 func _has_direct_interactable_under_cursor() -> bool:
-	var mouse_world: Vector2 = get_global_mouse_position()
-	var mouse_tile: Vector2i = Config.iso_to_world(mouse_world)
-	for node in get_tree().get_nodes_in_group("interactable"):
-		if node is Node2D and (node as Node2D).is_visible_in_tree():
-			var n2d: Node2D = node as Node2D
-			if n2d is StructureEntity:
-				var se: StructureEntity = n2d as StructureEntity
-				if se.tile_pos == mouse_tile or se.global_position.distance_to(mouse_world) <= 24.0:
-					return true
-			elif n2d.global_position.distance_to(mouse_world) <= 28.0:
-				return true
-	return false
+	var target: Node2D = InteractionPicker.pick(get_tree(), get_global_mouse_position(), self)
+	return target != null and target.is_in_group("interactable")
 
 func _try_place_block_from_hand() -> bool:
 	var structure_id: String = _get_held_placeable_structure()
@@ -757,77 +732,42 @@ func _is_holding_consumable() -> bool:
 	if def.is_empty():
 		return false
 	var itype: String = str(def.get("type", ""))
-	if itype in ["consumable", "food", "medical"]:
+	if itype in ["consumable", "food", "medical", "medicine"]:
 		return true
 	var s_dict: Dictionary = def.get("stats", def.get("effects", {}))
 	return s_dict.has("heal") or s_dict.has("nutrition") or s_dict.has("cure_status") or s_dict.has("restore_health") or s_dict.has("restore_hunger")
 
 
 func use_held_consumable() -> bool:
-	if is_dead or GameManager.is_paused():
-		return false
-	if _attack_cooldown > 0.0:
-		return false
-	if inventory == null:
-		return false
-	var slot: Dictionary = inventory.get_slot(active_hotbar_index)
-	if slot.is_empty():
-		return false
-	var item_id: String = str(slot.get("item_id", ""))
-	var def: Dictionary = DataRegistry.get_item(item_id)
-	if def.is_empty():
-		return false
+	return _begin_consuming(active_hotbar_index)
 
-	var effects: Dictionary = def.get("stats", def.get("effects", {}))
-	var heal_amt: float = float(effects.get("heal", effects.get("health", def.get("restore_health", 0.0))))
-	var hunger_amt: float = float(effects.get("nutrition", effects.get("hunger", def.get("restore_hunger", 0.0))))
-	var stamina_amt: float = float(effects.get("stamina", 20.0 if hunger_amt > 0.0 else 0.0))
-	var status_eff: String = str(effects.get("apply_status", effects.get("status_effect", "")))
-
-	if heal_amt > 0.0:
-		health_comp.heal(heal_amt)
-		stats.modify("health", heal_amt)
-	if hunger_amt > 0.0:
-		stats.modify("hunger", hunger_amt)
-		status_effects.apply("well_fed", 35.0, 1.0)
-	if stamina_amt > 0.0:
-		stats.modify("stamina", stamina_amt)
-	if not status_eff.is_empty():
-		status_effects.apply(status_eff, 30.0, 1.0)
-	if item_id.find("bandage") != -1 or bool(effects.get("stop_bleeding", effects.get("bandage", false))):
-		var bandaged_cnt: int = health_comp.bandage_all_bleeding()
-		if bandaged_cnt > 0:
-			skills.gain_xp("medicine", 12.0)
-	if effects.has("cure_status"):
-		var cure: String = str(effects.get("cure_status"))
-		status_effects.remove(cure)
-
-	inventory.remove_at_index(active_hotbar_index, 1)
-	if item_id.begins_with("potion_") or item_id == "water_bottle":
-		inventory.add_item("empty_bottle", 1)
-
-	_attack_cooldown = 0.40
-	_lunge_offset = facing_direction * 2.5
-	_swing_duration = 0.18
-	_swing_timer = _swing_duration
-	if item_id.begins_with("potion_") or item_id == "water_bottle":
-		SignalBus.ui_sound_requested.emit("click")
-	else:
-		SignalBus.ui_sound_requested.emit("click")
-	var item_name: String = str(def.get("name", item_id.capitalize().replace("_", " ")))
-	SignalBus.notification_posted.emit("Consumed %s." % item_name)
-	sync_weapon_from_active_slot()
-	SignalBus.inventory_changed.emit(self, inventory.snapshot())
-	queue_redraw()
-	return true
+func _begin_consuming(slot_index: int) -> bool:
+	if is_dead:
+		return false
+	if bool(get_meta("item_action_busy", false)):
+		SignalBus.notification_posted.emit("Finish or cancel the current action first.")
+		return false
+	var id: String = str(inventory.get_slot(slot_index).get("item_id", ""))
+	if id.is_empty():
+		return false
+	var action: ItemActionComponent = get_node_or_null("ItemAction") as ItemActionComponent
+	if action == null:
+		action = ItemActionComponent.new()
+		action.name = "ItemAction"
+		add_child(action)
+	var started: bool = action.begin("Use " + str(DataRegistry.get_item(id).get("name", id)), 0.35, func() -> void:
+		if ConsumableUse.consume(self, slot_index, id):
+			_attack_cooldown = 0.4
+			queue_redraw()
+	)
+	if started:
+		SignalBus.ui_close_all_requested.emit()
+	return started
 
 
 func use_slot_item(slot_index: int) -> void:
-	if slot_index >= 0 and slot_index < 8:
-		# Selecting a hotbar slot only equips it in hand, DOES NOT consume it automatically
-		select_hotbar_slot(slot_index)
+	if slot_index < 0 or slot_index >= inventory.slots.size():
 		return
-
 	var slot: Dictionary = inventory.get_slot(slot_index)
 	if slot.is_empty():
 		return
@@ -839,26 +779,14 @@ func use_slot_item(slot_index: int) -> void:
 
 	var item_type: String = str(def.get("type", ""))
 	if item_type == "weapon" or item_type == "tool":
+		if slot_index >= 8:
+			inventory.swap_slots(slot_index, active_hotbar_index)
+			sync_weapon_from_active_slot()
+		else:
+			select_hotbar_slot(slot_index)
 		SignalBus.notification_posted.emit("Selected %s." % str(def.get("name", item_id)))
-	elif item_type == "consumable" or item_type == "food" or item_type == "medical":
-		var effects: Dictionary = def.get("stats", def.get("effects", {}))
-		var heal_amt: float = float(effects.get("heal", effects.get("health", def.get("restore_health", 0.0))))
-		var hunger_amt: float = float(effects.get("nutrition", effects.get("hunger", def.get("restore_hunger", 0.0))))
-		var stamina_amt: float = float(effects.get("stamina", 15.0 if hunger_amt > 0.0 else 0.0))
-		if heal_amt > 0.0:
-			health_comp.heal(heal_amt)
-			stats.modify("health", heal_amt)
-		if hunger_amt > 0.0:
-			stats.modify("hunger", hunger_amt)
-			status_effects.apply("well_fed", 35.0, 1.0)
-		if stamina_amt > 0.0:
-			stats.modify("stamina", stamina_amt)
-		if item_id.find("bandage") != -1 or bool(effects.get("stop_bleeding", effects.get("bandage", false))):
-			var bandaged_cnt: int = health_comp.bandage_all_bleeding()
-			if bandaged_cnt > 0:
-				skills.gain_xp("medicine", 12.0)
-		inventory.remove_at_index(slot_index, 1)
-		SignalBus.notification_posted.emit("Used %s." % str(def.get("name", item_id)))
+	elif item_type in ["consumable", "food", "medical", "medicine"]:
+		_begin_consuming(slot_index)
 	elif equipment.can_equip(item_id):
 		# Armor equip: swap in-place so hotbar slots do not shift
 		var prev: Dictionary = equipment.equip(item_id, dur)
@@ -906,7 +834,7 @@ func take_damage(amount: float, damage_type: String = "physical", source: Node =
 		die()
 
 func die() -> void:
-	if is_dead:
+	if is_dead or GameManager.debug_god_mode:
 		return
 	is_dead = true
 	SignalBus.entity_died.emit(self, "world")
@@ -1028,6 +956,10 @@ func _connect_component_signals() -> void:
 	)
 
 func _connect_bus_signals() -> void:
+	SignalBus.build_mode_activated.connect(func(id: String) -> void: set_meta("build_mode_active", id != ""))
+	SignalBus.ui_panel_toggled.connect(func(id: String, opened: bool, _blocks: bool) -> void:
+		if id == "furnace":
+			set_meta("world_input_blocked", opened))
 	SignalBus.player_teleport_requested.connect(func(world_pos: Vector2) -> void:
 		global_position = world_pos
 		current_tile = Config.iso_to_world(global_position)
@@ -1050,7 +982,7 @@ func _connect_bus_signals() -> void:
 		var bdir: Vector2 = (build_world - global_position).normalized()
 		if bdir.length_squared() > 0.01:
 			facing_direction = bdir
-		_lunge_offset = facing_direction * 9.0
+		_lunge_offset = facing_direction * 3.0
 		_swing_duration = 0.28
 		_swing_timer = _swing_duration
 		queue_redraw()
@@ -1114,6 +1046,7 @@ func get_save_data() -> Dictionary:
 		"position": [global_position.x, global_position.y],
 		"active_hotbar_index": active_hotbar_index,
 		"facing_direction": [facing_direction.x, facing_direction.y],
+		"progression": ProgressionSystem.instance.to_dict() if ProgressionSystem.instance != null else {},
 		"stats": stats.to_dict() if stats != null else {},
 		"health": health_comp.to_dict() if health_comp != null else {},
 		"skills": skills.to_dict() if skills != null else {},
@@ -1131,6 +1064,8 @@ func load_save_data(p: Dictionary) -> void:
 		global_position = Vector2(float(pos[0]), float(pos[1]))
 		current_tile = Config.iso_to_world(global_position)
 		GameManager.set_player_world_pos(global_position)
+	if ProgressionSystem.instance != null and p.has("progression"):
+		ProgressionSystem.instance.from_dict(p["progression"])
 	var facing_arr: Array = p.get("facing_direction", [1.0, 0.0])
 	if facing_arr.size() >= 2:
 		facing_direction = Vector2(float(facing_arr[0]), float(facing_arr[1]))
@@ -1181,50 +1116,16 @@ func _draw() -> void:
 		var local_p: Vector2 = (puff["pos"] as Vector2) - global_position
 		draw_circle(local_p, lerpf(2.2, 6.2, t), Color(0.74, 0.68, 0.56, (1.0 - t) * 0.42))
 
-	var outline_col: Color = Color(0.07, 0.08, 0.10, 0.95)
-	var bob_y: float = -absf(sin(_walk_phase)) * 3.8 * _walk_blend
-	var sway_x: float = cos(_walk_phase) * 1.5 * _walk_blend
-	var stride: float = sin(_walk_phase) * 3.6 * _walk_blend
+	var bob_y: float = -absf(sin(_walk_phase)) * 1.3 * _walk_blend
+	var sway_x: float = cos(_walk_phase) * 0.6 * _walk_blend
+	var stride: float = sin(_walk_phase) * 0.8 * _walk_blend
 	var body_ofs: Vector2 = _lunge_offset + Vector2(sway_x, bob_y)
-
-	# Isometric ground shadow (scales slightly when jumping/bobbing)
-	var shadow_scale: float = 1.0 - (-bob_y * 0.03)
-	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(_lunge_offset.x, _lunge_offset.y + 3.0), 12.0 * shadow_scale, 6.0 * shadow_scale), Color(0.0, 0.0, 0.0, 0.38))
 
 	# Cardinal body views are independent of precise projectile aim.
 	var side: bool = absf(facing_direction.x) > absf(facing_direction.y)
 	var north: bool = not side and facing_direction.y < 0.0
 	var look_x: float = signf(facing_direction.x) if side else 0.0
-	var torso_width: float = 13.0 if side else 18.0
-	var chest_id: String = equipment.get_item_id("chest") if equipment != null else ""
-	var torso_col := Color(0.54, 0.36, 0.20)
-	if chest_id.contains("chainmail") or chest_id.contains("iron") or chest_id.contains("steel"):
-		torso_col = Color(0.62, 0.66, 0.72)
-	elif chest_id.contains("leather"):
-		torso_col = Color(0.48, 0.31, 0.17)
-	var torso_rect := Rect2(body_ofs + Vector2(-torso_width * 0.5, -23.0), Vector2(torso_width, 21.0))
-	draw_style_box(_pawn_body_style(torso_col, outline_col), torso_rect)
-	if not north:
-		draw_line(body_ofs + Vector2(-torso_width * 0.5 + 1.0, -8.0), body_ofs + Vector2(torso_width * 0.5 - 1.0, -8.0), Color(0.23, 0.17, 0.12), 2.0)
-		if not side:
-			draw_rect(Rect2(body_ofs + Vector2(-1.5, -9.0), Vector2(3.0, 3.0)), Color(0.85, 0.69, 0.30))
-	var head_center: Vector2 = body_ofs + Vector2(look_x * 1.5, -30.0)
-	var skin_col := Color(0.91, 0.76, 0.62)
-	var hair_col := Color(0.34, 0.22, 0.13)
-	draw_circle(head_center, 11.0, outline_col)
-	draw_circle(head_center, 9.6, hair_col if north else skin_col)
-	if not north:
-		if side:
-			draw_circle(head_center + Vector2(look_x * 9.0, 1.0), 2.2, skin_col)
-			draw_circle(head_center + Vector2(look_x * 5.5, -0.5), 1.0, outline_col)
-		else:
-			draw_circle(head_center + Vector2(-3.5, 0.0), 1.0, outline_col)
-			draw_circle(head_center + Vector2(3.5, 0.0), 1.0, outline_col)
-	var head_id: String = equipment.get_item_id("head") if equipment != null else ""
-	if not head_id.is_empty():
-		draw_arc(head_center + Vector2(0.0, -1.0), 9.0, PI, TAU, 16, Color(0.64, 0.68, 0.74), 4.0)
-	elif not north:
-		draw_arc(head_center + Vector2(0.0, -1.0), 8.7, PI, TAU, 16, hair_col, 4.0)
+	PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
 	if is_instance_valid(_locked_target):
 		draw_arc(to_local(_locked_target.global_position), 14.0, 0.0, TAU, 24, Color(0.95, 0.30, 0.20, 0.8), 1.5)
 
@@ -1233,8 +1134,10 @@ func _draw() -> void:
 	var rot_dir: float = -1.0 if is_facing_left else 1.0
 
 	# Fixed hand and shield anchor positions
-	var hand_x: float = -5.5 if is_facing_left else 5.5
+	var hand_x: float = -11.0 if is_facing_left else 11.0
 	var hand_pos: Vector2 = body_ofs + Vector2(hand_x, -13.0)
+	if _is_charging_bow:
+		hand_pos = body_ofs + Vector2(0, -15) + facing_direction * 13.0
 
 	var offhand_id: String = equipment.get_item_id("offhand") if equipment != null else ""
 	if not offhand_id.is_empty():
@@ -1274,6 +1177,8 @@ func _draw() -> void:
 		# Rigid equipment follows the whole-body attack pulse.
 		if _is_charging_bow:
 			hand_pos += facing_direction * 3.0
+		if _is_charging_bow:
+			base_angle += facing_direction.angle() - (PI if is_facing_left else 0.0)
 		var final_rot: float = base_angle
 		var weapon_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left else Vector2(1.0, 1.0)
 

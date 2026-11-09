@@ -7,6 +7,9 @@ static var instance: CraftSystem = null
 func _ready() -> void:
 	instance = self
 	SignalBus.craft_requested.connect(_on_craft_requested)
+	SignalBus.craft_batch_requested.connect(start_batch)
+	SignalBus.craft_materials_queried.connect(func(recipe: Dictionary, crafter: Node, result: Dictionary) -> void:
+		result.merge(_plan_materials(recipe, crafter), true))
 
 
 func get_recipes_for_station(station_id: String) -> Array[Dictionary]:
@@ -14,21 +17,11 @@ func get_recipes_for_station(station_id: String) -> Array[Dictionary]:
 	var recipes: Dictionary = DataRegistry.get_table("recipes")
 	for rid in recipes:
 		var recipe: Dictionary = recipes[rid]
-		var req_station: String = str(recipe.get("station", ""))
-		if station_id == "" and req_station == "":
+		var required: Array[String] = ProductionRequirements.stations(recipe)
+		if station_id == "" and required.is_empty():
 			result.append(recipe)
 		elif station_id != "":
-			if req_station == station_id:
-				result.append(recipe)
-			elif req_station == "" and station_id in ["workbench", "campfire"]:
-				result.append(recipe)
-			elif req_station == "water_mill" and station_id == "mechanical_water_mill":
-				result.append(recipe)
-			elif req_station == "furnace" and station_id == "ore_smelter":
-				result.append(recipe)
-			elif req_station == "workbench" and station_id == "forge":
-				result.append(recipe)
-			elif req_station == "forge" and station_id == "workbench" and str(recipe.get("id", "")).find("bronze") != -1:
+			if required.is_empty() or ProductionRequirements.supports(station_id, required[0]):
 				result.append(recipe)
 	return result
 
@@ -37,22 +30,20 @@ func can_craft(recipe_id: String, crafter: Node, active_station: String = "") ->
 	var recipe: Dictionary = DataRegistry.get_recipe(recipe_id)
 	if recipe.is_empty():
 		return {"ok": false, "reason": "Unknown recipe"}
-	if crafter == null:
+	if not is_instance_valid(crafter):
 		return {"ok": false, "reason": "No crafter"}
-	var required_station: String = str(recipe.get("station", ""))
-	if required_station != "" and required_station != active_station:
-		var is_mill_compat: bool = (required_station == "water_mill" and active_station == "mechanical_water_mill")
-		var is_smelt_compat: bool = (required_station == "furnace" and active_station == "ore_smelter")
-		var is_forge_bench: bool = (required_station == "workbench" and active_station == "forge")
-		var is_bronze_bench: bool = (required_station == "forge" and active_station == "workbench" and recipe_id.find("bronze") != -1)
-		var is_brew_compat: bool = (required_station in ["campfire", "alchemy_station"] and active_station in ["campfire", "alchemy_station"])
-		if not is_mill_compat and not is_smelt_compat and not is_forge_bench and not is_bronze_bench and not is_brew_compat and not _is_near_station(crafter, required_station):
-			return {"ok": false, "reason": "Requires station: " + required_station}
+	if GameManager.sandbox_for(crafter):
+		return _plan_materials(recipe, crafter)
+	if active_station == "" and ProgressionSystem.instance != null and not ProgressionSystem.instance.can_open_craft_menu():
+		return {"ok": false, "reason": "Соберите 30 ресурсов руками, чтобы открыть ручной крафт"}
+	var missing_stations: Array[String] = ProductionRequirements.missing(recipe, ProductionRequirements.nearby(get_tree(), crafter))
+	if not missing_stations.is_empty():
+		return {"ok": false, "reason": "Missing nearby stations: " + ", ".join(missing_stations)}
 
 	var req_tech: String = str(recipe.get("tech_required", ""))
 	if req_tech != "":
 		var RS = load("res://scripts/systems/research_system.gd")
-		if RS.instance != null and not RS.instance.is_researched(req_tech):
+		if RS.instance == null or not RS.instance.is_researched(req_tech):
 			return {"ok": false, "reason": "Requires Research: " + req_tech.capitalize()}
 
 	var skills: SkillsComponent = crafter.get("skills") as SkillsComponent
@@ -66,36 +57,8 @@ func can_craft(recipe_id: String, crafter: Node, active_station: String = "") ->
 				missing_parts.append("%s Lv.%d (you have %d)" % [str(sk).capitalize(), req_lvl, cur_lvl])
 		return {"ok": false, "reason": "Requires skill: " + ", ".join(missing_parts)}
 
-	var inv: InventoryComponent = crafter.get("inventory") as InventoryComponent
-	if inv == null:
-		return {"ok": false, "reason": "No inventory"}
-
-	var crafter_tile: Vector2i = Vector2i.ZERO
-	if crafter is Node2D:
-		crafter_tile = Config.iso_to_world((crafter as Node2D).global_position)
-
-	var storage_mgr: StorageManager = null
-	if BuildingSystem.instance != null:
-		storage_mgr = BuildingSystem.instance.get_storage_manager()
-
-	for inp in recipe.get("inputs", []):
-		if inp is Dictionary:
-			var item_id: String = str(inp.get("item_id", ""))
-			var count: int = int(inp.get("count", 1))
-			var personal_cnt: int = inv.get_item_count(item_id)
-			var chest_cnt: int = 0
-			if storage_mgr != null and personal_cnt < count:
-				chest_cnt = storage_mgr.count_item_in_radius(crafter_tile, item_id, 4)
-			if personal_cnt + chest_cnt < count:
-				return {"ok": false, "reason": "Missing material: " + item_id}
-
-	var output: Dictionary = recipe.get("output", {})
-	var out_id: String = str(output.get("item_id", ""))
-	var out_count: int = int(output.get("count", 1))
-	if not inv.can_fit_item(out_id, out_count):
-		return {"ok": false, "reason": "Inventory full"}
-
-	return {"ok": true, "reason": ""}
+	var materials: Dictionary = _plan_materials(recipe, crafter)
+	return {"ok": bool(materials.get("ok", false)), "reason": str(materials.get("reason", ""))}
 
 
 func craft(recipe_id: String, crafter: Node, active_station: String = "") -> bool:
@@ -107,49 +70,14 @@ func craft(recipe_id: String, crafter: Node, active_station: String = "") -> boo
 		return false
 
 	var recipe: Dictionary = DataRegistry.get_recipe(recipe_id)
-	var inv: InventoryComponent = crafter.get("inventory") as InventoryComponent
 	var skills: SkillsComponent = crafter.get("skills") as SkillsComponent
-
-	var crafter_tile: Vector2i = Vector2i.ZERO
-	if crafter is Node2D:
-		crafter_tile = Config.iso_to_world((crafter as Node2D).global_position)
-
-	var storage_mgr: StorageManager = null
-	if BuildingSystem.instance != null:
-		storage_mgr = BuildingSystem.instance.get_storage_manager()
-
-	var had_water_bottle: bool = false
-
-	for inp in recipe.get("inputs", []):
-		if inp is Dictionary:
-			var item_id: String = str(inp.get("item_id", ""))
-			var count: int = int(inp.get("count", 1))
-			if item_id == "water_bottle":
-				had_water_bottle = true
-
-			var personal_cnt: int = inv.get_item_count(item_id)
-			var from_inv: int = mini(personal_cnt, count)
-			if from_inv > 0:
-				inv.remove_item(item_id, from_inv)
-			var rem: int = count - from_inv
-			if rem > 0 and storage_mgr != null:
-				storage_mgr.remove_item_from_radius(crafter_tile, item_id, rem, 4)
-
-	var output: Dictionary = recipe.get("output", {})
-	var out_id: String = str(output.get("item_id", ""))
-	var out_count: int = int(output.get("count", 1))
-	var req_station: String = str(recipe.get("station", ""))
-	if skills != null:
-		if req_station == "forge" or req_station == "ore_smelter":
-			out_count += SmeltingSystem.compute_smelt_bonus_yield(skills.get_level("smithing"))
-		elif req_station == "campfire":
-			out_count += CookingSystem.compute_meal_bonus_count(skills.get_level("cooking"))
-
-	inv.add_item(out_id, out_count)
-
-	# Return bottle if water was consumed
-	if had_water_bottle:
-		inv.add_item("empty_bottle", 1)
+	var plan_data: Dictionary = _plan_materials(recipe, crafter)
+	if not CraftTransaction.commit(plan_data):
+		var reason: String = str(plan_data.get("reason", ""))
+		SignalBus.craft_failed.emit(recipe_id, reason if reason != "" else "Inventory changed")
+		return false
+	var out_id: String = str(plan_data["output_id"])
+	var out_count: int = int(plan_data["output_count"])
 
 	var xp_rewards: Dictionary = recipe.get("xp_reward", {})
 	if skills != null:
@@ -161,25 +89,62 @@ func craft(recipe_id: String, crafter: Node, active_station: String = "") -> boo
 	return true
 
 
+func _plan_materials(recipe: Dictionary, crafter: Node) -> Dictionary:
+	if not is_instance_valid(crafter):
+		return {"ok": false, "reason": "No crafter"}
+	var response: Dictionary = {}
+	if crafter is Node2D:
+		SignalBus.crafting_sources_queried.emit(Config.iso_to_world(crafter.global_position), response)
+	var skills: SkillsComponent = crafter.get("skills") as SkillsComponent
+	var output: String = str(recipe.get("output", {}).get("item_id", ""))
+	var station: String = str(recipe.get("station", ""))
+	var bonus: int = 0
+	if skills != null:
+		if station == "ore_smelter" and output.ends_with("_ingot"):
+			bonus = SmeltingSystem.compute_smelt_bonus_yield(skills.get_level("smithing"))
+		elif station == "campfire":
+			bonus = CookingSystem.compute_meal_bonus_count(skills.get_level("cooking"))
+	return CraftTransaction.plan(recipe, crafter.get("inventory") as InventoryComponent, response.get("inventories", []), bonus, GameManager.sandbox_for(crafter))
+
+
 func _on_craft_requested(recipe_id: String, crafter: Node, station_id: String) -> void:
 	craft(recipe_id, crafter, station_id)
 
+func duration_for_recipe(recipe_id: String) -> float:
+	return ProductionRequirements.duration(DataRegistry.get_recipe(recipe_id))
+
+func start_batch(recipe_id: String, crafter: Node, station: String, count: int = 1) -> void:
+	if not is_instance_valid(crafter) or not crafter is Node2D or count <= 0:
+		return
+	if GameManager.sandbox_for(crafter):
+		for index: int in range(count):
+			if not craft(recipe_id, crafter, station):
+				break
+		return
+	var check: Dictionary = can_craft(recipe_id, crafter, station)
+	if not bool(check.get("ok", false)):
+		SignalBus.craft_failed.emit(recipe_id, str(check.get("reason", "Cannot craft")))
+		SignalBus.notification_posted.emit(str(check.get("reason", "Cannot craft")))
+		return
+	var action: ItemActionComponent = crafter.get_node_or_null("ItemAction") as ItemActionComponent
+	if action == null:
+		action = ItemActionComponent.new()
+		action.name = "ItemAction"
+		crafter.add_child(action)
+	var output: String = str(DataRegistry.get_recipe(recipe_id).get("output", {}).get("item_id", ""))
+	var started: bool = action.begin("Craft " + str(DataRegistry.get_item(output).get("name", output)), duration_for_recipe(recipe_id), func() -> void:
+		if not is_instance_valid(crafter):
+			return
+		# Materials stay in their original inventory/chest until a unit finishes.
+		# Revalidate at completion; cancellation cannot duplicate or lose inputs.
+		if craft(recipe_id, crafter, station) and count > 1:
+			start_batch(recipe_id, crafter, station, count - 1)
+	, 0.35)
+	if started:
+		SignalBus.ui_close_all_requested.emit()
+	else:
+		SignalBus.notification_posted.emit("Finish or cancel the current action first.")
+
 
 func _is_near_station(crafter: Node, station_id: String) -> bool:
-	if not (crafter is Node2D):
-		return false
-	var cpos: Vector2 = (crafter as Node2D).global_position
-	var ctile: Vector2i = Config.iso_to_world(cpos)
-	for node in get_tree().get_nodes_in_group("craft_station"):
-		if node is Node2D and node.has_method("get_station_id"):
-			var st_id: String = str(node.call("get_station_id"))
-			if st_id != "":
-				var stile: Vector2i = Config.iso_to_world((node as Node2D).global_position)
-				if Config.tile_distance(ctile, stile) <= 3:
-					if st_id == station_id:
-						return true
-					if station_id == "workbench" and st_id == "forge":
-						return true
-					if station_id in ["campfire", "alchemy_station"] and st_id in ["campfire", "alchemy_station"]:
-						return true
-	return false
+	return ProductionRequirements.missing({"station": station_id}, ProductionRequirements.nearby(get_tree(), crafter)).is_empty()

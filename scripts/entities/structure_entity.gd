@@ -14,11 +14,49 @@ var _build_progress: float = 1.0
 var _flame_phase: float = 0.0
 var _fire_light: PointLight2D = null
 var _build_particles: Array[Dictionary] = []
+var wall_connections: int = 0
+static var _interaction_images: Dictionary = {}
+const WALL_DIRECTIONS: Array[Vector2i] = [Vector2i(1,0), Vector2i(0,1), Vector2i(-1,0), Vector2i(0,-1)]
+
+func is_wall_segment() -> bool:
+	return structure_id in ["wall", "stone_wall", "wood_wall", "door", "wood_door"]
+
+static func _wall_group(tile: Vector2i) -> StringName:
+	return StringName("wall_at_" + Config.vec2i_to_key(tile))
+
+func refresh_wall_connections() -> void:
+	wall_connections = 0
+	if not is_inside_tree() or not is_wall_segment():
+		return
+	for index: int in range(WALL_DIRECTIONS.size()):
+		for neighbor: Node in get_tree().get_nodes_in_group(_wall_group(tile_pos + WALL_DIRECTIONS[index])):
+			if not neighbor.is_queued_for_deletion():
+				wall_connections |= 1 << index
+				break
+	queue_redraw()
+
+func _refresh_wall_neighborhood() -> void:
+	if not is_inside_tree():
+		return
+	refresh_wall_connections()
+	for direction: Vector2i in WALL_DIRECTIONS:
+		for neighbor: Node in get_tree().get_nodes_in_group(_wall_group(tile_pos + direction)):
+			neighbor.refresh_wall_connections()
+
+func _exit_tree() -> void:
+	if is_wall_segment() and get_tree() != null:
+		for direction: Vector2i in WALL_DIRECTIONS:
+			for neighbor: Node in get_tree().get_nodes_in_group(_wall_group(tile_pos + direction)):
+				if not neighbor.is_queued_for_deletion():
+					neighbor.call_deferred("refresh_wall_connections")
 
 
 func _ready() -> void:
 	y_sort_enabled = true
 	add_to_group("structures")
+	if is_wall_segment():
+		add_to_group(_wall_group(tile_pos))
+		call_deferred("_refresh_wall_neighborhood")
 	_def = DataRegistry.get_structure(structure_id)
 	max_hp = float(_def.get("hp", 100.0))
 	current_hp = max_hp
@@ -83,6 +121,10 @@ func _process(delta: float) -> void:
 		_flame_phase += delta * 7.5
 		if _fire_light != null:
 			_fire_light.energy = 1.35 + sin(_flame_phase * 2.8) * 0.16 + cos(_flame_phase * 4.4) * 0.09
+			if not is_player_built and structure_id in ["torch", "forge"]:
+				var hour: float = GameManager.get_hour()
+				var daylight: float = smoothstep(5.0, 8.0, hour) * (1.0 - smoothstep(17.0, 21.0, hour))
+				_fire_light.energy *= lerpf(0.65, 0.05, daylight) if structure_id == "torch" else lerpf(0.60, 0.16, daylight)
 		needs_redraw = true
 
 	if needs_redraw:
@@ -124,21 +166,21 @@ static func _get_structure_tex(struct_id: String) -> Texture2D:
 
 
 func _draw() -> void:
+	if structure_id in ["floor", "wood_floor", "stone_floor"]:
+		var floor_color: Color = Color("77796e") if structure_id == "stone_floor" else Color("806647")
+		var floor_rect: Rect2 = Rect2(-Vector2(Config.HALF_TILE),Vector2(Config.TILE_SIZE))
+		draw_rect(floor_rect,floor_color)
+		draw_rect(floor_rect,floor_color.darkened(0.3),false,1)
+		return
+	if is_wall_segment():
+		_draw_connected_wall()
+		_draw_construction_overlay()
+		return
 	var base_col: Color = Color.from_string(str(_def.get("color", "#6c757d")), Color(0.55, 0.42, 0.28))
 	var height_px: float = float(_def.get("height_px", 18.0))
 	var hw: float = float(Config.HALF_TILE.x) * 0.82
 	var hh: float = float(Config.HALF_TILE.y) * 0.82
 	var outline_col: Color = Color(0.08, 0.09, 0.11, 0.92)
-
-	# Ground shadow (never for floors, fitted contact shadow for furniture)
-	var is_floor_struct: bool = structure_id in ["floor", "stone_floor"]
-	if not is_floor_struct:
-		if structure_id in ["workbench", "research_table", "alchemy_station"]:
-			draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 7.0), hw * 0.78, hh * 0.52), Color(0.0, 0.0, 0.0, 0.24))
-		elif structure_id == "bed":
-			draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 6.0), hw * 0.85, hh * 0.58), Color(0.0, 0.0, 0.0, 0.24))
-		else:
-			draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 2.5), hw * 0.90, hh * 0.85), Color(0.0, 0.0, 0.0, 0.28))
 
 	# 1. High-fidelity isometric structure sprite
 	var stex: Texture2D = _get_structure_tex(structure_id)
@@ -171,7 +213,7 @@ func _draw() -> void:
 		elif structure_id == "water_collector":
 			target_w = 46.0
 		elif structure_id == "torch":
-			target_w = 32.0
+			target_w = 48.0
 		
 		var scale_f: float = target_w / tw
 		var target_h: float = th * scale_f
@@ -247,7 +289,7 @@ func _draw() -> void:
 	if structure_id == "floor":
 		var plank_col: Color = Color(0.56, 0.38, 0.22)
 		var seam_col: Color = Color(0.28, 0.18, 0.10)
-		var floor_poly: PackedVector2Array = IsoMath.diamond_polygon(Vector2.ZERO, float(Config.HALF_TILE.x), float(Config.HALF_TILE.y))
+		var floor_poly: PackedVector2Array = IsoMath.cell_polygon(Vector2.ZERO)
 		draw_colored_polygon(floor_poly, plank_col)
 		for t in [-0.5, 0.0, 0.5]:
 			var p1: Vector2 = Vector2(-Config.HALF_TILE.x * 0.5 + t * Config.HALF_TILE.x * 0.5, -Config.HALF_TILE.y * 0.5 - t * Config.HALF_TILE.y * 0.5)
@@ -303,6 +345,84 @@ func _draw() -> void:
 		draw_circle(top_offset + Vector2(6.0, 1.0), 2.5, Color(0.25, 0.55, 0.95))
 	_draw_construction_overlay()
 
+
+func dismantle_hit_test(world_point: Vector2) -> bool:
+	return interaction_hit_test(world_point) or Geometry2D.is_point_in_polygon(to_local(world_point), IsoMath.cell_polygon(Vector2.ZERO))
+
+func interaction_hit_test(world_point: Vector2) -> bool:
+	var point: Vector2 = to_local(world_point)
+	if is_wall_segment():
+		var mask: int = wall_connections if wall_connections != 0 else 5
+		for i in range(4):
+			if (mask & (1 << i)) == 0:
+				continue
+			var end: Vector2 = Config.world_to_iso(WALL_DIRECTIONS[i]) * 0.5
+			var side: Vector2 = Vector2(-end.y,end.x).normalized() * 3.5
+			var hull: PackedVector2Array = PackedVector2Array()
+			for p: Vector2 in [-side,end-side,end+side,side]:
+				hull.append(p)
+				hull.append(p-Vector2(0,30))
+			if Geometry2D.is_point_in_polygon(point,Geometry2D.convex_hull(hull)):
+				return true
+		return false
+	if structure_id in ["floor","stone_floor"]:
+		return Geometry2D.is_point_in_polygon(point,IsoMath.cell_polygon(Vector2.ZERO))
+	var texture: Texture2D = _get_structure_tex(structure_id)
+	if texture == null:
+		return Rect2(-24,-maxf(24,float(_def.get("height_px",24))),48,40).has_point(point)
+	var width: float = 58.0
+	if structure_id == "bed": width = 60.0
+	elif structure_id in ["chest","storage","iron_vault"]: width = 52.0
+	elif structure_id == "campfire": width = 54.0
+	elif structure_id == "water_collector": width = 46.0
+	elif structure_id == "torch": width = 48.0
+	var height: float = texture.get_height() * width / texture.get_width()
+	var rect: Rect2 = Rect2(-width/2,10-height,width,height)
+	if not rect.has_point(point):
+		return false
+	var key: int = texture.get_instance_id()
+	if not _interaction_images.has(key):
+		var image: Image = texture.get_image()
+		if image.is_compressed(): image.decompress()
+		_interaction_images[key] = image
+	var image: Image = _interaction_images[key]
+	var uv: Vector2 = (point-rect.position)/rect.size
+	return image.get_pixel(clampi(int(uv.x*image.get_width()),0,image.get_width()-1),clampi(int(uv.y*image.get_height()),0,image.get_height()-1)).a > 0.15
+
+func _draw_connected_wall() -> void:
+	var wooden: bool = structure_id.contains("wood") or structure_id == "door"
+	var color: Color = Color("7c6241") if wooden else Color("77796e")
+	var height: float = 30.0
+	var mask: int = wall_connections
+	if mask == 0:
+		mask = 5
+	for i in range(4):
+		if (mask & (1 << i)) == 0:
+			continue
+		var endpoint: Vector2 = Config.world_to_iso(WALL_DIRECTIONS[i]) * 0.5
+		var along: Vector2 = endpoint.normalized()
+		var thickness: Vector2 = Vector2(-along.y, along.x) * 3.5
+		var a: Vector2 = -thickness
+		var b: Vector2 = endpoint - thickness
+		var c: Vector2 = endpoint + thickness
+		var d: Vector2 = thickness
+		var lift: Vector2 = Vector2(0, -height)
+		var door: bool = structure_id in ["door", "wood_door"]
+		if door and is_door_open:
+			# Open doorway keeps its lintel; collision is controlled by the door state.
+			draw_line(a + lift, b + lift, color, 5.0, true)
+			continue
+		draw_colored_polygon(PackedVector2Array([d,c,c+lift,d+lift]), color.darkened(0.25))
+		draw_colored_polygon(PackedVector2Array([a,b,b+lift,a+lift]), color.darkened(0.08))
+		draw_colored_polygon(PackedVector2Array([a+lift,b+lift,c+lift,d+lift]), color.lightened(0.18))
+		draw_line(d, c, Color("33362f"), 1.0, true)
+		if wooden:
+			for t: float in [0.25, 0.6, 0.9]:
+				var p: Vector2 = d.lerp(c, t)
+				draw_line(p, p+lift, color.darkened(0.4), 1.0, true)
+		else:
+			for h: float in [10.0, 20.0]:
+				draw_line(d-Vector2(0,h), c-Vector2(0,h), color.darkened(0.4), 1.0, true)
 
 func _draw_construction_overlay() -> void:
 	for p in _build_particles:
@@ -383,13 +503,40 @@ func get_station_id() -> String:
 	return ""
 
 
+var _resident_door_timer: Timer
+
+func _set_door_open(open: bool) -> void:
+	is_door_open = open
+	if _collision != null:
+		_collision.set_deferred("disabled", open)
+	queue_redraw()
+
+func open_for_resident() -> void:
+	if structure_id != "door" or is_door_open:
+		return
+	_set_door_open(true)
+	if _resident_door_timer == null:
+		_resident_door_timer = Timer.new()
+		_resident_door_timer.one_shot = true
+		_resident_door_timer.timeout.connect(_close_resident_door)
+		add_child(_resident_door_timer)
+	_resident_door_timer.start(2.5)
+
+func _close_resident_door() -> void:
+	var actors: Array[Node] = get_tree().get_nodes_in_group("npc")
+	actors.append_array(get_tree().get_nodes_in_group("player"))
+	for actor: Node in actors:
+		if actor is Node2D and actor.global_position.distance_to(global_position) < Config.TILE_SIZE.x * 0.75:
+			_resident_door_timer.start(1.0)
+			return
+	_set_door_open(false)
+
 func interact(actor: Node) -> void:
 	match structure_id:
 		"door":
-			is_door_open = not is_door_open
-			if _collision != null:
-				_collision.set_deferred("disabled", is_door_open)
-			queue_redraw()
+			if _resident_door_timer != null:
+				_resident_door_timer.stop()
+			_set_door_open(not is_door_open)
 		"workbench", "forge", "campfire", "alchemy_station", "ore_smelter", "water_mill", "mechanical_water_mill":
 			SignalBus.craft_station_opened.emit(structure_id)
 		"well":

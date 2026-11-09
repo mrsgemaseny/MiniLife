@@ -22,9 +22,16 @@ func _ready() -> void:
 	SignalBus.build_requested.connect(_on_build_requested)
 	SignalBus.structure_placement_validated.connect(_on_structure_placement_validated)
 	SignalBus.structure_restored.connect(_on_structure_restored)
+	SignalBus.settlement_door_passage_requested.connect(_on_settlement_door_passage_requested)
+	SignalBus.door_state_queried.connect(func(tile: Vector2i, result: Dictionary) -> void:
+		var door: StructureEntity = _placed_structures.get(Config.vec2i_to_key(tile)) as StructureEntity
+		if is_instance_valid(door) and door.structure_id in ["door", "wood_door"]:
+			result["open"] = door.is_door_open)
 	SignalBus.structure_destroyed.connect(_on_structure_destroyed)
 	SignalBus.structure_removal_requested.connect(_on_structure_removal_requested)
 	SignalBus.trap_triggered.connect(_on_trap_triggered)
+	SignalBus.crafting_sources_queried.connect(func(origin: Vector2i, result: Dictionary) -> void:
+		result["inventories"] = _storage_mgr.get_nearby_containers(origin, 4))
 
 
 func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
@@ -109,6 +116,7 @@ func set_build_mode(structure_id: String) -> void:
 	if structure_id != "" and DataRegistry.get_structure(structure_id).is_empty():
 		return
 	_active_build_id = structure_id
+	SignalBus.build_mode_activated.emit(structure_id)
 	_smooth_cursor_world = Vector2.ZERO
 	queue_redraw()
 
@@ -124,6 +132,13 @@ func has_materials(builder: Node, structure_id: String) -> bool:
 	var def: Dictionary = DataRegistry.get_structure(structure_id)
 	if def.is_empty():
 		return false
+	if GameManager.sandbox_for(builder):
+		return true
+	if ProgressionSystem.instance != null and ProgressionSystem.instance.current_level < int(def.get("min_level", 2)):
+		return false
+	var tech: String = str(def.get("tech_required", ""))
+	if tech != "" and (ResearchSystem.instance == null or not ResearchSystem.instance.is_researched(tech)):
+		return false
 	var inv: InventoryComponent = builder.get("inventory") as InventoryComponent
 	if inv == null:
 		return false
@@ -135,6 +150,8 @@ func has_materials(builder: Node, structure_id: String) -> bool:
 
 
 func consume_materials(builder: Node, structure_id: String) -> void:
+	if GameManager.sandbox_for(builder):
+		return
 	if builder == null:
 		return
 	var def: Dictionary = DataRegistry.get_structure(structure_id)
@@ -147,6 +164,14 @@ func consume_materials(builder: Node, structure_id: String) -> void:
 
 
 func can_place_block(structure_id: String, tile_pos: Vector2i) -> bool:
+	if DataRegistry.get_structure(structure_id).is_empty():
+		return false
+	var terrain: Dictionary = {}
+	SignalBus.world_tile_queried.emit(tile_pos, terrain)
+	if terrain.is_empty() or not bool(terrain.get("passable", false)):
+		return false
+	if bool(terrain.get("occupied", false)) and str(terrain.get("structure_id", "")) not in ["floor", "stone_floor"]:
+		return false
 	var key: String = Config.vec2i_to_key(tile_pos)
 	var is_floor: bool = structure_id in ["floor", "stone_floor"]
 
@@ -171,6 +196,8 @@ func can_place_block(structure_id: String, tile_pos: Vector2i) -> bool:
 
 
 func place_block_from_hand(structure_id: String, tile_pos: Vector2i, builder: Node) -> bool:
+	if not builder is Node2D or Config.tile_distance(Config.iso_to_world(builder.global_position), tile_pos) > 4:
+		return false
 	if not can_place_block(structure_id, tile_pos):
 		return false
 	_spawn_structure_node(structure_id, tile_pos, true, true)
@@ -187,6 +214,14 @@ func _on_build_mode_changed(structure_id: String) -> void:
 
 
 func _on_build_requested(structure_id: String, tile_pos: Vector2i, builder: Node) -> void:
+	if is_instance_valid(builder) and bool(builder.get_meta("item_action_busy", false)):
+		SignalBus.structure_placement_rejected.emit(structure_id, tile_pos, "Finish the current action first")
+		return
+	if not builder is Node2D or Config.tile_distance(Config.iso_to_world(builder.global_position), tile_pos) > 4:
+		SignalBus.structure_placement_rejected.emit(structure_id, tile_pos, "Move closer to the build site")
+		return
+	if not has_materials(builder, structure_id):
+		return
 	if can_place_block(structure_id, tile_pos):
 		SignalBus.structure_placement_validated.emit(structure_id, tile_pos, builder)
 	else:
@@ -194,16 +229,34 @@ func _on_build_requested(structure_id: String, tile_pos: Vector2i, builder: Node
 
 
 func _on_structure_placement_validated(structure_id: String, tile_pos: Vector2i, builder: Node) -> void:
+	if not has_materials(builder, structure_id) or not can_place_block(structure_id, tile_pos):
+		return
 	if builder != null:
 		consume_materials(builder, structure_id)
 		var skills: SkillsComponent = builder.get("skills") as SkillsComponent
 		if skills != null:
 			skills.gain_xp("construction", 14.0)
 	_spawn_structure_node(structure_id, tile_pos, true, true)
+	SignalBus.structure_built.emit(structure_id, tile_pos)
 
 
 func _on_structure_restored(structure_id: String, tile_pos: Vector2i) -> void:
 	_spawn_structure_node(structure_id, tile_pos, false, false)
+
+
+func _on_settlement_door_passage_requested(tile: Vector2i, resident: Node2D) -> void:
+	var door: StructureEntity = _placed_structures.get(Config.vec2i_to_key(tile)) as StructureEntity
+	if not is_instance_valid(door) or door.is_player_built or door.structure_id != "door":
+		return
+	if not is_instance_valid(resident) or not resident.has_meta("global_agent_id"):
+		return
+	if Config.tile_distance(Config.iso_to_world(resident.global_position), tile) > 1:
+		return
+	var info: Dictionary = {}
+	SignalBus.world_tile_queried.emit(tile, info)
+	var owner: String = str(info.get("settlement_door", ""))
+	if not owner.is_empty() and owner == str(resident.get_meta("settlement_id", "")):
+		door.open_for_resident()
 
 
 func _on_structure_removal_requested(tile_pos: Vector2i, breaker: Node) -> void:

@@ -26,3 +26,32 @@ static func compute_next_step(from_tile: Vector2i, to_tile: Vector2i, passable_c
 		elif not passable_check.is_valid():
 			return candidate
 	return from_tile
+
+
+static func compute_local_route(from_tile: Vector2i, to_tile: Vector2i, passable_check: Callable) -> Array[Vector2i]:
+	var queue: Array[Vector2i] = [from_tile]
+	var previous: Dictionary = {from_tile: from_tile}
+	var cursor: int = 0
+	var closest: Vector2i = from_tile
+	var difference: Vector2i = from_tile - to_tile
+	var best_distance: int = absi(difference.x) + absi(difference.y)
+	while cursor < queue.size() and cursor < 220 and closest != to_tile:
+		var current: Vector2i = queue[cursor]
+		cursor += 1
+		for direction: Vector2i in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
+			var next: Vector2i = current + direction
+			if previous.has(next) or not bool(passable_check.call(next)):
+				continue
+			previous[next] = current
+			queue.append(next)
+			difference = next - to_tile
+			var distance: int = absi(difference.x) + absi(difference.y)
+			if distance < best_distance:
+				best_distance = distance
+				closest = next
+	var route: Array[Vector2i] = []
+	while closest != from_tile:
+		route.append(closest)
+		closest = previous[closest]
+	route.reverse()
+	return route

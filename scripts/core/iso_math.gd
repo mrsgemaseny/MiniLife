@@ -43,6 +43,9 @@ static func bresenham_line(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
 			y0 += sy
 	return points
 
+static func cell_polygon(center: Vector2, half_w: float = float(Config.HALF_TILE.x), half_h: float = float(Config.HALF_TILE.y)) -> PackedVector2Array:
+	return PackedVector2Array([center+Vector2(-half_w,-half_h),center+Vector2(half_w,-half_h),center+Vector2(half_w,half_h),center+Vector2(-half_w,half_h)])
+
 
 static func tiles_in_radius(center: Vector2i, radius: int) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []

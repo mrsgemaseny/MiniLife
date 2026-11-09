@@ -9,7 +9,7 @@ static func draw_ghost_preview(canvas: CanvasItem, tile_pos: Vector2i, valid: bo
 	var pulse: float = 1.0 + sin(pulse_phase) * 0.05
 	var hw: float = float(Config.HALF_TILE.x) * 0.88 * pulse
 	var hh: float = float(Config.HALF_TILE.y) * 0.88 * pulse
-	var poly: PackedVector2Array = IsoMath.diamond_polygon(center, hw, hh)
+	var poly: PackedVector2Array = IsoMath.cell_polygon(center, hw, hh)
 	var alpha_pulse: float = 0.34 + sin(pulse_phase) * 0.08
 	var fill: Color = Color(0.22, 0.92, 0.48, alpha_pulse) if valid else Color(0.95, 0.25, 0.25, alpha_pulse)
 	var wire_col: Color = fill.lightened(0.32)
@@ -21,7 +21,7 @@ static func draw_ghost_preview(canvas: CanvasItem, tile_pos: Vector2i, valid: bo
 	var def: Dictionary = DataRegistry.get_structure(structure_id) if structure_id != "" else {}
 	var h_px: float = float(def.get("height_px", 16.0))
 	if h_px > 6.0:
-		var top_poly: PackedVector2Array = IsoMath.diamond_polygon(center + Vector2(0.0, -h_px), hw, hh)
+		var top_poly: PackedVector2Array = IsoMath.cell_polygon(center + Vector2(0.0, -h_px), hw, hh)
 		var top_fill: Color = fill
 		top_fill.a *= 0.65
 		canvas.draw_colored_polygon(top_poly, top_fill)

@@ -76,7 +76,10 @@ static func check_directional_shield_block(attacker_pos: Vector2, target: Node) 
 	var front_dot: float = target_facing.dot(to_attacker)
 	var is_front: bool = (front_dot >= 0.45) # Frontal arc ~126 degrees (+/- 63 deg)
 
-	if has_shield and is_front:
+	var can_block: bool = true
+	if "stats" in target and target.get("stats") != null:
+		can_block = target.get("stats").stamina >= 12.0
+	if has_shield and is_front and can_block and randf() < 0.35:
 		return {"blocked": true, "flanking": false, "front_dot": front_dot}
 
 	return {"blocked": false, "flanking": not is_front, "front_dot": front_dot}

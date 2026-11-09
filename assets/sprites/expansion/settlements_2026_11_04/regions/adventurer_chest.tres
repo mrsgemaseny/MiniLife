@@ -1,0 +1,8 @@
+[gd_resource type="AtlasTexture" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/expansion/settlements_2026_11_04/camp_props.png" id="1"]
+
+[resource]
+atlas = ExtResource("1")
+region = Rect2(962, 989, 264, 224)
+filter_clip = true

@@ -14,6 +14,8 @@ enum State { PATROL, CHASE, ATTACK }
 @export var ai_profile: String = ""
 @export var stats: StatsComponent
 
+var _body_lunge: Vector2 = Vector2.ZERO
+
 var spawn_uid: String = ""
 var display_name: String = "Hostile"
 var facing_direction: Vector2 = Vector2.DOWN
@@ -27,6 +29,7 @@ var _sim_timer: float = 0.0
 var _wander_dir: Vector2 = Vector2.RIGHT
 var _wander_timer: float = 0.0
 var _enemy_def: Dictionary = {}
+var _appearance_gear: EquipmentComponent = EquipmentComponent.new()
 
 func _ready() -> void:
 	y_sort_enabled = true
@@ -36,6 +39,8 @@ func _ready() -> void:
 	if stats == null:
 		stats = StatsComponent.new()
 	_apply_enemy_definition()
+	if not enemy_id.contains("scout"):
+		_appearance_gear._equipped["chest"] = {"item_id": "iron_armor", "durability": -1}
 	SignalBus.player_tile_changed.connect(_on_player_tile_changed)
 	queue_redraw()
 
@@ -51,11 +56,13 @@ func _apply_enemy_definition() -> void:
 		return
 	display_name = str(_enemy_def.get("name", enemy_id))
 	faction_id = str(_enemy_def.get("faction", _enemy_def.get("faction_id", faction_id)))
-	var max_hp: float = float(_enemy_def.get("health", _enemy_def.get("max_health", 60.0)))
+	var max_hp: float = float(_enemy_def.get("health", _enemy_def.get("max_health", _enemy_def.get("hp", 60.0))))
 	stats.set_max("health", max_hp)
 	stats.health = max_hp
 	stats.defense = float(_enemy_def.get("defense", 0.0))
 	move_speed = float(_enemy_def.get("speed", _enemy_def.get("move_speed", move_speed)))
+	if faction_id != "wildlife":
+		move_speed = minf(move_speed, Config.BASE_MOVE_SPEED * 0.55)
 	aggro_range = float(_enemy_def.get("aggro_range", aggro_range))
 	attack_range = float(_enemy_def.get("attack_range", attack_range))
 	attack_damage = float(_enemy_def.get("damage", _enemy_def.get("attack_damage", attack_damage)))
@@ -70,6 +77,8 @@ func _physics_process(delta: float) -> void:
 	if is_permanently_dead or GameManager.is_paused():
 		return
 
+	_body_lunge = _body_lunge.lerp(Vector2.ZERO, minf(1.0, delta * 12.0))
+	queue_redraw()
 	if _cooldown_timer > 0.0:
 		_cooldown_timer = maxf(0.0, _cooldown_timer - delta)
 
@@ -181,6 +190,8 @@ func _tick_fsm(delta: float) -> void:
 			if dist > attack_range * 1.25:
 				current_state = State.CHASE
 			elif _cooldown_timer <= 0.0:
+				facing_direction = (target_entity.global_position - global_position).normalized()
+				_body_lunge = facing_direction * 6.0
 				_cooldown_timer = attack_cooldown
 				SignalBus.damage_requested.emit(target_entity, attack_damage, "physical", self)
 
@@ -223,9 +234,8 @@ func _handle_death(killer: Node) -> void:
 
 func _spawn_loot_drop() -> void:
 	var drops: Array[Dictionary] = LootTableRoller.roll_enemy_loot(_enemy_def)
-	if drops.is_empty():
-		return
-	var bag: LootBag = LootBag.new()
+	var bag: CorpseEntity = CorpseEntity.new()
+	bag.species = enemy_id
 	bag.items = drops
 	bag.gold = randi_range(3, 12) if faction_id == "raiders" else 0
 	bag.global_position = global_position
@@ -237,8 +247,26 @@ func _on_player_tile_changed(player_tile: Vector2i) -> void:
 	sim_tier = SimulationBubble.compute_lod_tier(player_tile, my_tile)
 
 func _draw() -> void:
+	var species: String = ""
+	if enemy_id.contains("wolf"):
+		species = "direwolf" if enemy_id.contains("alpha") else "wolf"
+	elif enemy_id.contains("boar"):
+		species = "boar"
+	elif enemy_id == "swamp_crawler":
+		species = "spider"
+	elif enemy_id == "desert_stalker":
+		species = "fox"
+	if species != "":
+		AnimalRig.draw_animal(self, species, Time.get_ticks_msec() * 0.009, clampf(velocity.length() / maxf(move_speed, 1.0), 0.0, 1.0), -1.0 if facing_direction.x < 0 else 1.0, false, false)
+	else:
+		preload("res://scripts/entities/pawn_art.gd").draw_pawn(self, _body_lunge, facing_direction, _appearance_gear)
+	if stats != null and stats.health < stats.max_health:
+		var ratio: float = clampf(stats.health / maxf(1.0, stats.max_health), 0.0, 1.0)
+		draw_rect(Rect2(-16, -51, 32, 4), Color("28251f"))
+		draw_rect(Rect2(-15, -50, 30 * ratio, 2), Color("b96e50"))
+
+func _draw_legacy() -> void:
 	var outline_col: Color = Color(0.07, 0.08, 0.10, 0.95)
-	draw_colored_polygon(IsoMath.diamond_polygon(Vector2(0.0, 3.0), 13.0, 6.0), Color(0.0, 0.0, 0.0, 0.38))
 
 	var is_beast: bool = (faction_id == "wildlife" or enemy_id.find("wolf") != -1 or enemy_id.find("boar") != -1)
 	if is_beast:

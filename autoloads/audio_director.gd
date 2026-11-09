@@ -1,7 +1,8 @@
 extends Node
 
-# Procedural Ambient Music & Organic Tactile SFX Engine
-# Minecraft / RimWorld / C418-style ambient meditation & tactile game sounds
+# Organic tactile SFX; authored music and nature are handled independently.
+
+const PlainsSoundscape = preload("res://scripts/systems/plains_soundscape.gd")
 
 static var instance: Node = null
 
@@ -9,11 +10,7 @@ const SAMPLE_RATE: int = 22050
 const SFX_POOL_SIZE: int = 8
 
 var _sfx_pool: Array[AudioStreamPlayer] = []
-var _music_player: AudioStreamPlayer = null
 var _sfx_cache: Dictionary = {}
-var _music_phrases: Array[AudioStreamWAV] = []
-var _music_interval_timer: float = 4.0
-var _current_music_index: int = 0
 var _current_biome: String = "plains"
 var _in_combat: bool = false
 var _combat_decay_timer: float = 0.0
@@ -28,18 +25,17 @@ func _ready() -> void:
 	# 1. Polyphonic SFX Player Pool
 	for i in range(SFX_POOL_SIZE):
 		var p: AudioStreamPlayer = AudioStreamPlayer.new()
+		p.bus = "SFX"
 		p.volume_db = -10.0
 		add_child(p)
 		_sfx_pool.append(p)
 
-	# 2. Dedicated Procedural Music Player
-	_music_player = AudioStreamPlayer.new()
-	_music_player.volume_db = -17.0
-	add_child(_music_player)
+	# Music assets stream from disk; no long-form synthesis during startup.
+	var soundscape: Node = PlainsSoundscape.new()
+	soundscape.name = "PlainsSoundscape"
+	add_child(soundscape)
 
-	# 3. Procedurally synthesize all organic SFX & calm ambient phrases
 	_bake_all_sfx()
-	_bake_music_phrases()
 
 	# 4. Wire events strictly through SignalBus
 	SignalBus.resource_hit.connect(_on_resource_hit)
@@ -65,12 +61,6 @@ func _process(delta: float) -> void:
 		if _combat_decay_timer <= 0.0:
 			_in_combat = false
 			SignalBus.combat_state_changed.emit(false)
-
-	# Peaceful Ambient Music Scheduler (Minecraft / C418 style quiet rest between phrases)
-	if _music_player != null and not _music_player.playing:
-		_music_interval_timer -= delta
-		if _music_interval_timer <= 0.0 and not _music_phrases.is_empty():
-			_play_next_ambient_phrase()
 
 
 func play_sfx(sfx_id: String, volume_offset_db: float = 0.0, pitch_variance: float = 0.06) -> void:
@@ -98,19 +88,6 @@ func play_sfx(sfx_id: String, volume_offset_db: float = 0.0, pitch_variance: flo
 
 func play_tone(freq_hz: float, duration_sec: float = 0.08, volume_db: float = -12.0) -> void:
 	play_sfx("ui_click", volume_db - (-10.0), 0.04)
-
-
-func _play_next_ambient_phrase() -> void:
-	if _music_phrases.is_empty() or _music_player == null:
-		return
-	var phrase: AudioStreamWAV = _music_phrases[_current_music_index % _music_phrases.size()]
-	_current_music_index = (_current_music_index + 1) % _music_phrases.size()
-
-	_music_player.stream = phrase
-	_music_player.pitch_scale = randf_range(0.97, 1.03)
-	_music_player.play()
-	# Quiet peaceful interval between 20 and 35 seconds
-	_music_interval_timer = randf_range(20.0, 35.0)
 
 
 # ==============================================================================
@@ -449,55 +426,6 @@ func _synth_ui_close() -> AudioStreamWAV:
 		lp = lerpf(lp, randf_range(-1.0, 1.0), 0.20)
 		buf[i] = lp * env * 0.30
 	return _create_wav(buf)
-
-
-# ==============================================================================
-# PROCEDURAL CALM AMBIENT MUSIC PHRASES (Minecraft / C418 style meditation)
-# ==============================================================================
-
-func _bake_music_phrases() -> void:
-	# Phrase 0: Dawn Awakening (D Major Pentatonic)
-	_music_phrases.append(_synth_music_phrase([293.66, 369.99, 440.00, 493.88, 587.33], [0.0, 1.3, 2.5, 3.8, 5.0], 7.5))
-	# Phrase 1: Green Meadows (G Major Pentatonic)
-	_music_phrases.append(_synth_music_phrase([196.00, 246.94, 293.66, 329.63, 392.00, 493.88], [0.0, 1.2, 2.4, 3.6, 4.8, 6.0], 8.5))
-	# Phrase 2: Ancient Pines & Hearth (C Major / A Minor)
-	_music_phrases.append(_synth_music_phrase([261.63, 329.63, 392.00, 440.00, 523.25], [0.0, 1.4, 2.8, 4.2, 5.6], 8.0))
-	# Phrase 3: Dusk Solitude (E Minor Pentatonic)
-	_music_phrases.append(_synth_music_phrase([164.81, 246.94, 329.63, 392.00, 493.88], [0.0, 1.5, 3.0, 4.4, 5.8], 8.2))
-	# Phrase 4: Starlit Wilderness (A Minor Pentatonic)
-	_music_phrases.append(_synth_music_phrase([220.00, 261.63, 329.63, 392.00, 440.00], [0.0, 1.3, 2.6, 4.0, 5.4], 8.0))
-	# Phrase 5: Ancient Ruins Echo (D Dorian)
-	_music_phrases.append(_synth_music_phrase([146.83, 220.00, 293.66, 349.23, 392.00], [0.0, 1.5, 3.2, 4.6, 6.0], 8.8))
-
-
-func _synth_music_phrase(frequencies: Array[float], timings: Array[float], total_dur: float) -> AudioStreamWAV:
-	var total_samples: int = int(SAMPLE_RATE * total_dur)
-	var mix_buf: PackedFloat32Array = PackedFloat32Array()
-	mix_buf.resize(total_samples)
-
-	for n in range(mini(frequencies.size(), timings.size())):
-		var freq: float = frequencies[n]
-		var start_s: int = int(timings[n] * SAMPLE_RATE)
-		var note_len_s: int = int(2.4 * SAMPLE_RATE)
-		var inc: float = freq / float(SAMPLE_RATE)
-		var phase: float = 0.0
-
-		for s in range(note_len_s):
-			var idx: int = start_s + s
-			if idx >= total_samples:
-				break
-			var t: float = float(s) / float(SAMPLE_RATE)
-			var env: float = 0.0
-			if t < 0.045:
-				env = t / 0.045
-			else:
-				env = exp(-1.75 * (t - 0.045))
-			# Felt piano / acoustic bell tone: fundamental + subtle warm octave + 3rd harmonic
-			var sample: float = (sin(phase * TAU) * 0.72 + sin(phase * 2.0 * TAU) * 0.22 + sin(phase * 3.0 * TAU) * 0.06) * env * 0.32
-			mix_buf[idx] += sample
-			phase = fmod(phase + inc, 1.0)
-
-	return _create_wav(mix_buf)
 
 
 # ==============================================================================

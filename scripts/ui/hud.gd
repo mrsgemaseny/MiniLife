@@ -246,13 +246,18 @@ func _setup_styled_hud() -> void:
 		slot.slot_group = "hotbar"
 		slot.hotbar_num = i + 1
 		var slot_idx: int = i
-		slot.slot_clicked.connect(func(_idx: int, _b: int, _s: bool) -> void: _activate_hotbar_slot(slot_idx))
+		slot.slot_clicked.connect(func(_idx: int, button: int, _s: bool) -> void:
+			_activate_hotbar_slot(slot_idx)
+			if button == MOUSE_BUTTON_RIGHT:
+				var player: Node = get_tree().get_first_node_in_group("player")
+				if player != null:
+					SignalBus.item_use_requested.emit(player, slot_idx))
 		hotbar_hbox.add_child(slot)
 		_hotbar_slots.append(slot)
 
 	# 5. Subtle controls hint
 	var hint_lbl: Label = Label.new()
-	hint_lbl.text = "[I] Bag  [M] Map  [C] Craft  [B] Build  [J] Quests  [K] Hero  [F5] Quick Save  [ESC] Menu"
+	hint_lbl.text = "[F] Use held item  [E] Interact  [I] Bag  [M] Map  [C] Craft  [B] Build  [K] Hero  [ESC] Menu"
 	hint_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint_lbl.add_theme_font_size_override("font_size", 9)
 	hint_lbl.modulate = Color(0.72, 0.76, 0.82, 0.55)
@@ -304,6 +309,7 @@ func _setup_styled_hud() -> void:
 	ic_vbox.add_child(_inspect_details)
 
 	add_child(_inspect_card)
+	SurvivalTheme.ignore_pointer(_inspect_card)
 
 func _connect_signals() -> void:
 	SignalBus.player_stat_changed.connect(update_stat)
@@ -514,56 +520,14 @@ func _update_world_hover_inspect(delta: float) -> void:
 		return
 
 	var mouse_world: Vector2 = get_global_mouse_position()
-	var candidate: Node2D = null
+	var player: Node = get_tree().get_first_node_in_group("player")
+	var candidate: Node2D = InteractionPicker.pick(get_tree(), mouse_world, player)
 	var candidate_top_offset: float = -40.0
-
-	var harvestables: Array[Node] = get_tree().get_nodes_in_group("harvestable")
-	for node in harvestables:
-		if not (node is Node2D) or not (node as Node2D).is_visible_in_tree():
-			continue
-		var n2d: Node2D = node as Node2D
-		var gpos: Vector2 = n2d.global_position
-		var def_id: String = str(n2d.get("node_def_id"))
-		var is_tree: bool = def_id.find("tree") != -1 or def_id.find("pine") != -1 or def_id.find("oak") != -1
-		var is_rock: bool = def_id.find("rock") != -1 or def_id.find("ore") != -1 or def_id.find("boulder") != -1 or def_id.find("deposit") != -1
-
-		var hw: float = 38.0 if is_tree else (28.0 if is_rock else 22.0)
-		var top_y: float = -74.0 if is_tree else (-36.0 if is_rock else -26.0)
-		var bot_y: float = 14.0
-
-		if mouse_world.x >= gpos.x - hw and mouse_world.x <= gpos.x + hw and mouse_world.y >= gpos.y + top_y and mouse_world.y <= gpos.y + bot_y:
-			candidate = n2d
-			candidate_top_offset = top_y
-			break
-
-	if candidate == null:
-		var interactables: Array[Node] = get_tree().get_nodes_in_group("interactable")
-		for node in interactables:
-			if not (node is Node2D) or not (node as Node2D).is_visible_in_tree():
-				continue
-			var n2d: Node2D = node as Node2D
-			var gpos: Vector2 = n2d.global_position
-			if mouse_world.distance_to(gpos + Vector2(0.0, -10.0)) <= 32.0:
-				candidate = n2d
-				candidate_top_offset = -32.0
-				break
-
-	if candidate == null:
-		var npcs: Array[Node] = get_tree().get_nodes_in_group("npc")
-		for node in npcs:
-			if not (node is Node2D) or not (node as Node2D).is_visible_in_tree():
-				continue
-			var n2d: Node2D = node as Node2D
-			var gpos: Vector2 = n2d.global_position
-			if mouse_world.distance_to(gpos + Vector2(0.0, -18.0)) <= 26.0:
-				candidate = n2d
-				candidate_top_offset = -48.0
-				break
 
 	if candidate != null:
 		if candidate == _hovered_node:
 			_hover_timer += delta
-			if _hover_timer >= 1.0:
+			if _hover_timer >= 0.2:
 				_inspect_alpha = move_toward(_inspect_alpha, 1.0, delta * 4.5)
 				_inspect_card.visible = true
 				_populate_inspect_card(candidate)

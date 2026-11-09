@@ -10,6 +10,8 @@ var _armor_slots: Dictionary = {} # slot_key -> MCSlot ("head", "chest", "legs",
 var _inv_slots: Array = []
 var _hotbar_slots: Array = []
 var _hovered_slot_index: int = -1
+var _inspected_slot_index: int = -1
+var _use_button: Button = null
 
 # Floating cursor stack for Minecraft drag & drop
 var _cursor_stack: Dictionary = {}
@@ -43,7 +45,14 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	_build_minecraft_inventory_ui()
+	if _tooltip_panel != null:
+		SurvivalTheme.ignore_pointer(_tooltip_panel)
+	SurvivalTheme.apply_to(self)
 	SignalBus.ui_panel_requested.connect(_on_panel_requested)
+	SignalBus.save_data_requested.connect(func(_bundle: Dictionary) -> void: _return_cursor_stack_to_player())
+	SignalBus.save_data_loaded.connect(func(_bundle: Dictionary) -> void:
+		_cursor_stack.clear()
+		close_panel())
 	SignalBus.ui_close_all_requested.connect(close_panel)
 	SignalBus.inventory_changed.connect(_on_inventory_changed)
 	SignalBus.equipment_changed.connect(func(_s: String, _id: String) -> void:
@@ -62,6 +71,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		elif k.keycode == KEY_Q:
 			_drop_hovered_or_cursor_item(k.ctrl_pressed)
+			get_viewport().set_input_as_handled()
+		elif k.keycode == KEY_F:
+			_request_use(_hovered_slot_index if _hovered_slot_index >= 0 else _inspected_slot_index)
 			get_viewport().set_input_as_handled()
 		elif k.keycode >= KEY_1 and k.keycode <= KEY_8:
 			var target_hotbar: int = k.keycode - KEY_1
@@ -101,6 +113,7 @@ func _process(_delta: float) -> void:
 
 
 func open_panel() -> void:
+	SignalBus.ui_close_all_requested.emit()
 	visible = true
 	refresh()
 	SignalBus.ui_panel_toggled.emit(PANEL_ID, true, true)
@@ -171,6 +184,7 @@ func _build_minecraft_inventory_ui() -> void:
 	if ResourceLoader.exists("res://assets/sprites/ui/fullscreen_survival_bg.jpg"):
 		bg_tex.texture = load("res://assets/sprites/ui/fullscreen_survival_bg.jpg")
 	add_child(bg_tex)
+	bg_tex.modulate = Color(0.40, 0.44, 0.36)
 
 	# 2. Main Full-Screen Layout Panel
 	_panel = PanelContainer.new()
@@ -181,7 +195,7 @@ func _build_minecraft_inventory_ui() -> void:
 	_panel.offset_bottom = 0
 
 	var win_sb: StyleBoxFlat = StyleBoxFlat.new()
-	win_sb.bg_color = Color(0.06, 0.07, 0.08, 0.40) # Tint over texture
+	win_sb.bg_color = Color(0.10, 0.12, 0.09, 0.94)
 	win_sb.border_color = Color(0.20, 0.22, 0.26, 0.85)
 	win_sb.set_border_width_all(2)
 	win_sb.set_corner_radius_all(0)
@@ -255,7 +269,11 @@ func _build_minecraft_inventory_ui() -> void:
 	body_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body_hbox.add_theme_constant_override("separation", 20)
-	main_vbox.add_child(body_hbox)
+	var body_scroll: ScrollContainer = ScrollContainer.new()
+	body_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_vbox.add_child(body_scroll)
+	body_scroll.add_child(body_hbox)
 
 	# LEFT COLUMN: Equipment & Integrated Status Cards (280px)
 	var left_col: VBoxContainer = VBoxContainer.new()
@@ -489,8 +507,11 @@ func _build_minecraft_inventory_ui() -> void:
 		hotbar_grid.add_child(s)
 
 	var hint_lbl: Label = Label.new()
-	hint_lbl.text = "ЛКМ: Взять/Сложить  |  ПКМ: Разделить 1  |  Shift+ЛКМ: Быстро переместить  |  Q: Выбросить"
+	hint_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint_lbl.text = "LMB: Move | RMB: Eat / Use / Equip | Shift+RMB: Split | Shift+LMB: Quick move | F: Use | Q: Drop"
 	hint_lbl.add_theme_font_size_override("font_size", 10)
+	hint_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint_lbl.custom_minimum_size.x = 380
 	hint_lbl.modulate = Color(0.55, 0.58, 0.64, 1.0)
 	center_col.add_child(hint_lbl)
 
@@ -562,6 +583,11 @@ func _build_minecraft_inventory_ui() -> void:
 	_insp_panel_desc.add_theme_font_size_override("font_size", 10)
 	_insp_panel_desc.modulate = Color(0.65, 0.68, 0.74)
 	r_vbox.add_child(_insp_panel_desc)
+	_use_button = Button.new()
+	_use_button.text = "Use selected item [F]"
+	_use_button.disabled = true
+	_use_button.pressed.connect(func() -> void: _request_use(_inspected_slot_index))
+	r_vbox.add_child(_use_button)
 
 	# Floating Cursor Item View
 	_cursor_display = Control.new()
@@ -631,7 +657,7 @@ func _build_floating_tooltip() -> void:
 	vb.add_child(_tt_stats)
 
 	_tt_hint = Label.new()
-	_tt_hint.text = "LMB: Pick/Swap • RMB: Split/1 • Shift+LMB: Quick Move"
+	_tt_hint.text = "RMB / F: Eat, use or equip | Shift+RMB: Split | Shift+LMB: Quick move"
 	_tt_hint.add_theme_font_size_override("font_size", 8)
 	_tt_hint.modulate = Color(0.55, 0.58, 0.65)
 	vb.add_child(_tt_hint)
@@ -718,6 +744,9 @@ func _on_slot_clicked(slot_index: int, mouse_button: int, is_shift: bool) -> voi
 		return
 
 	var slot_item: Dictionary = inv.get_slot(slot_index)
+	_inspected_slot_index = slot_index
+	if mouse_button == MOUSE_BUTTON_RIGHT and not is_shift and _cursor_stack.is_empty() and _request_use(slot_index):
+		return
 
 	# 1. Shift + Left Click: Instant Quick Move (Minecraft-style)
 	if is_shift and mouse_button == MOUSE_BUTTON_LEFT:
@@ -805,6 +834,24 @@ func _on_slot_clicked(slot_index: int, mouse_button: int, is_shift: bool) -> voi
 	refresh()
 	# Update tooltip for newly modified slot
 	_on_slot_hovered(slot_index)
+
+
+func _request_use(slot_index: int) -> bool:
+	if slot_index < 0 or not _cursor_stack.is_empty():
+		return false
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if player == null:
+		return false
+	var inventory: InventoryComponent = player.get("inventory") as InventoryComponent
+	var slot: Dictionary = inventory.get_slot(slot_index)
+	var id: String = str(slot.get("item_id", ""))
+	var type: String = str(DataRegistry.get_item(id).get("type", ""))
+	var equipment: EquipmentComponent = player.get("equipment") as EquipmentComponent
+	if type not in ["food", "consumable", "medical", "medicine", "weapon", "tool"] and (equipment == null or not equipment.can_equip(id)):
+		return false
+	SignalBus.item_use_requested.emit(player, slot_index)
+	refresh()
+	return true
 
 
 func _on_armor_slot_clicked(slot_key: String, mouse_button: int, shift: bool) -> void:
@@ -900,6 +947,7 @@ func _on_armor_slot_clicked(slot_key: String, mouse_button: int, shift: bool) ->
 
 
 func _on_slot_hovered(slot_index: int) -> void:
+	_inspected_slot_index = slot_index
 	var player: Node = get_tree().get_first_node_in_group("player")
 	if player == null:
 		return
@@ -907,6 +955,8 @@ func _on_slot_hovered(slot_index: int) -> void:
 	if inv == null:
 		return
 	var s: Dictionary = inv.get_slot(slot_index)
+	if _use_button != null and s.is_empty():
+		_use_button.disabled = true
 	_show_item_tooltip(s)
 
 
@@ -921,6 +971,9 @@ func _on_armor_slot_hovered(slot_key: String) -> void:
 	var eq: EquipmentComponent = player.get("equipment") as EquipmentComponent
 	if eq == null:
 		return
+	_inspected_slot_index = -1
+	if _use_button != null:
+		_use_button.disabled = true
 	var it_id: String = eq.get_item_id(slot_key)
 	if it_id != "":
 		_show_item_tooltip({"item_id": it_id, "count": 1, "durability": eq.get_durability(slot_key)})
@@ -945,6 +998,7 @@ func _show_item_tooltip(item: Dictionary) -> void:
 	_tt_type.text = "[ %s ]" % itype
 
 	var stats_list: Array[String] = []
+	stats_list.append_array(_effect_description(def))
 	if def.has("damage"):
 		stats_list.append("Attack Damage: +%d" % int(def["damage"]))
 	if def.has("defense"):
@@ -974,6 +1028,12 @@ func _update_side_inspector(item: Dictionary) -> void:
 	var def: Dictionary = DataRegistry.get_item(item_id)
 	var title: String = str(def.get("name", item_id.capitalize().replace("_", " ")))
 	var itype: String = str(def.get("type", "material")).capitalize()
+	if _use_button != null:
+		_use_button.text = "Eat [F]" if str(def.get("type", "")) == "food" else "Use / Equip [F]"
+		var player: Node = get_tree().get_first_node_in_group("player")
+		var equipment: EquipmentComponent = player.get("equipment") as EquipmentComponent if player != null else null
+		var usable: bool = str(def.get("type", "")) in ["food", "consumable", "medical", "medicine", "weapon", "tool"] or (equipment != null and equipment.can_equip(item_id))
+		_use_button.disabled = _inspected_slot_index < 0 or not usable or not _cursor_stack.is_empty()
 
 	if _insp_panel_icon != null:
 		_insp_panel_icon.texture = IconFactory.get_icon(item_id)
@@ -982,6 +1042,7 @@ func _update_side_inspector(item: Dictionary) -> void:
 		_insp_panel_type.text = "[ %s ]" % itype
 
 	var stats_lines: Array[String] = []
+	stats_lines.append_array(_effect_description(def))
 	if def.has("damage"):
 		stats_lines.append("Урон атаки: +%d" % int(def["damage"]))
 	if def.has("defense"):
@@ -1004,20 +1065,47 @@ func _update_side_inspector(item: Dictionary) -> void:
 		_insp_panel_desc.text = desc if desc != "" else "Предмет готов к использованию или обработке."
 
 
+func _effect_description(definition: Dictionary) -> Array[String]:
+	var result: Array[String] = []
+	var stats: Dictionary = definition.get("stats", {})
+	for key in ["damage", "defense", "nutrition", "heal", "stamina"]:
+		if float(stats.get(key, 0.0)) != 0.0:
+			result.append("%s: +%.1f" % [str(key).capitalize(), float(stats[key])])
+	if bool(stats.get("stop_bleeding", false)):
+		result.append("Stops bleeding")
+	if str(stats.get("apply_status", "")) != "":
+		result.append("Effect: " + str(stats["apply_status"]).replace("_", " "))
+	return result
+
+
 func _hide_tooltip() -> void:
 	if _tooltip_panel != null:
 		_tooltip_panel.visible = false
 
 
-func _drop_hovered_or_cursor_item(_drop_all: bool) -> void:
+func _drop_hovered_or_cursor_item(drop_all: bool) -> void:
+	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
+	if player == null:
+		return
+	var entry: Dictionary = {}
 	if not _cursor_stack.is_empty():
-		# Drop from cursor onto ground
-		var it_id: String = str(_cursor_stack.get("item_id", ""))
-		var count: int = int(_cursor_stack.get("count", 1))
-		SignalBus.notification_posted.emit("Dropped %s x%d." % [it_id.capitalize(), count])
-		_cursor_stack = {}
-		_update_cursor_display()
-		refresh()
+		entry = _cursor_stack.duplicate(true)
+		var count: int = int(entry.get("count", 0))
+		var amount: int = count if drop_all else mini(1, count)
+		entry["count"] = amount
+		_cursor_stack["count"] = count - amount
+		if int(_cursor_stack["count"]) <= 0:
+			_cursor_stack = {}
+	elif _hovered_slot_index >= 0:
+		var inventory: InventoryComponent = player.get("inventory") as InventoryComponent
+		var slot: Dictionary = inventory.get_slot(_hovered_slot_index)
+		entry = inventory.remove_at_index(_hovered_slot_index, int(slot.get("count", 0)) if drop_all else 1)
+	if int(entry.get("count", 0)) > 0:
+		SignalBus.loot_bag_spawned.emit(player.global_position, [entry], 0)
+		SignalBus.item_dropped.emit(str(entry.get("item_id", "")), int(entry["count"]))
+		SignalBus.inventory_changed.emit(player, player.inventory.snapshot())
+	_update_cursor_display()
+	refresh()
 
 
 func _return_cursor_stack_to_player() -> void:
@@ -1029,7 +1117,9 @@ func _return_cursor_stack_to_player() -> void:
 		var it_id: String = str(_cursor_stack.get("item_id", ""))
 		var cnt: int = int(_cursor_stack.get("count", 1))
 		var dur: int = int(_cursor_stack.get("durability", -1))
-		inv.add_item(it_id, cnt, dur)
+		var added: int = inv.add_item(it_id, cnt, dur)
+		if added < cnt and player is Node2D:
+			SignalBus.loot_bag_spawned.emit(player.global_position, [{"item_id": it_id, "count": cnt - added, "durability": dur}], 0)
 	_cursor_stack = {}
 	_update_cursor_display()
 

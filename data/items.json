@@ -1,5 +1,16 @@
 [
 	{
+		"id": "iron_great_helm",
+		"name": "Quality Iron Pot Helm",
+		"description": "An enclosed quality iron pot helm with narrow eye slits and a short mail coif.",
+		"type": "armor_head", "equip_slot": "head",
+		"weight": 4.0, "value": 160, "stackable": false, "durability": 210,
+		"stats": {"defense": 14},
+		"visual": {"sprite": "items/iron_pot_helm.png", "color": "#94989b"},
+		"craft_requirements": {"quality_iron": 4, "tanned_leather": 1, "cloth": 1},
+		"craft_station": "forge", "skill_required": {"smithing": 24}
+	},
+	{
 		"id": "wood",
 		"name": "Wood Log",
 		"type": "material",
@@ -8,7 +19,10 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/wood.png", "color": "#8b5a2b" },
+		"visual": {
+			"sprite": "items/wood.png",
+			"color": "#8b5a2b"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -22,10 +36,17 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/plank.png", "color": "#b88655" },
-		"craft_requirements": { "wood": 1 },
+		"visual": {
+			"sprite": "items/plank.png",
+			"color": "#b88655"
+		},
+		"craft_requirements": {
+			"wood": 1
+		},
 		"craft_station": "workbench",
-		"skill_required": { "construction": 0 }
+		"skill_required": {
+			"construction": 0
+		}
 	},
 	{
 		"id": "stone",
@@ -36,7 +57,10 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/stone.png", "color": "#80868c" },
+		"visual": {
+			"sprite": "items/stone.png",
+			"color": "#80868c"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -50,7 +74,10 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/iron_ore.png", "color": "#8f563b" },
+		"visual": {
+			"sprite": "items/iron_ore.png",
+			"color": "#8f563b"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -64,7 +91,10 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/copper_ore.png", "color": "#c87533" },
+		"visual": {
+			"sprite": "items/copper_ore.png",
+			"color": "#c87533"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -78,7 +108,10 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/coal.png", "color": "#222226" },
+		"visual": {
+			"sprite": "items/coal.png",
+			"color": "#222226"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -92,7 +125,10 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/gold_ore.png", "color": "#e6b820" },
+		"visual": {
+			"sprite": "items/gold_ore.png",
+			"color": "#e6b820"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -106,7 +142,10 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/tin_ore.png", "color": "#7a8f9e" },
+		"visual": {
+			"sprite": "items/tin_ore.png",
+			"color": "#7a8f9e"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -120,10 +159,17 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/iron_ingot.png", "color": "#a2aeb8" },
-		"craft_requirements": { "iron_ore": 2 },
+		"visual": {
+			"sprite": "items/iron_ingot.png",
+			"color": "#a2aeb8"
+		},
+		"craft_requirements": {
+			"iron_ore": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 5 }
+		"skill_required": {
+			"smithing": 5
+		}
 	},
 	{
 		"id": "quality_iron",
@@ -134,10 +180,18 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/quality_iron.png", "color": "#707880" },
-		"craft_requirements": { "iron_ingot": 2, "coal": 1 },
+		"visual": {
+			"sprite": "items/quality_iron.png",
+			"color": "#707880"
+		},
+		"craft_requirements": {
+			"iron_ingot": 2,
+			"coal": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 15 }
+		"skill_required": {
+			"smithing": 15
+		}
 	},
 	{
 		"id": "steel_ingot",
@@ -148,10 +202,18 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/steel_ingot.png", "color": "#4a627a" },
-		"craft_requirements": { "quality_iron": 2, "coal": 2 },
+		"visual": {
+			"sprite": "items/steel_ingot.png",
+			"color": "#4a627a"
+		},
+		"craft_requirements": {
+			"quality_iron": 2,
+			"coal": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 30 }
+		"skill_required": {
+			"smithing": 30
+		}
 	},
 	{
 		"id": "silver_coin",
@@ -162,7 +224,10 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/silver_coin.png", "color": "#c8d0d8" },
+		"visual": {
+			"sprite": "items/silver_coin.png",
+			"color": "#c8d0d8"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -176,7 +241,10 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/gold_coin.png", "color": "#f0c840" },
+		"visual": {
+			"sprite": "items/gold_coin.png",
+			"color": "#f0c840"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -190,10 +258,18 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/bronze_ingot.png", "color": "#cd7f32" },
-		"craft_requirements": { "copper_ore": 1, "tin_ore": 1 },
+		"visual": {
+			"sprite": "items/bronze_ingot.png",
+			"color": "#cd7f32"
+		},
+		"craft_requirements": {
+			"copper_ore": 1,
+			"tin_ore": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 0 }
+		"skill_required": {
+			"smithing": 0
+		}
 	},
 	{
 		"id": "wool",
@@ -204,7 +280,10 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/wool.png", "color": "#f0ede6" },
+		"visual": {
+			"sprite": "items/wool.png",
+			"color": "#f0ede6"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -218,8 +297,13 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/cloth.png", "color": "#d8cfc2" },
-		"craft_requirements": { "wool": 2 },
+		"visual": {
+			"sprite": "items/cloth.png",
+			"color": "#d8cfc2"
+		},
+		"craft_requirements": {
+			"herb": 2
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -232,10 +316,18 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/quality_cloth.png", "color": "#8c2834" },
-		"craft_requirements": { "cloth": 2, "wool": 1 },
+		"visual": {
+			"sprite": "items/quality_cloth.png",
+			"color": "#8c2834"
+		},
+		"craft_requirements": {
+			"cloth": 2,
+			"wool": 1
+		},
 		"craft_station": "workbench",
-		"skill_required": { "crafting": 3 }
+		"skill_required": {
+			"crafting": 3
+		}
 	},
 	{
 		"id": "raw_leather",
@@ -246,7 +338,10 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/raw_leather.png", "color": "#7c4d2b" },
+		"visual": {
+			"sprite": "items/raw_leather.png",
+			"color": "#7c4d2b"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -260,10 +355,17 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/treated_leather.png", "color": "#94582f" },
-		"craft_requirements": { "raw_leather": 1 },
+		"visual": {
+			"sprite": "items/treated_leather.png",
+			"color": "#94582f"
+		},
+		"craft_requirements": {
+			"raw_leather": 1
+		},
 		"craft_station": "workbench",
-		"skill_required": { "crafting": 2 }
+		"skill_required": {
+			"crafting": 2
+		}
 	},
 	{
 		"id": "tanned_leather",
@@ -274,10 +376,18 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/tanned_leather.png", "color": "#4a2a19" },
-		"craft_requirements": { "treated_leather": 2, "wood": 2 },
+		"visual": {
+			"sprite": "items/tanned_leather.png",
+			"color": "#4a2a19"
+		},
+		"craft_requirements": {
+			"treated_leather": 2,
+			"wood": 2
+		},
 		"craft_station": "workbench",
-		"skill_required": { "crafting": 4 }
+		"skill_required": {
+			"crafting": 4
+		}
 	},
 	{
 		"id": "herb",
@@ -288,7 +398,10 @@
 		"stackable": true,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/herb.png", "color": "#4da64d" },
+		"visual": {
+			"sprite": "items/herb.png",
+			"color": "#4da64d"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -301,9 +414,17 @@
 		"value": 2,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "damage": 6 },
-		"visual": { "sprite": "items/arrow.png", "color": "#c2a878" },
-		"craft_requirements": { "wood": 4, "stone": 1 },
+		"stats": {
+			"damage": 6
+		},
+		"visual": {
+			"sprite": "items/arrow.png",
+			"color": "#c2a878"
+		},
+		"craft_requirements": {
+			"wood": 4,
+			"stone": 1
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -315,8 +436,14 @@
 		"value": 4,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "nutrition": 10.0, "heal": 0.0 },
-		"visual": { "sprite": "items/berries.png", "color": "#c9384a" },
+		"stats": {
+			"nutrition": 10.0,
+			"heal": 0.0
+		},
+		"visual": {
+			"sprite": "items/berries.png",
+			"color": "#c9384a"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -329,8 +456,13 @@
 		"value": 8,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "nutrition": 12.0 },
-		"visual": { "sprite": "items/food_raw.png", "color": "#b84a4a" },
+		"stats": {
+			"nutrition": 12.0
+		},
+		"visual": {
+			"sprite": "items/food_raw.png",
+			"color": "#b84a4a"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -343,11 +475,21 @@
 		"value": 18,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "nutrition": 38.0, "heal": 10.0 },
-		"visual": { "sprite": "items/cooked_food.png", "color": "#8f4724" },
-		"craft_requirements": { "food_raw": 1 },
+		"stats": {
+			"nutrition": 38.0,
+			"heal": 10.0
+		},
+		"visual": {
+			"sprite": "items/cooked_food.png",
+			"color": "#8f4724"
+		},
+		"craft_requirements": {
+			"food_raw": 1
+		},
 		"craft_station": "campfire",
-		"skill_required": { "cooking": 0 }
+		"skill_required": {
+			"cooking": 0
+		}
 	},
 	{
 		"id": "hunters_stew",
@@ -357,11 +499,23 @@
 		"value": 32,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "nutrition": 65.0, "heal": 0.0, "apply_status": "well_fed" },
-		"visual": { "sprite": "items/hunters_stew.png", "color": "#a85c28" },
-		"craft_requirements": { "food_raw": 2, "herb": 2 },
+		"stats": {
+			"nutrition": 65.0,
+			"heal": 0.0,
+			"apply_status": "well_fed"
+		},
+		"visual": {
+			"sprite": "items/hunters_stew.png",
+			"color": "#a85c28"
+		},
+		"craft_requirements": {
+			"food_raw": 2,
+			"herb": 2
+		},
 		"craft_station": "campfire",
-		"skill_required": { "cooking": 10 }
+		"skill_required": {
+			"cooking": 10
+		}
 	},
 	{
 		"id": "bread",
@@ -371,9 +525,17 @@
 		"value": 12,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "nutrition": 28.0 },
-		"visual": { "sprite": "items/bread.png", "color": "#c9964c" },
-		"craft_requirements": {},
+		"stats": {
+			"nutrition": 28.0
+		},
+		"visual": {
+			"sprite": "items/bread.png",
+			"color": "#c9964c"
+		},
+		"craft_requirements": {
+			"flour": 1,
+			"water_bottle": 1
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -385,9 +547,18 @@
 		"value": 15,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "heal": 15.0, "cure_status": "bleeding", "stop_bleeding": true },
-		"visual": { "sprite": "items/bandage.png", "color": "#e8e4dc" },
-		"craft_requirements": { "cloth": 2 },
+		"stats": {
+			"heal": 15.0,
+			"cure_status": "bleeding",
+			"stop_bleeding": true
+		},
+		"visual": {
+			"sprite": "items/bandage.png",
+			"color": "#e8e4dc"
+		},
+		"craft_requirements": {
+			"cloth": 2
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -399,11 +570,23 @@
 		"value": 35,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "heal": 45.0, "cure_status": "bleeding", "stop_bleeding": true },
-		"visual": { "sprite": "items/medicine.png", "color": "#52b788" },
-		"craft_requirements": { "herb": 3, "cloth": 1 },
+		"stats": {
+			"heal": 45.0,
+			"cure_status": "bleeding",
+			"stop_bleeding": true
+		},
+		"visual": {
+			"sprite": "items/medicine.png",
+			"color": "#52b788"
+		},
+		"craft_requirements": {
+			"herb": 3,
+			"cloth": 1
+		},
 		"craft_station": "workbench",
-		"skill_required": { "alchemy": 10 }
+		"skill_required": {
+			"alchemy": 10
+		}
 	},
 	{
 		"id": "stone_axe",
@@ -421,8 +604,14 @@
 			"range": "melee",
 			"tool_type": "axe"
 		},
-		"visual": { "sprite": "items/stone_axe.png", "color": "#949ba1" },
-		"craft_requirements": { "wood": 2, "stone": 2 },
+		"visual": {
+			"sprite": "items/stone_axe.png",
+			"color": "#949ba1"
+		},
+		"craft_requirements": {
+			"wood": 2,
+			"stone": 2
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -442,8 +631,14 @@
 			"range": "melee",
 			"tool_type": "pickaxe"
 		},
-		"visual": { "sprite": "items/stone_pickaxe.png", "color": "#7d858c" },
-		"craft_requirements": { "wood": 2, "stone": 3 },
+		"visual": {
+			"sprite": "items/stone_pickaxe.png",
+			"color": "#7d858c"
+		},
+		"craft_requirements": {
+			"wood": 2,
+			"stone": 3
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -462,8 +657,14 @@
 			"attack_speed": 1.1,
 			"range": "melee"
 		},
-		"visual": { "sprite": "items/stone_sword.png", "color": "#80868c" },
-		"craft_requirements": { "wood": 1, "stone": 3 },
+		"visual": {
+			"sprite": "items/stone_sword.png",
+			"color": "#80868c"
+		},
+		"craft_requirements": {
+			"wood": 1,
+			"stone": 3
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -482,8 +683,14 @@
 			"attack_speed": 1.45,
 			"range": "melee"
 		},
-		"visual": { "sprite": "items/stone_dagger.png", "color": "#4f5459" },
-		"craft_requirements": { "wood": 1, "stone": 1 },
+		"visual": {
+			"sprite": "items/stone_dagger.png",
+			"color": "#4f5459"
+		},
+		"craft_requirements": {
+			"wood": 1,
+			"stone": 1
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -504,10 +711,18 @@
 			"tool_type": "pickaxe",
 			"mining_power": 1
 		},
-		"visual": { "sprite": "items/bronze_pickaxe.png", "color": "#cd7f32" },
-		"craft_requirements": { "bronze_ingot": 2, "wood": 2 },
+		"visual": {
+			"sprite": "items/bronze_pickaxe.png",
+			"color": "#cd7f32"
+		},
+		"craft_requirements": {
+			"bronze_ingot": 2,
+			"wood": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 8 }
+		"skill_required": {
+			"smithing": 8
+		}
 	},
 	{
 		"id": "bronze_axe",
@@ -525,10 +740,18 @@
 			"range": "melee",
 			"tool_type": "axe"
 		},
-		"visual": { "sprite": "items/bronze_axe.png", "color": "#cd7f32" },
-		"craft_requirements": { "bronze_ingot": 2, "wood": 2 },
+		"visual": {
+			"sprite": "items/bronze_axe.png",
+			"color": "#cd7f32"
+		},
+		"craft_requirements": {
+			"bronze_ingot": 2,
+			"wood": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 8 }
+		"skill_required": {
+			"smithing": 8
+		}
 	},
 	{
 		"id": "bronze_sword",
@@ -545,10 +768,18 @@
 			"attack_speed": 1.15,
 			"range": "melee"
 		},
-		"visual": { "sprite": "items/bronze_sword.png", "color": "#cd7f32" },
-		"craft_requirements": { "bronze_ingot": 3, "wood": 2 },
+		"visual": {
+			"sprite": "items/bronze_sword.png",
+			"color": "#cd7f32"
+		},
+		"craft_requirements": {
+			"bronze_ingot": 3,
+			"wood": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 10 }
+		"skill_required": {
+			"smithing": 10
+		}
 	},
 	{
 		"id": "bronze_dagger",
@@ -565,10 +796,18 @@
 			"attack_speed": 1.5,
 			"range": "melee"
 		},
-		"visual": { "sprite": "items/bronze_dagger.png", "color": "#cd7f32" },
-		"craft_requirements": { "bronze_ingot": 1, "wood": 1 },
+		"visual": {
+			"sprite": "items/bronze_dagger.png",
+			"color": "#cd7f32"
+		},
+		"craft_requirements": {
+			"bronze_ingot": 1,
+			"wood": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 6 }
+		"skill_required": {
+			"smithing": 6
+		}
 	},
 	{
 		"id": "iron_pickaxe",
@@ -587,10 +826,18 @@
 			"tool_type": "pickaxe",
 			"mining_power": 2
 		},
-		"visual": { "sprite": "items/iron_pickaxe.png", "color": "#b8c2cc" },
-		"craft_requirements": { "iron_ingot": 3, "wood": 2 },
+		"visual": {
+			"sprite": "items/iron_pickaxe.png",
+			"color": "#b8c2cc"
+		},
+		"craft_requirements": {
+			"iron_ingot": 3,
+			"wood": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 15 }
+		"skill_required": {
+			"smithing": 15
+		}
 	},
 	{
 		"id": "iron_shield",
@@ -604,10 +851,18 @@
 		"stats": {
 			"defense": 22
 		},
-		"visual": { "sprite": "items/iron_shield.png", "color": "#7c858e" },
-		"craft_requirements": { "iron_ingot": 4, "wood": 2 },
+		"visual": {
+			"sprite": "items/iron_shield.png",
+			"color": "#7c858e"
+		},
+		"craft_requirements": {
+			"iron_ingot": 4,
+			"wood": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 18 }
+		"skill_required": {
+			"smithing": 18
+		}
 	},
 	{
 		"id": "iron_axe",
@@ -625,10 +880,18 @@
 			"range": "melee",
 			"tool_type": "axe"
 		},
-		"visual": { "sprite": "items/iron_axe.png", "color": "#b0bac2" },
-		"craft_requirements": { "iron_ingot": 3, "wood": 2 },
+		"visual": {
+			"sprite": "items/iron_axe.png",
+			"color": "#b0bac2"
+		},
+		"craft_requirements": {
+			"iron_ingot": 3,
+			"wood": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 15 }
+		"skill_required": {
+			"smithing": 15
+		}
 	},
 	{
 		"id": "bronze_spear",
@@ -645,10 +908,18 @@
 			"attack_speed": 1.15,
 			"range": "melee"
 		},
-		"visual": { "sprite": "items/bronze_spear.png", "color": "#cd7f32" },
-		"craft_requirements": { "bronze_ingot": 2, "wood": 2 },
+		"visual": {
+			"sprite": "items/bronze_spear.png",
+			"color": "#cd7f32"
+		},
+		"craft_requirements": {
+			"bronze_ingot": 2,
+			"wood": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 8 }
+		"skill_required": {
+			"smithing": 8
+		}
 	},
 	{
 		"id": "iron_sword",
@@ -665,10 +936,18 @@
 			"attack_speed": 1.25,
 			"range": "melee"
 		},
-		"visual": { "sprite": "items/iron_sword.png", "color": "#c0c8d0" },
-		"craft_requirements": { "iron_ingot": 3, "wood": 1 },
+		"visual": {
+			"sprite": "items/iron_sword.png",
+			"color": "#c0c8d0"
+		},
+		"craft_requirements": {
+			"iron_ingot": 3,
+			"wood": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 20 }
+		"skill_required": {
+			"smithing": 20
+		}
 	},
 	{
 		"id": "hunting_bow",
@@ -685,10 +964,18 @@
 			"attack_speed": 1.1,
 			"range": "ranged"
 		},
-		"visual": { "sprite": "items/hunting_bow.png", "color": "#8c5828" },
-		"craft_requirements": { "wood": 3, "cloth": 1 },
+		"visual": {
+			"sprite": "items/hunting_bow.png",
+			"color": "#8c5828"
+		},
+		"craft_requirements": {
+			"wood": 3,
+			"cloth": 1
+		},
 		"craft_station": "workbench",
-		"skill_required": { "woodcutting": 10 }
+		"skill_required": {
+			"woodcutting": 10
+		}
 	},
 	{
 		"id": "heavy_crossbow",
@@ -707,10 +994,18 @@
 			"weapon_archetype": "crossbow",
 			"armor_penetration": 0.35
 		},
-		"visual": { "sprite": "items/heavy_crossbow.png", "color": "#6e7680" },
-		"craft_requirements": { "iron_ingot": 3, "plank": 2 },
+		"visual": {
+			"sprite": "items/heavy_crossbow.png",
+			"color": "#6e7680"
+		},
+		"craft_requirements": {
+			"iron_ingot": 3,
+			"plank": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 22 }
+		"skill_required": {
+			"smithing": 22
+		}
 	},
 	{
 		"id": "iron_dagger",
@@ -727,10 +1022,18 @@
 			"attack_speed": 1.55,
 			"range": "melee"
 		},
-		"visual": { "sprite": "items/iron_dagger.png", "color": "#c0c8d0" },
-		"craft_requirements": { "iron_ingot": 1, "wood": 1 },
+		"visual": {
+			"sprite": "items/iron_dagger.png",
+			"color": "#c0c8d0"
+		},
+		"craft_requirements": {
+			"iron_ingot": 1,
+			"wood": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 8 }
+		"skill_required": {
+			"smithing": 8
+		}
 	},
 	{
 		"id": "war_hammer",
@@ -749,10 +1052,18 @@
 			"weapon_archetype": "hammer",
 			"sunder_armor": true
 		},
-		"visual": { "sprite": "items/war_hammer.png", "color": "#8c96a0" },
-		"craft_requirements": { "iron_ingot": 4, "wood": 2 },
+		"visual": {
+			"sprite": "items/war_hammer.png",
+			"color": "#8c96a0"
+		},
+		"craft_requirements": {
+			"iron_ingot": 4,
+			"wood": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 22 }
+		"skill_required": {
+			"smithing": 22
+		}
 	},
 	{
 		"id": "iron_war_pick",
@@ -769,12 +1080,20 @@
 			"attack_speed": 1.1,
 			"range": "melee",
 			"weapon_archetype": "war_pick",
-			"armor_penetration": 0.40
+			"armor_penetration": 0.4
 		},
-		"visual": { "sprite": "items/iron_war_pick.png", "color": "#7e8894" },
-		"craft_requirements": { "iron_ingot": 3, "wood": 2 },
+		"visual": {
+			"sprite": "items/iron_war_pick.png",
+			"color": "#7e8894"
+		},
+		"craft_requirements": {
+			"iron_ingot": 3,
+			"wood": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 18 }
+		"skill_required": {
+			"smithing": 18
+		}
 	},
 	{
 		"id": "wooden_shield",
@@ -785,11 +1104,21 @@
 		"value": 50,
 		"stackable": false,
 		"durability": 110,
-		"stats": { "defense": 10 },
-		"visual": { "sprite": "items/wooden_shield.png", "color": "#8b5a2b" },
-		"craft_requirements": { "wood": 3, "iron_ingot": 1 },
+		"stats": {
+			"defense": 10
+		},
+		"visual": {
+			"sprite": "items/wooden_shield.png",
+			"color": "#8b5a2b"
+		},
+		"craft_requirements": {
+			"plank": 3,
+			"raw_leather": 1
+		},
 		"craft_station": "workbench",
-		"skill_required": { "construction": 5 }
+		"skill_required": {
+			"construction": 5
+		}
 	},
 	{
 		"id": "leather_armor",
@@ -800,9 +1129,17 @@
 		"value": 30,
 		"stackable": false,
 		"durability": 65,
-		"stats": { "defense": 4 },
-		"visual": { "sprite": "items/leather_armor.png", "color": "#7f4f24" },
-		"craft_requirements": { "raw_leather": 4, "cloth": 1 },
+		"stats": {
+			"defense": 4
+		},
+		"visual": {
+			"sprite": "items/leather_armor.png",
+			"color": "#7f4f24"
+		},
+		"craft_requirements": {
+			"raw_leather": 4,
+			"cloth": 1
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -815,11 +1152,21 @@
 		"value": 70,
 		"stackable": false,
 		"durability": 120,
-		"stats": { "defense": 7 },
-		"visual": { "sprite": "items/chainmail_coif.png", "color": "#9aa4ad" },
-		"craft_requirements": { "iron_ingot": 2, "cloth": 1 },
+		"stats": {
+			"defense": 7
+		},
+		"visual": {
+			"sprite": "items/chainmail_coif.png",
+			"color": "#9aa4ad"
+		},
+		"craft_requirements": {
+			"iron_ingot": 2,
+			"cloth": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 18 }
+		"skill_required": {
+			"smithing": 18
+		}
 	},
 	{
 		"id": "iron_chainmail",
@@ -830,11 +1177,21 @@
 		"value": 140,
 		"stackable": false,
 		"durability": 160,
-		"stats": { "defense": 22 },
-		"visual": { "sprite": "items/iron_chainmail.png", "color": "#a8b2bd" },
-		"craft_requirements": { "iron_ingot": 5, "cloth": 2 },
+		"stats": {
+			"defense": 22
+		},
+		"visual": {
+			"sprite": "items/iron_chainmail.png",
+			"color": "#a8b2bd"
+		},
+		"craft_requirements": {
+			"iron_ingot": 5,
+			"cloth": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 25 }
+		"skill_required": {
+			"smithing": 25
+		}
 	},
 	{
 		"id": "torch",
@@ -854,8 +1211,14 @@
 			"attack_speed": 1.1,
 			"range": "melee"
 		},
-		"visual": { "sprite": "items/torch.png", "color": "#f59e0b" },
-		"craft_requirements": { "wood": 1, "cloth": 1 },
+		"visual": {
+			"sprite": "items/torch.png",
+			"color": "#f59e0b"
+		},
+		"craft_requirements": {
+			"wood": 1,
+			"cloth": 1
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -868,41 +1231,76 @@
 		"value": 110,
 		"stackable": false,
 		"durability": 150,
-		"stats": { "defense": 13 },
-		"visual": { "sprite": "items/iron_greaves.png", "color": "#949ea8" },
-		"craft_requirements": { "iron_ingot": 3, "treated_leather": 1 },
+		"stats": {
+			"defense": 13
+		},
+		"visual": {
+			"sprite": "items/iron_greaves.png",
+			"color": "#949ea8"
+		},
+		"craft_requirements": {
+			"iron_ingot": 3,
+			"treated_leather": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 20 }
+		"skill_required": {
+			"smithing": 20
+		}
 	},
 	{
 		"id": "gambeson",
 		"name": "Quilted Gambeson",
 		"type": "armor",
-		"equip_slots": ["clothing", "chest"],
+		"equip_slots": [
+			"clothing",
+			"chest"
+		],
 		"weight": 2.8,
 		"value": 45,
 		"stackable": false,
 		"durability": 90,
-		"stats": { "defense": 7 },
-		"visual": { "sprite": "items/gambeson.png", "color": "#c4a47c" },
-		"craft_requirements": { "cloth": 4 },
+		"stats": {
+			"defense": 7
+		},
+		"visual": {
+			"sprite": "items/gambeson.png",
+			"color": "#c4a47c"
+		},
+		"craft_requirements": {
+			"cloth": 4
+		},
 		"craft_station": "workbench",
-		"skill_required": { "crafting": 3 }
+		"skill_required": {
+			"crafting": 3
+		}
 	},
 	{
 		"id": "simple_chainmail",
 		"name": "Simple Iron Chainmail",
 		"type": "armor",
-		"equip_slots": ["clothing", "chest"],
+		"equip_slots": [
+			"clothing",
+			"chest"
+		],
 		"weight": 6.5,
 		"value": 110,
 		"stackable": false,
 		"durability": 130,
-		"stats": { "defense": 15 },
-		"visual": { "sprite": "items/simple_chainmail.png", "color": "#9ca7b0" },
-		"craft_requirements": { "iron_ingot": 4, "cloth": 1 },
+		"stats": {
+			"defense": 15
+		},
+		"visual": {
+			"sprite": "items/simple_chainmail.png",
+			"color": "#9ca7b0"
+		},
+		"craft_requirements": {
+			"iron_ingot": 4,
+			"cloth": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 16 }
+		"skill_required": {
+			"smithing": 16
+		}
 	},
 	{
 		"id": "iron_hauberk",
@@ -913,11 +1311,21 @@
 		"value": 165,
 		"stackable": false,
 		"durability": 190,
-		"stats": { "defense": 25 },
-		"visual": { "sprite": "items/iron_hauberk.png", "color": "#b8c2cc" },
-		"craft_requirements": { "quality_iron": 4, "cloth": 2 },
+		"stats": {
+			"defense": 25
+		},
+		"visual": {
+			"sprite": "items/iron_hauberk.png",
+			"color": "#b8c2cc"
+		},
+		"craft_requirements": {
+			"quality_iron": 4,
+			"cloth": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 24 }
+		"skill_required": {
+			"smithing": 24
+		}
 	},
 	{
 		"id": "bronze_cuirass",
@@ -928,11 +1336,21 @@
 		"value": 130,
 		"stackable": false,
 		"durability": 140,
-		"stats": { "defense": 18 },
-		"visual": { "sprite": "items/bronze_cuirass.png", "color": "#cd7f32" },
-		"craft_requirements": { "bronze_ingot": 5, "treated_leather": 2 },
+		"stats": {
+			"defense": 18
+		},
+		"visual": {
+			"sprite": "items/bronze_cuirass.png",
+			"color": "#cd7f32"
+		},
+		"craft_requirements": {
+			"bronze_ingot": 5,
+			"treated_leather": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 12 }
+		"skill_required": {
+			"smithing": 12
+		}
 	},
 	{
 		"id": "bronze_helmet",
@@ -943,11 +1361,20 @@
 		"value": 85,
 		"stackable": false,
 		"durability": 120,
-		"stats": { "defense": 8 },
-		"visual": { "sprite": "items/bronze_helmet.png", "color": "#cd7f32" },
-		"craft_requirements": { "bronze_ingot": 3 },
+		"stats": {
+			"defense": 8
+		},
+		"visual": {
+			"sprite": "items/bronze_helmet.png",
+			"color": "#cd7f32"
+		},
+		"craft_requirements": {
+			"bronze_ingot": 3
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 10 }
+		"skill_required": {
+			"smithing": 10
+		}
 	},
 	{
 		"id": "bronze_greaves",
@@ -958,11 +1385,21 @@
 		"value": 90,
 		"stackable": false,
 		"durability": 125,
-		"stats": { "defense": 9 },
-		"visual": { "sprite": "items/bronze_greaves.png", "color": "#cd7f32" },
-		"craft_requirements": { "bronze_ingot": 3, "treated_leather": 1 },
+		"stats": {
+			"defense": 9
+		},
+		"visual": {
+			"sprite": "items/bronze_greaves.png",
+			"color": "#cd7f32"
+		},
+		"craft_requirements": {
+			"bronze_ingot": 3,
+			"treated_leather": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 10 }
+		"skill_required": {
+			"smithing": 10
+		}
 	},
 	{
 		"id": "iron_armor",
@@ -973,11 +1410,21 @@
 		"value": 175,
 		"stackable": false,
 		"durability": 200,
-		"stats": { "defense": 26 },
-		"visual": { "sprite": "items/iron_armor.png", "color": "#7a848e" },
-		"craft_requirements": { "iron_ingot": 5, "treated_leather": 2 },
+		"stats": {
+			"defense": 26
+		},
+		"visual": {
+			"sprite": "items/iron_armor.png",
+			"color": "#7a848e"
+		},
+		"craft_requirements": {
+			"iron_ingot": 5,
+			"treated_leather": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 24 }
+		"skill_required": {
+			"smithing": 24
+		}
 	},
 	{
 		"id": "iron_plate_armor",
@@ -988,11 +1435,21 @@
 		"value": 195,
 		"stackable": false,
 		"durability": 220,
-		"stats": { "defense": 29 },
-		"visual": { "sprite": "items/iron_plate_armor.png", "color": "#8894a0" },
-		"craft_requirements": { "quality_iron": 5, "treated_leather": 2 },
+		"stats": {
+			"defense": 29
+		},
+		"visual": {
+			"sprite": "items/iron_plate_armor.png",
+			"color": "#8894a0"
+		},
+		"craft_requirements": {
+			"quality_iron": 5,
+			"treated_leather": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 26 }
+		"skill_required": {
+			"smithing": 26
+		}
 	},
 	{
 		"id": "iron_lamellar",
@@ -1003,11 +1460,21 @@
 		"value": 165,
 		"stackable": false,
 		"durability": 185,
-		"stats": { "defense": 24 },
-		"visual": { "sprite": "items/iron_lamellar.png", "color": "#7e8892" },
-		"craft_requirements": { "iron_ingot": 4, "treated_leather": 2 },
+		"stats": {
+			"defense": 24
+		},
+		"visual": {
+			"sprite": "items/iron_lamellar.png",
+			"color": "#7e8892"
+		},
+		"craft_requirements": {
+			"iron_ingot": 4,
+			"treated_leather": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 22 }
+		"skill_required": {
+			"smithing": 22
+		}
 	},
 	{
 		"id": "iron_scale_armor",
@@ -1018,11 +1485,21 @@
 		"value": 160,
 		"stackable": false,
 		"durability": 175,
-		"stats": { "defense": 23 },
-		"visual": { "sprite": "items/iron_scale_armor.png", "color": "#8c96a0" },
-		"craft_requirements": { "quality_iron": 4, "treated_leather": 2 },
+		"stats": {
+			"defense": 23
+		},
+		"visual": {
+			"sprite": "items/iron_scale_armor.png",
+			"color": "#8c96a0"
+		},
+		"craft_requirements": {
+			"quality_iron": 4,
+			"treated_leather": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 22 }
+		"skill_required": {
+			"smithing": 22
+		}
 	},
 	{
 		"id": "steel_cuirass",
@@ -1033,11 +1510,21 @@
 		"value": 260,
 		"stackable": false,
 		"durability": 280,
-		"stats": { "defense": 36 },
-		"visual": { "sprite": "items/steel_cuirass.png", "color": "#e2e8f0" },
-		"craft_requirements": { "steel_ingot": 4, "tanned_leather": 2 },
+		"stats": {
+			"defense": 36
+		},
+		"visual": {
+			"sprite": "items/steel_cuirass.png",
+			"color": "#e2e8f0"
+		},
+		"craft_requirements": {
+			"steel_ingot": 4,
+			"tanned_leather": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 32 }
+		"skill_required": {
+			"smithing": 32
+		}
 	},
 	{
 		"id": "steel_helmet",
@@ -1048,11 +1535,21 @@
 		"value": 170,
 		"stackable": false,
 		"durability": 240,
-		"stats": { "defense": 16 },
-		"visual": { "sprite": "items/steel_helmet.png", "color": "#e2e8f0" },
-		"craft_requirements": { "steel_ingot": 3, "tanned_leather": 1 },
+		"stats": {
+			"defense": 16
+		},
+		"visual": {
+			"sprite": "items/steel_helmet.png",
+			"color": "#e2e8f0"
+		},
+		"craft_requirements": {
+			"steel_ingot": 3,
+			"tanned_leather": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 30 }
+		"skill_required": {
+			"smithing": 30
+		}
 	},
 	{
 		"id": "steel_greaves",
@@ -1063,11 +1560,21 @@
 		"value": 180,
 		"stackable": false,
 		"durability": 250,
-		"stats": { "defense": 18 },
-		"visual": { "sprite": "items/steel_greaves.png", "color": "#e2e8f0" },
-		"craft_requirements": { "steel_ingot": 3, "tanned_leather": 1 },
+		"stats": {
+			"defense": 18
+		},
+		"visual": {
+			"sprite": "items/steel_greaves.png",
+			"color": "#e2e8f0"
+		},
+		"craft_requirements": {
+			"steel_ingot": 3,
+			"tanned_leather": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 30 }
+		"skill_required": {
+			"smithing": 30
+		}
 	},
 	{
 		"id": "leather_boots",
@@ -1078,11 +1585,20 @@
 		"value": 30,
 		"stackable": false,
 		"durability": 80,
-		"stats": { "defense": 3 },
-		"visual": { "sprite": "items/leather_boots.png", "color": "#7c4d2b" },
-		"craft_requirements": { "treated_leather": 2 },
+		"stats": {
+			"defense": 3
+		},
+		"visual": {
+			"sprite": "items/leather_boots.png",
+			"color": "#7c4d2b"
+		},
+		"craft_requirements": {
+			"raw_leather": 2
+		},
 		"craft_station": "workbench",
-		"skill_required": { "crafting": 2 }
+		"skill_required": {
+			"crafting": 2
+		}
 	},
 	{
 		"id": "bronze_boots",
@@ -1093,11 +1609,21 @@
 		"value": 55,
 		"stackable": false,
 		"durability": 110,
-		"stats": { "defense": 6 },
-		"visual": { "sprite": "items/bronze_boots.png", "color": "#cd7f32" },
-		"craft_requirements": { "bronze_ingot": 3, "treated_leather": 1 },
+		"stats": {
+			"defense": 6
+		},
+		"visual": {
+			"sprite": "items/bronze_boots.png",
+			"color": "#cd7f32"
+		},
+		"craft_requirements": {
+			"bronze_ingot": 3,
+			"treated_leather": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 10 }
+		"skill_required": {
+			"smithing": 10
+		}
 	},
 	{
 		"id": "iron_boots",
@@ -1108,11 +1634,21 @@
 		"value": 75,
 		"stackable": false,
 		"durability": 140,
-		"stats": { "defense": 8 },
-		"visual": { "sprite": "items/iron_boots.png", "color": "#949ea8" },
-		"craft_requirements": { "iron_ingot": 3, "treated_leather": 1 },
+		"stats": {
+			"defense": 8
+		},
+		"visual": {
+			"sprite": "items/iron_boots.png",
+			"color": "#949ea8"
+		},
+		"craft_requirements": {
+			"iron_ingot": 3,
+			"treated_leather": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 18 }
+		"skill_required": {
+			"smithing": 18
+		}
 	},
 	{
 		"id": "steel_boots",
@@ -1123,11 +1659,21 @@
 		"value": 150,
 		"stackable": false,
 		"durability": 220,
-		"stats": { "defense": 12 },
-		"visual": { "sprite": "items/steel_boots.png", "color": "#e2e8f0" },
-		"craft_requirements": { "steel_ingot": 3, "tanned_leather": 1 },
+		"stats": {
+			"defense": 12
+		},
+		"visual": {
+			"sprite": "items/steel_boots.png",
+			"color": "#e2e8f0"
+		},
+		"craft_requirements": {
+			"steel_ingot": 3,
+			"tanned_leather": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 28 }
+		"skill_required": {
+			"smithing": 28
+		}
 	},
 	{
 		"id": "steel_plate_armor",
@@ -1138,11 +1684,21 @@
 		"value": 360,
 		"stackable": false,
 		"durability": 340,
-		"stats": { "defense": 45 },
-		"visual": { "sprite": "items/steel_plate_armor.png", "color": "#f1f5f9" },
-		"craft_requirements": { "steel_ingot": 7, "tanned_leather": 3 },
+		"stats": {
+			"defense": 45
+		},
+		"visual": {
+			"sprite": "items/steel_plate_armor.png",
+			"color": "#f1f5f9"
+		},
+		"craft_requirements": {
+			"steel_ingot": 7,
+			"tanned_leather": 3
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 36 }
+		"skill_required": {
+			"smithing": 36
+		}
 	},
 	{
 		"id": "steel_pickaxe",
@@ -1161,10 +1717,18 @@
 			"tool_type": "pickaxe",
 			"mining_power": 3
 		},
-		"visual": { "sprite": "items/steel_pickaxe.png", "color": "#e0e8f0" },
-		"craft_requirements": { "iron_ingot": 4, "coal": 2, "wood": 2 },
+		"visual": {
+			"sprite": "items/steel_pickaxe.png",
+			"color": "#e0e8f0"
+		},
+		"craft_requirements": {
+			"steel_ingot": 4,
+			"wood": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 28 }
+		"skill_required": {
+			"smithing": 28
+		}
 	},
 	{
 		"id": "steel_axe",
@@ -1182,10 +1746,18 @@
 			"range": "melee",
 			"tool_type": "axe"
 		},
-		"visual": { "sprite": "items/steel_axe.png", "color": "#e0e8f0" },
-		"craft_requirements": { "iron_ingot": 4, "coal": 2, "wood": 2 },
+		"visual": {
+			"sprite": "items/steel_axe.png",
+			"color": "#e0e8f0"
+		},
+		"craft_requirements": {
+			"steel_ingot": 4,
+			"wood": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 28 }
+		"skill_required": {
+			"smithing": 28
+		}
 	},
 	{
 		"id": "steel_sword",
@@ -1202,10 +1774,18 @@
 			"attack_speed": 1.35,
 			"range": "melee"
 		},
-		"visual": { "sprite": "items/steel_sword.png", "color": "#f0f4f8" },
-		"craft_requirements": { "iron_ingot": 5, "coal": 3, "wood": 1 },
+		"visual": {
+			"sprite": "items/steel_sword.png",
+			"color": "#f0f4f8"
+		},
+		"craft_requirements": {
+			"steel_ingot": 5,
+			"wood": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 30 }
+		"skill_required": {
+			"smithing": 30
+		}
 	},
 	{
 		"id": "steel_dagger",
@@ -1222,10 +1802,18 @@
 			"attack_speed": 1.65,
 			"range": "melee"
 		},
-		"visual": { "sprite": "items/steel_dagger.png", "color": "#f0f4f8" },
-		"craft_requirements": { "steel_ingot": 1, "wood": 1 },
+		"visual": {
+			"sprite": "items/steel_dagger.png",
+			"color": "#f0f4f8"
+		},
+		"craft_requirements": {
+			"steel_ingot": 2,
+			"wood": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 25 }
+		"skill_required": {
+			"smithing": 25
+		}
 	},
 	{
 		"id": "wood_wall",
@@ -1238,8 +1826,13 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/wood_wall.png", "color": "#8c5a2b" },
-		"craft_requirements": { "wood": 2 },
+		"visual": {
+			"sprite": "items/wood_wall.png",
+			"color": "#8c5a2b"
+		},
+		"craft_requirements": {
+			"wood": 2
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -1254,8 +1847,13 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/plank.png", "color": "#a07040" },
-		"craft_requirements": { "wood": 1 },
+		"visual": {
+			"sprite": "items/plank.png",
+			"color": "#a07040"
+		},
+		"craft_requirements": {
+			"wood": 1
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -1270,8 +1868,13 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/stone_wall.png", "color": "#7a8288" },
-		"craft_requirements": { "stone": 2 },
+		"visual": {
+			"sprite": "items/stone_wall.png",
+			"color": "#7a8288"
+		},
+		"craft_requirements": {
+			"stone": 2
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -1286,8 +1889,13 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/stone.png", "color": "#889098" },
-		"craft_requirements": { "stone": 1 },
+		"visual": {
+			"sprite": "items/stone.png",
+			"color": "#889098"
+		},
+		"craft_requirements": {
+			"stone": 1
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -1302,8 +1910,13 @@
 		"max_stack": 16,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/wood_door.png", "color": "#8b5a2b" },
-		"craft_requirements": { "wood": 3 },
+		"visual": {
+			"sprite": "items/wood_door.png",
+			"color": "#8b5a2b"
+		},
+		"craft_requirements": {
+			"wood": 3
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -1317,8 +1930,13 @@
 		"max_stack": 16,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/empty_bottle.png", "color": "#d0e0eb" },
-		"craft_requirements": { "stone": 2 },
+		"visual": {
+			"sprite": "items/empty_bottle.png",
+			"color": "#d0e0eb"
+		},
+		"craft_requirements": {
+			"stone": 2
+		},
 		"craft_station": "furnace",
 		"skill_required": {}
 	},
@@ -1334,10 +1952,16 @@
 		"stats": {
 			"restore_thirst": 50.0,
 			"restore_hunger": 4.0,
+			"nutrition": 4.0,
 			"stamina": 20.0
 		},
-		"visual": { "sprite": "items/water_bottle.png", "color": "#4da6ff" },
-		"craft_requirements": { "empty_bottle": 1 },
+		"visual": {
+			"sprite": "items/water_bottle.png",
+			"color": "#4da6ff"
+		},
+		"craft_requirements": {
+			"empty_bottle": 1
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -1355,8 +1979,14 @@
 			"heal": 45.0,
 			"stop_bleeding": true
 		},
-		"visual": { "sprite": "items/potion_healing.png", "color": "#e62e2e" },
-		"craft_requirements": { "water_bottle": 1, "healing_herb": 2 },
+		"visual": {
+			"sprite": "items/potion_healing.png",
+			"color": "#e62e2e"
+		},
+		"craft_requirements": {
+			"water_bottle": 1,
+			"healing_herb": 2
+		},
 		"craft_station": "alchemy_station",
 		"skill_required": {}
 	},
@@ -1374,8 +2004,15 @@
 			"stamina": 100.0,
 			"apply_status": "sprint_boost"
 		},
-		"visual": { "sprite": "items/potion_stamina.png", "color": "#2ed4e6" },
-		"craft_requirements": { "water_bottle": 1, "vigor_herb": 2, "berries": 2 },
+		"visual": {
+			"sprite": "items/potion_stamina.png",
+			"color": "#2ed4e6"
+		},
+		"craft_requirements": {
+			"water_bottle": 1,
+			"vigor_herb": 2,
+			"berries": 2
+		},
 		"craft_station": "alchemy_station",
 		"skill_required": {}
 	},
@@ -1392,8 +2029,15 @@
 			"apply_status": "ironskin",
 			"stamina": 25.0
 		},
-		"visual": { "sprite": "items/potion_ironskin.png", "color": "#d49b2e" },
-		"craft_requirements": { "water_bottle": 1, "fire_herb": 2, "coal": 1 },
+		"visual": {
+			"sprite": "items/potion_ironskin.png",
+			"color": "#d49b2e"
+		},
+		"craft_requirements": {
+			"water_bottle": 1,
+			"fire_herb": 2,
+			"coal": 1
+		},
 		"craft_station": "alchemy_station",
 		"skill_required": {}
 	},
@@ -1407,7 +2051,10 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/wheat_seeds.png", "color": "#cfab5b" },
+		"visual": {
+			"sprite": "items/wheat_seeds.png",
+			"color": "#cfab5b"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -1422,7 +2069,10 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/wild_grass.png", "color": "#4da64d" },
+		"visual": {
+			"sprite": "items/wild_grass.png",
+			"color": "#4da64d"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -1440,7 +2090,10 @@
 			"restore_health": 4.0,
 			"heal": 4.0
 		},
-		"visual": { "sprite": "items/healing_herb.png", "color": "#57b84d" },
+		"visual": {
+			"sprite": "items/healing_herb.png",
+			"color": "#57b84d"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -1458,7 +2111,10 @@
 			"restore_stamina": 20.0,
 			"stamina": 20.0
 		},
-		"visual": { "sprite": "items/vigor_herb.png", "color": "#4db8a6" },
+		"visual": {
+			"sprite": "items/vigor_herb.png",
+			"color": "#4db8a6"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -1473,7 +2129,10 @@
 		"max_stack": 32,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/fire_herb.png", "color": "#d4572e" },
+		"visual": {
+			"sprite": "items/fire_herb.png",
+			"color": "#d4572e"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -1489,8 +2148,15 @@
 		"max_stack": 4,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "structures/alchemy_station.png", "color": "#4a5d4e" },
-		"craft_requirements": { "wood": 4, "stone": 2, "copper_ore": 1 },
+		"visual": {
+			"sprite": "structures/alchemy_station.png",
+			"color": "#4a5d4e"
+		},
+		"craft_requirements": {
+			"wood": 4,
+			"stone": 2,
+			"copper_ore": 1
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -1511,8 +2177,13 @@
 			"weapon_archetype": "club",
 			"stun_chance": 0.25
 		},
-		"visual": { "sprite": "items/wooden_club.png", "color": "#8b5a2b" },
-		"craft_requirements": { "wood": 4 },
+		"visual": {
+			"sprite": "items/wooden_club.png",
+			"color": "#8b5a2b"
+		},
+		"craft_requirements": {
+			"wood": 3
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -1533,8 +2204,14 @@
 			"weapon_archetype": "spear",
 			"crit_mult": 2.5
 		},
-		"visual": { "sprite": "items/wooden_spear.png", "color": "#a27546" },
-		"craft_requirements": { "plank": 2, "cloth": 1 },
+		"visual": {
+			"sprite": "items/wooden_spear.png",
+			"color": "#a27546"
+		},
+		"craft_requirements": {
+			"wood": 2,
+			"herb": 1
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -1555,10 +2232,19 @@
 			"weapon_archetype": "spear",
 			"crit_mult": 2.8
 		},
-		"visual": { "sprite": "items/iron_spear.png", "color": "#7e8892" },
-		"craft_requirements": { "quality_iron": 2, "plank": 2, "treated_leather": 1 },
+		"visual": {
+			"sprite": "items/iron_spear.png",
+			"color": "#7e8892"
+		},
+		"craft_requirements": {
+			"quality_iron": 2,
+			"plank": 2,
+			"treated_leather": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 20 }
+		"skill_required": {
+			"smithing": 20
+		}
 	},
 	{
 		"id": "steel_war_pick",
@@ -1577,10 +2263,19 @@
 			"weapon_archetype": "war_pick",
 			"sunder_armor": true
 		},
-		"visual": { "sprite": "items/steel_war_pick.png", "color": "#e0e8f0" },
-		"craft_requirements": { "steel_ingot": 4, "plank": 2, "tanned_leather": 1 },
+		"visual": {
+			"sprite": "items/steel_war_pick.png",
+			"color": "#e0e8f0"
+		},
+		"craft_requirements": {
+			"steel_ingot": 4,
+			"plank": 2,
+			"tanned_leather": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 32 }
+		"skill_required": {
+			"smithing": 32
+		}
 	},
 	{
 		"id": "primitive_bow",
@@ -1598,8 +2293,14 @@
 			"range": "ranged",
 			"weapon_archetype": "bow"
 		},
-		"visual": { "sprite": "items/primitive_bow.png", "color": "#96613d" },
-		"craft_requirements": { "wood": 4, "cloth": 2 },
+		"visual": {
+			"sprite": "items/primitive_bow.png",
+			"color": "#96613d"
+		},
+		"craft_requirements": {
+			"wood": 4,
+			"cloth": 2
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -1620,8 +2321,14 @@
 			"range": "ranged",
 			"crit_mult": 2.5
 		},
-		"visual": { "sprite": "items/javelins.png", "color": "#8c5a2b" },
-		"craft_requirements": { "plank": 2, "stone": 1 },
+		"visual": {
+			"sprite": "items/javelins.png",
+			"color": "#8c5a2b"
+		},
+		"craft_requirements": {
+			"plank": 2,
+			"stone": 1
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -1633,9 +2340,17 @@
 		"value": 5,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "damage": 12 },
-		"visual": { "sprite": "items/bronze_arrow.png", "color": "#cd7f32" },
-		"craft_requirements": { "bronze_ingot": 1, "plank": 2 },
+		"stats": {
+			"damage": 12
+		},
+		"visual": {
+			"sprite": "items/bronze_arrow.png",
+			"color": "#cd7f32"
+		},
+		"craft_requirements": {
+			"bronze_ingot": 1,
+			"plank": 2
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -1647,11 +2362,21 @@
 		"value": 8,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "damage": 17 },
-		"visual": { "sprite": "items/iron_arrow.png", "color": "#8894a0" },
-		"craft_requirements": { "iron_ingot": 1, "plank": 2, "feather": 2 },
+		"stats": {
+			"damage": 17
+		},
+		"visual": {
+			"sprite": "items/iron_arrow.png",
+			"color": "#8894a0"
+		},
+		"craft_requirements": {
+			"iron_ingot": 1,
+			"plank": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 15 }
+		"skill_required": {
+			"smithing": 15
+		}
 	},
 	{
 		"id": "iron_bolt",
@@ -1661,11 +2386,21 @@
 		"value": 10,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "damage": 22 },
-		"visual": { "sprite": "items/iron_bolt.png", "color": "#7e8892" },
-		"craft_requirements": { "iron_ingot": 2, "plank": 1 },
+		"stats": {
+			"damage": 22
+		},
+		"visual": {
+			"sprite": "items/iron_bolt.png",
+			"color": "#7e8892"
+		},
+		"craft_requirements": {
+			"iron_ingot": 2,
+			"plank": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 18 }
+		"skill_required": {
+			"smithing": 18
+		}
 	},
 	{
 		"id": "steel_arrow",
@@ -1675,11 +2410,21 @@
 		"value": 14,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "damage": 24 },
-		"visual": { "sprite": "items/steel_arrow.png", "color": "#f0f4f8" },
-		"craft_requirements": { "steel_ingot": 1, "plank": 2, "feather": 2 },
+		"stats": {
+			"damage": 24
+		},
+		"visual": {
+			"sprite": "items/steel_arrow.png",
+			"color": "#f0f4f8"
+		},
+		"craft_requirements": {
+			"steel_ingot": 1,
+			"plank": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 30 }
+		"skill_required": {
+			"smithing": 30
+		}
 	},
 	{
 		"id": "fishing_rod",
@@ -1697,14 +2442,20 @@
 			"range": "melee",
 			"tool_type": "fishing"
 		},
-		"visual": { "sprite": "items/fishing_rod.png", "color": "#c49a6c" },
-		"craft_requirements": { "plank": 2, "cloth": 2 },
+		"visual": {
+			"sprite": "items/fishing_rod.png",
+			"color": "#c49a6c"
+		},
+		"craft_requirements": {
+			"plank": 2,
+			"cloth": 2
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
 	{
 		"id": "shears",
-		"name": "Bronze Fleece Shears",
+		"name": "Primitive Wool Cutter",
 		"type": "tool",
 		"equip_slot": "weapon",
 		"weight": 0.8,
@@ -1718,8 +2469,14 @@
 			"range": "melee",
 			"tool_type": "shears"
 		},
-		"visual": { "sprite": "items/shears.png", "color": "#b87333" },
-		"craft_requirements": { "copper_ore": 2, "wood": 1 },
+		"visual": {
+			"sprite": "items/stone_dagger.png",
+			"color": "#8b8170"
+		},
+		"craft_requirements": {
+			"stone": 2,
+			"wood": 1
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -1739,8 +2496,14 @@
 			"range": "melee",
 			"tool_type": "hoe"
 		},
-		"visual": { "sprite": "items/hoe.png", "color": "#7a8288" },
-		"craft_requirements": { "plank": 2, "stone": 2 },
+		"visual": {
+			"sprite": "items/hoe.png",
+			"color": "#7a8288"
+		},
+		"craft_requirements": {
+			"plank": 2,
+			"stone": 2
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -1753,9 +2516,18 @@
 		"value": 15,
 		"stackable": false,
 		"durability": 50,
-		"stats": { "defense": 2, "cold_resist": 5 },
-		"visual": { "sprite": "items/wool_hood.png", "color": "#e8e0d5" },
-		"craft_requirements": { "wool": 2, "cloth": 1 },
+		"stats": {
+			"defense": 2,
+			"cold_resist": 5
+		},
+		"visual": {
+			"sprite": "items/wool_hood.png",
+			"color": "#e8e0d5"
+		},
+		"craft_requirements": {
+			"wool": 2,
+			"cloth": 1
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -1768,11 +2540,21 @@
 		"value": 35,
 		"stackable": false,
 		"durability": 80,
-		"stats": { "defense": 5 },
-		"visual": { "sprite": "items/leather_helmet.png", "color": "#7c4d2b" },
-		"craft_requirements": { "treated_leather": 2, "cloth": 1 },
+		"stats": {
+			"defense": 5
+		},
+		"visual": {
+			"sprite": "items/leather_helmet.png",
+			"color": "#7c4d2b"
+		},
+		"craft_requirements": {
+			"raw_leather": 2,
+			"cloth": 1
+		},
 		"craft_station": "workbench",
-		"skill_required": { "crafting": 2 }
+		"skill_required": {
+			"crafting": 2
+		}
 	},
 	{
 		"id": "iron_helmet",
@@ -1783,11 +2565,21 @@
 		"value": 110,
 		"stackable": false,
 		"durability": 180,
-		"stats": { "defense": 11 },
-		"visual": { "sprite": "items/iron_helmet.png", "color": "#8f99a3" },
-		"craft_requirements": { "iron_ingot": 3, "cloth": 1 },
+		"stats": {
+			"defense": 11
+		},
+		"visual": {
+			"sprite": "items/iron_helmet.png",
+			"color": "#8f99a3"
+		},
+		"craft_requirements": {
+			"iron_ingot": 3,
+			"cloth": 1
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 20 }
+		"skill_required": {
+			"smithing": 20
+		}
 	},
 	{
 		"id": "wool_shirt",
@@ -1798,9 +2590,17 @@
 		"value": 18,
 		"stackable": false,
 		"durability": 60,
-		"stats": { "defense": 1, "cold_resist": 8 },
-		"visual": { "sprite": "items/wool_shirt.png", "color": "#dfd7cb" },
-		"craft_requirements": { "wool": 3 },
+		"stats": {
+			"defense": 1,
+			"cold_resist": 8
+		},
+		"visual": {
+			"sprite": "items/wool_shirt.png",
+			"color": "#dfd7cb"
+		},
+		"craft_requirements": {
+			"wool": 3
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -1813,11 +2613,22 @@
 		"value": 95,
 		"stackable": false,
 		"durability": 110,
-		"stats": { "defense": 0, "barter_bonus": 0.15 },
-		"visual": { "sprite": "items/quality_clothing.png", "color": "#9e2a2b" },
-		"craft_requirements": { "quality_cloth": 2, "wool": 2 },
+		"stats": {
+			"defense": 0,
+			"barter_bonus": 0.15
+		},
+		"visual": {
+			"sprite": "items/quality_clothing.png",
+			"color": "#9e2a2b"
+		},
+		"craft_requirements": {
+			"quality_cloth": 2,
+			"wool": 2
+		},
 		"craft_station": "workbench",
-		"skill_required": { "crafting": 5 }
+		"skill_required": {
+			"crafting": 5
+		}
 	},
 	{
 		"id": "arming_doublet",
@@ -1828,11 +2639,21 @@
 		"value": 140,
 		"stackable": false,
 		"durability": 160,
-		"stats": { "defense": 0 },
-		"visual": { "sprite": "items/arming_doublet.png", "color": "#334155" },
-		"craft_requirements": { "quality_cloth": 3, "tanned_leather": 1 },
+		"stats": {
+			"defense": 0
+		},
+		"visual": {
+			"sprite": "items/arming_doublet.png",
+			"color": "#334155"
+		},
+		"craft_requirements": {
+			"quality_cloth": 3,
+			"tanned_leather": 1
+		},
 		"craft_station": "workbench",
-		"skill_required": { "crafting": 6 }
+		"skill_required": {
+			"crafting": 6
+		}
 	},
 	{
 		"id": "boiled_leather_cuirass",
@@ -1843,11 +2664,21 @@
 		"value": 65,
 		"stackable": false,
 		"durability": 110,
-		"stats": { "defense": 11 },
-		"visual": { "sprite": "items/boiled_leather_cuirass.png", "color": "#5c3317" },
-		"craft_requirements": { "treated_leather": 3, "wood": 2 },
+		"stats": {
+			"defense": 11
+		},
+		"visual": {
+			"sprite": "items/boiled_leather_cuirass.png",
+			"color": "#5c3317"
+		},
+		"craft_requirements": {
+			"raw_leather": 3,
+			"wood": 2
+		},
 		"craft_station": "workbench",
-		"skill_required": { "crafting": 3 }
+		"skill_required": {
+			"crafting": 3
+		}
 	},
 	{
 		"id": "leather_lamellar",
@@ -1858,11 +2689,21 @@
 		"value": 85,
 		"stackable": false,
 		"durability": 130,
-		"stats": { "defense": 14 },
-		"visual": { "sprite": "items/leather_lamellar.png", "color": "#4a2810" },
-		"craft_requirements": { "treated_leather": 4, "cloth": 2 },
+		"stats": {
+			"defense": 14
+		},
+		"visual": {
+			"sprite": "items/leather_lamellar.png",
+			"color": "#4a2810"
+		},
+		"craft_requirements": {
+			"treated_leather": 4,
+			"cloth": 2
+		},
 		"craft_station": "workbench",
-		"skill_required": { "crafting": 4 }
+		"skill_required": {
+			"crafting": 4
+		}
 	},
 	{
 		"id": "bronze_lamellar",
@@ -1873,11 +2714,21 @@
 		"value": 140,
 		"stackable": false,
 		"durability": 160,
-		"stats": { "defense": 20 },
-		"visual": { "sprite": "items/bronze_lamellar.png", "color": "#cd7f32" },
-		"craft_requirements": { "bronze_ingot": 5, "treated_leather": 2 },
+		"stats": {
+			"defense": 20
+		},
+		"visual": {
+			"sprite": "items/bronze_lamellar.png",
+			"color": "#cd7f32"
+		},
+		"craft_requirements": {
+			"bronze_ingot": 5,
+			"treated_leather": 2
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 14 }
+		"skill_required": {
+			"smithing": 14
+		}
 	},
 	{
 		"id": "steel_brigandine",
@@ -1888,11 +2739,21 @@
 		"value": 260,
 		"stackable": false,
 		"durability": 280,
-		"stats": { "defense": 38 },
-		"visual": { "sprite": "items/steel_brigandine.png", "color": "#1e293b" },
-		"craft_requirements": { "steel_ingot": 6, "tanned_leather": 3 },
+		"stats": {
+			"defense": 38
+		},
+		"visual": {
+			"sprite": "items/steel_brigandine.png",
+			"color": "#1e293b"
+		},
+		"craft_requirements": {
+			"steel_ingot": 6,
+			"tanned_leather": 3
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 34 }
+		"skill_required": {
+			"smithing": 34
+		}
 	},
 	{
 		"id": "wool_wraps",
@@ -1903,9 +2764,17 @@
 		"value": 12,
 		"stackable": false,
 		"durability": 50,
-		"stats": { "defense": 1, "cold_resist": 4 },
-		"visual": { "sprite": "items/wool_wraps.png", "color": "#cfc7ba" },
-		"craft_requirements": { "wool": 2 },
+		"stats": {
+			"defense": 1,
+			"cold_resist": 4
+		},
+		"visual": {
+			"sprite": "items/wool_wraps.png",
+			"color": "#cfc7ba"
+		},
+		"craft_requirements": {
+			"wool": 2
+		},
 		"craft_station": "workbench",
 		"skill_required": {}
 	},
@@ -1918,11 +2787,21 @@
 		"value": 38,
 		"stackable": false,
 		"durability": 85,
-		"stats": { "defense": 4 },
-		"visual": { "sprite": "items/leather_greaves.png", "color": "#8b5a2b" },
-		"craft_requirements": { "treated_leather": 2, "cloth": 1 },
+		"stats": {
+			"defense": 4
+		},
+		"visual": {
+			"sprite": "items/leather_greaves.png",
+			"color": "#8b5a2b"
+		},
+		"craft_requirements": {
+			"raw_leather": 2,
+			"cloth": 1
+		},
 		"craft_station": "workbench",
-		"skill_required": { "crafting": 2 }
+		"skill_required": {
+			"crafting": 2
+		}
 	},
 	{
 		"id": "stone_masonry",
@@ -1934,10 +2813,17 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/stone_masonry.png", "color": "#64748b" },
-		"craft_requirements": { "stone": 4 },
+		"visual": {
+			"sprite": "items/stone_masonry.png",
+			"color": "#64748b"
+		},
+		"craft_requirements": {
+			"stone": 4
+		},
 		"craft_station": "workbench",
-		"skill_required": { "construction": 5 }
+		"skill_required": {
+			"construction": 5
+		}
 	},
 	{
 		"id": "clay",
@@ -1949,7 +2835,10 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/clay.png", "color": "#a0522d" },
+		"visual": {
+			"sprite": "items/clay.png",
+			"color": "#a0522d"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -1964,8 +2853,13 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/brick.png", "color": "#b91c1c" },
-		"craft_requirements": { "clay": 2 },
+		"visual": {
+			"sprite": "items/brick.png",
+			"color": "#b91c1c"
+		},
+		"craft_requirements": {
+			"clay": 2
+		},
 		"craft_station": "furnace",
 		"skill_required": {}
 	},
@@ -1978,9 +2872,16 @@
 		"stackable": true,
 		"max_stack": 64,
 		"durability": -1,
-		"stats": { "fuel_value": 55.0 },
-		"visual": { "sprite": "items/charcoal.png", "color": "#1e293b" },
-		"craft_requirements": { "wood": 2 },
+		"stats": {
+			"fuel_value": 55.0
+		},
+		"visual": {
+			"sprite": "items/charcoal.png",
+			"color": "#1e293b"
+		},
+		"craft_requirements": {
+			"wood": 2
+		},
 		"craft_station": "campfire",
 		"skill_required": {}
 	},
@@ -1994,7 +2895,10 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/feather.png", "color": "#f8fafc" },
+		"visual": {
+			"sprite": "items/feather.png",
+			"color": "#f8fafc"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -2009,7 +2913,10 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/silver_ore.png", "color": "#cbd5e1" },
+		"visual": {
+			"sprite": "items/silver_ore.png",
+			"color": "#cbd5e1"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -2024,7 +2931,10 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/wheat.png", "color": "#eab308" },
+		"visual": {
+			"sprite": "items/wheat.png",
+			"color": "#eab308"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -2039,8 +2949,13 @@
 		"max_stack": 64,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/flour.png", "color": "#fef08a" },
-		"craft_requirements": { "wheat": 2 },
+		"visual": {
+			"sprite": "items/flour.png",
+			"color": "#fef08a"
+		},
+		"craft_requirements": {
+			"wheat": 2
+		},
 		"craft_station": "water_mill",
 		"skill_required": {}
 	},
@@ -2052,8 +2967,14 @@
 		"value": 6,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "nutrition": 12.0, "heal": 0.0 },
-		"visual": { "sprite": "items/fish.png", "color": "#38bdf8" },
+		"stats": {
+			"nutrition": 12.0,
+			"heal": 0.0
+		},
+		"visual": {
+			"sprite": "items/fish.png",
+			"color": "#38bdf8"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -2066,9 +2987,17 @@
 		"value": 14,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "nutrition": 30.0, "heal": 0.0 },
-		"visual": { "sprite": "items/cooked_fish.png", "color": "#f97316" },
-		"craft_requirements": { "fish": 1 },
+		"stats": {
+			"nutrition": 30.0,
+			"heal": 0.0
+		},
+		"visual": {
+			"sprite": "items/cooked_fish.png",
+			"color": "#f97316"
+		},
+		"craft_requirements": {
+			"fish": 1
+		},
 		"craft_station": "campfire",
 		"skill_required": {}
 	},
@@ -2080,8 +3009,15 @@
 		"value": 10,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "nutrition": 15.0, "heal": 0.0, "stamina": 25.0 },
-		"visual": { "sprite": "items/milk.png", "color": "#ffffff" },
+		"stats": {
+			"nutrition": 15.0,
+			"heal": 0.0,
+			"stamina": 25.0
+		},
+		"visual": {
+			"sprite": "items/milk.png",
+			"color": "#ffffff"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -2094,8 +3030,14 @@
 		"value": 4,
 		"stackable": true,
 		"durability": -1,
-		"stats": { "nutrition": 8.0, "heal": 0.0 },
-		"visual": { "sprite": "items/egg.png", "color": "#fef3c7" },
+		"stats": {
+			"nutrition": 8.0,
+			"heal": 0.0
+		},
+		"visual": {
+			"sprite": "items/egg.png",
+			"color": "#fef3c7"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -2110,7 +3052,10 @@
 		"max_stack": 9999,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/silver_coin.png", "color": "#cbd5e1" },
+		"visual": {
+			"sprite": "items/silver_coin.png",
+			"color": "#cbd5e1"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -2125,7 +3070,10 @@
 		"max_stack": 9999,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/gold_coin.png", "color": "#facc15" },
+		"visual": {
+			"sprite": "items/gold_coin.png",
+			"color": "#facc15"
+		},
 		"craft_requirements": {},
 		"craft_station": "",
 		"skill_required": {}
@@ -2146,8 +3094,14 @@
 			"attack_speed": 1.0,
 			"range": "melee"
 		},
-		"visual": { "sprite": "items/torch.png", "color": "#f59e0b" },
-		"craft_requirements": { "wood": 1, "herb": 1 },
+		"visual": {
+			"sprite": "items/torch.png",
+			"color": "#f59e0b"
+		},
+		"craft_requirements": {
+			"wood": 1,
+			"cloth": 1
+		},
 		"craft_station": "",
 		"skill_required": {}
 	},
@@ -2160,11 +3114,21 @@
 		"value": 180,
 		"stackable": false,
 		"durability": 200,
-		"stats": { "defense": 27 },
-		"visual": { "sprite": "items/iron_brigandine.png", "color": "#79523e" },
-		"craft_requirements": { "iron_ingot": 5, "treated_leather": 3 },
+		"stats": {
+			"defense": 27
+		},
+		"visual": {
+			"sprite": "items/iron_brigandine.png",
+			"color": "#79523e"
+		},
+		"craft_requirements": {
+			"iron_ingot": 5,
+			"treated_leather": 3
+		},
 		"craft_station": "forge",
-		"skill_required": { "smithing": 24 }
+		"skill_required": {
+			"smithing": 24
+		}
 	},
 	{
 		"id": "pack_saddle",
@@ -2176,9 +3140,17 @@
 		"max_stack": 16,
 		"durability": -1,
 		"stats": {},
-		"visual": { "sprite": "items/treated_leather.png", "color": "#7a431d" },
-		"craft_requirements": { "treated_leather": 2, "wood": 2 },
+		"visual": {
+			"sprite": "items/treated_leather.png",
+			"color": "#7a431d"
+		},
+		"craft_requirements": {
+			"treated_leather": 2,
+			"wood": 2
+		},
 		"craft_station": "workbench",
-		"skill_required": { "crafting": 2 }
+		"skill_required": {
+			"crafting": 2
+		}
 	}
 ]

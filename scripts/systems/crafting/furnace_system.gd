@@ -5,17 +5,11 @@ static var instance: FurnaceSystem = null
 
 signal furnace_updated(furnace_id: String)
 
-const SMELT_RECIPES: Dictionary = {
-	"iron_ore": "iron_ingot",
-	"clay": "brick",
-	"wood": "coal",
-	"food_raw": "cooked_food",
-	"raw_meat": "cooked_food",
-	"fish": "cooked_fish"
-}
+
 
 const FUEL_BURN_TIMES: Dictionary = {
 	"coal": 20.0,
+	"charcoal": 20.0,
 	"wood": 8.0,
 	"plank": 4.0
 }
@@ -29,6 +23,7 @@ func _ready() -> void:
 	SignalBus.game_started.connect(_on_game_started)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
+	SignalBus.structure_destroyed.connect(_on_structure_destroyed)
 
 
 func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
@@ -41,48 +36,11 @@ static func is_valid_fuel(item_id: String) -> bool:
 
 
 static func is_valid_input(item_id: String) -> bool:
-	return item_id in ["iron_ore", "copper_ore", "tin_ore", "coal", "iron_ingot", "quality_iron", "clay", "wood", "food_raw", "raw_meat", "fish"]
+	return item_id in ["clay", "wood", "food_raw", "raw_meat", "fish"]
 
 
-static func get_smelt_recipe(in1: String, in2: String) -> Dictionary:
-	if in1.is_empty() and in2.is_empty():
-		return {}
-
-	# 1. Dual-slot Alloy & Carbon Blending Recipes (order independent)
-	if (in1 == "copper_ore" and in2 == "tin_ore") or (in1 == "tin_ore" and in2 == "copper_ore"):
-		return { "output": "bronze_ingot", "need1": 1, "need2": 1, "duration": 3.6 }
-	if (in1 == "iron_ingot" and in2 == "coal") or (in1 == "coal" and in2 == "iron_ingot"):
-		return { "output": "steel_ingot", "need1": 1, "need2": 1, "duration": 4.5 }
-	if (in1 == "quality_iron" and in2 == "coal") or (in1 == "coal" and in2 == "quality_iron"):
-		return { "output": "steel_ingot", "need1": 1, "need2": 1, "duration": 4.0 }
-	if (in1 == "iron_ore" and in2 == "coal") or (in1 == "coal" and in2 == "iron_ore"):
-		return { "output": "quality_iron", "need1": 1, "need2": 1, "duration": 3.8 }
-
-	# 2. Single-slot Ore & Cooking Recipes (active if other slot is empty)
-	if in2.is_empty():
-		if in1 == "iron_ore":
-			return { "output": "iron_ingot", "need1": 1, "need2": 0, "duration": 3.6 }
-		elif in1 == "clay":
-			return { "output": "brick", "need1": 1, "need2": 0, "duration": 3.0 }
-		elif in1 == "wood":
-			return { "output": "coal", "need1": 1, "need2": 0, "duration": 2.4 }
-		elif in1 == "food_raw" or in1 == "raw_meat":
-			return { "output": "cooked_food", "need1": 1, "need2": 0, "duration": 2.0 }
-		elif in1 == "fish":
-			return { "output": "cooked_fish", "need1": 1, "need2": 0, "duration": 2.0 }
-	elif in1.is_empty():
-		if in2 == "iron_ore":
-			return { "output": "iron_ingot", "need1": 0, "need2": 1, "duration": 3.6 }
-		elif in2 == "clay":
-			return { "output": "brick", "need1": 0, "need2": 1, "duration": 3.0 }
-		elif in2 == "wood":
-			return { "output": "coal", "need1": 0, "need2": 1, "duration": 2.4 }
-		elif in2 == "food_raw" or in2 == "raw_meat":
-			return { "output": "cooked_food", "need1": 0, "need2": 1, "duration": 2.0 }
-		elif in2 == "fish":
-			return { "output": "cooked_fish", "need1": 0, "need2": 1, "duration": 2.0 }
-
-	return {}
+static func get_smelt_recipe(in1: String, in2: String, count1: int = 2147483647, count2: int = 2147483647) -> Dictionary:
+	return ThermalRecipes.resolve(in1, in2, count1, count2)
 
 
 static func get_output_item(input_id: String) -> String:
@@ -109,6 +67,10 @@ func get_furnace_state(furnace_id: String) -> Dictionary:
 
 
 func set_slot_data(furnace_id: String, slot_type: String, item_id: String, count: int) -> void:
+	if count < 0:
+		return
+	if count > 0 and ((slot_type in ["input", "input1", "input2"] and not is_valid_input(item_id)) or (slot_type == "fuel" and not is_valid_fuel(item_id))):
+		return
 	var state: Dictionary = get_furnace_state(furnace_id)
 	if slot_type == "input" or slot_type == "input1":
 		state["ore_item"] = item_id if count > 0 else ""
@@ -126,6 +88,8 @@ func set_slot_data(furnace_id: String, slot_type: String, item_id: String, count
 
 
 func add_fuel(furnace_id: String, player: Node, item_id: String, amount: int = 1) -> bool:
+	if amount <= 0:
+		return false
 	if not is_valid_fuel(item_id):
 		SignalBus.notification_posted.emit("Furnace only accepts Coal, Wood, or Planks as fuel.")
 		return false
@@ -136,6 +100,9 @@ func add_fuel(furnace_id: String, player: Node, item_id: String, amount: int = 1
 		return false
 
 	var state: Dictionary = get_furnace_state(furnace_id)
+	if int(state.get("fuel_count", 0)) > 0 and str(state.get("fuel_item", "")) != item_id:
+		SignalBus.notification_posted.emit("Remove the stored fuel before changing its type.")
+		return false
 	inv.remove_item(item_id, amount)
 	state["fuel_item"] = item_id
 	state["fuel_count"] = int(state.get("fuel_count", 0)) + amount
@@ -144,6 +111,8 @@ func add_fuel(furnace_id: String, player: Node, item_id: String, amount: int = 1
 
 
 func add_ore(furnace_id: String, player: Node, item_id: String, amount: int = 1, slot_idx: int = 1) -> bool:
+	if amount <= 0 or slot_idx not in [1, 2]:
+		return false
 	if not is_valid_input(item_id):
 		SignalBus.notification_posted.emit("Furnace can only smelt Ore, Raw Meat, Fish, Wood, or Charcoal.")
 		return false
@@ -180,75 +149,90 @@ func take_output(furnace_id: String, player: Node) -> int:
 	if inv == null:
 		return 0
 
-	if not inv.can_fit_item(out_id, count):
+	var added: int = inv.add_item(out_id, count)
+	if added <= 0:
 		SignalBus.notification_posted.emit("Inventory full!")
 		return 0
 
-	inv.add_item(out_id, count)
-	state["out_count"] = 0
-	state["out_item"] = ""
-	SignalBus.notification_posted.emit("Collected %s x%d" % [out_id.capitalize(), count])
+	SignalBus.item_crafted.emit(out_id)
+	state["out_count"] = count - added
+	if int(state["out_count"]) == 0:
+		state["out_item"] = ""
+	SignalBus.notification_posted.emit("Collected %s x%d" % [out_id.capitalize(), added])
 	furnace_updated.emit(furnace_id)
-	return count
+	return added
 
 
 func _process(delta: float) -> void:
-	var any_changed: bool = false
-	for fid in _furnaces:
+	advance(delta)
+
+
+func advance(delta: float) -> void:
+	if GameManager.is_paused() or delta <= 0.0 or not is_finite(delta):
+		return
+	for fid in _furnaces.keys():
 		var state: Dictionary = _furnaces[fid]
-		var in1_id: String = str(state.get("ore_item", ""))
-		var in1_cnt: int = int(state.get("ore_count", 0))
-		var in2_id: String = str(state.get("ore2_item", ""))
-		var in2_cnt: int = int(state.get("ore2_count", 0))
-		var burn_rem: float = float(state.get("burn_remaining", 0.0))
-		var fuel_cnt: int = int(state.get("fuel_count", 0))
+		var before: Dictionary = state.duplicate(true)
+		_advance_state(state, delta)
+		if state != before:
+			furnace_updated.emit(str(fid))
 
-		var recipe_info: Dictionary = get_smelt_recipe(in1_id if in1_cnt > 0 else "", in2_id if in2_cnt > 0 else "")
-		var has_recipe: bool = not recipe_info.is_empty()
-		var n1: int = int(recipe_info.get("need1", 0))
-		var n2: int = int(recipe_info.get("need2", 0))
-		var can_smelt: bool = has_recipe and (in1_cnt >= n1) and (in2_cnt >= n2)
 
-		# Consume fuel to maintain fire when smelting
-		if can_smelt and burn_rem <= 0.0 and fuel_cnt > 0:
-			var fuel_id: String = str(state.get("fuel_item", "coal"))
-			var btime: float = float(FUEL_BURN_TIMES.get(fuel_id, 8.0))
-			state["fuel_count"] = fuel_cnt - 1
-			state["max_burn_time"] = btime
-			state["burn_remaining"] = btime
-			burn_rem = btime
-			any_changed = true
-
-		# Active smelting tick
-		if burn_rem > 0.0:
-			state["burn_remaining"] = maxf(0.0, burn_rem - delta)
-			if can_smelt:
-				var duration: float = float(recipe_info.get("duration", 3.6))
-				var prog: float = float(state.get("smelt_progress", 0.0)) + (delta / duration)
-				if prog >= 1.0:
-					prog = 0.0
-					state["ore_count"] = in1_cnt - n1
-					if int(state["ore_count"]) <= 0:
-						state["ore_item"] = ""
-					state["ore2_count"] = in2_cnt - n2
-					if int(state["ore2_count"]) <= 0:
-						state["ore2_item"] = ""
-
-					var target_out: String = str(recipe_info.get("output", ""))
-					state["out_item"] = target_out
-					state["out_count"] = int(state.get("out_count", 0)) + 1
-					any_changed = true
-				state["smelt_progress"] = prog
-			else:
+func _advance_state(state: Dictionary, seconds: float) -> void:
+	var left: float = seconds
+	while left > 0.000001:
+		var in1: String = str(state.get("ore_item", "")) if int(state.get("ore_count", 0)) > 0 else ""
+		var in2: String = str(state.get("ore2_item", "")) if int(state.get("ore2_count", 0)) > 0 else ""
+		var recipe: Dictionary = get_smelt_recipe(in1, in2, int(state.get("ore_count", 0)), int(state.get("ore2_count", 0)))
+		var key: String = str(recipe.get("recipe_id", "")) + "|" + in1 + "|" + in2
+		if str(state.get("recipe_key", "")) != key:
+			state["smelt_progress"] = 0.0
+			state["recipe_key"] = key
+		var permitted: bool = not recipe.is_empty()
+		var tech: String = str(recipe.get("tech", ""))
+		if permitted and tech != "":
+			var response: Dictionary = {}
+			SignalBus.production_tech_queried.emit(tech, response)
+			permitted = bool(response.get("researched", false))
+		var output: String = str(recipe.get("output", ""))
+		var yield_count: int = int(recipe.get("output_count", 1))
+		var output_count: int = int(state.get("out_count", 0))
+		var limit: int = int(DataRegistry.get_item(output).get("stack_limit", 64))
+		permitted = permitted and int(state.get("ore_count", 0)) >= int(recipe.get("need1", 0)) and int(state.get("ore2_count", 0)) >= int(recipe.get("need2", 0))
+		permitted = permitted and output_count + yield_count <= limit and (output_count == 0 or str(state.get("out_item", "")) == output)
+		if not permitted:
+			if recipe.is_empty():
 				state["smelt_progress"] = 0.0
-		else:
-			if float(state.get("smelt_progress", 0.0)) > 0.0:
-				state["smelt_progress"] = 0.0
-				any_changed = true
-
-	if any_changed:
-		for fid in _furnaces:
-			furnace_updated.emit(fid)
+			state["burn_remaining"] = maxf(0.0, float(state.get("burn_remaining", 0.0)) - left)
+			return
+		var burn: float = maxf(0.0, float(state.get("burn_remaining", 0.0)))
+		if burn <= 0.000001:
+			var fuel: String = str(state.get("fuel_item", ""))
+			if int(state.get("fuel_count", 0)) <= 0 or not is_valid_fuel(fuel):
+				state["burn_remaining"] = 0.0
+				return # Preserve this recipe's partial progress until refuelled.
+			burn = float(FUEL_BURN_TIMES[fuel])
+			state["fuel_count"] = int(state["fuel_count"]) - 1
+			state["max_burn_time"] = burn
+			state["burn_remaining"] = burn
+			SignalBus.furnace_fuel_ignited.emit()
+		var duration: float = maxf(0.1, float(recipe.get("duration", 3.0)))
+		var progress: float = clampf(float(state.get("smelt_progress", 0.0)), 0.0, 1.0)
+		var step: float = minf(left, minf(burn, (1.0 - progress) * duration))
+		progress += step / duration
+		left -= step
+		state["burn_remaining"] = maxf(0.0, burn - step)
+		state["smelt_progress"] = progress
+		if progress >= 1.0 - 0.000001:
+			state["ore_count"] = int(state.get("ore_count", 0)) - int(recipe["need1"])
+			state["ore2_count"] = int(state.get("ore2_count", 0)) - int(recipe["need2"])
+			if int(state["ore_count"]) == 0:
+				state["ore_item"] = ""
+			if int(state["ore2_count"]) == 0:
+				state["ore2_item"] = ""
+			state["out_item"] = output
+			state["out_count"] = output_count + yield_count
+			state["smelt_progress"] = 0.0
 
 
 func _on_save_data_requested(bundle: Dictionary) -> void:
@@ -256,5 +240,23 @@ func _on_save_data_requested(bundle: Dictionary) -> void:
 
 
 func _on_save_data_loaded(bundle: Dictionary) -> void:
-	if bundle.has("furnaces"):
-		_furnaces = (bundle["furnaces"] as Dictionary).duplicate(true)
+	_furnaces = (bundle.get("furnaces", {}) as Dictionary).duplicate(true)
+	for fid in _furnaces:
+		furnace_updated.emit(str(fid))
+
+func _on_structure_destroyed(structure_id: String, tile_pos: Vector2i) -> void:
+	if structure_id != "furnace":
+		return
+	var id: String = "furnace_" + Config.vec2i_to_key(tile_pos)
+	if not _furnaces.has(id):
+		return
+	var state: Dictionary = _furnaces[id]
+	var items: Array = []
+	for keys in [["ore_item", "ore_count"], ["ore2_item", "ore2_count"], ["fuel_item", "fuel_count"], ["out_item", "out_count"]]:
+		var item: String = str(state.get(keys[0], ""))
+		var count: int = int(state.get(keys[1], 0))
+		if item != "" and count > 0:
+			items.append({"item_id": item, "count": count, "durability": -1})
+	_furnaces.erase(id)
+	if not items.is_empty():
+		SignalBus.loot_bag_spawned.emit(Config.world_to_iso(tile_pos), items, 0)

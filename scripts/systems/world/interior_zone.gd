@@ -130,10 +130,10 @@ func _draw() -> void:
 		for rx in range(w):
 			var tile: Vector2i = _interior_origin_tile + Vector2i(rx, ry)
 			var center: Vector2 = Config.world_to_iso(tile)
-			var top_pt: Vector2 = center + Vector2(0.0, -hh)
-			var right_pt: Vector2 = center + Vector2(hw, 0.0)
-			var bot_pt: Vector2 = center + Vector2(0.0, hh)
-			var left_pt: Vector2 = center + Vector2(-hw, 0.0)
+			var top_pt: Vector2 = center + Vector2(-hw, -hh)
+			var right_pt: Vector2 = center + Vector2(hw, -hh)
+			var bot_pt: Vector2 = center + Vector2(hw, hh)
+			var left_pt: Vector2 = center + Vector2(-hw, hh)
 			var poly: PackedVector2Array = PackedVector2Array([top_pt, right_pt, bot_pt, left_pt])
 
 			var is_wall: bool = (rx == 0 or rx == w - 1 or ry == 0 or ry == h - 1)
