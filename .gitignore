@@ -44,3 +44,25 @@ PixelBuilder/
 # Environment & Secrets
 .env
 *.local
+
+# Temporary scratch files, notes and assistant dumps
+Results_From_*.md
+CLAUDE.md
+alife-arch.md
+CHARACTER_ART.md
+PLAYER_CONTROLS.md
+вопросы-ответы.md
+A_LIFE_THEORY.md
+**/PROMPTS.md
+**/README.md
+assets/sprites/characters/generated/*.md
+
+# Logs and Python helper scripts
+*.log
+*.py
+
+# Test and run outputs (except locked art refresh archive)
+output/*
+!output/art_refresh_2026-11-04/
+!output/art_refresh_2026-11-04/integration.log
+

@@ -1,4 +1,0 @@
-ERROR: Texture with GL ID of 19: leaked 5460 bytes.
-   at: ~Utilities (drivers/gles3/storage/utilities.cpp:82)
-ERROR: Parameter "RenderingServer::get_singleton()" is null.
-   at: ~CompressedTexture2D (scene/resources/compressed_texture.cpp:464)
