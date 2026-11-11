@@ -156,13 +156,13 @@ static func get_base_ambient_for_hour(h: float) -> Color:
 		return Color(0.18, 0.20, 0.36)
 	elif h < 6.0:
 		var t: float = (h - 4.5) / 1.5
-		return Color(0.18, 0.20, 0.36).lerp(Color(0.44, 0.36, 0.54), t)
+		return Color(0.18, 0.20, 0.36).lerp(Color(0.72, 0.68, 0.75), t)
 	elif h < 7.5:
 		var t: float = (h - 6.0) / 1.5
-		return Color(0.44, 0.36, 0.54).lerp(Color(0.94, 0.70, 0.50), t)
+		return Color(0.72, 0.68, 0.75).lerp(Color(0.94, 0.80, 0.68), t)
 	elif h < 9.0:
 		var t: float = (h - 7.5) / 1.5
-		return Color(0.94, 0.70, 0.50).lerp(Color(0.98, 0.95, 0.90), t)
+		return Color(0.94, 0.80, 0.68).lerp(Color(0.98, 0.95, 0.90), t)
 	elif h < 16.5:
 		return Color(1.0, 1.0, 1.0)
 	elif h < 18.5:

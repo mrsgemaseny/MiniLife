@@ -2,7 +2,8 @@ shader_type canvas_item;
 
 uniform vec2 vision_center;
 uniform float vision_radius_px = 864.0;
-uniform float feather_px = 72.0;
+// Keep the explored area fully lit; blend only the outer half-tile.
+uniform float feather_px = 18.0;
 
 varying vec2 map_position;
 varying float fade_edge;
