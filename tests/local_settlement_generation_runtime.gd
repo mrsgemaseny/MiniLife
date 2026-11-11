@@ -36,6 +36,7 @@ func run() -> void:
 	check(hud._minimap._cached_pois.any(func(poi: Dictionary) -> bool: return poi.get("id") == "merchant_outpost"),
 		"Minimap keeps the settlement marker")
 	check(world_system._loaded_chunks.has(chunk), "Settlement chunk loads")
+	check(not WorldSimulation.materializer.loaded_chunks.has(chunk), "Settlement residents are not spawned on the local map")
 	var chunk_node: Node = world_system._loaded_chunks.get(chunk)
 	check(chunk_node.get_node_or_null("SettlementRoofs") == null and chunk_node.get_node_or_null("SettlementStreets") == null, "Local settlement buildings and streets are absent")
 	get_tree().quit(0 if failures == 0 else 1)

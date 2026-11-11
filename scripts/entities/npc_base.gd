@@ -366,8 +366,8 @@ func _draw() -> void:
 	else:
 		art.draw_pawn(self, Vector2.ZERO, facing, null, _clothing_tint)
 	if get_local_mouse_position().distance_to(Vector2(0, -20)) < 30.0:
-		draw_string_outline(ThemeDB.fallback_font, Vector2(-55, -49), display_name + " [E]", HORIZONTAL_ALIGNMENT_CENTER, 110, 11, 3, Color("191b17"))
-		draw_string(ThemeDB.fallback_font, Vector2(-55, -49), display_name + " [E]", HORIZONTAL_ALIGNMENT_CENTER, 110, 11, Color("ece5d4"))
+		draw_string_outline(ThemeDB.fallback_font, Vector2(-55, -49), display_name + " [ПКМ]", HORIZONTAL_ALIGNMENT_CENTER, 110, 11, 3, Color("191b17"))
+		draw_string(ThemeDB.fallback_font, Vector2(-55, -49), display_name + " [ПКМ]", HORIZONTAL_ALIGNMENT_CENTER, 110, 11, Color("ece5d4"))
 
 func _draw_legacy() -> void:
 	var outline_col: Color = Color(0.07, 0.08, 0.10, 0.95)
@@ -404,7 +404,7 @@ func _draw_legacy() -> void:
 
 	# Framed Nameplate Pill above NPC
 	if ThemeDB.fallback_font != null:
-		var label_text: String = display_name + " [E]"
+		var label_text: String = display_name + " [ПКМ]"
 		var pill_rect: Rect2 = Rect2(-64.0, -49.0, 128.0, 16.0)
 		draw_rect(pill_rect, Color(0.08, 0.09, 0.12, 0.86), true)
 		draw_rect(pill_rect, Color(0.72, 0.58, 0.28, 0.90), false, 1.2)

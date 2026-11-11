@@ -586,6 +586,8 @@ func _draw_canvas() -> void:
 
 	for cpos in chunk_pois:
 		var pinfo: Dictionary = chunk_pois[cpos]
+		if pinfo.has("settlement_id"):
+			continue
 		if bool(pinfo.get("district", false)):
 			continue
 		if _politics_enabled and pinfo.has("settlement_id"):

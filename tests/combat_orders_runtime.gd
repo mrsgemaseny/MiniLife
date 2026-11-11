@@ -26,17 +26,22 @@ func run_checks() -> void:
 	player.position = Vector2(100, 0)
 	var combat := CombatSystem.new()
 	add_child(combat)
-	player.equipment.equip("hunting_bow", -1, "weapon")
+	GameManager._state = GameManager.State.PLAYING
+	GameManager.resume()
+	player.inventory.set_slot(0, {"item_id": "hunting_bow", "count": 1, "durability": 85})
+	player.sync_weapon_from_active_slot()
+	player.inventory.add_item("arrow", 10)
 	assert(player._is_holding_ranged())
 	var before: float = enemy.stats.health
+	player._attack_cooldown = 0
+	player.stats.stamina = player.stats.max_stamina
+	player._tick_auto_attack(0.1)
 	for i in range(30):
-		player._attack_cooldown = 0
-		player.stats.stamina = player.stats.max_stamina
-		player._tick_auto_attack(0.1)
+		await get_tree().physics_frame
 		if not is_instance_valid(enemy) or enemy.stats.health < before:
 			break
 	assert(not is_instance_valid(enemy) or enemy.stats.health < before)
-	assert(not player._is_charging_bow, "Melee order started bow charging")
+	assert(not player._is_charging_bow, "Ranged order started bow charging")
 	GameManager._state = GameManager.State.PLAYING
 	preload("res://scripts/ui/enemy_inspect.gd").show_target(player, player)
 	assert(GameManager.is_paused(), "Inspect does not pause combat")
@@ -50,6 +55,8 @@ func run_checks() -> void:
 	enemy.set_physics_process(false)
 	enemy.position = Vector2(300, 0)
 	player.position = Vector2(80, 0)
+	player.inventory.set_slot(0, {"item_id": "stone_sword", "count": 1, "durability": 70})
+	player.sync_weapon_from_active_slot()
 	player._attack_cooldown = 0.0
 	player._locked_target = enemy
 	var approach_health: float = enemy.stats.health

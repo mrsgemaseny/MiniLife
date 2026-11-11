@@ -127,7 +127,7 @@ func _build_ui() -> void:
 	title_vbox.add_child(title)
 
 	var subtitle: Label = Label.new()
-	subtitle.text = "Соберите ресурсы в мире [E / ЛКМ], выберите технологию и нажмите [ИССЛЕДОВАТЬ ТЕХНОЛОГИЮ] [ESC / R чтобы закрыть]"
+	subtitle.text = "Соберите ресурсы в мире [ПКМ / ЛКМ], выберите технологию и нажмите [ИССЛЕДОВАТЬ ТЕХНОЛОГИЮ] [ESC / R чтобы закрыть]"
 	subtitle.add_theme_font_size_override("font_size", 10)
 	subtitle.modulate = Color(0.55, 0.58, 0.64, 1.0) # Muted silver
 	title_vbox.add_child(subtitle)

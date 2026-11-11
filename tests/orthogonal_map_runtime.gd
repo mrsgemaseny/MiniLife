@@ -12,6 +12,28 @@ func _ready() -> void:
 	call_deferred("run")
 
 func run() -> void:
+	DataRegistry.reload_all()
+	var wall_a := StructureEntity.new()
+	wall_a.structure_id = "wall"
+	add_child(wall_a)
+	var wall_b := StructureEntity.new()
+	wall_b.structure_id = "wall"
+	wall_b.position = Vector2(48, 48)
+	wall_b.tile_pos = Vector2i.ONE
+	add_child(wall_b)
+	var walker := CharacterBody2D.new()
+	var walker_collision := CollisionShape2D.new()
+	var walker_shape := CircleShape2D.new()
+	walker_shape.radius = 12.0
+	walker_collision.shape = walker_shape
+	walker.add_child(walker_collision)
+	walker.position = Vector2(0, 48)
+	add_child(walker)
+	await get_tree().physics_frame
+	check(walker.move_and_collide(Vector2(48, -48)) != null, "Diagonal movement cannot slip between wall corners")
+	wall_a.queue_free()
+	wall_b.queue_free()
+	walker.queue_free()
 	check(Config.world_to_iso(Vector2i.RIGHT) == Vector2(48,0), "Tile X points right")
 	check(Config.world_to_iso(Vector2i.DOWN) == Vector2(0,48), "Tile Y points down")
 	for tile: Vector2i in [Vector2i(-3,-2),Vector2i.ZERO,Vector2i(500,500),Vector2i(999,999)]:

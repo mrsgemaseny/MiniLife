@@ -436,7 +436,6 @@ func _register_default_inputs() -> void:
 		"move_down": KEY_S,
 		"move_left": KEY_A,
 		"move_right": KEY_D,
-		"interact": KEY_E,
 		"use_item": KEY_F,
 		"ui_inventory": KEY_I,
 		"ui_map": KEY_M,
@@ -454,6 +453,8 @@ func _register_default_inputs() -> void:
 		"debug_fast_time": KEY_F2,
 		"debug_reveal": KEY_F3
 	}
+	if InputMap.has_action("interact"):
+		InputMap.erase_action("interact")
 	for action_name in key_bindings:
 		if not InputMap.has_action(action_name):
 			InputMap.add_action(action_name)

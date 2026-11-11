@@ -33,7 +33,10 @@ func _ready() -> void:
 	SignalBus.alife_settlement_queried.connect(_on_settlement_queried)
 	SignalBus.alife_political_map_queried.connect(_on_political_map_queried)
 	SignalBus.fog_batch_updated.connect(_on_political_visibility_changed)
-	SignalBus.chunk_loaded.connect(func(chunk: Vector2i) -> void: materializer.loaded_chunks[chunk] = true)
+	SignalBus.chunk_loaded.connect(func(chunk: Vector2i) -> void:
+		if not _settlement_chunks.has(chunk):
+			materializer.loaded_chunks[chunk] = true
+	)
 	SignalBus.chunk_unloaded.connect(materializer.unload_chunk)
 	SignalBus.player_tile_changed.connect(func(tile: Vector2i) -> void: materializer.player_tile = tile)
 	SignalBus.entity_died.connect(_on_entity_died)
@@ -572,7 +575,7 @@ func _on_refugee_aid_requested(camp_id: String, actor: Node, item_id: String, re
 			var def: Dictionary = DataRegistry.get_item(candidate)
 			if str(def.get("type", "")) == "food" and float(def.get("stats", {}).get("nutrition", 0.0)) > 0.0:
 				result["offer_item"] = candidate
-				result["message"] = "Refugee camp: press E again to donate 1 %s." % str(def.get("name", candidate))
+				result["message"] = "Лагерь беженцев: нажмите ПКМ ещё раз, чтобы передать 1 %s." % str(def.get("name", candidate))
 				return
 		result["message"] = "The refugees need food."
 		return

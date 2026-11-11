@@ -42,6 +42,23 @@ func key(code: Key, shift: bool = false, ctrl: bool = false) -> void:
 	Input.parse_input_event(event)
 	await frames()
 
+func right_click_world(point: Vector2) -> void:
+	var motion := InputEventMouseMotion.new()
+	motion.position = point
+	motion.global_position = point
+	Input.parse_input_event(motion)
+	await frames()
+	var event := InputEventMouseButton.new()
+	event.position = point
+	event.global_position = point
+	event.button_index = MOUSE_BUTTON_RIGHT
+	event.pressed = true
+	Input.parse_input_event(event)
+	await frames(1)
+	event.pressed = false
+	Input.parse_input_event(event)
+	await frames()
+
 func click(control: Control, button: MouseButton = MOUSE_BUTTON_LEFT, shift: bool = false) -> void:
 	check(control.is_visible_in_tree(), "Attempted to click a hidden control")
 	check(get_viewport().get_visible_rect().grow(1.0).encloses(control.get_global_rect()), "Control is clipped outside the viewport: " + str(control.get_path()))
@@ -219,8 +236,8 @@ func run() -> void:
 		motion.global_position = motion.position
 		get_viewport().push_input(motion, true)
 		await frames()
-		await key(KEY_E)
-		check(player.inventory.get_item_count("stone") == 3, "E failed to pick up dropped item")
+		await right_click_world(motion.position)
+		check(player.inventory.get_item_count("stone") == 3, "RMB failed to pick up dropped item")
 	player.inventory.set_slot(12, {"item_id": "copper_ore", "count": 3, "durability": -1})
 	await key(KEY_I)
 	hover = InputEventMouseMotion.new()
@@ -231,7 +248,8 @@ func run() -> void:
 	await key(KEY_Q, false, true)
 	check(player.inventory.get_slot(12).is_empty(), "Ctrl+Q did not remove full hovered stack")
 	await key(KEY_I)
-	await key(KEY_E)
+	if not world._ground_loot._bags().is_empty():
+		await right_click_world(world._ground_loot._bags()[0].get_global_transform_with_canvas().origin + Vector2(0, -3))
 	check(player.inventory.get_item_count("copper_ore") == 3, "Ctrl+Q lost dropped stack")
 	# Armour use and unequip must go through the visible slot widgets too.
 	player.inventory.set_slot(10, {"item_id": "leather_helmet", "count": 1, "durability": 31})

@@ -279,7 +279,7 @@ func _physics_process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if bool(get_meta("world_input_blocked", false)):
 		return
-	if bool(get_meta("build_mode_active", false)) and (event.is_action_pressed("attack") or event.is_action_pressed("interact") or event is InputEventMouseButton):
+	if bool(get_meta("build_mode_active", false)) and (event.is_action_pressed("attack") or event is InputEventMouseButton):
 		return
 	if bool(get_meta("item_action_busy", false)) and event.is_action_pressed("attack"):
 		return
@@ -360,7 +360,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_released("attack"):
 		if _is_charging_bow:
 			_release_bow_shot()
-	elif event.is_action_pressed("interact") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT):
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		var target: Node2D = InteractionPicker.pick(get_tree(), get_global_mouse_position(), self)
 		if target != null and target.is_in_group("combatant") and event is InputEventMouseButton:
 			preload("res://scripts/ui/enemy_inspect.gd").show_target(self, target)
@@ -368,8 +368,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			perform_interact(false)
 		elif _is_holding_placeable_block() and event is InputEventMouseButton:
 			_try_place_block_from_hand()
-		elif not event is InputEventMouseButton:
-			perform_interact(true)
 		get_viewport().set_input_as_handled()
 
 func _read_movement_input() -> Vector2:
@@ -519,7 +517,7 @@ func _has_attack_order() -> bool:
 func _attack_order_movement() -> Vector2:
 	if _is_holding_consumable() or not _has_attack_order():
 		return Vector2.ZERO
-	var reach: float = minf(42.0, float(equipment.get_weapon_stats().get("range_px", Config.MELEE_RANGE)))
+	var reach: float = _ordered_attack_reach()
 	var offset: Vector2 = _locked_target.global_position - global_position
 	if offset.length() > reach * 0.85:
 		var goal: Vector2i = Config.iso_to_world(_locked_target.global_position)
@@ -552,9 +550,15 @@ func _tick_auto_attack(_delta: float) -> void:
 		return
 	if stats.stamina < Config.STAMINA_COST_ATTACK:
 		return
-	var reach: float = minf(42.0, float(equipment.get_weapon_stats().get("range_px", Config.MELEE_RANGE)))
+	var reach: float = _ordered_attack_reach()
 	if global_position.distance_to(_locked_target.global_position) <= reach:
 		perform_attack()
+
+func _ordered_attack_reach() -> float:
+	var weapon: Dictionary = equipment.get_weapon_stats()
+	if str(weapon.get("range", "melee")) == "ranged":
+		return minf(320.0, Config.RANGED_MAX_RANGE * 0.7)
+	return minf(42.0, float(weapon.get("range_px", Config.MELEE_RANGE)))
 
 
 func _get_enemy_under_cursor() -> Node2D:
@@ -592,7 +596,7 @@ func perform_attack() -> void:
 	_lunge_offset = facing_direction * 4.0
 	queue_redraw()
 
-	var is_ranged: bool = str(w_stats.get("range", "melee")) == "ranged" and not _has_attack_order()
+	var is_ranged: bool = str(w_stats.get("range", "melee")) == "ranged"
 	if is_ranged:
 		if not inventory.has_item("arrow", 1):
 			SignalBus.notification_posted.emit("Out of arrows!")
@@ -606,8 +610,6 @@ func perform_attack() -> void:
 		return
 
 	if _has_attack_order():
-		if _is_holding_ranged():
-			w_stats = {"damage": 5.0, "range_px": Config.MELEE_RANGE}
 		w_stats["ordered_target"] = _locked_target
 	# SignalBus Melee Combat Dispatch (Decoupled from MeleeResolver)
 	SignalBus.melee_attack_requested.emit(self, global_position, facing_direction, w_stats)

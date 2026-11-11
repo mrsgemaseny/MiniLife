@@ -575,9 +575,14 @@ func take_structure_damage(amount: float) -> void:
 
 func _setup_collision(passable: bool) -> void:
 	_collision = CollisionShape2D.new()
-	var shape: CircleShape2D = CircleShape2D.new()
-	shape.radius = 14.0
-	_collision.shape = shape
+	if is_wall_segment():
+		var wall_shape := RectangleShape2D.new()
+		wall_shape.size = Vector2(Config.TILE_SIZE)
+		_collision.shape = wall_shape
+	else:
+		var shape := CircleShape2D.new()
+		shape.radius = 14.0
+		_collision.shape = shape
 	_collision.disabled = passable
 	add_child(_collision)
 

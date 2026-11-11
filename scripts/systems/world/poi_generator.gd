@@ -18,8 +18,7 @@ const RUIN_ANCHORS: Array[Vector2i] = [
 const RUIN_IDS: Array[String] = [
 	"abandoned_fort",
 	"collapsed_tower",
-	"underground_vault",
-	"old_village"
+	"underground_vault"
 ]
 
 

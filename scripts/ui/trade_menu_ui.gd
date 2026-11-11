@@ -10,6 +10,9 @@ var _stock_list: ItemList = null
 var _player_list: ItemList = null
 var _player_item_ids: Array[String] = []
 var _info_label: Label = null
+var _trade_closed: bool = false
+var _buy_button: Button
+var _sell_button: Button
 var _amnesty_button: Button
 var _amnesty_quote: int = 0
 
@@ -26,15 +29,33 @@ func _ready() -> void:
 
 func _make_mc_btn_style(hover: bool = false) -> StyleBoxFlat:
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
-	sb.bg_color = Color(0.68, 0.68, 0.68, 1.0) if hover else Color(0.58, 0.58, 0.58, 1.0)
-	sb.border_color = Color(0.22, 0.22, 0.22, 1.0)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(0)
+	sb.bg_color = Color("49605b") if hover else Color("34433f")
+	sb.border_color = Color("a38f61")
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(5)
 	sb.content_margin_left = 8
 	sb.content_margin_right = 8
-	sb.content_margin_top = 3
-	sb.content_margin_bottom = 3
+	sb.content_margin_top = 6
+	sb.content_margin_bottom = 6
 	return sb
+
+func _make_list_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("171d21")
+	style.border_color = Color("53605b")
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(4)
+	style.set_content_margin_all(8)
+	return style
+
+func _style_button(button: Button) -> void:
+	button.add_theme_stylebox_override("normal", _make_mc_btn_style())
+	button.add_theme_stylebox_override("hover", _make_mc_btn_style(true))
+	button.add_theme_color_override("font_color", Color("f2ebd8"))
+	button.add_theme_font_size_override("font_size", 13)
+
+func _currency_label(value: String) -> String:
+	return "сер." if value == "silver" else "зол."
 
 
 func _build_ui() -> void:
@@ -48,101 +69,131 @@ func _build_ui() -> void:
 	# 1. Dark World Dimmer (Minecraft authentic - NO BLUE, NO TEXTURE)
 	var dimmer: ColorRect = ColorRect.new()
 	dimmer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dimmer.color = Color(0.0, 0.0, 0.0, 0.65)
+	dimmer.color = Color(0.0, 0.0, 0.0, 0.55)
 	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(dimmer)
 	move_child(dimmer, 0)
 
 	var panel: PanelContainer = PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.offset_left = -360.0
-	panel.offset_top = -250.0
-	panel.offset_right = 360.0
-	panel.offset_bottom = 250.0
-	panel.custom_minimum_size = Vector2(720.0, 500.0)
+	panel.offset_left = -340.0
+	panel.offset_top = -210.0
+	panel.offset_right = 340.0
+	panel.offset_bottom = 210.0
+	panel.custom_minimum_size = Vector2(680.0, 420.0)
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
-	sb.bg_color = Color(0.776, 0.776, 0.776, 1.0) # Solid neutral grey
-	sb.border_color = Color(0.22, 0.22, 0.22, 1.0) # Dark pixel border
-	sb.set_border_width_all(3)
-	sb.set_corner_radius_all(0)
-	sb.set_content_margin_all(14)
+	sb.bg_color = Color("252d31")
+	sb.border_color = Color("aa9565")
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(8)
+	sb.set_content_margin_all(16)
 	panel.add_theme_stylebox_override("panel", sb)
 	add_child(panel)
 
 	var vbox: VBoxContainer = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
+	vbox.add_theme_constant_override("separation", 10)
 	panel.add_child(vbox)
 
 	var hdr_row: HBoxContainer = HBoxContainer.new()
 	var title: Label = Label.new()
 	title.text = "Торговля и обмен каравана"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 12)
-	title.modulate = Color(0.24, 0.24, 0.24, 1.0) # Minecraft dark text #3f3f3f
+	title.add_theme_font_size_override("font_size", 19)
+	title.add_theme_color_override("font_color", Color("f1e6c9"))
 	hdr_row.add_child(title)
 
 	var close_btn_top: Button = Button.new()
 	close_btn_top.text = " ✕ "
-	close_btn_top.add_theme_font_size_override("font_size", 11)
-	close_btn_top.add_theme_color_override("font_color", Color(0.24, 0.24, 0.24, 1.0))
-	close_btn_top.add_theme_stylebox_override("normal", _make_mc_btn_style(false))
-	close_btn_top.add_theme_stylebox_override("hover", _make_mc_btn_style(true))
+	_style_button(close_btn_top)
 	close_btn_top.pressed.connect(close_trade)
 	hdr_row.add_child(close_btn_top)
 	vbox.add_child(hdr_row)
 
 	_info_label = Label.new()
 	_info_label.text = "Выберите предмет для покупки или продажи."
-	_info_label.add_theme_font_size_override("font_size", 10)
-	_info_label.modulate = Color(0.35, 0.35, 0.35, 1.0)
+	_info_label.add_theme_font_size_override("font_size", 13)
+	_info_label.add_theme_color_override("font_color", Color("d7d3c2"))
 	vbox.add_child(_info_label)
 
 	_amnesty_button = Button.new()
+	_style_button(_amnesty_button)
 	_amnesty_button.hide()
 	_amnesty_button.pressed.connect(_on_amnesty_pressed)
 	vbox.add_child(_amnesty_button)
 
 	var hbox: HBoxContainer = HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 12)
 	hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(hbox)
 
+	var stock_column := VBoxContainer.new()
+	stock_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox.add_child(stock_column)
+	var stock_title := Label.new()
+	stock_title.text = "ТОВАРЫ КАРАВАНА  •  купить"
+	stock_title.add_theme_color_override("font_color", Color("e0c887"))
+	stock_title.add_theme_font_size_override("font_size", 13)
+	stock_column.add_child(stock_title)
 	_stock_list = ItemList.new()
 	_stock_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_stock_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	hbox.add_child(_stock_list)
+	_stock_list.add_theme_stylebox_override("panel", _make_list_style())
+	_stock_list.add_theme_color_override("font_color", Color("f4f0e5"))
+	_stock_list.add_theme_font_size_override("font_size", 13)
+	_stock_list.item_selected.connect(func(_index: int) -> void: _update_buttons())
+	stock_column.add_child(_stock_list)
 
+	var player_column := VBoxContainer.new()
+	player_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox.add_child(player_column)
+	var player_title := Label.new()
+	player_title.text = "ВАШИ ВЕЩИ  •  продать"
+	player_title.add_theme_color_override("font_color", Color("e0c887"))
+	player_title.add_theme_font_size_override("font_size", 13)
+	player_column.add_child(player_title)
 	_player_list = ItemList.new()
 	_player_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_player_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	hbox.add_child(_player_list)
+	_player_list.add_theme_stylebox_override("panel", _make_list_style())
+	_player_list.add_theme_color_override("font_color", Color("f4f0e5"))
+	_player_list.add_theme_font_size_override("font_size", 13)
+	_player_list.item_selected.connect(func(_index: int) -> void: _update_buttons())
+	player_column.add_child(_player_list)
 
 	var btn_row: HBoxContainer = HBoxContainer.new()
+	btn_row.add_theme_constant_override("separation", 8)
 	vbox.add_child(btn_row)
 
-	var buy_btn: Button = Button.new()
-	buy_btn.text = "Buy Selected (1x)"
-	buy_btn.pressed.connect(_on_buy_pressed)
-	btn_row.add_child(buy_btn)
+	_buy_button = Button.new()
+	_buy_button.text = "Купить ×1"
+	_buy_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_style_button(_buy_button)
+	_buy_button.pressed.connect(_on_buy_pressed)
+	btn_row.add_child(_buy_button)
 
-	var sell_btn: Button = Button.new()
-	sell_btn.text = "Sell Selected (1x)"
-	sell_btn.pressed.connect(_on_sell_pressed)
-	btn_row.add_child(sell_btn)
+	_sell_button = Button.new()
+	_sell_button.text = "Продать ×1"
+	_sell_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_style_button(_sell_button)
+	_sell_button.pressed.connect(_on_sell_pressed)
+	btn_row.add_child(_sell_button)
 
+	var exchange_row := HBoxContainer.new()
+	exchange_row.add_theme_constant_override("separation", 8)
+	vbox.add_child(exchange_row)
 	var buy_gold_btn: Button = Button.new()
-	buy_gold_btn.text = "Exchange: Silver -> 1 Gold"
+	buy_gold_btn.text = "Серебро → 1 золото"
+	buy_gold_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_style_button(buy_gold_btn)
 	buy_gold_btn.pressed.connect(_on_buy_gold_pressed)
-	btn_row.add_child(buy_gold_btn)
+	exchange_row.add_child(buy_gold_btn)
 
 	var sell_gold_btn: Button = Button.new()
-	sell_gold_btn.text = "Exchange: 1 Gold -> Silver"
+	sell_gold_btn.text = "1 золото → серебро"
+	sell_gold_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_style_button(sell_gold_btn)
 	sell_gold_btn.pressed.connect(_on_sell_gold_pressed)
-	btn_row.add_child(sell_gold_btn)
-
-	var close_btn: Button = Button.new()
-	close_btn.text = "Close Trade"
-	close_btn.pressed.connect(close_trade)
-	btn_row.add_child(close_btn)
+	exchange_row.add_child(sell_gold_btn)
 
 func _on_trade_session_requested(trader: Node) -> void:
 	_current_trader = trader
@@ -164,8 +215,10 @@ func _refresh_lists() -> void:
 	SignalBus.alife_market_queried.emit(_current_trader, market)
 	_amnesty_quote = int(market.get("amnesty_silver", 0))
 	_amnesty_button.visible = _amnesty_quote > 0
-	_amnesty_button.text = "Pay amnesty — %d silver" % _amnesty_quote
+	_amnesty_button.text = "Выплатить штраф — %d серебра" % _amnesty_quote
 	var managed: bool = bool(market.get("managed", false))
+	var closed: bool = bool(market.get("closed", false))
+	_trade_closed = closed
 	if managed:
 		_trader_stock.assign((market.get("items", {}) as Dictionary).keys())
 		_trader_stock.sort()
@@ -178,11 +231,14 @@ func _refresh_lists() -> void:
 		if managed:
 			var quote: Dictionary = MarketPricing.quote(item_id, market, true, parameters.skill, parameters.memory)
 			if quote.is_empty():
-				_stock_list.add_item("Unavailable")
+				_stock_list.add_item("%s — нет в продаже" % str(def.get("name", item_id)))
 			else:
-				_stock_list.add_item("[BUY] %s x%d - %d %s" % [str(def.get("name", item_id)), int(quote["available"]), int(quote["price"]), str(quote["currency"])])
+				_stock_list.add_item("%s ×%d  •  %d %s" % [str(def.get("name", item_id)), int(quote["available"]), int(quote["price"]), _currency_label(str(quote["currency"]))])
 		else:
-			_stock_list.add_item("[BUY] %s - %d Gold" % [str(def.get("name", item_id)), val])
+			_stock_list.add_item("%s  •  %d зол." % [str(def.get("name", item_id)), val])
+	if _trader_stock.is_empty():
+		_stock_list.add_item("Сейчас нет товаров")
+		_stock_list.set_item_disabled(0, true)
 
 	_player_list.clear()
 	_player_item_ids.clear()
@@ -195,9 +251,11 @@ func _refresh_lists() -> void:
 				is_city = bool(_current_trader.get("is_in_city"))
 			var rate: int = CurrencyPolicy.SILVER_PER_GOLD
 			var loc_name: String = str(market.get("name", "Trade City" if is_city else "Village / Frontier"))
-			_info_label.text = "Wealth: %d Gold | %d Silver  [Rate at %s: 1 Gold = %d Silver]" % [inv.gold + inv.count_of("gold_coin"), inv.silver + inv.count_of("silver_coin"), loc_name, rate]
+			_info_label.text = "%s  •  У вас %d зол. и %d сер.  •  1 зол. = %d сер." % [loc_name, inv.gold + inv.count_of("gold_coin"), inv.silver + inv.count_of("silver_coin"), rate]
 			if market.has("close_reason"):
-				_info_label.text = "%s  |  %d gold, %d silver" % [market["close_reason"], inv.gold, inv.silver]
+				_info_label.text = "%s  •  %d зол., %d сер." % [market["close_reason"], inv.gold, inv.silver]
+			elif closed:
+				_info_label.text = "Груз каравана зарезервирован для доставки. Торговля недоступна."
 		for slot in inv.slots:
 			var iid: String = str(slot.get("item_id", ""))
 			var cnt: int = int(slot.get("count", 0))
@@ -209,11 +267,21 @@ func _refresh_lists() -> void:
 			if managed:
 				var quote: Dictionary = MarketPricing.quote(iid, market, false, parameters.skill, parameters.memory)
 				if quote.is_empty():
-					_player_list.add_item("%s x%d (not traded)" % [str(def.get("name", iid)), cnt])
+					_player_list.add_item("%s ×%d  •  не принимают" % [str(def.get("name", iid)), cnt])
 				else:
-					_player_list.add_item("[SELL] %s x%d (+%d %s ea)" % [str(def.get("name", iid)), cnt, int(quote["price"]), str(quote["currency"])])
+					_player_list.add_item("%s ×%d  •  +%d %s" % [str(def.get("name", iid)), cnt, int(quote["price"]), _currency_label(str(quote["currency"]))])
 			else:
-				_player_list.add_item("[SELL] %s x%d (+%d Gold ea)" % [str(def.get("name", iid)), cnt, sell_val])
+				_player_list.add_item("%s ×%d  •  +%d зол." % [str(def.get("name", iid)), cnt, sell_val])
+	if _player_item_ids.is_empty():
+		_player_list.add_item("В сумке пока пусто")
+		_player_list.set_item_disabled(0, true)
+	_update_buttons()
+
+func _update_buttons() -> void:
+	if _buy_button != null:
+		_buy_button.disabled = _trade_closed or _stock_list.get_selected_items().is_empty() or _trader_stock.is_empty()
+	if _sell_button != null:
+		_sell_button.disabled = _trade_closed or _player_list.get_selected_items().is_empty() or _player_item_ids.is_empty()
 
 func _on_amnesty_pressed() -> void:
 	var result: Dictionary = {}

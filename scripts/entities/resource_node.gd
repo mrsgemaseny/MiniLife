@@ -449,7 +449,7 @@ func is_forageable() -> bool:
 
 
 func interact(harvester: Node) -> void:
-	# Hand foraging via [E] or RMB for wild plants, herbs and bushes
+	# Hand foraging via RMB for wild plants, herbs and bushes
 	if is_forageable():
 		SignalBus.ui_sound_requested.emit("harvest_foliage")
 		_deplete_and_grant(harvester)

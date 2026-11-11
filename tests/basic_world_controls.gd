@@ -19,6 +19,7 @@ func mouse(point: Vector2, pressed: bool = false) -> void:
 
 func run() -> void:
 	await setup()
+	check(not InputMap.has_action("interact"), "Legacy E interaction action still exists")
 	var world: WorldSystem = main.get_node("World") as WorldSystem
 	var start: Vector2i = world._find_spawn_tile()
 	SignalBus.player_teleport_requested.emit(Config.world_to_iso(start))
@@ -37,7 +38,7 @@ func run() -> void:
 	Input.parse_input_event(move)
 	await wait_action(0.2)
 	check(player.position.distance_to(before) > 3.0, "D did not move the player")
-	# E must gather the object actually under the pointer.
+	# RMB gathers the object actually under the pointer.
 	var bush: ResourceNode = ResourceNode.new()
 	bush.node_def_id = "wild_berry_bush"
 	bush.tile_pos = Config.iso_to_world(player.position) + Vector2i(1,0)
@@ -46,8 +47,8 @@ func run() -> void:
 	camera.reset_smoothing()
 	await frames()
 	await mouse(bush.get_global_transform_with_canvas().origin + Vector2(0,-12))
-	await key(KEY_E)
-	check(player.inventory.get_item_count("berries") >= 2, "E did not gather berries")
+	await right_click_world(bush.get_global_transform_with_canvas().origin + Vector2(0,-12))
+	check(player.inventory.get_item_count("berries") >= 2, "RMB did not gather berries")
 	# Hold mining input; do not call harvest methods directly.
 	player.inventory.set_slot(0, {"item_id": "stone_axe", "count": 1, "durability": 65})
 	await key(KEY_1)
@@ -124,7 +125,7 @@ func run() -> void:
 	var furnace: StructureEntity = building._placed_structures.get(Config.vec2i_to_key(target)) as StructureEntity
 	if furnace != null:
 		await mouse(furnace.get_global_transform_with_canvas().origin + Vector2(0,-18))
-		await key(KEY_E)
+		await right_click_world(furnace.get_global_transform_with_canvas().origin + Vector2(0,-18))
 		var furnace_ui: FurnaceUI = main.get_node("UILayer/FurnaceUI") as FurnaceUI
 		check(furnace_ui.visible and not GameManager.is_paused(), "Opening furnace froze its processing")
 		player.inventory.set_slot(8, {"item_id": "wood", "count": 2, "durability": -1})
@@ -155,9 +156,9 @@ func run() -> void:
 	var contents: InventoryComponent = building.get_storage_manager().get_or_create_container(chest_tile)
 	contents.add_item("stone", 5)
 	await mouse(chest.get_global_transform_with_canvas().origin + Vector2(0,-12))
-	await key(KEY_E)
+	await right_click_world(chest.get_global_transform_with_canvas().origin + Vector2(0,-12))
 	var chest_ui: Control = main.get_node("UILayer/ChestLoot") as Control
-	check(chest_ui.visible, "E did not open chest")
+	check(chest_ui.visible, "RMB did not open chest")
 	var stone_count: int = player.inventory.get_item_count("stone")
 	for button in chest_ui.find_children("*", "Button", true, false):
 		if button.text.contains("TAKE ALL"):

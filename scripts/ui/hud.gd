@@ -137,7 +137,7 @@ func _setup_styled_hud() -> void:
 	_exit_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_exit_hint_label.add_theme_font_size_override("font_size", 11)
 	_exit_hint_label.modulate = Color(0.82, 0.80, 0.76) # Muted parchment (NO YELLOW)
-	_exit_hint_label.text = "Press [E] near entrance to leave"
+	_exit_hint_label.text = "ПКМ у входа — выйти"
 	_exit_hint_label.visible = false
 	add_child(_exit_hint_label)
 
@@ -257,7 +257,7 @@ func _setup_styled_hud() -> void:
 
 	# 5. Subtle controls hint
 	var hint_lbl: Label = Label.new()
-	hint_lbl.text = "[F] Use held item  [E] Interact  [I] Bag  [M] Local map  [G] World map  [C] Craft  [B] Build  [K] Hero  [ESC] Menu"
+	hint_lbl.text = "[F] Предмет  [ПКМ] Действие  [I] Сумка  [M] Локальная карта  [G] Мир  [C] Крафт  [B] Строить  [K] Герой  [ESC] Меню"
 	hint_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint_lbl.add_theme_font_size_override("font_size", 9)
 	hint_lbl.modulate = Color(0.72, 0.76, 0.82, 0.55)
@@ -585,12 +585,12 @@ func _populate_inspect_card(target: Node2D) -> void:
 		var faction: String = str(target.get("faction_id")).capitalize()
 		_inspect_title.text = npc_name if not npc_name.is_empty() else "Inhabitant"
 		_inspect_badge.text = "[ Faction: %s ]" % faction
-		_inspect_details.text = "Press [E] to interact or trade"
+		_inspect_details.text = "ПКМ — взаимодействовать или торговать"
 	elif target.is_in_group("interactable") or target.has_method("get_station_id"):
 		var sid: String = str(target.get("structure_id"))
 		var sdef: Dictionary = DataRegistry.get_structure(sid)
 		var sname: String = str(sdef.get("name", sid.capitalize().replace("_", " ")))
 		_inspect_title.text = sname
-		_inspect_badge.text = "[ Station / Structure • E or RMB ]"
+		_inspect_badge.text = "[ Станция / Постройка • ПКМ ]"
 		_inspect_details.text = "Interact range: 3 tiles"
 

@@ -1,7 +1,7 @@
 class_name LootBag
 extends Node2D
 
-# World-dropped loot pouch that players can pick up with [E].
+# World-dropped loot pouch that players can pick up with RMB.
 
 var items: Array[Dictionary] = [] # [{item_id: String, count: int}]
 var gold: int = 0

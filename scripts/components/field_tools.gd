@@ -4,7 +4,7 @@ extends Node
 func _unhandled_input(event: InputEvent) -> void:
 	if GameManager.is_paused() or bool(get_parent().get_meta("build_mode_active", false)) or bool(get_parent().get_meta("world_input_blocked", false)):
 		return
-	if not (event.is_action_pressed("interact") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT)):
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT):
 		return
 	var actor: Node2D = get_parent() as Node2D
 	if InteractionPicker.pick(get_tree(),actor.get_global_mouse_position(),actor) != null:

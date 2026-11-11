@@ -48,6 +48,7 @@ var _terrain_jobs: Dictionary = {}
 var _retired_jobs: Array[ChunkTerrainJob] = []
 var _alife_seed_structures: Dictionary = {}
 var _vision_material: ShaderMaterial
+var _vision_mask: ColorRect
 
 
 func _ready() -> void:
@@ -55,6 +56,18 @@ func _ready() -> void:
 	_vision_material.shader = preload("res://assets/shaders/vision_edge.gdshader")
 	_vision_material.set_shader_parameter("vision_radius_px", float(_vision_radius * Config.TILE_SIZE.x))
 	material = _vision_material
+	_vision_mask = ColorRect.new()
+	_vision_mask.name = "VisionMask"
+	_vision_mask.size = Vector2(4096.0, 4096.0)
+	_vision_mask.color = Color.BLACK
+	_vision_mask.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_vision_mask.z_as_relative = false
+	_vision_mask.z_index = 1000
+	var mask_material := ShaderMaterial.new()
+	mask_material.shader = preload("res://assets/shaders/vision_mask.gdshader")
+	mask_material.set_shader_parameter("vision_radius_px", float(_vision_radius * Config.TILE_SIZE.x))
+	_vision_mask.material = mask_material
+	add_child(_vision_mask)
 	SignalBus.settlement_facilities_queried.connect(_on_settlement_facilities_queried)
 	SignalBus.endgame_stronghold_revealed.connect(_on_stronghold_unlocked)
 	SignalBus.world_tile_queried.connect(func(tile: Vector2i, result: Dictionary) -> void:
@@ -110,6 +123,7 @@ func _exit_tree() -> void:
 func _process(delta: float) -> void:
 	if _last_player_tile.x >= 0:
 		_vision_material.set_shader_parameter("vision_center", GameManager.get_player_world_pos())
+		_vision_mask.position = GameManager.get_player_world_pos() - _vision_mask.size * 0.5
 	for job: ChunkTerrainJob in _retired_jobs.duplicate():
 		if job.complete():
 			job.collect()
@@ -130,6 +144,7 @@ func _process(delta: float) -> void:
 			running_jobs += 1
 	# SceneTree mutations stay on the main thread, with a bounded streaming budget.
 	var deadline: int = Time.get_ticks_usec() + 2500
+	var chunks_loaded_this_frame: int = 0
 	while not _pending_chunks.is_empty() and Time.get_ticks_usec() < deadline:
 		var next_chunk: Vector2i = _pending_chunks.pop_front()
 		if _terrain_jobs.has(next_chunk) and not (_terrain_jobs[next_chunk] as ChunkTerrainJob).complete():
@@ -137,6 +152,9 @@ func _process(delta: float) -> void:
 			break
 		if not _loaded_chunks.has(next_chunk):
 			_load_chunk(next_chunk)
+			chunks_loaded_this_frame += 1
+			if chunks_loaded_this_frame >= 1:
+				break
 	var target_col: Color = Color(1.0, 1.0, 1.0, 1.0)
 	if _interior_zone != null and _interior_zone.is_player_inside():
 		target_col = Color(0.12, 0.12, 0.15, 1.0)
@@ -600,6 +618,7 @@ func _on_player_tile_changed(tile_pos: Vector2i) -> void:
 func _on_player_vision_changed(radius: int) -> void:
 	_vision_radius = maxi(radius, 3)
 	_vision_material.set_shader_parameter("vision_radius_px", float(_vision_radius * Config.TILE_SIZE.x))
+	_vision_mask.material.set_shader_parameter("vision_radius_px", float(_vision_radius * Config.TILE_SIZE.x))
 	if _last_player_tile.x > -9000:
 		update_visibility(Config.world_to_iso(_last_player_tile))
 
@@ -668,6 +687,7 @@ func _load_chunk(cpos: Vector2i) -> void:
 	var poi_data: Dictionary = PoiGenerator.get_chunk_poi(_seed, cpos, center_biome)
 	var settlement_info: Dictionary = {}
 	SignalBus.alife_settlement_queried.emit(cpos, settlement_info)
+	# Keep the minimap marker without generating a settlement in local terrain.
 	if not settlement_info.is_empty():
 		poi_data = settlement_info
 	for id: String in _boss_sites:
@@ -1182,7 +1202,8 @@ func _check_poi_discovery(pos: Vector2i) -> void:
 				var poi_id: String = str(pinfo.get("poi_id", ""))
 				_discovered_pois[key] = poi_id
 				SignalBus.poi_discovered.emit(poi_id, discovery_tile)
-				SignalBus.notification_posted.emit("Discovered: " + str(pinfo.get("name", poi_id.capitalize())))
+				if not pinfo.has("settlement_id"):
+					SignalBus.notification_posted.emit("Discovered: " + str(pinfo.get("name", poi_id.capitalize())))
 
 
 func _check_interior_entry(pos: Vector2i) -> void:
