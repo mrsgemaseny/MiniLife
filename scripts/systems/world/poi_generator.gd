@@ -142,8 +142,9 @@ static func _build_bandit_plan(world_seed: int) -> Dictionary:
 		if anchor.x < 0:
 			continue
 		var index: int = result.size()
-		var id: String = BANDIT_IDS[3] if index == wanted - 1 else BANDIT_IDS[index % 3]
-		result[candidate] = {"poi_id": id, "tile_pos": anchor, "is_ruin": false, "camp_variant": rng.randi_range(0, 3)}
+		var id: String = BANDIT_IDS[3] if index == 5 or index == wanted - 1 else BANDIT_IDS[index % 3]
+		var variant: int = (0 if index == 5 else 1) if id == BANDIT_IDS[3] else rng.randi_range(0, 3)
+		result[candidate] = {"poi_id": id, "tile_pos": anchor, "is_ruin": false, "camp_variant": variant}
 	return result
 
 static func find_land_anchor(world_seed: int, chunk_pos: Vector2i, size: Vector2i) -> Vector2i:

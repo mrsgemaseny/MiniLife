@@ -42,7 +42,7 @@ func _ready() -> void:
 		stats = StatsComponent.new()
 	_apply_enemy_definition()
 	if int(_enemy_def.get("bandit_tier", 0)) > 0:
-		var sprite_name: String = enemy_id.trim_prefix("bandit_")
+		var sprite_name: String = str(_enemy_def.get("sprite", enemy_id.trim_prefix("bandit_")))
 		_bandit_texture = load("res://assets/sprites/enemies/bandits/" + sprite_name + ".png") as Texture2D
 	if not enemy_id.contains("scout"):
 		_appearance_gear._equipped["chest"] = {"item_id": "iron_armor", "durability": -1}
@@ -163,6 +163,8 @@ func _tick_fsm(delta: float) -> void:
 						prof = "bandit"
 
 				match prof:
+					"bandit_ranged":
+						velocity = (-to_target * move_speed * 0.75) if dist < 100.0 else to_target * move_speed
 					"bandit_scout":
 						# Scouts circle and disengage when wounded.
 						var side: float = 1.0 if (hash(spawn_uid) & 1) == 0 else -1.0
@@ -214,6 +216,13 @@ func _tick_fsm(delta: float) -> void:
 				facing_direction = (target_entity.global_position - global_position).normalized()
 				_body_lunge = facing_direction * 6.0
 				_cooldown_timer = attack_cooldown
+				if ai_profile == "bandit_ranged":
+					if not _has_clear_shot(target_entity.global_position):
+						current_state = State.CHASE
+						return
+					var aim: Vector2 = (target_entity.global_position + Vector2(0.0, -14.0) - (global_position + Vector2(0.0, -12.0))).normalized()
+					SignalBus.projectile_fired.emit(global_position + Vector2(0.0, -12.0), aim, Config.PROJECTILE_SPEED, attack_damage, "physical", self, attack_range)
+					return
 				_attack_count += 1
 				var strike_damage: float = attack_damage
 				if ai_profile == "bandit_raider" and _attack_count % 3 == 0:
@@ -224,6 +233,29 @@ func _tick_fsm(delta: float) -> void:
 					strike_damage *= 1.6
 					_cooldown_timer *= 1.4
 				SignalBus.damage_requested.emit(target_entity, strike_damage, "physical", self)
+
+func _has_clear_shot(target_position: Vector2) -> bool:
+	var from_tile: Vector2i = Config.iso_to_world(global_position)
+	var to_tile: Vector2i = Config.iso_to_world(target_position)
+	var steps: int = maxi(absi(to_tile.x - from_tile.x), absi(to_tile.y - from_tile.y))
+	var previous: Vector2i = from_tile
+	for step: int in range(1, steps):
+		var tile: Vector2i = Vector2i(Vector2(from_tile).lerp(Vector2(to_tile), float(step) / float(steps)).round())
+		var result: Dictionary = {}
+		SignalBus.world_tile_queried.emit(tile, result)
+		if not bool(result.get("passable", true)):
+			return false
+		if tile.x != previous.x and tile.y != previous.y:
+			for side: Vector2i in [Vector2i(previous.x, tile.y), Vector2i(tile.x, previous.y)]:
+				result.clear()
+				SignalBus.world_tile_queried.emit(side, result)
+				if not bool(result.get("passable", true)):
+					return false
+		previous = tile
+	return true
+
+func get_last_fired_projectile_id() -> String:
+	return "iron_bolt" if enemy_id == "bandit_crossbow" else "arrow"
 
 func is_alive() -> bool:
 	return not is_permanently_dead and stats.health > 0.0

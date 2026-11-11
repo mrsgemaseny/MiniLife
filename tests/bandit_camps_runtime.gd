@@ -14,6 +14,19 @@ func _run() -> void:
 		assert(info == PoiGenerator.get_bandit_camp_for_chunk(seed_value, chunk))
 		assert(DataRegistry.get_poi(info["poi_id"]).has("camp_tier"))
 	assert(kinds.size() == 4)
+	var all_bandits: Dictionary = {}
+	for poi_id: String in PoiGenerator.BANDIT_IDS:
+		for id: String in DataRegistry.get_poi(poi_id).get("enemy_pool", []):
+			all_bandits[id] = true
+	all_bandits["bandit_axe_chief"] = true
+	assert(all_bandits.size() == 13)
+	for id: String in all_bandits:
+		var def: Dictionary = DataRegistry.get_enemy(id)
+		assert(not def.is_empty() and int(def.get("bandit_tier", 0)) > 0)
+		var sprite_name: String = str(def.get("sprite", id.trim_prefix("bandit_")))
+		var sprite: Texture2D = load("res://assets/sprites/enemies/bandits/" + sprite_name + ".png") as Texture2D
+		assert(sprite != null and sprite.get_width() <= 256)
+		assert(sprite.get_image().get_pixel(0, 0).a < 0.1)
 	var unique_chests: Dictionary = {}
 	for i: int in range(40):
 		for tier: int in range(1, 5):
@@ -56,5 +69,18 @@ func _run() -> void:
 	var site_storage: StorageManager = BuildingSystem.instance.get_storage_manager()
 	assert(site_storage.get_container_gold(site_chest) > 0)
 	assert(not site_storage.get_or_create_container(site_chest).to_dict().is_empty())
+	var spawned_ids: Dictionary = {}
+	for chunk: Vector2i in plan:
+		if not world._loaded_chunks.has(chunk):
+			world._load_chunk(chunk)
+		for entity: Node in world._spawned_entities_by_chunk.get(chunk, []):
+			if entity is EnemyBase and entity.faction_id == "bandits":
+				spawned_ids[entity.enemy_id] = true
+	assert(spawned_ids.size() == 13)
+	var chief_variants: Dictionary = {}
+	for info: Dictionary in plan.values():
+		if info["poi_id"] == "bandit_chief_camp":
+			chief_variants[int(info["camp_variant"])] = true
+	assert(chief_variants.size() == 2)
 	print("BANDIT_CAMPS_PASS: sites, ranks, deterministic varied loot, valid items, chest persistence")
 	get_tree().quit()

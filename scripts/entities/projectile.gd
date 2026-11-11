@@ -78,6 +78,8 @@ func _process(delta: float) -> void:
 	for node in get_tree().get_nodes_in_group("combatant"):
 		if node == shooter or not (node is Node2D):
 			continue
+		if shooter is EnemyBase and node is EnemyBase and (shooter as EnemyBase).faction_id == (node as EnemyBase).faction_id:
+			continue
 		var n2d: Node2D = node as Node2D
 		if not n2d.is_visible_in_tree():
 			continue

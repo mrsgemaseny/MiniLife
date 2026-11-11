@@ -1371,7 +1371,7 @@ func _spawn_minor_location(info: Dictionary) -> void:
 					SignalBus.structure_restored.emit("wall", anchor + Vector2i(6, y))
 		elif tier == 2:
 			for y in [1, 2, 4, 5]:
-				SignalBus.structure_restored.emit("wall", anchor + Vector2i(1 if variant % 2 == 0 else 5, y))
+				SignalBus.structure_restored.emit("wall", anchor + Vector2i(0 if variant % 2 == 0 else 6, y))
 	if id in ["ruins", "cave", "dungeon"]:
 		for x in range(5):
 			SignalBus.structure_restored.emit("wall", anchor + Vector2i(x, 0))
@@ -1408,6 +1408,9 @@ func _spawn_location_inhabitants(cpos: Vector2i, spawned: Array[Node], killed: A
 	elif not bool(info.get("is_ruin", false)):
 		var poi_def: Dictionary = DataRegistry.get_poi(str(info["poi_id"]))
 		var pool: Array = poi_def.get("enemy_pool", [])
+		if str(info["poi_id"]) == "bandit_chief_camp" and int(info.get("camp_variant", 0)) % 2 == 1:
+			pool = pool.duplicate()
+			pool[0] = "bandit_axe_chief"
 		var tier: int = int(poi_def.get("camp_tier", 0))
 		var offsets: Array[Vector2i] = [Vector2i(1, 2), Vector2i(5, 4), Vector2i(2, 5), Vector2i(4, 1), Vector2i(3, 4)]
 		for i in range(pool.size() if tier > 0 else mini(pool.size(), 2)):

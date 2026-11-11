@@ -21,7 +21,7 @@ static func compute_next_step(from_tile: Vector2i, to_tile: Vector2i, passable_c
 	for candidate in candidates:
 		if candidate == from_tile:
 			continue
-		if passable_check.is_valid() and bool(passable_check.call(candidate)):
+		if passable_check.is_valid() and bool(passable_check.call(candidate)) and _diagonal_clear(from_tile, candidate, passable_check):
 			return candidate
 		elif not passable_check.is_valid():
 			return candidate
@@ -38,9 +38,9 @@ static func compute_local_route(from_tile: Vector2i, to_tile: Vector2i, passable
 	while cursor < queue.size() and cursor < 220 and closest != to_tile:
 		var current: Vector2i = queue[cursor]
 		cursor += 1
-		for direction: Vector2i in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
+		for direction: Vector2i in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]:
 			var next: Vector2i = current + direction
-			if previous.has(next) or not bool(passable_check.call(next)):
+			if previous.has(next) or not bool(passable_check.call(next)) or not _diagonal_clear(current, next, passable_check):
 				continue
 			previous[next] = current
 			queue.append(next)
@@ -55,3 +55,9 @@ static func compute_local_route(from_tile: Vector2i, to_tile: Vector2i, passable
 		closest = previous[closest]
 	route.reverse()
 	return route
+
+static func _diagonal_clear(from_tile: Vector2i, to_tile: Vector2i, passable_check: Callable) -> bool:
+	var delta: Vector2i = to_tile - from_tile
+	if delta.x == 0 or delta.y == 0 or not passable_check.is_valid():
+		return true
+	return bool(passable_check.call(from_tile + Vector2i(delta.x, 0))) and bool(passable_check.call(from_tile + Vector2i(0, delta.y)))

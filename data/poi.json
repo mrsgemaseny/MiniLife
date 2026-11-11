@@ -14,19 +14,19 @@
 	},
 	{
 		"id": "bandit_hideout", "name": "Bandit Hideout", "type": "bandit_camp", "camp_tier": 1,
-		"color": "#a66b38", "enemy_pool": ["bandit_scout", "bandit_scout", "bandit_raider"], "respawns": false
+		"color": "#a66b38", "enemy_pool": ["bandit_scout", "bandit_club", "bandit_novice_archer", "bandit_spear_guard"], "respawns": false
 	},
 	{
 		"id": "bandit_roadblock", "name": "Bandit Roadblock", "type": "bandit_camp", "camp_tier": 2,
-		"color": "#a34d31", "enemy_pool": ["bandit_scout", "bandit_raider", "bandit_raider", "bandit_veteran"], "respawns": false
+		"color": "#a34d31", "enemy_pool": ["bandit_raider", "bandit_axe_guard", "bandit_heavy_axe", "bandit_ranger"], "respawns": false
 	},
 	{
 		"id": "bandit_fort", "name": "Bandit Fort", "type": "bandit_camp", "camp_tier": 3,
-		"color": "#812b28", "enemy_pool": ["bandit_raider", "bandit_veteran", "bandit_veteran", "bandit_scout"], "respawns": false
+		"color": "#812b28", "enemy_pool": ["bandit_veteran", "bandit_armored_axe", "bandit_crossbow", "bandit_raider"], "respawns": false
 	},
 	{
 		"id": "bandit_chief_camp", "name": "Bandit Chief's Camp", "type": "bandit_camp", "camp_tier": 4,
-		"color": "#5d1620", "enemy_pool": ["bandit_scout", "bandit_raider", "bandit_veteran", "bandit_veteran", "bandit_chief"], "respawns": false
+		"color": "#5d1620", "enemy_pool": ["bandit_chief", "bandit_ranger", "bandit_veteran", "bandit_armored_axe", "bandit_crossbow"], "respawns": false
 	},
 	{
 		"id": "ruins",
