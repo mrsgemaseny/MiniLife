@@ -29,6 +29,8 @@ var _sim_timer: float = 0.0
 var _wander_dir: Vector2 = Vector2.RIGHT
 var _wander_timer: float = 0.0
 var _enemy_def: Dictionary = {}
+var _attack_count: int = 0
+var _bandit_texture: Texture2D = null
 var _appearance_gear: EquipmentComponent = EquipmentComponent.new()
 
 func _ready() -> void:
@@ -39,6 +41,9 @@ func _ready() -> void:
 	if stats == null:
 		stats = StatsComponent.new()
 	_apply_enemy_definition()
+	if int(_enemy_def.get("bandit_tier", 0)) > 0:
+		var sprite_name: String = enemy_id.trim_prefix("bandit_")
+		_bandit_texture = load("res://assets/sprites/enemies/bandits/" + sprite_name + ".png") as Texture2D
 	if not enemy_id.contains("scout"):
 		_appearance_gear._equipped["chest"] = {"item_id": "iron_armor", "durability": -1}
 	SignalBus.player_tile_changed.connect(_on_player_tile_changed)
@@ -67,6 +72,7 @@ func _apply_enemy_definition() -> void:
 	attack_range = float(_enemy_def.get("attack_range", attack_range))
 	attack_damage = float(_enemy_def.get("damage", _enemy_def.get("attack_damage", attack_damage)))
 	attack_cooldown = float(_enemy_def.get("attack_cooldown", attack_cooldown))
+	ai_profile = str(_enemy_def.get("ai_profile", ai_profile))
 
 	# Wolves are non-aggressive fauna: attacks and damage completely disabled
 	if enemy_id == "wolf" or enemy_id.find("wolf") != -1:
@@ -84,6 +90,9 @@ func _physics_process(delta: float) -> void:
 
 	if sim_tier == SimulationBubble.Tier.FULL:
 		_tick_fsm(delta)
+	elif _bandit_texture != null:
+		var bob: float = -1.5 if velocity.length_squared() > 20.0 and int(Time.get_ticks_msec() / 160) % 2 == 0 else 0.0
+		draw_texture_rect(_bandit_texture, Rect2(-28.0 + _body_lunge.x, -58.0 + bob + _body_lunge.y, 56.0, 56.0), false)
 	else:
 		_sim_timer += delta
 		var interval: float = SimulationBubble.get_tick_interval(sim_tier)
@@ -154,6 +163,18 @@ func _tick_fsm(delta: float) -> void:
 						prof = "bandit"
 
 				match prof:
+					"bandit_scout":
+						# Scouts circle and disengage when wounded.
+						var side: float = 1.0 if (hash(spawn_uid) & 1) == 0 else -1.0
+						var tangent: Vector2 = Vector2(-to_target.y, to_target.x) * side
+						velocity = ((-to_target * 0.7 + tangent * 0.7) if stats.health < stats.max_health * 0.30 else (to_target * 0.65 + tangent * 0.55)).normalized() * move_speed
+					"bandit_raider":
+						var side: float = 1.0 if (hash(spawn_uid) & 1) == 0 else -1.0
+						velocity = (to_target + Vector2(-to_target.y, to_target.x) * side * 0.4).normalized() * move_speed
+					"bandit_veteran":
+						velocity = to_target * (move_speed * 0.75 if dist < attack_range * 2.0 else move_speed)
+					"bandit_chief":
+						velocity = to_target * (move_speed * 1.25 if stats.health < stats.max_health * 0.5 else move_speed)
 					"mercenary":
 						if stats.health < stats.max_health * 0.35 and not has_used_potion:
 							has_used_potion = true
@@ -193,7 +214,16 @@ func _tick_fsm(delta: float) -> void:
 				facing_direction = (target_entity.global_position - global_position).normalized()
 				_body_lunge = facing_direction * 6.0
 				_cooldown_timer = attack_cooldown
-				SignalBus.damage_requested.emit(target_entity, attack_damage, "physical", self)
+				_attack_count += 1
+				var strike_damage: float = attack_damage
+				if ai_profile == "bandit_raider" and _attack_count % 3 == 0:
+					strike_damage *= 1.35
+				elif ai_profile == "bandit_veteran" and _attack_count % 3 == 0:
+					strike_damage *= 1.25
+				elif ai_profile == "bandit_chief" and _attack_count % 3 == 0:
+					strike_damage *= 1.6
+					_cooldown_timer *= 1.4
+				SignalBus.damage_requested.emit(target_entity, strike_damage, "physical", self)
 
 func is_alive() -> bool:
 	return not is_permanently_dead and stats.health > 0.0
@@ -234,10 +264,20 @@ func _handle_death(killer: Node) -> void:
 
 func _spawn_loot_drop() -> void:
 	var drops: Array[Dictionary] = LootTableRoller.roll_enemy_loot(_enemy_def)
+	var gold: int = randi_range(3, 12) if faction_id == "raiders" else 0
+	var tier: int = int(_enemy_def.get("bandit_tier", 0))
+	if tier > 0:
+		var tile: Vector2i = Config.iso_to_world(global_position)
+		var identity_x: int = hash(spawn_uid) if not spawn_uid.is_empty() else tile.x
+		var identity_y: int = hash(enemy_id + spawn_uid) if not spawn_uid.is_empty() else tile.y
+		var seed_value: int = RngService.hash_coords(GameManager.get_world_seed(), identity_x, identity_y, 8422)
+		var rolled: Dictionary = BanditLoot.roll(tier, seed_value)
+		drops = BanditLoot.as_drops(rolled)
+		gold = int(rolled["gold"])
 	var bag: CorpseEntity = CorpseEntity.new()
 	bag.species = enemy_id
 	bag.items = drops
-	bag.gold = randi_range(3, 12) if faction_id == "raiders" else 0
+	bag.gold = gold
 	bag.global_position = global_position
 	if get_parent() != null:
 		get_parent().add_child(bag)

@@ -1342,16 +1342,36 @@ func _on_settlement_facilities_queried(settlement_id: String, result: Dictionary
 func _spawn_minor_location(info: Dictionary) -> void:
 	var anchor: Vector2i = info["tile_pos"]
 	var id: String = str(info["poi_id"])
-	for x in range(5):
-		for y in range(5):
-			_remove_resource_node_at(anchor + Vector2i(x, y))
-	SignalBus.structure_restored.emit("campfire", anchor + Vector2i(2, 2))
-	var chest: Vector2i = anchor + Vector2i(3, 2)
-	SignalBus.structure_restored.emit("storage", chest)
 	var definition: Dictionary = DataRegistry.get_poi(id)
+	var tier: int = int(definition.get("camp_tier", 0))
+	var footprint: int = 7 if tier > 0 else 5
+	for x in range(footprint):
+		for y in range(footprint):
+			_remove_resource_node_at(anchor + Vector2i(x, y))
+	var variant: int = int(info.get("camp_variant", 0))
+	var fire: Vector2i = anchor + (Vector2i(2, 3) if variant % 2 == 0 else Vector2i(4, 3))
+	SignalBus.structure_restored.emit("campfire", fire)
+	var chest: Vector2i = anchor + (Vector2i(5, 2) if tier > 0 else Vector2i(3, 2))
+	SignalBus.structure_restored.emit("storage", chest)
 	var loot: Dictionary = definition.get("loot_table", {})
+	if tier > 0:
+		loot = BanditLoot.roll(tier, RngService.hash_coords(_seed, anchor.x, anchor.y, 8421), true)
 	if BuildingSystem.instance != null:
 		BuildingSystem.instance.get_storage_manager().populate_chest_loot(chest, str(definition.get("name", id)), int(loot.get("gold", 0)), loot.get("items", {}))
+	if tier > 0:
+		# Perimeter and entrance vary by camp type; all placed pieces use existing structures.
+		if tier >= 3:
+			for x in range(7):
+				if x != 3:
+					SignalBus.structure_restored.emit("wall", anchor + Vector2i(x, 0))
+					SignalBus.structure_restored.emit("wall", anchor + Vector2i(x, 6))
+			for y in range(1, 6):
+				if y != 3:
+					SignalBus.structure_restored.emit("wall", anchor + Vector2i(0, y))
+					SignalBus.structure_restored.emit("wall", anchor + Vector2i(6, y))
+		elif tier == 2:
+			for y in [1, 2, 4, 5]:
+				SignalBus.structure_restored.emit("wall", anchor + Vector2i(1 if variant % 2 == 0 else 5, y))
 	if id in ["ruins", "cave", "dungeon"]:
 		for x in range(5):
 			SignalBus.structure_restored.emit("wall", anchor + Vector2i(x, 0))
@@ -1386,9 +1406,13 @@ func _spawn_location_inhabitants(cpos: Vector2i, spawned: Array[Node], killed: A
 	elif str(info["poi_id"]) == "dungeon":
 		guards.append({"id": "warlord_khan_boss", "offset": [1, 3]})
 	elif not bool(info.get("is_ruin", false)):
-		var pool: Array = DataRegistry.get_poi(str(info["poi_id"])).get("enemy_pool", [])
-		for i in range(mini(pool.size(), 2)):
-			guards.append({"id": pool[i], "offset": [1 + i * 2, 3]})
+		var poi_def: Dictionary = DataRegistry.get_poi(str(info["poi_id"]))
+		var pool: Array = poi_def.get("enemy_pool", [])
+		var tier: int = int(poi_def.get("camp_tier", 0))
+		var offsets: Array[Vector2i] = [Vector2i(1, 2), Vector2i(5, 4), Vector2i(2, 5), Vector2i(4, 1), Vector2i(3, 4)]
+		for i in range(pool.size() if tier > 0 else mini(pool.size(), 2)):
+			var offset: Vector2i = offsets[(i + int(info.get("camp_variant", 0))) % offsets.size()] if tier > 0 else Vector2i(1 + i * 2, 3)
+			guards.append({"id": pool[i], "offset": [offset.x, offset.y]})
 	for i in range(guards.size()):
 		var uid: String = "poi_%d_%d_%d" % [cpos.x, cpos.y, i]
 		if killed.has(uid):

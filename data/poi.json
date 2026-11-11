@@ -3,6 +3,7 @@
 		"id": "abandoned_camp",
 		"name": "Abandoned Raider Camp",
 		"type": "abandoned_camp",
+		"camp_tier": 1,
 		"color": "#d97706",
 		"enemy_pool": ["bandit_scout", "bandit_raider"],
 		"loot_table": {
@@ -10,6 +11,22 @@
 			"items": { "bread": 2, "plank": 3, "bandage": 1 }
 		},
 		"respawns": false
+	},
+	{
+		"id": "bandit_hideout", "name": "Bandit Hideout", "type": "bandit_camp", "camp_tier": 1,
+		"color": "#a66b38", "enemy_pool": ["bandit_scout", "bandit_scout", "bandit_raider"], "respawns": false
+	},
+	{
+		"id": "bandit_roadblock", "name": "Bandit Roadblock", "type": "bandit_camp", "camp_tier": 2,
+		"color": "#a34d31", "enemy_pool": ["bandit_scout", "bandit_raider", "bandit_raider", "bandit_veteran"], "respawns": false
+	},
+	{
+		"id": "bandit_fort", "name": "Bandit Fort", "type": "bandit_camp", "camp_tier": 3,
+		"color": "#812b28", "enemy_pool": ["bandit_raider", "bandit_veteran", "bandit_veteran", "bandit_scout"], "respawns": false
+	},
+	{
+		"id": "bandit_chief_camp", "name": "Bandit Chief's Camp", "type": "bandit_camp", "camp_tier": 4,
+		"color": "#5d1620", "enemy_pool": ["bandit_scout", "bandit_raider", "bandit_veteran", "bandit_veteran", "bandit_chief"], "respawns": false
 	},
 	{
 		"id": "ruins",

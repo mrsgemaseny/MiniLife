@@ -21,6 +21,8 @@
 		"biome": "plains",
 		"faction": "bandits",
 		"hp": 75,
+		"ai_profile": "bandit_scout",
+		"bandit_tier": 1,
 		"damage": 14,
 		"speed": 160,
 		"color": "#c94a38",
@@ -37,6 +39,8 @@
 		"biome": "forest",
 		"faction": "bandits",
 		"hp": 95,
+		"ai_profile": "bandit_raider",
+		"bandit_tier": 2,
 		"damage": 18,
 		"speed": 155,
 		"color": "#a83228",
@@ -46,6 +50,18 @@
 			"items": { "iron_ingot": 1, "bandage": 1 }
 		},
 		"respawns": false
+	},
+	{
+		"id": "bandit_veteran", "name": "Bandit Veteran", "biome": "forest", "faction": "bandits",
+		"bandit_tier": 3, "ai_profile": "bandit_veteran", "hp": 155, "defense": 15,
+		"damage": 23, "speed": 145, "attack_cooldown": 1.55, "has_shield": true,
+		"color": "#783f36", "is_boss": false, "respawns": false
+	},
+	{
+		"id": "bandit_chief", "name": "Bandit Chief", "biome": "forest", "faction": "bandits",
+		"bandit_tier": 4, "ai_profile": "bandit_chief", "hp": 295, "defense": 20,
+		"damage": 29, "speed": 155, "attack_cooldown": 1.4, "has_shield": true,
+		"color": "#611d25", "is_boss": true, "respawns": false
 	},
 	{
 		"id": "raider_marauder",

@@ -4,6 +4,7 @@ extends Node2D
 const ROOT: String = "res://assets/sprites/expansion/settlements_2026_11_04/regions/"
 const TRADE: Array[String] = ["cargo_crates", "sealed_barrels", "grain_sacks", "cloth_bolts", "trader_chest", "apple_basket", "bread_basket", "fish_tub", "cargo_handcart", "tent_bundle", "travel_packs", "balance_scales", "bronze_stack", "iron_stack", "plank_bundle", "wool_bales"]
 const CAMP: Array[String] = ["expedition_tent", "fur_bedroll", "cooking_tripod", "meat_drying_rack", "waterskin_cup", "firewood_stack", "chopping_block", "fishing_kit", "medicine_chest", "direction_signpost", "map_compass", "lean_to", "herb_basket", "travel_toolkit", "adventurer_chest"]
+const BANDIT_CAMP: Array[String] = ["expedition_tent", "fur_bedroll", "cooking_tripod", "meat_drying_rack", "firewood_stack", "chopping_block", "lean_to", "adventurer_chest", "broken_cart", "discarded_armor", "broken_weapon_rack", "cargo_crates", "sealed_barrels"]
 const RUINS: Array[String] = ["broken_column", "stone_chest", "broken_cart", "broken_pottery", "old_signpost", "standing_stone", "discarded_armor", "old_vault", "broken_weapon_rack", "broken_bridge"]
 const FARM: Array[String] = ["feeding_trough", "hay_bale", "wheat_sheaves", "beehive", "rain_barrel", "grain_quern", "spinning_wheel", "loom", "linen_rack", "kindling_block", "produce_basket", "seedling_pots", "wattle_fence", "farm_wheelbarrow"]
 const WORKSHOP: Array[String] = ["anvil_stump", "forge_bellows", "hot_crucible", "charcoal_bucket", "smith_tool_rack", "stitching_frame", "tanning_rack", "sewing_basket", "masonry_blocks", "herb_mortar", "herb_drying_rack", "medicine_jars", "carpenter_chest", "sawhorse_plank", "pottery_set", "cauldron_ladle"]
@@ -27,6 +28,9 @@ func populate(seed_value: int, info: Dictionary, passable: Callable, fog_state: 
 	rng.seed = seed_value ^ (anchor.x * 73856093) ^ (anchor.y * 19349663)
 	var pool: Array[String] = CAMP.duplicate()
 	var id: String = str(info.get("poi_id", ""))
+	if id == "abandoned_camp" or id in PoiGenerator.BANDIT_IDS:
+		size = 7
+		pool = BANDIT_CAMP.duplicate()
 	if info.has("settlement_id") or id == "merchant_outpost":
 		pool = TRADE.duplicate()
 		pool.append_array(FARM)
@@ -38,7 +42,7 @@ func populate(seed_value: int, info: Dictionary, passable: Callable, fog_state: 
 		if node is Node2D:
 			occupied[Config.iso_to_world(node.global_position)] = true
 	# Small decorative props only: existing buildings, doors and functional stations remain authoritative.
-	var wanted: int = 10 if info.has("settlement_id") else 5
+	var wanted: int = 10 if info.has("settlement_id") else (8 if id == "abandoned_camp" or id in PoiGenerator.BANDIT_IDS else 5)
 	for attempt: int in range(100):
 		if _props.size() >= wanted:
 			break
