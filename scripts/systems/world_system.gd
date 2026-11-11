@@ -47,27 +47,10 @@ var _pending_chunks: Array[Vector2i] = []
 var _terrain_jobs: Dictionary = {}
 var _retired_jobs: Array[ChunkTerrainJob] = []
 var _alife_seed_structures: Dictionary = {}
-var _vision_material: ShaderMaterial
-var _vision_mask: ColorRect
+var _draw_bounds: Rect2i
 
 
 func _ready() -> void:
-	_vision_material = ShaderMaterial.new()
-	_vision_material.shader = preload("res://assets/shaders/vision_edge.gdshader")
-	_vision_material.set_shader_parameter("vision_radius_px", float(_vision_radius * Config.TILE_SIZE.x))
-	material = _vision_material
-	_vision_mask = ColorRect.new()
-	_vision_mask.name = "VisionMask"
-	_vision_mask.size = Vector2(4096.0, 4096.0)
-	_vision_mask.color = Color.BLACK
-	_vision_mask.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_vision_mask.z_as_relative = false
-	_vision_mask.z_index = 1000
-	var mask_material := ShaderMaterial.new()
-	mask_material.shader = preload("res://assets/shaders/vision_mask.gdshader")
-	mask_material.set_shader_parameter("vision_radius_px", float(_vision_radius * Config.TILE_SIZE.x))
-	_vision_mask.material = mask_material
-	add_child(_vision_mask)
 	SignalBus.settlement_facilities_queried.connect(_on_settlement_facilities_queried)
 	SignalBus.endgame_stronghold_revealed.connect(_on_stronghold_unlocked)
 	SignalBus.world_tile_queried.connect(func(tile: Vector2i, result: Dictionary) -> void:
@@ -122,8 +105,10 @@ func _exit_tree() -> void:
 
 func _process(delta: float) -> void:
 	if _last_player_tile.x >= 0:
-		_vision_material.set_shader_parameter("vision_center", GameManager.get_player_world_pos())
-		_vision_mask.position = GameManager.get_player_world_pos() - _vision_mask.size * 0.5
+		var next_bounds: Rect2i = _visible_tile_bounds()
+		if next_bounds != _draw_bounds:
+			_draw_bounds = next_bounds
+			queue_redraw()
 	for job: ChunkTerrainJob in _retired_jobs.duplicate():
 		if job.complete():
 			job.collect()
@@ -247,15 +232,13 @@ func get_biome_color_fast(tpos: Vector2i) -> Color:
 func _draw() -> void:
 	if _last_player_tile.x < -9000:
 		return
-	# Square ground cells share the same projection as entities and pointer hits.
-	var radius: int = maxi(18, _vision_radius) + 2
-	for dy in range(-radius, radius + 1):
-		for dx in range(-radius, radius + 1):
-			var tpos: Vector2i = _last_player_tile + Vector2i(dx, dy)
+	# Render the camera viewport, with a two-tile margin for smooth scrolling.
+	var bounds: Rect2i = _visible_tile_bounds()
+	draw_rect(Rect2(Vector2(bounds.position) * Vector2(Config.TILE_SIZE), Vector2(bounds.size) * Vector2(Config.TILE_SIZE)), Color("1f2922"))
+	for y: int in range(bounds.position.y, bounds.end.y):
+		for x: int in range(bounds.position.x, bounds.end.x):
+			var tpos := Vector2i(x, y)
 			if not _terrain.is_in_world(tpos):
-				continue
-			var fstate: int = _fog.get_state(tpos)
-			if fstate == int(FogState.UNEXPLORED) and Vector2(tpos).distance_to(Vector2(_last_player_tile)) > float(_vision_radius + 2):
 				continue
 
 			var center: Vector2 = Config.world_to_iso(tpos)
@@ -268,10 +251,6 @@ func _draw() -> void:
 			if paving in ["floor", "stone_floor"]:
 				var surface: Color = Color("938e81") if paving == "stone_floor" else Color("96724d")
 				surface = surface.darkened(float(hash_val % 5) * 0.025)
-				if fstate == int(FogState.VISITED):
-					surface = surface.darkened(0.48)
-				else:
-					surface.a = 0.95
 				var cell: PackedVector2Array = IsoMath.cell_polygon(center)
 				draw_colored_polygon(cell, surface)
 				draw_polyline(cell, surface.darkened(0.24), 0.75, true)
@@ -279,10 +258,6 @@ func _draw() -> void:
 			var col: Color = ProceduralTileset.BIOME_PALETTE.get(biome_id, Color(0.34, 0.56, 0.25))
 			var variation: float = float(hash_val % 9 - 4) * 0.014
 			col = col.lightened(variation) if variation > 0.0 else col.darkened(-variation)
-			if fstate == int(FogState.VISITED):
-				col = col.darkened(0.48)
-			else:
-				col.a = 0.95
 
 			var tile_tex_name: String = "tile_grass"
 			if biome_id == "desert":
@@ -300,11 +275,9 @@ func _draw() -> void:
 
 			var tile_tex: Texture2D = _get_tile_tex(tile_tex_name)
 			if tile_tex != null:
-				var modulate_col: Color = Color(0.46, 0.46, 0.52, 1.0) if fstate == int(FogState.VISITED) else Color.WHITE
-				if biome_id == "forest" and fstate != int(FogState.VISITED):
+				var modulate_col: Color = Color.WHITE
+				if biome_id == "forest":
 					modulate_col = Color(0.72, 0.88, 0.68, 1.0)
-				if fstate != int(FogState.VISITED):
-					modulate_col.a = 0.95
 				# Map the original diamond top surface onto the square cell.
 				var uv: PackedVector2Array = PackedVector2Array([Vector2(0.5,0.01),Vector2(0.99,16.0/37.0),Vector2(0.5,31.5/37.0),Vector2(0.01,16.0/37.0)])
 				draw_polygon(IsoMath.cell_polygon(center),PackedColorArray([modulate_col]),uv,tile_tex)
@@ -316,12 +289,23 @@ func _draw() -> void:
 		if poi_info.has("settlement_id"):
 			continue
 		var p_tile: Vector2i = poi_info.get("tile_pos", Vector2i.ZERO)
-		if Config.tile_distance(p_tile, _last_player_tile) <= 20 and _fog.get_state(p_tile) != int(FogState.UNEXPLORED):
+		if bounds.has_point(p_tile):
 			var p_center: Vector2 = Config.world_to_iso(p_tile)
 			var poi_def: Dictionary = DataRegistry.get_poi(str(poi_info.get("poi_id", "")))
 			var poi_col: Color = Color.from_string(str(poi_def.get("color", "#eab308")), Color.GOLD)
 			draw_colored_polygon(IsoMath.diamond_polygon(p_center, 22.0, 11.0), poi_col)
 			draw_polyline(IsoMath.diamond_polygon(p_center, 22.0, 11.0), poi_col.lightened(0.35), 1.5, true)
+
+func _visible_tile_bounds() -> Rect2i:
+	var screen_size: Vector2 = get_viewport().get_visible_rect().size
+	var inverse: Transform2D = get_global_transform_with_canvas().affine_inverse()
+	var first: Vector2 = inverse * Vector2.ZERO
+	var last: Vector2 = inverse * screen_size
+	var begin := Vector2i(floori(minf(first.x, last.x) / Config.TILE_SIZE.x) - 2,
+		floori(minf(first.y, last.y) / Config.TILE_SIZE.y) - 2)
+	var end := Vector2i(ceili(maxf(first.x, last.x) / Config.TILE_SIZE.x) + 3,
+		ceili(maxf(first.y, last.y) / Config.TILE_SIZE.y) + 3)
+	return Rect2i(begin, end - begin)
 
 
 func get_tile(pos: Vector2i) -> TileState:
@@ -433,41 +417,10 @@ func update_visibility(player_pos: Vector2) -> void:
 		SignalBus.fog_updated.emit(tpos, st)
 		if st == int(FogState.VISIBLE):
 			_check_poi_discovery(tpos)
-		var rkey: String = Config.vec2i_to_key(tpos)
-		if _resource_nodes_by_tile.has(rkey):
-			var rnode: ResourceNode = _resource_nodes_by_tile[rkey] as ResourceNode
-			if is_instance_valid(rnode):
-				rnode.visible = (st != int(FogState.UNEXPLORED))
-				rnode.modulate = Color(1, 1, 1, 1) if st == int(FogState.VISIBLE) else Color(0.55, 0.55, 0.62, 1)
 	if not changes.is_empty():
 		SignalBus.fog_batch_updated.emit(changes)
-	_sync_mobile_entity_fog_visibility()
 	_update_exploration_progress()
 	queue_redraw()
-
-
-func _sync_entity_fog_visibility() -> void:
-	for key in _resource_nodes_by_tile:
-		var rnode: ResourceNode = _resource_nodes_by_tile[key] as ResourceNode
-		if is_instance_valid(rnode):
-			var st: int = _fog.get_state(rnode.tile_pos)
-			rnode.visible = (st != int(FogState.UNEXPLORED))
-			rnode.modulate = Color(1, 1, 1, 1) if st == int(FogState.VISIBLE) else Color(0.55, 0.55, 0.62, 1)
-	_sync_mobile_entity_fog_visibility()
-
-
-func _sync_mobile_entity_fog_visibility() -> void:
-	if _ground_loot != null:
-		_ground_loot.sync_visibility(_fog)
-	for cpos in _spawned_entities_by_chunk:
-		for ent in _spawned_entities_by_chunk[cpos]:
-			if is_instance_valid(ent) and ent is Node2D:
-				var etile: Vector2i = Config.iso_to_world((ent as Node2D).global_position)
-				var st: int = _fog.get_state(etile)
-				if ent.is_in_group("enemy"):
-					(ent as Node2D).visible = (st == int(FogState.VISIBLE))
-				else:
-					(ent as Node2D).visible = (st != int(FogState.UNEXPLORED))
 
 
 func harvest(pos: Vector2i, _resource_id: String, _amount: int) -> bool:
@@ -617,8 +570,6 @@ func _on_player_tile_changed(tile_pos: Vector2i) -> void:
 
 func _on_player_vision_changed(radius: int) -> void:
 	_vision_radius = maxi(radius, 3)
-	_vision_material.set_shader_parameter("vision_radius_px", float(_vision_radius * Config.TILE_SIZE.x))
-	_vision_mask.material.set_shader_parameter("vision_radius_px", float(_vision_radius * Config.TILE_SIZE.x))
 	if _last_player_tile.x > -9000:
 		update_visibility(Config.world_to_iso(_last_player_tile))
 
@@ -744,9 +695,6 @@ func _spawn_resource_node(chunk_node: Node2D, node_def_id: String, tpos: Vector2
 	rnode.tile_pos = tpos
 	rnode.growth_stage = stage
 	rnode.global_position = Config.world_to_iso(tpos)
-	var st: int = _fog.get_state(tpos)
-	rnode.visible = (st != int(FogState.UNEXPLORED))
-	rnode.modulate = Color(1, 1, 1, 1) if st == int(FogState.VISIBLE) else Color(0.55, 0.55, 0.62, 1)
 	chunk_node.add_child(rnode)
 	_resource_nodes_by_tile[Config.vec2i_to_key(tpos)] = rnode
 

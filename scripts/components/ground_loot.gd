@@ -45,11 +45,10 @@ func restore(rows: Array) -> void:
 			else:
 				spawn(position, row.get("items", []), int(row.get("gold", 0)))
 
-func sync_visibility(fog: FogOfWarSystem) -> void:
+func sync_visibility(_fog: FogOfWarSystem) -> void:
 	for bag: LootBag in _bags():
-		var state: int = fog.get_state(Config.iso_to_world(bag.global_position))
-		bag.visible = state != 0
-		bag.modulate = Color.WHITE if state == 2 else Color(0.55, 0.55, 0.62)
+		bag.visible = true
+		bag.modulate = Color.WHITE
 
 func _bags() -> Array[LootBag]:
 	var result: Array[LootBag] = []

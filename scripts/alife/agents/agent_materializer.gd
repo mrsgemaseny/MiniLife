@@ -60,7 +60,7 @@ func update(delta: float) -> void:
 			entity._on_player_tile_changed(player_tile)
 			var tile_info: Dictionary = {}
 			SignalBus.world_tile_queried.emit(tile, tile_info)
-			entity.visible = int(tile_info.get("fog_state", Config.FogState.VISIBLE)) != int(Config.FogState.UNEXPLORED)
+			entity.visible = true
 		for agent: GlobalAgent in world.agents.get_all_global():
 			if loaded_chunks.has(Config.tile_to_chunk(agent.tile)) and Config.tile_distance(player_tile, agent.tile) <= MATERIALIZE_RADIUS:
 				_candidates.append(agent.agent_id)
@@ -108,7 +108,7 @@ func materialize(agent: GlobalAgent) -> NPCBase:
 	entity.position = parent.to_local(Config.world_to_iso(agent.tile))
 	if agent.world_position.size() == 2:
 		entity.position = parent.to_local(Vector2(float(agent.world_position[0]), float(agent.world_position[1])))
-	entity.visible = int(tile_info.get("fog_state", Config.FogState.VISIBLE)) != int(Config.FogState.UNEXPLORED)
+	entity.visible = true
 	world.agents.materialized[agent.agent_id] = entity
 	parent.add_child(entity)
 	entity._on_player_tile_changed(player_tile)

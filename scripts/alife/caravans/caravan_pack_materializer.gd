@@ -46,9 +46,7 @@ func update(loaded_chunks: Dictionary, player_tile: Vector2i) -> void:
 				pack.rotation = -PI * 0.5
 				pack.display_name = "Abandoned Caravan Supplies"
 				pack.remove_from_group("combatant")
-			var info: Dictionary = {}
-			SignalBus.world_tile_queried.emit(tile, info)
-			get_entity(id).visible = int(info.get("fog_state", Config.FogState.VISIBLE)) != int(Config.FogState.UNEXPLORED)
+			get_entity(id).visible = true
 	for id: String in entities.keys():
 		if not wanted.has(id):
 			_sync(id)

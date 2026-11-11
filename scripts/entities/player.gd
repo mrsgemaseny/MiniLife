@@ -311,7 +311,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 
 	if event.is_action_pressed("attack"):
-		if _is_holding_ranged() and _get_enemy_under_cursor() == null:
+		if _is_holding_ranged():
 			_locked_target = null
 			_start_bow_charge()
 			get_viewport().set_input_as_handled()
@@ -359,6 +359,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			use_held_consumable()
 	elif event.is_action_released("attack"):
 		if _is_charging_bow:
+			if event is InputEventMouseButton:
+				var target_world: Vector2 = get_global_transform_with_canvas().affine_inverse() * (event as InputEventMouseButton).position
+				var aim_dir: Vector2 = (target_world - (global_position + Vector2(0.0, -12.0))).normalized()
+				if aim_dir.length_squared() > 0.01:
+					facing_direction = aim_dir
 			_release_bow_shot()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		var target: Node2D = InteractionPicker.pick(get_tree(), get_global_mouse_position(), self)
@@ -569,6 +574,13 @@ func _get_enemy_under_cursor() -> Node2D:
 
 func perform_attack() -> void:
 	if _attack_cooldown > 0.0 or is_dead or status_effects.is_action_blocked():
+		return
+	if _is_holding_javelin() and _has_attack_order():
+		_start_bow_charge()
+		if _is_charging_bow:
+			facing_direction = (_locked_target.global_position - global_position).normalized()
+			_bow_charge_time = MAX_BOW_CHARGE_TIME
+			_release_bow_shot()
 		return
 	if _is_holding_ranged() and not _has_attack_order():
 		_start_bow_charge()

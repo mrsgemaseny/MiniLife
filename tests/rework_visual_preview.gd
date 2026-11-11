@@ -52,6 +52,11 @@ func _capture() -> void:
 	await _frames(5)
 	await RenderingServer.frame_post_draw
 	_save("trade_window.png")
+	SignalBus.ui_close_all_requested.emit()
+	SignalBus.ui_panel_requested.emit("global_map")
+	await _frames(4)
+	await RenderingServer.frame_post_draw
+	_save("global_regions.png")
 	get_tree().quit()
 
 func _frames(count: int) -> void:

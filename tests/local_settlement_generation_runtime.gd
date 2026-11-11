@@ -27,8 +27,8 @@ func run() -> void:
 	for frame: int in range(45):
 		await get_tree().process_frame
 	var world_system: WorldSystem = main.get_node("World") as WorldSystem
-	check(world_system.material is ShaderMaterial and (world_system.material as ShaderMaterial).shader.resource_path == "res://assets/shaders/vision_edge.gdshader",
-		"Local terrain uses the circular vision edge shader")
+	check(world_system.material == null and world_system.get_node_or_null("VisionMask") == null,
+		"Local terrain is visible across the entire camera viewport")
 	var local_info: Dictionary = world_system.get_chunk_pois().get(chunk, {})
 	check(local_info.get("settlement_id") == settlement.settlement_id, "Loaded settlement marker remains on the maps")
 	var hud: HUD = main.get_node("UILayer/HUD") as HUD

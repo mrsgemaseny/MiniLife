@@ -13,10 +13,8 @@ var _props: Dictionary = {}
 
 func _ready() -> void:
 	y_sort_enabled = true
-	SignalBus.fog_updated.connect(_on_fog_updated)
-	SignalBus.fog_batch_updated.connect(_on_fog_batch_updated)
 
-func populate(seed_value: int, info: Dictionary, passable: Callable, fog_state: Callable) -> void:
+func populate(seed_value: int, info: Dictionary, passable: Callable, _fog_state: Callable) -> void:
 	if info.is_empty() or not _props.is_empty():
 		return
 	var anchor: Vector2i = info.get("origin", info.get("tile_pos", Vector2i.ZERO))
@@ -67,15 +65,4 @@ func populate(seed_value: int, info: Dictionary, passable: Callable, fog_state: 
 		prop.set_meta("decoration_id", asset_id)
 		add_child(prop)
 		_props[tile] = prop
-		_on_fog_updated(tile, int(fog_state.call(tile)))
-
-func _on_fog_updated(tile: Vector2i, state: int) -> void:
-	if not _props.has(tile):
-		return
-	var prop: Sprite2D = _props[tile]
-	prop.visible = state > 0
-	prop.modulate = Color(0.52, 0.52, 0.58) if state == 1 else Color.WHITE
-
-func _on_fog_batch_updated(changes: Array) -> void:
-	for change: Dictionary in changes:
-		_on_fog_updated(change.get("pos", Vector2i.ZERO), int(change.get("state", 0)))
+		prop.visible = true

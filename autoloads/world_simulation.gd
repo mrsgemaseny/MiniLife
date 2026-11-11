@@ -982,7 +982,7 @@ func _sync_caravan_hostile_visibility() -> void:
 		if entity.has_meta("alife_caravan_hostile"):
 			var info: Dictionary = {}
 			SignalBus.world_tile_queried.emit(Config.iso_to_world(entity.global_position), info)
-			entity.visible = int(info.get("fog_state", Config.FogState.VISIBLE)) == int(Config.FogState.VISIBLE)
+			entity.visible = true
 
 func _materialize_encounters() -> void:
 	var needed: Dictionary = {}
