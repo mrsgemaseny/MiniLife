@@ -14,6 +14,7 @@ var _limbs_grid: GridContainer = null
 var _skills_grid: GridContainer = null
 var _bg_texture: TextureRect = null
 var _content_box: HBoxContainer = null
+var _progression_label: Label = null
 
 
 func _ready() -> void:
@@ -145,6 +146,12 @@ func _setup_styled_character_sheet() -> void:
 	if class_label != null:
 		class_label.add_theme_font_size_override("font_size", 11)
 		class_label.modulate = Color(0.75, 0.78, 0.84, 1.0) # Light steel silver
+		_progression_label = Label.new()
+		_progression_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_progression_label.add_theme_font_size_override("font_size", 11)
+		_progression_label.modulate = Color(0.90, 0.86, 0.72, 1.0)
+		vbox.add_child(_progression_label)
+		vbox.move_child(_progression_label, class_label.get_index() + 1)
 
 	if traits_label != null:
 		traits_label.visible = false
@@ -236,6 +243,9 @@ func refresh() -> void:
 				pretty_traits.append(tr.replace("_", " ").capitalize())
 			t_str = ", ".join(pretty_traits)
 		class_label.text = "Background: %s   |   Armor Defense: %.1f   |   Traits: %s" % [stats_comp.active_class.capitalize(), stats_comp.defense, t_str]
+	if _progression_label != null and ProgressionSystem.instance != null:
+		var progression: ProgressionSystem = ProgressionSystem.instance
+		_progression_label.text = "ОБЩИЙ УРОВЕНЬ %d — %s. Следующий этап: %s. Уровень открывает рецепты, исследования и постройки; навыки растут отдельно от опыта за действия." % [progression.current_level, progression.get_current_title(), progression.get_next_milestone_summary()]
 
 	# Render Unified Vitals & Armor (Left column)
 	if _limbs_grid != null and health_comp != null and stats_comp != null:

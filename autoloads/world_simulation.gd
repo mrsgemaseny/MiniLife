@@ -484,32 +484,14 @@ func _on_settlement_queried(chunk: Vector2i, result: Dictionary) -> void:
 	if not _initialized or not _settlement_chunks.has(chunk):
 		return
 	var settlement: AlifeSettlement = world.settlements.find(_settlement_chunks[chunk]) as AlifeSettlement
-	if settlement != null:
-		if chunk == Config.tile_to_chunk(settlement.tile):
-			var core: Dictionary = SettlementLayout.describe(settlement)
-			if settlement.status not in [AlifeSettlement.Status.RUINS, AlifeSettlement.Status.RAZED]:
-				for direction: Vector2i in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
-					if _settlement_chunks.get(chunk + direction) != settlement.settlement_id:
-						continue
-					var tile: Vector2i = settlement.tile + direction
-					while Config.tile_to_chunk(tile) == chunk:
-						var key: String = Config.vec2i_to_key(tile)
-						if not core.structures.has(key):
-							if core.streets.is_empty():
-								core.structures[key] = "stone_floor"
-						if not core.streets.is_empty():
-							var lane: Vector2i = Vector2i.LEFT if direction.y != 0 else Vector2i.UP
-							for road_tile: Vector2i in [tile, tile + lane]:
-								if not core.streets.paving.has(road_tile):
-									core.streets.paving[road_tile] = SettlementLayout.Streets.Surface.COBBLE
-						tile += direction
-			result.merge(core)
-		else:
-			var connections: Array[Vector2i] = []
-			for direction: Vector2i in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
-				if _settlement_chunks.get(chunk + direction) == settlement.settlement_id:
-					connections.append(direction)
-			result.merge(SettlementLayout.describe_district(settlement, chunk, connections))
+	if settlement != null and chunk == Config.tile_to_chunk(settlement.tile):
+		result.merge({
+			"settlement_id": settlement.settlement_id,
+			"poi_id": "merchant_outpost",
+			"name": settlement.name,
+			"tile_pos": settlement.tile,
+			"settlement_tile": settlement.tile,
+		})
 
 func _on_entity_died(entity: Node, killer_id: String) -> void:
 	if entity is CaravanPackAnimal:

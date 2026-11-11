@@ -35,14 +35,9 @@ func run() -> void:
 	var chunk: Vector2i = Config.tile_to_chunk(settlement.tile)
 	var info: Dictionary = world_system.get_chunk_pois().get(chunk, {})
 	check(str(info.get("settlement_id", "")) == settlement.settlement_id, "Settlement is integrated into world POIs")
-	var civic_plan: Dictionary = info.get("streets", {})
-	var plaza: Dictionary = civic_plan.get("paving", {})
-	check(plaza.get(settlement.tile) == SettlementLayout.Streets.Surface.FORUM
-		and world_system.is_passable(settlement.tile), "The forum has an open, walkable center")
-	var structures: Dictionary = info.get("structures", {})
-	check("forge" in structures.values(), "The civic center has an interactive forge")
+	check(not info.has("streets") and not info.has("structures"), "Local settlement chunk has no generated city layout")
 	var lord: GlobalAgent = WorldSimulation.world.agents.find(settlement.settlement_id + "/resident/0000") as GlobalAgent
-	check(lord != null and lord.home_tile == civic_plan.get("lord_home"), "The local lord lives in the residence")
+	check(lord != null, "Settlement leader remains in the global simulation")
 	var live: Array = []
 	for agent: GlobalAgent in WorldSimulation.world.agents.by_settlement(settlement.settlement_id):
 		if WorldSimulation.world.agents.materialized.has(agent.agent_id):
@@ -111,15 +106,6 @@ func run() -> void:
 		check(player.inventory.count_of("bread") == bread_before + 1 and settlement.food == stock_before - 1.0, "Actual trade signal transfers one delivered item")
 		check(CurrencyPolicy.total_value(player.inventory) == wallet_before - int(quote["silver_value"]), "Actual trade charges the displayed amount")
 		trade_ui.close_trade()
-	var layout: Dictionary = SettlementLayout.describe(settlement)
-	var wall_tile: Vector2i = Vector2i.ZERO
-	for key: String in layout.structures:
-		if str(layout.structures[key]) == "wall":
-			wall_tile = Config.key_to_vec2i(key)
-			break
-	check(not world_system.is_passable(wall_tile), "Seed wall participates in world collision queries")
-	check(world_system.remove_structure(wall_tile), "Seed wall can be destroyed")
-	check(world_system.is_passable(wall_tile), "Destroyed wall becomes passable")
 	var local_residents: Array[String] = []
 	for id: String in live:
 		var reference: Variant = WorldSimulation.world.agents.materialized.get(id)
@@ -145,19 +131,13 @@ func run() -> void:
 	for id: String in local_residents:
 		check(not WorldSimulation.world.agents.materialized.has(id), "Unload removes residents in the departing chunk")
 	world_system._load_chunk(chunk)
-	check(world_system.is_passable(wall_tile), "Destroyed seed wall stays destroyed after chunk reload")
+	check(not world_system.get_chunk_pois().get(chunk, {}).has("structures"), "Reload does not regenerate city structures")
 	if not resident_id.is_empty():
 		var agent: GlobalAgent = WorldSimulation.world.agents.find(resident_id) as GlobalAgent
 		var resident: NPCBase = WorldSimulation.materializer.materialize(agent)
 		check(resident != null and resident.stats.health == 51.0 and resident.inventory.gold == 37, "Reload restores resident state")
-	var bed_tile: Vector2i = Vector2i(-1, -1)
-	for key: String in layout.structures:
-		if str(layout.structures[key]) == "bed":
-			bed_tile = Config.key_to_vec2i(key)
-			break
 	_check_local_political_rumor(settlement)
 	_check_daily_routine(settlement, live)
-	_check_facility_assignments(settlement, live)
 	_check_killing_witness(settlement, live)
 	SettlementStatus.transition(WorldSimulation.world, settlement, AlifeSettlement.Status.RUINS)
 	WorldSimulation.materializer.reconcile_dead()
@@ -165,8 +145,7 @@ func run() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	check(settlement.population == 0 and settlement.status == AlifeSettlement.Status.RUINS, "Destroyed settlement has no living population")
-	check(world_system.get_tile(bed_tile).structure_id.is_empty(), "Loaded settlement layout refreshes immediately when it becomes ruins")
-	check(world_system.is_passable(wall_tile), "Settlement refresh preserves previously destroyed seed wall")
+	check(not world_system.get_chunk_pois().get(chunk, {}).has("structures"), "Settlement status change does not generate city structures")
 	world_system.update_visibility(Config.world_to_iso(settlement.tile))
 	var map_snapshot: Dictionary = {}
 	SignalBus.alife_political_map_queried.emit(map_snapshot)
@@ -249,29 +228,6 @@ func _check_daily_routine(settlement: AlifeSettlement, live: Array) -> void:
 	for step: int in range(16):
 		subject._follow_routine(target, 0.2)
 	check(subject.global_position.distance_to(Config.world_to_iso(target)) < 2.0, "Live NPC follows a routine across paving")
-	var layout: Dictionary = SettlementLayout.describe(settlement)
-	var door_tile: Vector2i = Vector2i(-1, -1)
-	for key: String in layout["structures"]:
-		if layout["structures"][key] == "door":
-			door_tile = Config.key_to_vec2i(key)
-			break
-	var door: StructureEntity = BuildingSystem.instance._placed_structures.get(Config.vec2i_to_key(door_tile)) as StructureEntity
-	check(door != null, "Routine fixture has a seeded door")
-	if door != null:
-		if door.is_door_open:
-			door.interact(null)
-		subject.global_position = Config.world_to_iso(door_tile + Vector2i.DOWN)
-		var settlement_id: String = str(subject.get_meta("settlement_id"))
-		subject.set_meta("settlement_id", "another_settlement")
-		SignalBus.settlement_door_passage_requested.emit(door_tile, subject)
-		check(not door.is_door_open, "Foreign NPC cannot open a settlement door")
-		subject.set_meta("settlement_id", settlement_id)
-		for step: int in range(16):
-			subject._follow_routine(door_tile, 0.2)
-		check(door.is_door_open and Config.iso_to_world(subject.global_position) == door_tile, "Routine opens and crosses an owned door")
-		door._close_resident_door()
-		check(door.is_door_open, "Occupied doorway remains open")
-		subject.global_position = Config.world_to_iso(door_tile + Vector2i.DOWN * 2)
 	subject.global_position = old_position
 	subject.sim_tier = old_tier as SimulationBubble.Tier
 

@@ -20,13 +20,8 @@ func get_state(pos: Vector2i) -> int:
 
 func update_around(center: Vector2i, radius: int) -> Array[Dictionary]:
 	var changes: Array[Dictionary] = []
-	for prev in _visible_tiles:
-		var pkey: String = Config.vec2i_to_key(prev)
-		if int(_fog_map.get(pkey, 0)) == int(Config.FogState.VISIBLE):
-			_fog_map[pkey] = int(Config.FogState.VISITED)
-			changes.append({"pos": prev, "state": int(Config.FogState.VISITED)})
-	_visible_tiles.clear()
-
+	var next_visible: Array[Vector2i] = []
+	var next_lookup: Dictionary = {}
 	var r_sq: int = radius * radius
 	for dx in range(-radius, radius + 1):
 		for dy in range(-radius, radius + 1):
@@ -36,9 +31,17 @@ func update_around(center: Vector2i, radius: int) -> Array[Dictionary]:
 			if tpos.x < 0 or tpos.y < 0 or tpos.x >= Config.WORLD_SIZE_TILES or tpos.y >= Config.WORLD_SIZE_TILES:
 				continue
 			var key: String = Config.vec2i_to_key(tpos)
-			_fog_map[key] = int(Config.FogState.VISIBLE)
-			_visible_tiles.append(tpos)
-			changes.append({"pos": tpos, "state": int(Config.FogState.VISIBLE)})
+			next_visible.append(tpos)
+			next_lookup[key] = true
+			if int(_fog_map.get(key, 0)) != int(Config.FogState.VISIBLE):
+				_fog_map[key] = int(Config.FogState.VISIBLE)
+				changes.append({"pos": tpos, "state": int(Config.FogState.VISIBLE)})
+	for prev: Vector2i in _visible_tiles:
+		var pkey: String = Config.vec2i_to_key(prev)
+		if not next_lookup.has(pkey) and int(_fog_map.get(pkey, 0)) == int(Config.FogState.VISIBLE):
+			_fog_map[pkey] = int(Config.FogState.VISITED)
+			changes.append({"pos": prev, "state": int(Config.FogState.VISITED)})
+	_visible_tiles = next_visible
 
 	return changes
 

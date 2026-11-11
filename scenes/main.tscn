@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3]
+[gd_scene load_steps=32 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/world.tscn" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/entities/player.tscn" id="2_player"]
@@ -30,6 +30,7 @@
 [ext_resource type="Script" path="res://scripts/systems/world/weather_system.gd" id="28_weather"]
 [ext_resource type="Script" path="res://scripts/ui/world_map_ui.gd" id="29_map_ui"]
 [ext_resource type="Script" path="res://scripts/ui/main_menu_ui.gd" id="30_main_menu_ui"]
+[ext_resource type="Script" path="res://scripts/ui/global_map_ui.gd" id="31_global_map_ui"]
 
 [sub_resource type="GDScript" id="GDScript_main"]
 script/source = "extends Node2D
@@ -111,6 +112,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		SignalBus.ui_panel_requested.emit(\"inventory\")
 	elif event.is_action_pressed(\"ui_map\") or (event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_M):
 		SignalBus.ui_panel_requested.emit(\"map\")
+	elif event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_G:
+		SignalBus.ui_panel_requested.emit(\"global_map\")
 	elif event.is_action_pressed(\"ui_craft\"):
 		SignalBus.ui_panel_requested.emit(\"craft\")
 	elif event.is_action_pressed(\"ui_build\") or (event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_B):
@@ -286,6 +289,16 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("29_map_ui")
+
+[node name="GlobalMapUI" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("31_global_map_ui")
 
 [node name="MainMenu" type="Control" parent="UILayer"]
 layout_mode = 3

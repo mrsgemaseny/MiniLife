@@ -257,7 +257,7 @@ func _setup_styled_hud() -> void:
 
 	# 5. Subtle controls hint
 	var hint_lbl: Label = Label.new()
-	hint_lbl.text = "[F] Use held item  [E] Interact  [I] Bag  [M] Map  [C] Craft  [B] Build  [K] Hero  [ESC] Menu"
+	hint_lbl.text = "[F] Use held item  [E] Interact  [I] Bag  [M] Local map  [G] World map  [C] Craft  [B] Build  [K] Hero  [ESC] Menu"
 	hint_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint_lbl.add_theme_font_size_override("font_size", 9)
 	hint_lbl.modulate = Color(0.72, 0.76, 0.82, 0.55)

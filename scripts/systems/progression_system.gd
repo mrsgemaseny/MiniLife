@@ -103,6 +103,20 @@ func reset_progression() -> void:
 func get_current_title() -> String:
 	return str(LEVEL_TITLES.get(current_level, "Scavenger"))
 
+func get_next_milestone_summary() -> String:
+	match current_level:
+		1: return "Собрать 30 ресурсов (%d/30)" % mini(gathered_raw_resources, 30)
+		2: return "Создать каменные топор и кирку, добыть уголь, построить и разжечь печь"
+		3: return "Исследовать доски, примитивную стрельбу, травничество и шерстяную одежду"
+		4: return "Добыть медь и олово, встретить NPC и исследовать каменную кладку, одежду и оружие"
+		5: return "Добыть железо, построить плавильню, исследовать бронзовые инструменты и плавку железа"
+		6: return "Создать железные доспехи, шлем и поножи, победить 3 налётчиков и поторговать"
+		7: return "Построить кузницу и исследовать улучшенные материалы, латные доспехи и тяжёлое оружие"
+		8: return "Посетить 5 разных биомов (%d/5)" % mini(visited_biomes.size(), 5)
+		9: return "Создать стальное снаряжение и исследовать стальную плавку, оружие и броню"
+		10: return "Завершить финальное испытание"
+		_: return "Все этапы пройдены"
+
 
 func can_open_craft_menu() -> bool:
 	return GameManager.debug_god_mode or current_level >= 2

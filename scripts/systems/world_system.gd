@@ -47,9 +47,14 @@ var _pending_chunks: Array[Vector2i] = []
 var _terrain_jobs: Dictionary = {}
 var _retired_jobs: Array[ChunkTerrainJob] = []
 var _alife_seed_structures: Dictionary = {}
+var _vision_material: ShaderMaterial
 
 
 func _ready() -> void:
+	_vision_material = ShaderMaterial.new()
+	_vision_material.shader = preload("res://assets/shaders/vision_edge.gdshader")
+	_vision_material.set_shader_parameter("vision_radius_px", float(_vision_radius * Config.TILE_SIZE.x))
+	material = _vision_material
 	SignalBus.settlement_facilities_queried.connect(_on_settlement_facilities_queried)
 	SignalBus.endgame_stronghold_revealed.connect(_on_stronghold_unlocked)
 	SignalBus.world_tile_queried.connect(func(tile: Vector2i, result: Dictionary) -> void:
@@ -103,6 +108,8 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
+	if _last_player_tile.x >= 0:
+		_vision_material.set_shader_parameter("vision_center", GameManager.get_player_world_pos())
 	for job: ChunkTerrainJob in _retired_jobs.duplicate():
 		if job.complete():
 			job.collect()
@@ -222,23 +229,15 @@ func get_biome_color_fast(tpos: Vector2i) -> Color:
 func _draw() -> void:
 	if _last_player_tile.x < -9000:
 		return
-	const Materials = preload("res://scripts/systems/world/settlement_materials.gd")
-	var city_ground: Dictionary = {}
-	for chunk: Vector2i in _chunk_pois:
-		if not _chunk_pois[chunk].has("settlement_id"):
-			continue
-		for x: int in range(-1, 2):
-			for y: int in range(-1, 2):
-				city_ground[chunk + Vector2i(x, y)] = true
 	# Square ground cells share the same projection as entities and pointer hits.
-	var radius: int = maxi(18, _vision_radius)
+	var radius: int = maxi(18, _vision_radius) + 2
 	for dy in range(-radius, radius + 1):
 		for dx in range(-radius, radius + 1):
 			var tpos: Vector2i = _last_player_tile + Vector2i(dx, dy)
 			if not _terrain.is_in_world(tpos):
 				continue
 			var fstate: int = _fog.get_state(tpos)
-			if fstate == int(FogState.UNEXPLORED):
+			if fstate == int(FogState.UNEXPLORED) and Vector2(tpos).distance_to(Vector2(_last_player_tile)) > float(_vision_radius + 2):
 				continue
 
 			var center: Vector2 = Config.world_to_iso(tpos)
@@ -246,45 +245,26 @@ func _draw() -> void:
 			var hash_val: int = absi((tpos.x * 73856093) ^ (tpos.y * 19349663))
 			var key: String = Config.vec2i_to_key(tpos)
 			var chunk: Vector2i = Config.tile_to_chunk(tpos)
-			var urban: bool = city_ground.has(chunk)
-			var material_tint: Color = Color("777683") if fstate == int(FogState.VISITED) else Color.WHITE
 			var delta: Dictionary = _chunk_deltas.get(Config.vec2i_to_key(chunk), {})
 			var paving: String = str(delta.get("structures", {}).get(key, _alife_seed_structures.get(key, "")))
 			if paving in ["floor", "stone_floor"]:
-				if urban:
-					var material: int = Materials.Kind.FLAGSTONE if paving == "stone_floor" else Materials.Kind.OAK
-					Materials.draw_ground(self, tpos, material, 3, material_tint)
-					continue
 				var surface: Color = Color("938e81") if paving == "stone_floor" else Color("96724d")
 				surface = surface.darkened(float(hash_val % 5) * 0.025)
 				if fstate == int(FogState.VISITED):
 					surface = surface.darkened(0.48)
+				else:
+					surface.a = 0.95
 				var cell: PackedVector2Array = IsoMath.cell_polygon(center)
 				draw_colored_polygon(cell, surface)
 				draw_polyline(cell, surface.darkened(0.24), 0.75, true)
 				continue
-			var poi: Dictionary = _chunk_pois.get(chunk, {})
-			if poi.has("streets") and not poi.streets.is_empty() and poi.streets.paving.has(tpos):
-				continue
-			if urban and biome_id in ["plains", "forest", "swamp", "desert", "mountains"]:
-				var material: int = Materials.Kind.MEADOW
-				match biome_id:
-					"swamp":
-						material = Materials.Kind.EARTH
-					"desert":
-						material = Materials.Kind.DRY_MEADOW
-					"mountains":
-						material = Materials.Kind.RUBBLE
-					"forest":
-						material_tint *= Color("b4b5a0")
-				Materials.draw_ground(self, tpos, material, 4, material_tint)
-				continue
-
 			var col: Color = ProceduralTileset.BIOME_PALETTE.get(biome_id, Color(0.34, 0.56, 0.25))
 			var variation: float = float(hash_val % 9 - 4) * 0.014
 			col = col.lightened(variation) if variation > 0.0 else col.darkened(-variation)
 			if fstate == int(FogState.VISITED):
 				col = col.darkened(0.48)
+			else:
+				col.a = 0.95
 
 			var tile_tex_name: String = "tile_grass"
 			if biome_id == "desert":
@@ -305,6 +285,8 @@ func _draw() -> void:
 				var modulate_col: Color = Color(0.46, 0.46, 0.52, 1.0) if fstate == int(FogState.VISITED) else Color.WHITE
 				if biome_id == "forest" and fstate != int(FogState.VISITED):
 					modulate_col = Color(0.72, 0.88, 0.68, 1.0)
+				if fstate != int(FogState.VISITED):
+					modulate_col.a = 0.95
 				# Map the original diamond top surface onto the square cell.
 				var uv: PackedVector2Array = PackedVector2Array([Vector2(0.5,0.01),Vector2(0.99,16.0/37.0),Vector2(0.5,31.5/37.0),Vector2(0.01,16.0/37.0)])
 				draw_polygon(IsoMath.cell_polygon(center),PackedColorArray([modulate_col]),uv,tile_tex)
@@ -439,7 +421,8 @@ func update_visibility(player_pos: Vector2) -> void:
 			if is_instance_valid(rnode):
 				rnode.visible = (st != int(FogState.UNEXPLORED))
 				rnode.modulate = Color(1, 1, 1, 1) if st == int(FogState.VISIBLE) else Color(0.55, 0.55, 0.62, 1)
-	SignalBus.fog_batch_updated.emit(changes)
+	if not changes.is_empty():
+		SignalBus.fog_batch_updated.emit(changes)
 	_sync_mobile_entity_fog_visibility()
 	_update_exploration_progress()
 	queue_redraw()
@@ -616,6 +599,7 @@ func _on_player_tile_changed(tile_pos: Vector2i) -> void:
 
 func _on_player_vision_changed(radius: int) -> void:
 	_vision_radius = maxi(radius, 3)
+	_vision_material.set_shader_parameter("vision_radius_px", float(_vision_radius * Config.TILE_SIZE.x))
 	if _last_player_tile.x > -9000:
 		update_visibility(Config.world_to_iso(_last_player_tile))
 
@@ -696,19 +680,9 @@ func _load_chunk(cpos: Vector2i) -> void:
 
 	var delta: Dictionary = _get_or_create_delta(cpos)
 	var harvested: Dictionary = delta.get("harvested", {})
-	var settlement_area := Rect2i()
-	var settlement_paving: Dictionary = {}
-	if poi_data.has("settlement_id"):
-		var size: int = poi_data["size"]
-		settlement_area = Rect2i(poi_data["origin"], Vector2i(size, size))
-		var streets: Dictionary = poi_data.get("streets", {})
-		settlement_paving = streets.get("paving", {})
-
 	for lx in range(Config.CHUNK_SIZE):
 		for ly in range(Config.CHUNK_SIZE):
 			var tpos: Vector2i = origin + Vector2i(lx, ly)
-			if settlement_area.has_point(tpos) or settlement_paving.has(tpos):
-				continue
 			if not _terrain.is_in_world(tpos):
 				continue
 			get_biome_cached(tpos)
@@ -729,15 +703,13 @@ func _load_chunk(cpos: Vector2i) -> void:
 		var tpos: Vector2i = Config.key_to_vec2i(str(tile_key))
 		SignalBus.structure_restored.emit(str(structures[tile_key]), tpos)
 
-	if poi_data.has("settlement_id"):
-		_spawn_alife_settlement(poi_data, delta)
-	elif poi_data.get("is_ruin", false):
+	if poi_data.get("is_ruin", false):
 		_spawn_ruin_complex(chunk_node, cpos, poi_data)
-	elif not poi_data.is_empty() and str(poi_data["poi_id"]) != "alpha_wolf_den":
+	elif not poi_data.is_empty() and not poi_data.has("settlement_id") and str(poi_data["poi_id"]) != "alpha_wolf_den":
 		_spawn_minor_location(poi_data)
 
 	_spawn_chunk_inhabitants(cpos, center_biome, delta)
-	if not poi_data.is_empty():
+	if not poi_data.is_empty() and not poi_data.has("settlement_id"):
 		var decorations: Node2D = preload("res://scripts/systems/world/poi_decoration.gd").new()
 		decorations.name = "PoiDecorations"
 		chunk_node.add_child(decorations)
@@ -1342,7 +1314,6 @@ func _refresh_alife_settlement(chunk: Vector2i) -> void:
 			_alife_seed_structures.erase(key)
 			SignalBus.structure_destroyed.emit(structure_id, Config.key_to_vec2i(key))
 	_chunk_pois[chunk] = next
-	_spawn_alife_settlement(next, _get_or_create_delta(chunk))
 	queue_redraw()
 
 func _on_settlement_facilities_queried(settlement_id: String, result: Dictionary) -> void:
@@ -1367,41 +1338,6 @@ func _on_settlement_facilities_queried(settlement_id: String, result: Dictionary
 							result[key] = {"kind": kind, "approach": [approach.x, approach.y]}
 							break
 
-
-func _spawn_alife_settlement(info: Dictionary, delta: Dictionary) -> void:
-	var origin: Vector2i = info["origin"]
-	var size: int = int(info["size"])
-	for x: int in range(size):
-		for y: int in range(size):
-			_remove_resource_node_at(origin + Vector2i(x, y))
-	var streets_info: Dictionary = info.get("streets", {})
-	for tile: Vector2i in streets_info.get("paving", {}):
-		_remove_resource_node_at(tile)
-	var removed: Array = delta.get("removed_seed_structures", [])
-	var overrides: Dictionary = delta.get("structures", {})
-	var structures: Dictionary = info.get("structures", {})
-	for key: String in structures:
-		if removed.has(key) or overrides.has(key):
-			continue
-		var tile: Vector2i = Config.key_to_vec2i(key)
-		_remove_resource_node_at(tile)
-		_alife_seed_structures[key] = structures[key]
-		SignalBus.structure_restored.emit(str(structures[key]), tile)
-	var chunk_node: Node2D = _loaded_chunks.get(Config.tile_to_chunk(info["tile_pos"]))
-	if chunk_node == null:
-		return
-	var roofs: Node2D = chunk_node.get_node_or_null("SettlementRoofs")
-	if roofs == null:
-		roofs = preload("res://scripts/systems/world/settlement_roofs.gd").new()
-		roofs.name = "SettlementRoofs"
-		chunk_node.add_child(roofs)
-	roofs.configure(info, removed, _fog.get_state, _last_player_tile)
-	var streets: Node2D = chunk_node.get_node_or_null("SettlementStreets")
-	if streets == null:
-		streets = preload("res://scripts/systems/world/settlement_streets.gd").new()
-		streets.name = "SettlementStreets"
-		chunk_node.add_child(streets)
-	streets.configure(info, _fog.get_state)
 
 func _spawn_minor_location(info: Dictionary) -> void:
 	var anchor: Vector2i = info["tile_pos"]

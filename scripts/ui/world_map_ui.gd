@@ -290,13 +290,13 @@ func _build_ui_layout() -> void:
 	hdr.add_child(title_vbox)
 
 	var title: Label = Label.new()
-	title.text = "АТЛАС МИРА [M]"
+	title.text = "ЛОКАЛЬНАЯ КАРТА [M]"
 	title.add_theme_font_size_override("font_size", 15)
 	title.modulate = Color(0.92, 0.90, 0.86, 1.0) # Antique ivory
 	title_vbox.add_child(title)
 
 	var subtitle: Label = Label.new()
-	subtitle.text = "World atlas — north up, square grid"
+	subtitle.text = "Локальная область — север сверху"
 	subtitle.add_theme_font_size_override("font_size", 10)
 	subtitle.modulate = Color(0.60, 0.64, 0.70, 1.0)
 	title_vbox.add_child(subtitle)
@@ -352,6 +352,14 @@ func _build_ui_layout() -> void:
 	center_btn.add_theme_stylebox_override("hover", _make_mc_btn_style(true))
 	center_btn.pressed.connect(center_on_player)
 	btm.add_child(center_btn)
+
+	var global_btn: Button = Button.new()
+	global_btn.text = " ГЛОБАЛЬНАЯ КАРТА [G] "
+	global_btn.add_theme_font_size_override("font_size", 11)
+	global_btn.add_theme_stylebox_override("normal", _make_mc_btn_style(false))
+	global_btn.add_theme_stylebox_override("hover", _make_mc_btn_style(true))
+	global_btn.pressed.connect(func() -> void: SignalBus.ui_panel_requested.emit("global_map"))
+	btm.add_child(global_btn)
 
 	var politics_btn: Button = Button.new()
 	politics_btn.text = " ФРАКЦИИ "
