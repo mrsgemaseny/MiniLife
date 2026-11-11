@@ -90,9 +90,6 @@ func _physics_process(delta: float) -> void:
 
 	if sim_tier == SimulationBubble.Tier.FULL:
 		_tick_fsm(delta)
-	elif _bandit_texture != null:
-		var bob: float = -1.5 if velocity.length_squared() > 20.0 and int(Time.get_ticks_msec() / 160) % 2 == 0 else 0.0
-		draw_texture_rect(_bandit_texture, Rect2(-28.0 + _body_lunge.x, -58.0 + bob + _body_lunge.y, 56.0, 56.0), false)
 	else:
 		_sim_timer += delta
 		var interval: float = SimulationBubble.get_tick_interval(sim_tier)
@@ -330,6 +327,9 @@ func _draw() -> void:
 		species = "fox"
 	if species != "":
 		AnimalRig.draw_animal(self, species, Time.get_ticks_msec() * 0.009, clampf(velocity.length() / maxf(move_speed, 1.0), 0.0, 1.0), -1.0 if facing_direction.x < 0 else 1.0, false, false)
+	elif _bandit_texture != null:
+		var bob: float = -1.5 if velocity.length_squared() > 20.0 and int(Time.get_ticks_msec() / 160) % 2 == 0 else 0.0
+		draw_texture_rect(_bandit_texture, Rect2(-28.0 + _body_lunge.x, -58.0 + bob + _body_lunge.y, 56.0, 56.0), false)
 	else:
 		preload("res://scripts/entities/pawn_art.gd").draw_pawn(self, _body_lunge, facing_direction, _appearance_gear)
 	if stats != null and stats.health < stats.max_health:
