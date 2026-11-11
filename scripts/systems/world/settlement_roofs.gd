@@ -1,6 +1,7 @@
 extends Node2D
 
 const Materials = preload("res://scripts/systems/world/settlement_materials.gd")
+const PALACE: Texture2D = preload("res://assets/sprites/world/settlement_materials/governors_palace.png")
 const STONE_ROOFS: Array[Color] = [Color("8c513b"), Color("725552"), Color("74604c")]
 const TIMBER_ROOFS: Array[Color] = [Color("685039"), Color("8b6b46"), Color("6b6450")]
 
@@ -51,17 +52,27 @@ func _draw() -> void:
 	for tile: Vector2i in _ramparts:
 		var fog: int = _fog_state.call(tile)
 		if fog != 0:
-			_draw_rampart(tile, _ramparts[tile], fog == 2)
+			var segment: Variant = _ramparts[tile]
+			if segment is Dictionary:
+				_draw_thick_rampart(tile, segment, fog == 2)
+			else:
+				_draw_rampart(tile, segment, fog == 2)
 	for room: Rect2i in _rooms:
-		if room.grow(1).has_point(_player_tile) or _damaged.has(room.position):
+		var style: String = _styles.get(room.position, "")
+		var reveal_area: Rect2i = room if style == "governors_palace" else room.grow(1)
+		if reveal_area.has_point(_player_tile) or _damaged.has(room.position):
 			continue
 		var fog: int = int(_fog_state.call(room.get_center()))
 		if fog == 0:
 			continue
+		if style == "governors_palace":
+			var origin: Vector2 = Config.world_to_iso(room.position) - Vector2(Config.HALF_TILE)
+			var bounds := Rect2(origin - Vector2(4, 56), Vector2(room.size * Config.TILE_SIZE) + Vector2(8, 70))
+			draw_texture_rect(PALACE, bounds, false, Color.WHITE if fog == 2 else Color("8c8a93"))
+			continue
 		var masonry: bool = _materials[room.position] == "wall"
 		var palette: Array[Color] = STONE_ROOFS if masonry else TIMBER_ROOFS
 		var color: Color = palette[posmod(hash(room.position), palette.size())]
-		var style: String = _styles.get(room.position, "")
 		match style:
 			"basilica", "temple":
 				color = Color("a0543a")
@@ -147,24 +158,66 @@ func _draw_room_roof(room: Rect2i, color: Color, masonry: bool, visible_now: boo
 		draw_rect(Rect2(stack.position + Vector2(2, 0), Vector2(22, 9)), Color("322a26"))
 
 
+func _draw_thick_rampart(tile: Vector2i, segment: Dictionary, visible_now: bool) -> void:
+	var center: Vector2 = Config.world_to_iso(tile)
+	var normal: Vector2 = Vector2(segment["normal"])
+	var depth: int = segment["depth"]
+	var stone: Color = Color("9a8c78") if visible_now else Color("60574e")
+	var tint: Color = Color("bdb4a6") if visible_now else Color("77707a")
+	var cell := Rect2(center - Vector2(Config.HALF_TILE) - Vector2(0, 8), Vector2(Config.TILE_SIZE))
+	if depth == 0:
+		draw_rect(Rect2(cell.position + normal * 8.0 + Vector2(0, 6), cell.size), stone.darkened(0.54))
+	Materials.draw_ground(self, tile, Materials.Kind.ASHLAR, 3, tint if depth != 1 else tint.darkened(0.17), Vector2(0, -8))
+	if depth != 1:
+		var edge: Vector2 = center - Vector2(0, 8) + normal * (21.0 if depth == 0 else -21.0)
+		var axis := Vector2(absf(normal.y), absf(normal.x))
+		draw_line(edge - axis * 24.0, edge + axis * 24.0, stone.darkened(0.3), 6)
+		for offset: float in [-19.0, -3.0, 13.0]:
+			draw_line(edge + axis * offset, edge + axis * (offset + 8.0), stone.lightened(0.20), 8)
+	if segment["tower"]:
+		_draw_rampart_tower(center, stone, tint)
+
+
 func _draw_rampart(tile: Vector2i, tower: bool, visible_now: bool) -> void:
 	var center: Vector2 = Config.world_to_iso(tile)
-	var stone: Color = Color("9a8b73") if visible_now else Color("60594f")
-	var width: float = 66.0 if tower else float(Config.TILE_SIZE.x)
-	var height: float = 66.0 if tower else float(Config.TILE_SIZE.y)
-	var top := Rect2(center - Vector2(width * 0.5, height * 0.5 + 9), Vector2(width, height))
-	draw_rect(Rect2(top.position + Vector2(0, 10), top.size), stone.darkened(0.48))
-	draw_rect(top, stone.darkened(0.24))
-	Materials.draw_surface(self, top.grow(-6), Materials.Kind.ASHLAR, Color.WHITE if visible_now else Color("88818a"))
-	var parapet: Rect2 = top.grow(-2)
-	draw_rect(parapet, stone.lightened(0.14), false, 3)
-	for offset: float in [7.0, 21.0, 35.0]:
-		draw_rect(Rect2(top.position + Vector2(offset, 0), Vector2(7, 7)), stone.lightened(0.21))
-		draw_rect(Rect2(top.position + Vector2(offset, height - 6), Vector2(7, 6)), stone.darkened(0.08))
+	var stone: Color = Color("928778") if visible_now else Color("5f574f")
+	var tint: Color = Color("bdb4a6") if visible_now else Color("77707a")
+	var horizontal: bool = _ramparts.has(tile + Vector2i.LEFT) or _ramparts.has(tile + Vector2i.RIGHT)
+	var vertical: bool = _ramparts.has(tile + Vector2i.UP) or _ramparts.has(tile + Vector2i.DOWN)
+	if horizontal:
+		_draw_wall_walk(center, Vector2.RIGHT, Vector2.DOWN, stone, tint)
+	if vertical:
+		_draw_wall_walk(center, Vector2.DOWN, Vector2.RIGHT, stone, tint)
 	if tower:
-		draw_rect(top.grow(-12), stone.darkened(0.35))
-		draw_rect(top.grow(-17), stone.lightened(0.05))
-		draw_rect(Rect2(center - Vector2(5, 13), Vector2(10, 10)), stone.darkened(0.50))
+		_draw_rampart_tower(center, stone, tint)
+
+
+func _draw_rampart_tower(center: Vector2, stone: Color, tint: Color) -> void:
+	var top := Rect2(center - Vector2(25, 36), Vector2(50, 50))
+	draw_rect(Rect2(top.position + Vector2(4, 13), top.size), Color(0.12, 0.10, 0.08, 0.33))
+	draw_rect(Rect2(top.position + Vector2(0, 10), top.size), stone.darkened(0.52))
+	Materials.draw_surface(self, top, Materials.Kind.ASHLAR, tint)
+	draw_rect(top.grow(-3), stone.lightened(0.14), false, 6)
+	draw_rect(top.grow(-10), stone.darkened(0.34), false, 2)
+	for offset: float in [0.0, 20.0, 40.0]:
+		draw_rect(Rect2(top.position + Vector2(offset, 0), Vector2(10, 8)), stone.lightened(0.19))
+		draw_rect(Rect2(top.position + Vector2(offset, 42), Vector2(10, 8)), stone.lightened(0.08))
+
+
+func _draw_wall_walk(center: Vector2, axis: Vector2, across: Vector2, stone: Color, tint: Color) -> void:
+	var half_length: float = Config.TILE_SIZE.x * 0.5
+	var start: Vector2 = center - axis * half_length - Vector2(0, 8)
+	var end: Vector2 = start + axis * half_length * 2.0
+	var size: Vector2 = axis * half_length * 2.0 + across * 38.0
+	var wall := Rect2(start - across * 19.0, size)
+	draw_rect(Rect2(wall.position + Vector2(4, 10), size), stone.darkened(0.48))
+	Materials.draw_surface(self, wall, Materials.Kind.ASHLAR, tint)
+	for side: float in [-1.0, 1.0]:
+		var parapet: Vector2 = across * side * 16.0
+		draw_line(start + parapet, end + parapet, stone.lightened(0.12) if side < 0 else stone.darkened(0.20), 4)
+		for offset: float in [4.0, 20.0, 36.0]:
+			var tooth: Vector2 = start + axis * offset + parapet
+			draw_line(tooth, tooth + axis * 8.0, stone.lightened(0.21) if side < 0 else stone, 7)
 
 
 func _draw_portico(facade: Rect2, visible_now: bool, temple: bool) -> void:

@@ -30,6 +30,9 @@ func _ready() -> void:
 	SignalBus.structure_destroyed.connect(_on_structure_destroyed)
 	SignalBus.structure_removal_requested.connect(_on_structure_removal_requested)
 	SignalBus.trap_triggered.connect(_on_trap_triggered)
+	SignalBus.structure_placement_rejected.connect(func(_structure_id: String, _tile_pos: Vector2i, reason: String) -> void:
+		if reason != "":
+			SignalBus.notification_posted.emit(reason))
 	SignalBus.crafting_sources_queried.connect(func(origin: Vector2i, result: Dictionary) -> void:
 		result["inventories"] = _storage_mgr.get_nearby_containers(origin, 4))
 
@@ -97,10 +100,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("build_place"):
 		var player: Node = get_tree().get_first_node_in_group("player")
-		if player != null and has_materials(player, _active_build_id):
+		var reason: String = requirement_block_reason(player, _active_build_id)
+		if player != null and reason.is_empty():
 			SignalBus.build_requested.emit(_active_build_id, _cursor_tile, player)
 		else:
-			SignalBus.notification_posted.emit("Insufficient materials for " + _active_build_id)
+			SignalBus.notification_posted.emit(reason if reason != "" else "Cannot build " + _active_build_id)
 		get_viewport().set_input_as_handled()
 
 
@@ -108,7 +112,7 @@ func _draw() -> void:
 	if _active_build_id == "":
 		return
 	var player: Node = get_tree().get_first_node_in_group("player")
-	var valid: bool = has_materials(player, _active_build_id)
+	var valid: bool = has_materials(player, _active_build_id) and can_place_block(_active_build_id, _cursor_tile)
 	BlueprintPlacer.draw_ghost_preview(self, _cursor_tile, valid, _smooth_cursor_world, _pulse_phase, _active_build_id)
 
 
@@ -127,26 +131,37 @@ func snap_to_iso_grid(world_pos: Vector2) -> Vector2:
 
 
 func has_materials(builder: Node, structure_id: String) -> bool:
+	return requirement_block_reason(builder, structure_id).is_empty()
+
+
+static func requirement_block_reason(builder: Node, structure_id: String) -> String:
 	if builder == null:
-		return false
+		return "No builder"
 	var def: Dictionary = DataRegistry.get_structure(structure_id)
 	if def.is_empty():
-		return false
+		return "Unknown structure"
 	if GameManager.sandbox_for(builder):
-		return true
-	if ProgressionSystem.instance != null and ProgressionSystem.instance.current_level < int(def.get("min_level", 2)):
-		return false
+		return ""
+	var min_level: int = int(def.get("min_level", 2))
+	if ProgressionSystem.instance != null and ProgressionSystem.instance.current_level < min_level:
+		return "Requires level %d" % min_level
 	var tech: String = str(def.get("tech_required", ""))
 	if tech != "" and (ResearchSystem.instance == null or not ResearchSystem.instance.is_researched(tech)):
-		return false
+		return "Requires research: " + tech.replace("_", " ")
 	var inv: InventoryComponent = builder.get("inventory") as InventoryComponent
 	if inv == null:
-		return false
+		return "No inventory"
+	var missing: PackedStringArray = PackedStringArray()
 	for mat in def.get("materials", []):
 		if mat is Dictionary:
-			if not inv.has_item(str(mat.get("item_id", "")), int(mat.get("count", 1))):
-				return false
-	return true
+			var item_id: String = str(mat.get("item_id", ""))
+			var need: int = int(mat.get("count", 1))
+			var have: int = inv.count_of(item_id)
+			if have < need:
+				missing.append("%s %d/%d" % [item_id, have, need])
+	if not missing.is_empty():
+		return "Need " + ", ".join(missing)
+	return ""
 
 
 func consume_materials(builder: Node, structure_id: String) -> void:

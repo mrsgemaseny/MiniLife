@@ -6,6 +6,8 @@ const CREATIONS_PER_FRAME: int = 2
 const MATERIALIZE_RADIUS: int = 18
 const DEMATERIALIZE_RADIUS: int = MATERIALIZE_RADIUS + 5
 const MAX_ACTIVE_RESIDENTS: int = 32
+const CITY_ACTIVE_RESIDENTS: int = 80
+const CITY_MATERIALIZE_RADIUS: int = 48
 var world: AlifeWorldContext
 var parent: Node2D
 var loaded_chunks: Dictionary = {}
@@ -28,7 +30,7 @@ func _live_entity(id: String) -> NPCBase:
 	var reference: Variant = world.agents.materialized.get(id)
 	return reference as NPCBase if is_instance_valid(reference) else null
 
-func update(delta: float) -> void:
+func update(delta: float, city_id: String = "") -> void:
 	if world == null or not is_instance_valid(parent) or not parent.is_inside_tree():
 		return
 	_refresh_elapsed += delta
@@ -43,7 +45,10 @@ func update(delta: float) -> void:
 				world.agents.materialized.erase(id)
 				continue
 			var tile: Vector2i = Config.iso_to_world(entity.global_position)
-			if agent == null or not agent.alive or not loaded_chunks.has(Config.tile_to_chunk(tile)) or Config.tile_distance(player_tile, tile) > DEMATERIALIZE_RADIUS:
+			var distance_limit: int = DEMATERIALIZE_RADIUS
+			if agent != null and not city_id.is_empty() and agent.settlement_id == city_id:
+				distance_limit = CITY_MATERIALIZE_RADIUS + 5
+			if agent == null or not agent.alive or not loaded_chunks.has(Config.tile_to_chunk(tile)) or Config.tile_distance(player_tile, tile) > distance_limit:
 				dematerialize(id)
 				continue
 			agent.tile = tile
@@ -62,10 +67,12 @@ func update(delta: float) -> void:
 			SignalBus.world_tile_queried.emit(tile, tile_info)
 			entity.visible = int(tile_info.get("fog_state", Config.FogState.VISIBLE)) != int(Config.FogState.UNEXPLORED)
 		for agent: GlobalAgent in world.agents.get_all_global():
-			if loaded_chunks.has(Config.tile_to_chunk(agent.tile)) and Config.tile_distance(player_tile, agent.tile) <= MATERIALIZE_RADIUS:
+			var radius: int = CITY_MATERIALIZE_RADIUS if not city_id.is_empty() and agent.settlement_id == city_id else MATERIALIZE_RADIUS
+			if loaded_chunks.has(Config.tile_to_chunk(agent.tile)) and Config.tile_distance(player_tile, agent.tile) <= radius:
 				_candidates.append(agent.agent_id)
 	var created: int = 0
-	while not _candidates.is_empty() and created < CREATIONS_PER_FRAME and world.agents.materialized.size() < MAX_ACTIVE_RESIDENTS:
+	var active_limit: int = CITY_ACTIVE_RESIDENTS if not city_id.is_empty() else MAX_ACTIVE_RESIDENTS
+	while not _candidates.is_empty() and created < CREATIONS_PER_FRAME and world.agents.materialized.size() < active_limit:
 		var id: String = str(_candidates.pop_front())
 		var agent: GlobalAgent = world.agents.find(id) as GlobalAgent
 		if agent != null and agent.alive and loaded_chunks.has(Config.tile_to_chunk(agent.tile)):

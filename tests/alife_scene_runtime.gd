@@ -22,13 +22,14 @@ func run() -> void:
 	check(WorldSimulation.world.settlements.all().size() > 10, "Game start populates settlements")
 	var settlement: AlifeSettlement = null
 	for entry: AlifeSettlement in WorldSimulation.world.settlements.all():
-		if entry.population >= 250:
+		if entry.settlement_type == "city":
 			settlement = entry
 			break
 	check(settlement != null, "Generated populated city")
 	if settlement == null:
 		get_tree().quit(1)
 		return
+	check(settlement.population == 80, "New city starts with 80 residents")
 	SignalBus.player_teleport_requested.emit(Config.world_to_iso(settlement.tile + Vector2i(0, 2)))
 	for frame: int in range(100):
 		await get_tree().process_frame
@@ -37,17 +38,62 @@ func run() -> void:
 	check(str(info.get("settlement_id", "")) == settlement.settlement_id, "Settlement is integrated into world POIs")
 	var civic_plan: Dictionary = info.get("streets", {})
 	var plaza: Dictionary = civic_plan.get("paving", {})
-	check(plaza.get(settlement.tile) == SettlementLayout.Streets.Surface.FORUM
-		and world_system.is_passable(settlement.tile), "The forum has an open, walkable center")
+	var forum_center: Vector2i = civic_plan.get("forum_inlay", settlement.tile)
+	check(plaza.get(forum_center) == SettlementLayout.Streets.Surface.FORUM
+		and world_system.is_passable(forum_center) and world_system.is_passable(settlement.tile),
+		"The forum has an open, walkable center")
 	var structures: Dictionary = info.get("structures", {})
 	check("forge" in structures.values(), "The civic center has an interactive forge")
 	var lord: GlobalAgent = WorldSimulation.world.agents.find(settlement.settlement_id + "/resident/0000") as GlobalAgent
 	check(lord != null and lord.home_tile == civic_plan.get("lord_home"), "The local lord lives in the residence")
+	var palace: Rect2i = Rect2i()
+	var roof_styles: Dictionary = civic_plan.get("styles", {})
+	for room: Rect2i in info.get("roofs", []):
+		if roof_styles.get(room.position) == "governors_palace":
+			palace = room
+			break
+	check(lord != null and palace.size.x >= 10 and palace.has_point(lord.home_tile), "The palace is a large, furnished building")
+	var posts: int = 0
+	var patrols: int = 0
+	for guard: GlobalAgent in WorldSimulation.world.agents.by_settlement(settlement.settlement_id):
+		if guard.role != "guard":
+			continue
+		var goal: String = AgentGoalEvaluator.evaluate(guard, WorldSimulation.world)
+		if goal == "hold_gate" and guard.guard_route.size() == 1:
+			posts += 1
+		elif goal == "patrol_settlement" and guard.guard_route.size() > 1:
+			patrols += 1
+	check(posts > 0 and patrols > 0, "City has stationary posts and moving patrols")
+	var buildings: int = 0
+	var gate_checked: bool = false
+	for district: Vector2i in WorldSimulation._settlement_chunks:
+		if WorldSimulation._settlement_chunks[district] != settlement.settlement_id:
+			continue
+		var layout: Dictionary = {}
+		SignalBus.alife_settlement_queried.emit(district, layout)
+		buildings += layout.get("roofs", []).size()
+		for post: Vector2i in layout.get("streets", {}).get("gates", []):
+			var local: Vector2i = post - Config.chunk_origin(district)
+			var normal: Vector2i = Vector2i.ZERO
+			for side: Vector2i in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+				if not Rect2i(Vector2i.ZERO, Vector2i.ONE * Config.CHUNK_SIZE).has_point(local + side * 4):
+					normal = side
+					break
+			if normal == Vector2i.ZERO:
+				continue
+			var flank: Vector2i = Vector2i.DOWN if normal.x != 0 else Vector2i.RIGHT
+			for depth: int in range(1, 4):
+				var passage: Vector2i = post + normal * depth
+				check(not layout.structures.has(Config.vec2i_to_key(passage))
+					and layout.structures.get(Config.vec2i_to_key(passage + flank)) == "wall",
+					"The gate stays clear through all three wall blocks")
+			gate_checked = true
+	check(buildings in range(40, 61) and gate_checked, "City has about 50 buildings and a gate through the thick rampart")
 	var live: Array = []
 	for agent: GlobalAgent in WorldSimulation.world.agents.by_settlement(settlement.settlement_id):
 		if WorldSimulation.world.agents.materialized.has(agent.agent_id):
 			live.append(agent.agent_id)
-	check(not live.is_empty() and live.size() <= AgentMaterializer.MAX_ACTIVE_RESIDENTS, "City residents materialize within the active NPC budget")
+	check(not live.is_empty() and live.size() <= AgentMaterializer.CITY_ACTIVE_RESIDENTS, "City residents materialize within the active NPC budget")
 	var seen: Dictionary = {}
 	for npc: Node in get_tree().get_nodes_in_group("npc"):
 		if npc.has_meta("global_agent_id"):

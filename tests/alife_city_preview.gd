@@ -26,15 +26,23 @@ func _ready() -> void:
 	main.get_node("UILayer/MainMenu").hide()
 	GameManager.resume()
 	var camera: Camera2D = main.get_node("World/Player/Camera2D")
-	camera.zoom = Vector2.ONE * (0.34 if center_view else 0.128)
+	camera.zoom = Vector2.ONE * (0.43 if center_view else 0.128)
+	var buildings: int = 0
 	for chunk: Vector2i in WorldSimulation._settlement_chunks:
+		if WorldSimulation._settlement_chunks[chunk] != city.settlement_id:
+			continue
+		var layout: Dictionary = {}
+		SignalBus.alife_settlement_queried.emit(chunk, layout)
+		buildings += layout.get("roofs", []).size()
 		if center_view and (chunk - Config.tile_to_chunk(city.tile)).abs().length_squared() > 2:
 			continue
-		if WorldSimulation._settlement_chunks[chunk] == city.settlement_id and not world._loaded_chunks.has(chunk):
+		if not world._loaded_chunks.has(chunk):
 			world._pending_chunks.erase(chunk)
 			world._load_chunk(chunk)
-	for frame: int in range(18):
-		await get_tree().process_frame
+	await get_tree().process_frame
+	GameManager._on_application_focus_gained()
+	GameManager.resume()
+	await get_tree().create_timer(1.5).timeout
 	main.get_node("UILayer").hide()
 	for frame: int in range(3):
 		await get_tree().process_frame
@@ -43,9 +51,10 @@ func _ready() -> void:
 	for agent: GlobalAgent in WorldSimulation.world.agents.by_settlement(city.settlement_id):
 		if is_instance_valid(WorldSimulation.world.agents.materialized.get(agent.agent_id)):
 			active += 1
-	var screenshot: String = "city_materials_%s_%s.png" % ["center" if center_view else "streets", "night" if night else "day"]
+	var screenshot: String = "city_guard_%s_%s.png" % ["center" if center_view else "streets", "night" if night else "day"]
 	var result: Error = get_viewport().get_texture().get_image().save_png("user://" + screenshot)
-	print("CITY_PREVIEW: ", city.settlement_id, " chunks=", district_count, " population=", city.population, " active=", active, " screenshot=", result)
+	print("CITY_PREVIEW: ", city.settlement_id, " chunks=", district_count, " buildings=", buildings,
+		" population=", city.population, " active=", active, " screenshot=", result)
 	GameManager._state = GameManager.State.BOOT
 	main.queue_free()
 	await get_tree().process_frame

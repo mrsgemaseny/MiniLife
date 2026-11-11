@@ -4,7 +4,7 @@ enum Surface { GRAVEL, COBBLE, FLAGSTONE, FORUM }
 
 static func build_core(structures: Dictionary, roofs: Array[Rect2i], origin: Vector2i, size: int, plan: int) -> Dictionary:
 	if plan >= 3:
-		return _build_civic_center(structures, roofs, origin, size)
+		return _build_civic_center(structures, roofs, origin, size, plan >= 4)
 	var paving: Dictionary = {}
 	var middle: int = size / 2
 	var plaza := Rect2i(origin + Vector2i(0, middle - 2), Vector2i(size, 4))
@@ -42,7 +42,9 @@ static func build_district(structures: Dictionary, roofs: Array[Rect2i], origin:
 	var props: Dictionary = {}
 	var styles: Dictionary = {}
 	var ramparts: Dictionary = {}
+	var gates: Array[Vector2i] = []
 	var size: int = Config.CHUNK_SIZE
+	var thick: bool = plan >= 5 and fort_level >= 2
 	var main_surface: int = Surface.COBBLE if direction.x == 0 or direction.y == 0 else Surface.GRAVEL
 	_pave(paving, Rect2i(origin + Vector2i(crossing.x - 1, 0), Vector2i(2, size)), main_surface)
 	_pave(paving, Rect2i(origin + Vector2i(0, crossing.y - 1), Vector2i(size, 2)), main_surface)
@@ -53,9 +55,22 @@ static func build_district(structures: Dictionary, roofs: Array[Rect2i], origin:
 		var right: int = size - 1 if east else crossing.x - 1
 		var top: int = crossing.y + 2 if south else 1
 		var bottom: int = size - 1 if south else crossing.y - 2
+		if thick:
+			left = 3 if not east and Vector2i.LEFT not in connections else left
+			right = size - 3 if east and Vector2i.RIGHT not in connections else right
+			top = 3 if not south and Vector2i.UP not in connections else top
+			bottom = size - 3 if south and Vector2i.DOWN not in connections else bottom
+			if bottom - top < 3:
+				if south:
+					top = bottom - 3
+				else:
+					bottom = top + 3
 		var lot := Rect2i(origin + Vector2i(left, top), Vector2i(right - left, bottom - top))
 		var frontage_y: int = top - 1 if south else bottom
-		_pave(paving, Rect2i(origin + Vector2i(left, frontage_y), Vector2i(lot.size.x, 1)), Surface.GRAVEL)
+		for x: int in range(left, right):
+			var frontage := origin + Vector2i(x, frontage_y)
+			if not paving.has(frontage):
+				paving[frontage] = Surface.GRAVEL
 		if plan >= 3 and direction == Vector2i.LEFT:
 			_build_smithy_lot(structures, roofs, paving, props, styles, lot, side, south)
 			continue
@@ -85,30 +100,59 @@ static func build_district(structures: Dictionary, roofs: Array[Rect2i], origin:
 			if normal in connections:
 				continue
 			var gate: bool = normal == (direction.sign() if plan >= 2 else direction)
+			var axis: int = crossing.x if normal.y != 0 else crossing.y
+			var edge: int = 0 if normal.x + normal.y < 0 else size - 1
+			if thick and gate:
+				var entrance := Vector2i(axis, edge) if normal.y != 0 else Vector2i(edge, axis)
+				gates.append(origin + entrance - normal * 3)
 			for index: int in range(size):
-				var edge: int = 0 if normal.x + normal.y < 0 else size - 1
 				var tile := Vector2i(index, edge) if normal.y != 0 else Vector2i(edge, index)
-				var axis: int = crossing.x if normal.y != 0 else crossing.y
 				if not gate or index not in [axis - 1, axis]:
-					_put(structures, origin + tile, "wall")
 					if plan >= 3:
 						var world_tile: Vector2i = origin + tile
-						var tower: bool = index in [0, size - 1] or (gate and index in [axis - 2, axis + 1])
-						ramparts[world_tile] = tower or ramparts.get(world_tile, false)
-	return {"paving": paving, "props": props, "styles": styles, "ramparts": ramparts}
+						var corner: bool = false
+						if index in [0, size - 1]:
+							var tangent: Vector2i = Vector2i.RIGHT if normal.y != 0 else Vector2i.DOWN
+							var edge_normal: Vector2i = -tangent if index == 0 else tangent
+							corner = edge_normal not in connections
+						var tower: bool = corner or (gate and index in [axis - 2, axis + 1])
+						if thick:
+							for depth: int in range(3):
+								var wall_tile: Vector2i = world_tile - normal * depth
+								var previous: Dictionary = ramparts.get(wall_tile, {})
+								_put(structures, wall_tile, "wall")
+								if previous.is_empty() or depth < int(previous["depth"]) or (depth == 0 and tower):
+									ramparts[wall_tile] = {"normal": normal, "depth": depth, "tower": depth == 0 and tower}
+						else:
+							ramparts[world_tile] = tower or ramparts.get(world_tile, false)
+					if not thick:
+						_put(structures, origin + tile, "wall")
+	return {"paving": paving, "props": props, "styles": styles, "ramparts": ramparts, "gates": gates}
 
 
-static func _build_civic_center(structures: Dictionary, roofs: Array[Rect2i], origin: Vector2i, size: int) -> Dictionary:
+static func _build_civic_center(structures: Dictionary, roofs: Array[Rect2i], origin: Vector2i, size: int, palace_plan: bool) -> Dictionary:
 	var paving: Dictionary = {}
 	var middle: int = size / 2
 	var palace := Rect2i(origin, Vector2i(middle - 1, middle - 1))
 	var hall := Rect2i(origin + Vector2i(middle + 1, 1), palace.size - Vector2i(0, 1))
 	var forum := Rect2i(origin + Vector2i(0, middle - 1), Vector2i(size, size - middle + 1))
+	if palace_plan:
+		palace = Rect2i(origin + Vector2i(0, 1), Vector2i(size - 2, middle - 1))
+		forum.position.y += 1
+		forum.size.y -= 1
 	_pave(paving, Rect2i(origin, Vector2i(size, size)), Surface.FLAGSTONE)
 	_pave(paving, forum.grow(-1), Surface.FORUM)
 	_house(structures, roofs, palace, "wall", "storage", false)
 	_put(structures, palace.position + Vector2i(palace.size.x - 2, 1), "bed")
-	_house(structures, roofs, hall, "wall", "workbench", false)
+	var styles: Dictionary = {palace.position: "lord_house", hall.position: "basilica"}
+	if palace_plan:
+		styles = {palace.position: "governors_palace"}
+		_put(structures, palace.position + Vector2i(1, 3), "workbench")
+		for x: int in [3, palace.size.x - 3]:
+			for y: int in range(1, palace.size.y - 1):
+				_put(structures, palace.position + Vector2i(x, y), "door" if y == 2 else "wall")
+	else:
+		_house(structures, roofs, hall, "wall", "workbench", false)
 	_put(structures, origin + Vector2i(2, size - 2), "well")
 	_put(structures, origin + Vector2i(size - 2, middle + 2), "forge")
 	for tile: Vector2i in [Vector2i(0, middle), Vector2i(size - 1, middle), Vector2i(1, size - 1), Vector2i(size - 2, size - 1)]:
@@ -117,7 +161,7 @@ static func _build_civic_center(structures: Dictionary, roofs: Array[Rect2i], or
 		"paving": paving,
 		"lord_home": palace.position + Vector2i(palace.size.x - 2, 2),
 		"forum_inlay": forum.get_center(),
-		"styles": {palace.position: "lord_house", hall.position: "basilica"},
+		"styles": styles,
 		"props": {
 			origin + Vector2i(size - 3, size - 3): "market_stall",
 			origin + Vector2i(size - 2, size - 2): "grain_sacks",
@@ -136,11 +180,12 @@ static func _build_smithy_lot(structures: Dictionary, roofs: Array[Rect2i], pavi
 		props[lot.position + Vector2i(1, 1)] = "iron_stack"
 		props[lot.end - Vector2i(2, 2)] = "charcoal_bucket"
 		return
-	var smithy := Rect2i(lot.position, Vector2i(lot.size.x, lot.size.y - 1))
-	smithy.position.y += 1 if south else 0
+	var forecourt: int = 1 if lot.size.y > 3 else 0
+	var smithy := Rect2i(lot.position, Vector2i(lot.size.x, lot.size.y - forecourt))
+	smithy.position.y += forecourt if south else 0
 	_house(structures, roofs, smithy, "wall", "forge", south)
 	styles[smithy.position] = "smithy"
-	var frontage: int = lot.position.y if south else lot.end.y - 1
+	var frontage: int = lot.position.y - 1 + forecourt if south else lot.end.y - forecourt
 	props[Vector2i(lot.position.x, frontage)] = "anvil_stump"
 	props[Vector2i(lot.end.x - 1, frontage)] = "charcoal_bucket"
 
@@ -157,7 +202,7 @@ static func _build_roman_lot(structures: Dictionary, roofs: Array[Rect2i], pavin
 		props[lot.position + Vector2i(1, 0)] = "sealed_barrels"
 		props[lot.end - Vector2i(2, 2)] = "grain_sacks"
 		return
-	if district_type == 0 and side in [0, 3]:
+	if district_type == 0 and side in [0, 3] and lot.size.y >= 4:
 		# Bath block: long hall with an open stone forecourt.
 		var bath := Rect2i(lot.position, lot.size - Vector2i(0, 1))
 		bath.position.y += 1 if south else 0
@@ -184,7 +229,7 @@ static func _build_roman_lot(structures: Dictionary, roofs: Array[Rect2i], pavin
 			props[Vector2i(lot.position.x, patio_y)] = "seedling_pots"
 		props[Vector2i(lot.end.x - 1, patio_y)] = "seedling_pots"
 		return
-	if district_type == 3 and lot.size.x >= 6:
+	if district_type == 3 and lot.size.x >= 6 and lot.size.y >= 4:
 		# Attached shopfronts share the same street and have separate doors.
 		for x: int in [lot.position.x, lot.end.x - 3]:
 			var shop := Rect2i(Vector2i(x, lot.position.y if south else lot.end.y - 4), Vector2i(3, 4))

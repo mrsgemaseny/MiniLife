@@ -289,12 +289,16 @@ func refresh() -> void:
 		var mats: Array = def.get("materials", [])
 
 		var req_tech: String = str(def.get("tech_required", ""))
+		var min_level: int = int(def.get("min_level", 2))
+		var is_level_unlocked: bool = true
+		if not GameManager.sandbox_for(player) and ProgressionSystem.instance != null:
+			is_level_unlocked = ProgressionSystem.instance.current_level >= min_level
 		var is_tech_unlocked: bool = true
 		if req_tech != "" and not GameManager.sandbox_for(player):
 			if ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_tech):
 				is_tech_unlocked = false
 
-		var can_build: bool = is_tech_unlocked and _has_materials(player, mats)
+		var can_build: bool = is_level_unlocked and is_tech_unlocked and _has_materials(player, mats)
 		var is_sel: bool = (sid == _selected_structure_id)
 
 		var btn: Button = Button.new()
@@ -315,7 +319,7 @@ func refresh() -> void:
 			bsb.bg_color = Color(0.18, 0.20, 0.24, 1.0)
 			bsb.border_color = Color(0.88, 0.89, 0.94, 1.0)
 			bsb.set_border_width_all(2)
-		elif not is_tech_unlocked:
+		elif not is_level_unlocked or not is_tech_unlocked:
 			bsb.bg_color = Color(0.09, 0.10, 0.11, 0.90)
 			bsb.border_color = Color(0.20, 0.22, 0.25, 0.50)
 			bsb.set_border_width_all(1)
@@ -333,7 +337,10 @@ func refresh() -> void:
 		btn.add_theme_stylebox_override("pressed", bsb)
 		btn.add_theme_stylebox_override("focus", bsb)
 
-		if not is_tech_unlocked:
+		if not is_level_unlocked:
+			btn.text = "   %s   [УРОВЕНЬ %d]" % [sname, min_level]
+			btn.add_theme_color_override("font_color", Color(0.45, 0.48, 0.54, 1.0))
+		elif not is_tech_unlocked:
 			btn.text = "   %s   [ЗАКРЫТО: %s]" % [sname, req_tech.capitalize().replace("_", " ")]
 			btn.add_theme_color_override("font_color", Color(0.45, 0.48, 0.54, 1.0))
 		elif can_build:
@@ -365,20 +372,28 @@ func _update_detail_panel(player: Node) -> void:
 	var sname: String = str(def.get("name", _selected_structure_id.capitalize()))
 	var mats: Array = def.get("materials", [])
 	var req_tech: String = str(def.get("tech_required", ""))
+	var min_level: int = int(def.get("min_level", 2))
 
+	var is_level_unlocked: bool = true
+	if not GameManager.sandbox_for(player) and ProgressionSystem.instance != null:
+		is_level_unlocked = ProgressionSystem.instance.current_level >= min_level
 	var is_tech_unlocked: bool = true
 	if req_tech != "" and not GameManager.sandbox_for(player):
 		if ResearchSys.instance != null and not ResearchSys.instance.is_researched(req_tech):
 			is_tech_unlocked = false
-	var can_build: bool = is_tech_unlocked and _has_materials(player, mats)
+	var can_build: bool = is_level_unlocked and is_tech_unlocked and _has_materials(player, mats)
 
 	if _detail_icon != null:
 		_detail_icon.texture = IconFactory.get_icon(_selected_structure_id)
 	if _detail_title != null:
 		_detail_title.text = sname
 	if _detail_category != null:
-		_detail_category.text = "Категория: Базовая инфраструктура" if req_tech.is_empty() else ("Требует исследования: %s" % req_tech.capitalize().replace("_", " "))
-		_detail_category.modulate = Color(0.60, 0.63, 0.68) if is_tech_unlocked else Color(0.75, 0.45, 0.42)
+		if not is_level_unlocked:
+			_detail_category.text = "Требуется уровень %d" % min_level
+			_detail_category.modulate = Color(0.75, 0.45, 0.42)
+		else:
+			_detail_category.text = "Категория: Базовая инфраструктура" if req_tech.is_empty() else ("Требует исследования: %s" % req_tech.capitalize().replace("_", " "))
+			_detail_category.modulate = Color(0.60, 0.63, 0.68) if is_tech_unlocked else Color(0.75, 0.45, 0.42)
 		if GameManager.sandbox_for(player):
 			_detail_category.text = "God mode: all blueprints available"
 	if _detail_desc != null:
@@ -399,7 +414,10 @@ func _update_detail_panel(player: Node) -> void:
 
 	if _detail_action_btn != null:
 		_detail_action_btn.modulate = Color.WHITE
-		if not is_tech_unlocked:
+		if not is_level_unlocked:
+			_detail_action_btn.text = "ТРЕБУЕТСЯ УРОВЕНЬ %d" % min_level
+			_detail_action_btn.disabled = true
+		elif not is_tech_unlocked:
 			_detail_action_btn.text = "ТЕХНОЛОГИЯ НЕ ИЗУЧЕНА"
 			_detail_action_btn.disabled = true
 		elif can_build:

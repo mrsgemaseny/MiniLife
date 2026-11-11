@@ -39,7 +39,7 @@ static func populate(world: AlifeWorldContext) -> void:
 			settlement.treasury = int(template["treasury"])
 			settlement.fort_level = int(template["fort_level"])
 			if settlement.settlement_type in ["city", "fortress"]:
-				settlement.street_plan = 3
+				settlement.street_plan = 5
 			elif settlement.settlement_type == "town":
 				settlement.street_plan = 1
 			settlement.food = float(settlement.population) * 5.0

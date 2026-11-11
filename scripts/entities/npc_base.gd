@@ -121,7 +121,7 @@ func _tick_ai(delta: float) -> void:
 			_set_routine_pose("", 0.0)
 			_follow_routine(get_meta("alife_destination", Config.iso_to_world(global_position)), delta)
 			return
-		if goal in ["sleep", "work", "run_trade_route", "socialize", "patrol_settlement", "idle"]:
+		if goal in ["sleep", "work", "run_trade_route", "socialize", "patrol_settlement", "hold_gate", "idle"]:
 			var target: Vector2i = get_meta("alife_routine_destination", Config.iso_to_world(global_position))
 			_follow_routine(target, delta)
 			_update_routine_pose(goal, target, delta)

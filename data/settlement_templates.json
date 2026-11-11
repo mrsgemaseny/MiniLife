@@ -1,6 +1,6 @@
 [
   {"id":"village","population":80,"footprint":8,"prosperity":45,"treasury":800,"fort_level":0,"economies":["agricultural","crafting"]},
   {"id":"town","population":160,"footprint":10,"prosperity":60,"treasury":2500,"fort_level":1,"economies":["crafting","mining","trading"]},
-  {"id":"city","population":250,"footprint":10,"prosperity":70,"treasury":5000,"fort_level":2,"economies":["trading","crafting"]},
-  {"id":"fortress","population":400,"footprint":10,"prosperity":50,"treasury":3500,"fort_level":3,"economies":["mining","agricultural"]}
+  {"id":"city","population":80,"footprint":10,"prosperity":70,"treasury":5000,"fort_level":2,"economies":["trading","crafting"]},
+  {"id":"fortress","population":80,"footprint":10,"prosperity":50,"treasury":3500,"fort_level":3,"economies":["mining","agricultural"]}
 ]

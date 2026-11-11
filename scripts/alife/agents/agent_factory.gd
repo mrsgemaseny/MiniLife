@@ -11,7 +11,9 @@ static func create_population(world: AlifeWorldContext, settlement: AlifeSettlem
 		agent.settlement_id = settlement.settlement_id
 		# 40% production, 30% security, 20% residents, 10% commerce.
 		var category: int = index % 10
-		if category < 4:
+		if settlement.street_plan >= 5 and (category == 6 or index % 20 == 14):
+			agent.role = "civilian"
+		elif category < 4:
 			agent.role = "farmer" if settlement.economy_type == "agricultural" else "worker"
 		elif category < 7:
 			agent.role = "guard"

@@ -23,6 +23,7 @@ var definition_id: String = "wanderer_npc"
 var display_name: String = "Settler"
 var named: bool = false
 var home_tile: Vector2i = Vector2i.ZERO
+var guard_route: Array = []
 var world_position: Array = []
 var max_health: float = 100.0
 var local_state: Dictionary = {}
@@ -34,7 +35,7 @@ var ambush_route_id: String = ""
 var ambush_original_role: String = ""
 
 func _fields() -> Array[String]:
-	return ["agent_id", "faction_id", "settlement_id", "role", "current_goal", "goal_progress", "memory_flags", "relation_to_player", "tile", "alive", "unique", "health", "morale", "equipment_tier", "goal_stack", "memories", "grudges", "inventory", "definition_id", "display_name", "named", "home_tile", "world_position", "max_health", "local_state", "memory_state", "deployment_id", "destination_tile", "caravan_id", "ambush_route_id", "ambush_original_role"]
+	return ["agent_id", "faction_id", "settlement_id", "role", "current_goal", "goal_progress", "memory_flags", "relation_to_player", "tile", "alive", "unique", "health", "morale", "equipment_tier", "goal_stack", "memories", "grudges", "inventory", "definition_id", "display_name", "named", "home_tile", "guard_route", "world_position", "max_health", "local_state", "memory_state", "deployment_id", "destination_tile", "caravan_id", "ambush_route_id", "ambush_original_role"]
 
 static func from_dict(data: Dictionary) -> GlobalAgent:
 	var result: GlobalAgent = GlobalAgent.new()

@@ -36,7 +36,7 @@ static func evaluate(agent: GlobalAgent, world: AlifeWorldContext) -> String:
 		return "sleep"
 	match agent.role:
 		"trader": return "run_trade_route"
-		"guard": return "patrol_settlement"
+		"guard": return "hold_gate" if agent.guard_route.size() == 1 else "patrol_settlement"
 		"smith", "farmer", "worker": return "work"
 		"bandit": return "raid_target"
 		_: return "socialize" if hour >= 17.0 else "idle"
@@ -54,7 +54,13 @@ static func routine_destination(agent: GlobalAgent, world: AlifeWorldContext) ->
 			return settlement.tile + Vector2i(side * 3, 2 + offset)
 		"socialize":
 			return settlement.tile + Vector2i(offset, -2)
+		"hold_gate":
+			return agent.home_tile
 		"patrol_settlement":
+			if not agent.guard_route.is_empty():
+				var step: int = posmod(int(world.simulated_hour * 3.0) + agent.agent_id.hash(), agent.guard_route.size())
+				var point: Array = agent.guard_route[step]
+				return Vector2i(int(point[0]), int(point[1]))
 			var corners: Array[Vector2i] = [Vector2i(-4, -4), Vector2i(4, -4), Vector2i(4, 4), Vector2i(-4, 4)]
 			var patrol_index: int = posmod(int(world.simulated_hour * 2.0) + agent.agent_id.hash(), corners.size())
 			return settlement.tile + corners[patrol_index]

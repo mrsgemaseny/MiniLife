@@ -62,7 +62,9 @@ func _process(_delta: float) -> void:
 		return
 	world.travel.background_enabled = true
 	world.travel.poll()
-	materializer.update(_delta)
+	var district_id: String = _settlement_chunks.get(Config.tile_to_chunk(materializer.player_tile), "")
+	var district_owner: AlifeSettlement = world.settlements.find(district_id) as AlifeSettlement
+	materializer.update(_delta, district_id if district_owner != null and district_owner.street_plan >= 5 else "")
 	_body_scan_elapsed += _delta
 	if _body_scan_elapsed >= 1.0:
 		_body_scan_elapsed = 0.0
@@ -248,6 +250,8 @@ func _index_settlements() -> void:
 					frontier.append(chunk)
 		var index: int = 0
 		var limit: int = 33 if settlement.settlement_type == "city" else 25
+		if settlement.street_plan >= 5:
+			limit = 14
 		while index < frontier.size() and frontier.size() + 1 < limit:
 			var source: Vector2i = frontier[index]
 			index += 1
@@ -278,6 +282,7 @@ func _district_has_land(terrain: TerrainGenerator, chunk: Vector2i) -> bool:
 
 func _assign_district_homes() -> void:
 	var homes: Dictionary = {}
+	var gate_posts: Dictionary = {}
 	for chunk: Vector2i in _settlement_chunks:
 		var id: String = _settlement_chunks[chunk]
 		var settlement: AlifeSettlement = world.settlements.find(id) as AlifeSettlement
@@ -291,6 +296,11 @@ func _assign_district_homes() -> void:
 			continue
 		var direction: Vector2i = chunk - center
 		var crossing: Vector2i = settlement.tile + direction * Config.CHUNK_SIZE
+		if settlement.street_plan >= 5:
+			var layout: Dictionary = SettlementLayout.describe_district(settlement, chunk, _district_connections(chunk, id))
+			var posts: Array = gate_posts.get(id, [])
+			posts.append_array(layout.streets.get("gates", []))
+			gate_posts[id] = posts
 		if not homes.has(id):
 			homes[id] = []
 		var along_street: Vector2i = Vector2i.RIGHT if direction.y != 0 else Vector2i.DOWN
@@ -307,6 +317,43 @@ func _assign_district_homes() -> void:
 				var home: Vector2i = places[index % places.size()]
 				agent.tile = home
 				agent.home_tile = home
+	for settlement: AlifeSettlement in world.settlements.all():
+		if settlement.street_plan >= 5:
+			_assign_city_guards(settlement, gate_posts.get(settlement.settlement_id, []))
+
+
+func _assign_city_guards(settlement: AlifeSettlement, gates: Array) -> void:
+	var center: Vector2i = settlement.tile
+	var posts: Array = gates.duplicate()
+	posts.append(center + Vector2i(-2, 1))
+	posts.append(center + Vector2i(2, 1))
+	var route: Array[Vector2i] = [
+		center + Vector2i(-3, 0), center + Vector2i(3, 0),
+		center + Vector2i(3, 4), center + Vector2i(-3, 4),
+	]
+	var guard_index: int = 0
+	for agent: GlobalAgent in world.agents.by_settlement(settlement.settlement_id):
+		if agent.role != "guard":
+			continue
+		var start: Vector2i
+		if guard_index < posts.size():
+			start = posts[guard_index]
+			agent.guard_route = [[start.x, start.y]]
+		else:
+			start = route[guard_index % route.size()]
+			for point: Vector2i in route:
+				agent.guard_route.append([point.x, point.y])
+		agent.tile = start
+		agent.home_tile = start
+		guard_index += 1
+
+
+func _district_connections(chunk: Vector2i, settlement_id: String) -> Array[Vector2i]:
+	var connections: Array[Vector2i] = []
+	for direction: Vector2i in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
+		if _settlement_chunks.get(chunk + direction) == settlement_id:
+			connections.append(direction)
+	return connections
 
 func _on_political_visibility_changed(changes: Array) -> void:
 	if not _initialized:
@@ -505,11 +552,7 @@ func _on_settlement_queried(chunk: Vector2i, result: Dictionary) -> void:
 						tile += direction
 			result.merge(core)
 		else:
-			var connections: Array[Vector2i] = []
-			for direction: Vector2i in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
-				if _settlement_chunks.get(chunk + direction) == settlement.settlement_id:
-					connections.append(direction)
-			result.merge(SettlementLayout.describe_district(settlement, chunk, connections))
+			result.merge(SettlementLayout.describe_district(settlement, chunk, _district_connections(chunk, settlement.settlement_id)))
 
 func _on_entity_died(entity: Node, killer_id: String) -> void:
 	if entity is CaravanPackAnimal:
