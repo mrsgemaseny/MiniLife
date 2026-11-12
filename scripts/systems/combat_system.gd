@@ -4,19 +4,27 @@ extends Node
 const DAMAGE_TYPES: Array[String] = ["physical", "fire", "poison", "cold", "true"]
 
 var _projectile_layer: ProjectileSystem = null
+var _combat_rng: RandomNumberGenerator = RandomNumberGenerator.new()
+var _attack_sequence: int = 0
+var trace_enabled: bool = false
+var _combat_trace: Array[Dictionary] = []
+const TRACE_LIMIT: int = 256
 
 
 func _ready() -> void:
+	_combat_rng.randomize()
 	_projectile_layer = ProjectileSystem.new()
 	add_child(_projectile_layer)
 	SignalBus.damage_requested.connect(_on_damage_requested)
-	SignalBus.projectile_hit_confirmed.connect(_on_damage_requested.bind(true))
+	SignalBus.projectile_resolve_requested.connect(_on_projectile_resolve_requested)
 	SignalBus.status_apply_requested.connect(_on_status_apply_requested)
 	SignalBus.melee_attack_requested.connect(_on_melee_attack_requested)
 
 
 func _on_melee_attack_requested(attacker: Node2D, origin: Vector2, direction: Vector2, weapon_stats: Dictionary) -> void:
 	if attacker == null or not is_instance_valid(attacker):
+		return
+	if attacker.has_method("is_alive") and not bool(attacker.call("is_alive")):
 		return
 
 	var max_range: float = float(weapon_stats.get("range_px", Config.MELEE_RANGE))
@@ -43,33 +51,10 @@ func _on_melee_attack_requested(attacker: Node2D, origin: Vector2, direction: Ve
 		return
 
 	var raw_dmg: float = MeleeResolver.compute_raw_melee_damage(attacker, weapon_stats)
-	var archetype: String = str(weapon_stats.get("weapon_archetype", ""))
-	var crit_mult: float = float(weapon_stats.get("crit_mult", 1.5))
-	var is_crit: bool = (randf() < 0.20)
-
 	for target in targets:
-		var dmg: float = raw_dmg
-		if is_crit:
-			dmg *= crit_mult
-
-		# Archetype specific effects
-		if archetype == "club" or bool(weapon_stats.get("stun_chance", 0.0) > 0.0):
-			if is_crit or randf() < float(weapon_stats.get("stun_chance", 0.25)):
-				SignalBus.status_apply_requested.emit(target, "stunned", 1.5, 1.0)
-		elif archetype == "war_pick" or bool(weapon_stats.get("sunder_armor", false)):
-			# Sunder: x3 armor durability wear
-			if target.has_method("damage_armor"):
-				target.call("damage_armor", 3)
-			elif "equipment" in target and target.get("equipment") != null:
-				var eq: EquipmentComponent = target.get("equipment") as EquipmentComponent
-				if eq != null:
-					eq.damage_armor(3)
-		elif archetype == "sword" or archetype == "dagger" or str(weapon_stats.get("damage_type", "")) == "bleed":
-			if randf() < 0.35:
-				SignalBus.status_apply_requested.emit(target, "bleeding", 6.0, 1.0)
-
-		SignalBus.damage_requested.emit(target, dmg, "physical", attacker)
-		SignalBus.melee_hit_landed.emit(attacker, target, dmg)
+		var result: Dictionary = _resolve_attack(target, raw_dmg, "physical", attacker, false, weapon_stats)
+		if str(result.get("outcome", "")) in ["armor_contact", "body_contact"]:
+			SignalBus.melee_hit_landed.emit(attacker, target, float(result.get("health_damage", 0.0)) + float(result.get("armor_damage", 0.0)))
 
 	# Wear weapon if attacker has equipment
 	if "equipment" in attacker and attacker.get("equipment") != null:
@@ -100,48 +85,133 @@ func _on_damage_requested(target: Node, amount: float, damage_type: String, sour
 		return
 	if target.has_method("is_alive") and not bool(target.call("is_alive")):
 		return
-	if source != null and damage_type == "physical" and not confirmed_projectile_hit:
-		var hit_chance: float = MeleeResolver.compute_hit_chance(source, target)
-		if randf() > hit_chance:
-			_float_feedback(target, "ПРОМАХ", Color.GRAY)
-			return
-
-	var armor_pen: float = 0.0
-	var final_dmg: float = amount
-
-	if source != null and source is Node2D:
-		var attacker_pos: Vector2 = (source as Node2D).global_position
-		var block_res: Dictionary = MeleeResolver.check_directional_shield_block(attacker_pos, target)
-		if bool(block_res.get("blocked", false)):
-			if "equipment" in target and target.get("equipment") != null:
-				var target_eq: EquipmentComponent = target.get("equipment") as EquipmentComponent
-				if target_eq != null:
-					target_eq.damage_shield(1)
-			if "stats" in target and target.get("stats") is StatsComponent:
-				(target.get("stats") as StatsComponent).modify("stamina", -12.0)
-			_float_feedback(target, "БЛОК", Color.SKY_BLUE)
-			return
-
-		if bool(block_res.get("flanking", false)):
-			final_dmg *= 1.15
-
-		if "equipment" in source and source.get("equipment") != null:
-			var eq: EquipmentComponent = source.get("equipment") as EquipmentComponent
-			if eq != null:
-				var w_stats: Dictionary = eq.get_weapon_stats()
-				armor_pen = float(w_stats.get("armor_penetration", 0.0))
-				if str(w_stats.get("weapon_archetype", "")) == "war_pick":
-					armor_pen = maxf(armor_pen, 0.40)
-				elif eq.get_item_id("weapon").find("crossbow") != -1:
-					armor_pen = maxf(armor_pen, 0.35)
-
 	var valid_type: String = damage_type if DAMAGE_TYPES.has(damage_type) else "physical"
-	var final_damage: float = resolve_damage(final_dmg, valid_type, target, armor_pen)
-	_float_feedback(target, str(roundi(final_damage)), Color.SALMON)
-	if target.has_method("take_damage"):
-		target.call("take_damage", final_damage, valid_type, source)
-	if source != null and valid_type == "physical":
-		apply_knockback(target, source)
+	_resolve_attack(target, amount, valid_type, source, confirmed_projectile_hit or not (source is Node2D), {})
+
+
+func _on_projectile_resolve_requested(target: Node, amount: float, damage_type: String, source: Node, weapon_profile: Dictionary) -> void:
+	if not is_instance_valid(target) or (target.has_method("is_alive") and not bool(target.call("is_alive"))):
+		return
+	_resolve_attack(target, amount, damage_type if DAMAGE_TYPES.has(damage_type) else "physical", source, true, {}, weapon_profile)
+
+
+func _resolve_attack(target: Node, amount: float, damage_type: String, source: Node, confirmed: bool, weapon_stats: Dictionary, fixed_profile: Dictionary = {}) -> Dictionary:
+	if source == target:
+		return {"accepted": false, "outcome": "self_hit"}
+	if not confirmed and is_instance_valid(source):
+		if source.has_method("is_alive") and not bool(source.call("is_alive")):
+			return {"accepted": false, "outcome": "dead_attacker"}
+		if "_stagger_remaining" in source and float(source.get("_stagger_remaining")) > 0.0:
+			return {"accepted": false, "outcome": "staggered_attacker"}
+		if "status_effects" in source and source.get("status_effects") is StatusEffectsComponent and (source.get("status_effects") as StatusEffectsComponent).is_action_blocked():
+			return {"accepted": false, "outcome": "blocked_attacker"}
+	if is_instance_valid(source) and "faction_id" in source and "faction_id" in target and str(source.get("faction_id")) == str(target.get("faction_id")):
+		return {"accepted": false, "outcome": "friendly_fire"}
+	_attack_sequence += 1
+	var source_eq: EquipmentComponent = _equipment_of(source)
+	var item_id: String = source_eq.get_item_id("weapon") if source_eq != null else ""
+	var profile_stats: Dictionary = weapon_stats.duplicate(true)
+	if item_id.is_empty() and is_instance_valid(source) and source.has_method("get_combat_weapon_id"):
+		item_id = str(source.call("get_combat_weapon_id"))
+		profile_stats = DataRegistry.get_item(item_id).get("stats", {})
+	if profile_stats.is_empty() and source_eq != null:
+		profile_stats = source_eq.get_weapon_stats()
+	var profile: Dictionary = fixed_profile.duplicate(true) if not fixed_profile.is_empty() else CombatBalance.weapon_profile(item_id, profile_stats)
+	var attacker_skills: SkillsComponent = _skills_of(source)
+	var target_skills: SkillsComponent = _skills_of(target)
+	var source_stats: StatsComponent = source.get("stats") as StatsComponent if is_instance_valid(source) and "stats" in source else null
+	var request: Dictionary = {
+		"attack_id": _attack_sequence, "damage": amount, "damage_type": damage_type,
+		"weapon": profile, "confirmed_contact": confirmed,
+		"attack_skill": _combat_level(source, attacker_skills, "combat_attack"),
+		"penetration_skill": _combat_level(source, attacker_skills, "combat_penetration"),
+		"athletics_skill": _combat_level(source, attacker_skills, "combat_athletics"),
+		"attacker_stamina": source_stats.stamina if source_stats != null else 100.0,
+		"stamina_reserved": source is Player
+	}
+	var target_eq: EquipmentComponent = _equipment_of(target)
+	var front_dot: float = 1.0
+	if source is Node2D and target is Node2D and "facing_direction" in target:
+		var target_facing: Vector2 = target.get("facing_direction") as Vector2
+		front_dot = target_facing.normalized().dot(((source as Node2D).global_position - (target as Node2D).global_position).normalized())
+	var has_shield: bool = target_eq != null and target_eq.has_shield()
+	if target.has_method("has_shield"):
+		has_shield = has_shield or bool(target.call("has_shield"))
+	var target_stats: StatsComponent = target.get("stats") as StatsComponent if "stats" in target else null
+	var defender: Dictionary = {
+		"alive": not target.has_method("is_alive") or bool(target.call("is_alive")),
+		"defense_skill": _combat_level(target, target_skills, "combat_defense"),
+		"stamina": target_stats.stamina if target_stats != null else 100.0,
+		"front_dot": front_dot, "has_shield": has_shield,
+		"can_parry": target_eq != null and not target_eq.get_item_id("weapon").is_empty(),
+		"armor_layers": target_eq.get_armor_layers() if target_eq != null else []
+	}
+	var result: Dictionary = CombatResolution.resolve(request, defender, _combat_rng)
+	if trace_enabled:
+		_combat_trace.append({"attack_id": _attack_sequence, "source": source.get_instance_id() if is_instance_valid(source) else 0,
+			"target": target.get_instance_id(), "outcome": result.get("outcome", "rejected"),
+			"armor": result.get("armor_damage", 0.0), "health": result.get("health_damage", 0.0)})
+		if _combat_trace.size() > TRACE_LIMIT:
+			_combat_trace.pop_front()
+	CombatApplier.apply(target, source, result)
+	if bool(result.get("accepted", false)):
+		var outcome: String = str(result.get("outcome", ""))
+		if outcome == "miss":
+			_float_feedback(target, "ПРОМАХ", Color.GRAY)
+		elif outcome == "shield_block":
+			_float_feedback(target, "БЛОК", Color.SKY_BLUE)
+		elif outcome == "armor_contact" and str(result.get("armor_outcome", "")) == "glancing":
+			_float_feedback(target, "ГЛУХОЙ", Color.LIGHT_GRAY)
+		elif outcome == "armor_contact":
+			_float_feedback(target, "БРОНЯ -%d" % roundi(float(result.get("armor_damage", 0.0))), Color.SALMON)
+		elif outcome == "body_contact":
+			_float_feedback(target, str(roundi(float(result.get("health_damage", 0.0)))), Color.SALMON)
+		if float(result.get("knockback_strength", 0.0)) > 0.0 and is_instance_valid(target) and is_instance_valid(source):
+			apply_knockback(target, source, float(result.knockback_strength))
+	return result
+
+
+func get_combat_trace() -> Array[Dictionary]:
+	return _combat_trace.duplicate(true)
+
+
+func _equipment_of(entity: Node) -> EquipmentComponent:
+	if not is_instance_valid(entity):
+		return null
+	if "equipment" in entity:
+		return entity.get("equipment") as EquipmentComponent
+	if "_appearance_gear" in entity:
+		return entity.get("_appearance_gear") as EquipmentComponent
+	return null
+
+
+func _skills_of(entity: Node) -> SkillsComponent:
+	if is_instance_valid(entity) and "skills" in entity:
+		return entity.get("skills") as SkillsComponent
+	return null
+
+
+func _combat_level(entity: Node, component: SkillsComponent, kind: String) -> int:
+	if component != null:
+		return component.get_combat_level(kind)
+	if entity is EnemyBase:
+		var id: String = (entity as EnemyBase).enemy_id
+		if id.find("boss") != -1 or id.find("warlord") != -1:
+			return 14
+		if id.find("chief") != -1:
+			return 12
+		if id.find("veteran") != -1:
+			return 9
+		if id.find("raider") != -1:
+			return 6
+		return 3
+	if entity is NPCBase:
+		match str(entity.get_meta("alife_role", "civilian")):
+			"guard", "soldier": return 8
+			"bandit", "raider": return 6
+			"hunter": return 4
+			_: return 1
+	return 0
 
 
 func _on_status_apply_requested(target: Node, effect: String, duration: float, intensity: float) -> void:

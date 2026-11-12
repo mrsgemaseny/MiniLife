@@ -11,6 +11,7 @@ var speed: float = Config.PROJECTILE_SPEED
 var damage: float = 14.0
 var damage_type: String = "physical"
 var shooter: Node = null
+var weapon_profile: Dictionary = {}
 var max_range: float = Config.RANGED_MAX_RANGE
 
 var _distance_travelled: float = 0.0
@@ -24,6 +25,8 @@ func _ready() -> void:
 	_flight_dir = direction.normalized() if direction != Vector2.ZERO else Vector2.RIGHT
 	if item_id == "javelins" or item_id == "javelin":
 		projectile_type = "javelin"
+		if weapon_profile.is_empty():
+			weapon_profile = CombatBalance.weapon_profile("javelins", DataRegistry.get_item("javelins").get("stats", {}))
 
 
 func _process(delta: float) -> void:
@@ -113,7 +116,9 @@ func _process(delta: float) -> void:
 
 	if closest_hit_node != null:
 		SignalBus.arrow_impacted.emit(current_tip, "flesh")
-		SignalBus.projectile_hit_confirmed.emit(closest_hit_node, damage, damage_type, shooter if is_instance_valid(shooter) else null)
+		var valid_shooter: Node = shooter if is_instance_valid(shooter) else null
+		SignalBus.projectile_resolve_requested.emit(closest_hit_node, damage, damage_type, valid_shooter, weapon_profile)
+		SignalBus.projectile_hit_confirmed.emit(closest_hit_node, damage, damage_type, valid_shooter)
 		queue_free()
 		return
 

@@ -23,5 +23,4 @@ static func tick(npc: NPCBase, delta: float) -> bool:
 		npc._alife_attack_cooldown = 1.0
 		var damage: float = 8.0 + float(npc.get_meta("alife_equipment_tier", 1)) * 3.0
 		SignalBus.damage_requested.emit(target, damage, "physical", npc)
-		SignalBus.melee_hit_landed.emit(npc, target, damage)
 	return true

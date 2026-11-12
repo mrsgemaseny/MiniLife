@@ -65,5 +65,9 @@ func _on_apply_pressed() -> void:
 		var start_skills: Dictionary = def.get("starting_skills", {})
 		for s in start_skills.keys():
 			player.skills.set_level(str(s), int(start_skills[s]))
+		player.skills.set_level("combat_attack", roundi(float(start_skills.get("melee", 0)) * 0.2))
+		player.skills.set_level("combat_defense", roundi(float(start_skills.get("defense", 0)) * 0.2))
+		player.skills.set_level("combat_penetration", roundi(maxf(float(start_skills.get("melee", 0)), float(start_skills.get("ranged", 0))) * 0.2))
+		player.skills.set_level("combat_athletics", roundi(float(start_skills.get("athletics", 0)) * 0.2))
 		SignalBus.notification_posted.emit("Background selected: %s" % str(def.get("name", cid)))
 	visible = false

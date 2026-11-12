@@ -94,6 +94,7 @@ signal melee_attack_requested(attacker: Node2D, origin: Vector2, direction: Vect
 signal melee_hit_landed(attacker: Node2D, target: Node2D, damage: float)
 signal damage_requested(target: Node, amount: float, damage_type: String, source: Node)
 signal projectile_hit_confirmed(target: Node, amount: float, damage_type: String, source: Node)
+signal projectile_resolve_requested(target: Node, amount: float, damage_type: String, source: Node, weapon_profile: Dictionary)
 signal projectile_fired(origin: Vector2, direction: Vector2, speed: float, damage: float, damage_type: String, shooter: Node, max_range: float)
 signal weapon_swung(weapon_type: String)
 signal bow_drawn()

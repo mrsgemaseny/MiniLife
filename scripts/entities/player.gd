@@ -481,26 +481,25 @@ func _release_bow_shot() -> void:
 		inventory.remove_item("arrow", 1)
 
 	var base_dmg: float = float(w_stats.get("damage", 22.0 if is_jav else 16.0))
-	var skill_lvl: int = skills.get_level("ranged")
-	var scaled_dmg: float = base_dmg * (1.0 + float(skill_lvl) * Config.SKILL_DAMAGE_BONUS_PER_LEVEL) * (0.35 + 0.65 * charge_ratio)
+	var skill_lvl: int = skills.get_combat_level("combat_attack")
+	var scaled_dmg: float = base_dmg * (0.35 + 0.65 * charge_ratio)
 	var speed_mult: float = 0.72 if is_jav else 1.0
 	var proj_speed: float = Config.PROJECTILE_SPEED * speed_mult * (0.45 + 0.55 * charge_ratio)
 
 	# MiniDayZ Aiming Cone Spread & Range
-	var min_spread: float = deg_to_rad(lerpf(6.0 if is_jav else 5.5, 1.4, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
-	var max_spread: float = deg_to_rad(lerpf(45.0, 22.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
+	var min_spread: float = deg_to_rad(lerpf(6.0 if is_jav else 5.5, 1.4, clampf(float(skill_lvl) / 20.0, 0.0, 1.0)))
+	var max_spread: float = deg_to_rad(lerpf(45.0, 22.0, clampf(float(skill_lvl) / 20.0, 0.0, 1.0)))
 	var current_spread: float = lerpf(max_spread, min_spread, pow(charge_ratio, 1.7))
 	var random_spread: float = randf_range(-current_spread, current_spread)
 	var fire_dir: Vector2 = facing_direction.rotated(random_spread)
 
 	var min_dist: float = 50.0 if is_jav else 65.0
-	var max_dist: float = lerpf(220.0, 340.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)) if is_jav else lerpf(260.0, 420.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0))
+	var max_dist: float = lerpf(220.0, 340.0, clampf(float(skill_lvl) / 20.0, 0.0, 1.0)) if is_jav else lerpf(260.0, 420.0, clampf(float(skill_lvl) / 20.0, 0.0, 1.0))
 	var current_range: float = lerpf(min_dist, max_dist, pow(charge_ratio, 1.4))
 
 	var shoot_origin: Vector2 = global_position + Vector2(0.0, -12.0) + facing_direction * 14.0
 	SignalBus.projectile_fired.emit(shoot_origin, fire_dir, proj_speed, scaled_dmg, "physical", self, current_range)
 	SignalBus.bow_released.emit(charge_ratio)
-	skills.gain_xp("ranged", Config.XP_PER_RANGED_HIT)
 	if not is_jav:
 		equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
 
@@ -553,7 +552,8 @@ func _tick_auto_attack(_delta: float) -> void:
 		return
 	if _is_charging_bow or _is_holding_consumable() or not _has_attack_order():
 		return
-	if stats.stamina < Config.STAMINA_COST_ATTACK:
+	var attack_stamina_cost: float = maxf(1.0, Config.STAMINA_COST_ATTACK * (1.0 - 0.01 * float(skills.get_combat_level("combat_athletics"))))
+	if stats.stamina < attack_stamina_cost:
 		return
 	var reach: float = _ordered_attack_reach()
 	if global_position.distance_to(_locked_target.global_position) <= reach:
@@ -585,16 +585,17 @@ func perform_attack() -> void:
 	if _is_holding_ranged() and not _has_attack_order():
 		_start_bow_charge()
 		return
-	if stats.stamina < Config.STAMINA_COST_ATTACK:
+	var attack_stamina_cost: float = maxf(1.0, Config.STAMINA_COST_ATTACK * (1.0 - 0.01 * float(skills.get_combat_level("combat_athletics"))))
+	if stats.stamina < attack_stamina_cost:
 		SignalBus.notification_posted.emit("Too exhausted to swing!")
 		return
-	stats.modify("stamina", -Config.STAMINA_COST_ATTACK)
+	stats.modify("stamina", -attack_stamina_cost)
 
 	var w_stats: Dictionary = equipment.get_weapon_stats()
 	var atk_speed: float = maxf(0.25, float(w_stats.get("attack_speed", 1.0)))
 	if status_effects != null and status_effects.has_effect("hungry"):
 		atk_speed *= 0.75
-	_attack_cooldown = Config.BASE_ATTACK_COOLDOWN / atk_speed
+	_attack_cooldown = CombatMath.attack_period(Config.BASE_ATTACK_COOLDOWN / atk_speed, skills.get_combat_level("combat_attack"))
 	_swing_duration = 0.26
 	_swing_timer = _swing_duration
 	SignalBus.weapon_swung.emit(equipment.get_item_id("weapon"))
@@ -615,9 +616,8 @@ func perform_attack() -> void:
 			return
 		inventory.remove_item("arrow", 1)
 		var base_dmg: float = float(w_stats.get("damage", 16.0))
-		var scaled_dmg: float = base_dmg * (1.0 + float(skills.get_level("ranged")) * Config.SKILL_DAMAGE_BONUS_PER_LEVEL)
+		var scaled_dmg: float = base_dmg
 		SignalBus.projectile_fired.emit(global_position + Vector2(0, -12), facing_direction, Config.PROJECTILE_SPEED, scaled_dmg, "physical", self, Config.RANGED_MAX_RANGE)
-		skills.gain_xp("ranged", Config.XP_PER_RANGED_HIT)
 		equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
 		return
 
@@ -705,7 +705,7 @@ func sync_weapon_from_active_slot() -> void:
 		queue_redraw()
 		return
 	var item_id: String = str(slot.get("item_id", ""))
-	var dur: int = int(slot.get("durability", -1))
+	var dur: float = float(slot.get("durability", -1))
 	var def: Dictionary = DataRegistry.get_item(item_id)
 	var item_type: String = str(def.get("type", ""))
 	if item_type == "weapon" or item_type == "tool" or item_id.find("pickaxe") != -1 or item_id.find("axe") != -1 or item_id.find("sword") != -1 or item_id.find("bow") != -1 or item_id.find("spear") != -1 or item_id.find("hammer") != -1 or item_id.find("dagger") != -1 or item_id == "torch":
@@ -786,7 +786,7 @@ func use_slot_item(slot_index: int) -> void:
 	if slot.is_empty():
 		return
 	var item_id: String = str(slot.get("item_id", ""))
-	var dur: int = int(slot.get("durability", -1))
+	var dur: float = float(slot.get("durability", -1))
 	var def: Dictionary = DataRegistry.get_item(item_id)
 	if def.is_empty():
 		return
@@ -809,7 +809,7 @@ func use_slot_item(slot_index: int) -> void:
 			inventory.slots[slot_index] = {
 				"item_id": prev_id,
 				"count": 1,
-				"durability": int(prev.get("durability", -1))
+				"durability": float(prev.get("durability", -1))
 			}
 			inventory.contents_changed.emit()
 		else:
@@ -835,12 +835,8 @@ func apply_status(effect: String, duration: float, intensity: float) -> void:
 func take_damage(amount: float, damage_type: String = "physical", source: Node = null) -> void:
 	if is_dead or GameManager.debug_god_mode:
 		return
-	var def: float = equipment.get_defense() if equipment != null else 0.0
-	var mitigated: float = health_comp.take_damage(amount, damage_type, def)
-	stats.modify("health", -mitigated)
-	skills.gain_xp("defense", mitigated * 0.7)
-	if equipment != null and damage_type == "physical":
-		equipment.damage_armor(1)
+	var mitigated: float = health_comp.apply_direct_damage(amount, damage_type)
+	stats.modify("health", health_comp.current - stats.health)
 	var src_name: String = str(source.name) if source != null else damage_type
 	SignalBus.player_damaged.emit(mitigated, src_name)
 	queue_redraw()
@@ -1001,11 +997,6 @@ func _connect_bus_signals() -> void:
 		_swing_timer = _swing_duration
 		queue_redraw()
 	)
-	SignalBus.melee_hit_landed.connect(func(attacker: Node2D, _target: Node2D, _dmg: float) -> void:
-		if attacker == self:
-			skills.gain_xp("melee", Config.XP_PER_MELEE_HIT)
-			equipment.damage_weapon(Config.WEAPON_WEAR_PER_HIT)
-	)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
 	SignalBus.game_started.connect(_on_game_started)
@@ -1091,8 +1082,13 @@ func load_save_data(p: Dictionary) -> void:
 	if health_comp != null:
 		if p.get("health") is Dictionary:
 			health_comp.from_dict(p.get("health", {}))
+		elif stats != null:
+			health_comp.set_max(stats.max_health)
+			health_comp.current = stats.health
 		if health_comp.current <= 0.0:
 			health_comp.current = health_comp.maximum
+	if stats != null and health_comp != null:
+		stats.modify("health", health_comp.current - stats.health)
 	is_dead = false
 	if skills != null:
 		skills.from_dict(p.get("skills", {}))
@@ -1238,13 +1234,13 @@ func _draw() -> void:
 		if (is_bow or is_javelin) and _is_charging_bow:
 			var charge_ratio: float = clampf(_bow_charge_time / MAX_BOW_CHARGE_TIME, 0.0, 1.0)
 			# MiniDayZ Dynamic Aiming Cone (Wide & short -> Narrow laser sniper beam)
-			var skill_lvl: int = skills.get_level("ranged")
-			var min_spread: float = deg_to_rad(lerpf(6.0 if is_javelin else 5.5, 1.4, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
-			var max_spread: float = deg_to_rad(lerpf(45.0, 22.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)))
+			var skill_lvl: int = skills.get_combat_level("combat_attack")
+			var min_spread: float = deg_to_rad(lerpf(6.0 if is_javelin else 5.5, 1.4, clampf(float(skill_lvl) / 20.0, 0.0, 1.0)))
+			var max_spread: float = deg_to_rad(lerpf(45.0, 22.0, clampf(float(skill_lvl) / 20.0, 0.0, 1.0)))
 			var current_spread: float = lerpf(max_spread, min_spread, pow(charge_ratio, 1.7))
 
 			var min_dist: float = 50.0 if is_javelin else 65.0
-			var max_dist: float = lerpf(220.0, 340.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0)) if is_javelin else lerpf(260.0, 420.0, clampf(float(skill_lvl) / 50.0, 0.0, 1.0))
+			var max_dist: float = lerpf(220.0, 340.0, clampf(float(skill_lvl) / 20.0, 0.0, 1.0)) if is_javelin else lerpf(260.0, 420.0, clampf(float(skill_lvl) / 20.0, 0.0, 1.0))
 			var current_range: float = lerpf(min_dist, max_dist, pow(charge_ratio, 1.4))
 
 			var aim_base_angle: float = facing_direction.angle()

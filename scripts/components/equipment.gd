@@ -50,7 +50,7 @@ func can_equip_slot(item_id: String, target_slot: String) -> bool:
 	return _resolve_slot(def) == target_slot
 
 
-func equip(item_id: String, durability: int = -1, slot_override: String = "") -> Dictionary:
+func equip(item_id: String, durability: float = -1.0, slot_override: String = "") -> Dictionary:
 	var def: Dictionary = _get_item_def(item_id)
 	var slot: String = slot_override
 	if slot.is_empty():
@@ -84,7 +84,7 @@ func equip(item_id: String, durability: int = -1, slot_override: String = "") ->
 		return {}
 
 	var prev: Dictionary = _equipped.get(slot, {"item_id": "", "durability": -1}).duplicate()
-	var dur: int = durability if durability >= 0 else int(def.get("durability", -1))
+	var dur: float = durability if durability >= 0 else float(def.get("durability", -1))
 	_equipped[slot] = {"item_id": item_id, "durability": dur}
 	slot_changed.emit(slot, item_id)
 	return prev
@@ -107,6 +107,73 @@ func get_item_id(slot: String) -> String:
 func get_durability(slot: String) -> int:
 	var entry: Dictionary = _equipped.get(slot, {})
 	return int(entry.get("durability", -1))
+
+
+func get_armor_hp(slot: String) -> float:
+	var item_id: String = get_item_id(slot)
+	if item_id.is_empty():
+		return 0.0
+	var value: float = float(_equipped.get(slot, {}).get("durability", -1.0))
+	if value < 0.0:
+		value = float(_get_item_def(item_id).get("durability", 0.0))
+	return maxf(0.0, value)
+
+
+func get_armor_max_hp(slot: String) -> float:
+	var item_id: String = get_item_id(slot)
+	if item_id.is_empty():
+		return 0.0
+	return CombatBalance.armor_max_hp(item_id, slot)
+
+
+func get_effective_armor_hp(slot: String) -> float:
+	var item_id: String = get_item_id(slot)
+	if item_id.is_empty():
+		return 0.0
+	var catalog_max: float = float(_get_item_def(item_id).get("durability", 0.0))
+	var effective_max: float = get_armor_max_hp(slot)
+	if catalog_max <= 0.0 or effective_max <= 0.0:
+		return 0.0
+	return clampf(get_armor_hp(slot) / catalog_max, 0.0, 1.0) * effective_max
+
+
+func get_armor_layers() -> Array[Dictionary]:
+	var layers: Array[Dictionary] = []
+	for slot: String in CombatBalance.ARMOR_ORDER:
+		var item_id: String = get_item_id(slot)
+		var durability: float = get_effective_armor_hp(slot)
+		if item_id.is_empty() or durability <= 0.0:
+			continue
+		var material: String = CombatBalance.armor_material(item_id)
+		layers.append({
+			"slot": slot, "item_id": item_id, "durability": durability,
+			"material": material,
+			"deflection": float(CombatBalance.ARMOR_DEFLECTION.get(material, 0.05))
+		})
+	return layers
+
+
+func apply_armor_damage(wear_by_slot: Dictionary) -> void:
+	for slot: String in CombatBalance.ARMOR_ORDER:
+		var wear: float = maxf(0.0, float(wear_by_slot.get(slot, 0.0)))
+		if wear <= 0.0:
+			continue
+		var entry: Dictionary = _equipped.get(slot, {})
+		var item_id: String = str(entry.get("item_id", ""))
+		if item_id.is_empty():
+			continue
+		var effective_max: float = get_armor_max_hp(slot)
+		var catalog_max: float = float(_get_item_def(item_id).get("durability", 0.0))
+		if effective_max <= 0.0 or catalog_max <= 0.0:
+			continue
+		var remaining: float = maxf(0.0, get_armor_hp(slot) - wear * catalog_max / effective_max)
+		if remaining <= 0.00001:
+			_equipped[slot] = {"item_id": "", "durability": -1}
+			slot_changed.emit(slot, "")
+			item_broken.emit(slot, item_id)
+		else:
+			entry["durability"] = remaining
+			_equipped[slot] = entry
 
 
 func get_slot_entry(slot: String) -> Dictionary:
@@ -239,7 +306,11 @@ func damage_shield(wear: int = 1) -> bool:
 	var entry: Dictionary = _equipped.get("offhand", {})
 	var item_id: String = str(entry.get("item_id", ""))
 	var dur: int = int(entry.get("durability", -1))
-	if item_id == "" or dur < 0:
+	if item_id == "":
+		return false
+	if dur < 0:
+		dur = int(_get_item_def(item_id).get("durability", -1))
+	if dur < 0:
 		return false
 	dur -= wear
 	if dur <= 0:
@@ -279,7 +350,7 @@ func from_dict(data: Dictionary) -> void:
 		if raw is Dictionary:
 			_equipped[s] = {
 				"item_id": str(raw.get("item_id", "")),
-				"durability": int(raw.get("durability", -1))
+				"durability": float(raw.get("durability", -1))
 			}
 		elif raw is String:
 			_equipped[s] = {"item_id": str(raw), "durability": -1}

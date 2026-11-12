@@ -695,7 +695,7 @@ func refresh() -> void:
 			else:
 				var it_id: String = eq.get_item_id(k)
 				if it_id != "":
-					_armor_slots[k].set_item({"item_id": it_id, "count": 1, "durability": eq.get_durability(k)})
+					_armor_slots[k].set_item({"item_id": it_id, "count": 1, "durability": eq.get_armor_hp(k)})
 				else:
 					_armor_slots[k].set_item({})
 
@@ -705,7 +705,10 @@ func refresh() -> void:
 	if _gold_label != null:
 		_gold_label.text = "Coins: %dg" % inv.gold
 	if _defense_label != null and eq != null:
-		_defense_label.text = "Armor Rating: %d" % int(eq.get_defense())
+		var armor_hp: float = 0.0
+		for layer: Dictionary in eq.get_armor_layers():
+			armor_hp += float(layer.get("durability", 0.0))
+		_defense_label.text = "Armor HP: %.1f" % armor_hp
 
 	# Refresh dynamic character preview icon
 	if _char_icon != null and eq != null:
@@ -875,7 +878,7 @@ func _on_armor_slot_clicked(slot_key: String, mouse_button: int, shift: bool) ->
 		return
 
 	var current_id: String = eq.get_item_id(slot_key)
-	var current_dur: int = eq.get_durability(slot_key)
+	var current_dur: float = eq.get_armor_hp(slot_key)
 
 	# Shift + Click: Quick unequip to inventory
 	if shift and mouse_button == MOUSE_BUTTON_LEFT:
@@ -895,7 +898,7 @@ func _on_armor_slot_clicked(slot_key: String, mouse_button: int, shift: bool) ->
 	else:
 		# Check if cursor item can fit in this slot
 		var c_id: String = str(_cursor_stack.get("item_id", ""))
-		var c_dur: int = int(_cursor_stack.get("durability", -1))
+		var c_dur: float = float(_cursor_stack.get("durability", -1))
 		var def: Dictionary = DataRegistry.get_item(c_id)
 		var it_type: String = str(def.get("type", ""))
 		var def_slot: String = str(def.get("equip_slot", ""))
@@ -929,7 +932,7 @@ func _on_armor_slot_clicked(slot_key: String, mouse_button: int, shift: bool) ->
 				var c_cnt: int = int(_cursor_stack.get("count", 1))
 				if c_cnt == 1:
 					var prev: Dictionary = eq.equip(c_id, c_dur, slot_key)
-					_cursor_stack = {"item_id": str(prev.get("item_id")), "count": 1, "durability": int(prev.get("durability", -1))}
+					_cursor_stack = {"item_id": str(prev.get("item_id")), "count": 1, "durability": float(prev.get("durability", -1))}
 				else:
 					SignalBus.notification_posted.emit("Cannot equip stack into occupied slot.")
 					return
@@ -976,7 +979,7 @@ func _on_armor_slot_hovered(slot_key: String) -> void:
 		_use_button.disabled = true
 	var it_id: String = eq.get_item_id(slot_key)
 	if it_id != "":
-		_show_item_tooltip({"item_id": it_id, "count": 1, "durability": eq.get_durability(slot_key)})
+		_show_item_tooltip({"item_id": it_id, "count": 1, "durability": eq.get_armor_hp(slot_key)})
 	else:
 		_hide_tooltip()
 
@@ -1116,7 +1119,7 @@ func _return_cursor_stack_to_player() -> void:
 		var inv: InventoryComponent = player.get("inventory") as InventoryComponent
 		var it_id: String = str(_cursor_stack.get("item_id", ""))
 		var cnt: int = int(_cursor_stack.get("count", 1))
-		var dur: int = int(_cursor_stack.get("durability", -1))
+		var dur: float = float(_cursor_stack.get("durability", -1))
 		var added: int = inv.add_item(it_id, cnt, dur)
 		if added < cnt and player is Node2D:
 			SignalBus.loot_bag_spawned.emit(player.global_position, [{"item_id": it_id, "count": cnt - added, "durability": dur}], 0)

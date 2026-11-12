@@ -10,6 +10,7 @@ enum State { IDLE, PATROL, TRADE, FLEE, ATTACK, GIVE_QUEST }
 @export var patrol_points: Array[Vector2i] = []
 @export var stats: StatsComponent
 @export var inventory: InventoryComponent
+@export var equipment: EquipmentComponent
 @export var memory: MemoryComponent
 
 var spawn_uid: String = ""
@@ -20,6 +21,8 @@ var _sim_timer: float = 0.0
 var _idle_timer: float = 2.0
 var _npc_def: Dictionary = {}
 var _alife_attack_cooldown: float = 0.0
+var _stagger_remaining: float = 0.0
+var _stagger_cooldown: float = 0.0
 
 func _ready() -> void:
 	y_sort_enabled = true
@@ -30,6 +33,8 @@ func _ready() -> void:
 		stats = StatsComponent.new()
 	if inventory == null:
 		inventory = InventoryComponent.new()
+	if equipment == null:
+		equipment = EquipmentComponent.new()
 	if memory == null:
 		memory = MemoryComponent.new()
 	_apply_npc_def()
@@ -60,6 +65,13 @@ func _apply_npc_def() -> void:
 
 func _physics_process(delta: float) -> void:
 	if GameManager.is_paused():
+		return
+	if stats.stamina < stats.max_stamina:
+		stats.modify("stamina", Config.STAMINA_REGEN_PER_SEC * delta)
+	_stagger_cooldown = maxf(0.0, _stagger_cooldown - delta)
+	if _stagger_remaining > 0.0:
+		_stagger_remaining = maxf(0.0, _stagger_remaining - delta)
+		velocity = Vector2.ZERO
 		return
 	if sim_tier == SimulationBubble.Tier.FULL:
 		_tick_ai(delta)
@@ -181,12 +193,29 @@ func interact(_interactor: Node) -> void:
 func is_alive() -> bool:
 	return stats.health > 0.0
 
+
+func get_combat_weapon_id() -> String:
+	var tier: int = int(get_meta("alife_equipment_tier", 0))
+	if tier >= 3:
+		return "iron_sword"
+	if tier >= 2:
+		return "bronze_sword"
+	return "wooden_club"
+
 func apply_knockback(vel: Vector2) -> void:
 	velocity = vel
 	move_and_slide()
 
-func apply_status(_effect: String, _duration: float, _intensity: float) -> void:
-	pass
+func apply_status(effect: String, duration: float, _intensity: float) -> void:
+	if effect == "stunned" and _stagger_cooldown <= 0.0:
+		_stagger_remaining = clampf(duration, 0.0, 0.65)
+		_stagger_cooldown = 1.0
+
+
+func on_combat_contact(source: Node) -> void:
+	if source != null and source.is_in_group("player"):
+		memory.remember("attacked_by_player", "player", -25, GameManager.get_day())
+		SignalBus.faction_rep_change_requested.emit(faction_id, Config.ASSAULT_REP_PENALTY, "assaulted_npc")
 
 func take_damage(amount: float, _damage_type: String = "physical", source: Node = null) -> void:
 	stats.modify("health", -amount)
@@ -298,6 +327,11 @@ func restore_alife_state(data: Dictionary) -> void:
 	else:
 		memory.personal_opinion_of_player = int(data.get("relation_to_player", 0))
 	var local: Dictionary = data.get("local_state", {})
+	if local.get("combat_equipment") is Dictionary:
+		equipment.from_dict(local.get("combat_equipment", {}))
+	elif str(data.get("role", "")) in ["guard", "soldier", "caravan_guard"]:
+		var armor_id: String = "iron_armor" if int(data.get("equipment_tier", 1)) >= 3 else "leather_armor"
+		equipment.equip(armor_id, -1, "chest")
 	current_state = clampi(int(local.get("state", State.IDLE)), State.IDLE, State.GIVE_QUEST) as State
 	_idle_timer = float(local.get("idle_timer", 2.0))
 	_sim_timer = float(local.get("sim_timer", 0.0))
@@ -321,7 +355,8 @@ func get_alife_state() -> Dictionary:
 		"inventory": inventory.to_dict(), "memory_state": memory.to_dict(),
 		"relation_to_player": memory.personal_opinion_of_player,
 		"local_state": {"state": current_state, "idle_timer": _idle_timer,
-			"sim_timer": _sim_timer, "patrol_index": _patrol_index, "patrol_points": points, "attack_cooldown": _alife_attack_cooldown}
+			"sim_timer": _sim_timer, "patrol_index": _patrol_index, "patrol_points": points,
+			"attack_cooldown": _alife_attack_cooldown, "combat_equipment": equipment.to_dict()}
 	}
 
 func _update_routine_pose(goal: String, target: Vector2i, delta: float) -> void:

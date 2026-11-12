@@ -103,10 +103,17 @@ func _process(_delta: float) -> void:
 	if "stats" in target and target.get("stats") != null:
 		var stats = target.get("stats")
 		lines.append("Здоровье: %.0f / %.0f" % [stats.health, stats.max_health])
-		lines.append("Защита: %.0f" % stats.defense)
 		lines.append("Выносливость: %.0f / %.0f" % [stats.stamina, stats.max_stamina])
-	if "equipment" in target and target.get("equipment") != null:
-		var equipment: EquipmentComponent = target.get("equipment")
+	var equipment: EquipmentComponent = null
+	if "equipment" in target:
+		equipment = target.get("equipment") as EquipmentComponent
+	elif "_appearance_gear" in target:
+		equipment = target.get("_appearance_gear") as EquipmentComponent
+	if equipment != null:
+		var armor_hp: float = 0.0
+		for layer: Dictionary in equipment.get_armor_layers():
+			armor_hp += float(layer.get("durability", 0.0))
+		lines.append("Броня: %.1f Armor HP" % armor_hp)
 		for slot: String in ["weapon", "offhand", "head", "chest", "legs"]:
 			var item: String = equipment.get_item_id(slot)
 			if not item.is_empty():
@@ -114,6 +121,8 @@ func _process(_delta: float) -> void:
 	if "skills" in target and target.get("skills") != null:
 		var skills: SkillsComponent = target.get("skills")
 		for skill: String in SkillsComponent.ALL_SKILLS:
+			if SkillsComponent.LEGACY_COMBAT_IDS.has(skill):
+				continue
 			lines.append("Навык · " + skill + ": " + str(skills.get_level(skill)))
 	if "_enemy_def" in target:
 		var definition: Dictionary = target.get("_enemy_def")

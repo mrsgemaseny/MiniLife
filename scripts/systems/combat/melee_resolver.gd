@@ -15,13 +15,9 @@ static func is_target_in_melee_arc(attacker_pos: Vector2, facing_dir: Vector2, t
 
 static func compute_raw_melee_damage(attacker: Node, weapon_stats: Dictionary) -> float:
 	var base_dmg: float = float(weapon_stats.get("damage", 8.0))
-	var skill_lvl: int = 0
 	var trait_mult: float = 1.0
 	var manip_mult: float = 1.0
 	if attacker != null:
-		var askills: SkillsComponent = attacker.get("skills") as SkillsComponent
-		if askills != null:
-			skill_lvl = askills.get_level("melee")
 		var atraits: TraitsComponent = attacker.get("traits") as TraitsComponent
 		if atraits != null:
 			trait_mult = atraits.get_modifier("melee_damage")
@@ -31,8 +27,7 @@ static func compute_raw_melee_damage(attacker: Node, weapon_stats: Dictionary) -
 		var ahealth: HealthComponent = attacker.get("health_comp") as HealthComponent
 		if ahealth != null:
 			manip_mult = ahealth.get_manipulation_multiplier()
-	var skill_mult: float = 1.0 + float(skill_lvl) * Config.SKILL_DAMAGE_BONUS_PER_LEVEL
-	return maxf(1.0, base_dmg * skill_mult * trait_mult * manip_mult)
+	return maxf(1.0, base_dmg * trait_mult * manip_mult)
 
 
 static func compute_hit_chance(attacker: Node, target: Node) -> float:
@@ -41,13 +36,12 @@ static func compute_hit_chance(attacker: Node, target: Node) -> float:
 	if attacker != null:
 		var askills: SkillsComponent = attacker.get("skills") as SkillsComponent
 		if askills != null:
-			atk_level = askills.get_level("melee")
+			atk_level = askills.get_combat_level("combat_attack")
 	if target != null:
 		var tskills: SkillsComponent = target.get("skills") as SkillsComponent
 		if tskills != null:
-			def_dodge = tskills.get_level("dodge") + int(tskills.get_level("defense") / 2)
-	var base_chance: float = 0.78 + float(atk_level - def_dodge) * 0.005
-	return clampf(base_chance, 0.25, 0.96)
+			def_dodge = tskills.get_combat_level("combat_defense")
+	return CombatMath.hit_chance(atk_level, def_dodge)
 
 
 static func check_directional_shield_block(attacker_pos: Vector2, target: Node) -> Dictionary:

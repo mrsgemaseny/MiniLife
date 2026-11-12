@@ -64,6 +64,19 @@ func take_damage(amount: float, damage_type: String = "physical", defense: float
 	return final_damage
 
 
+func apply_direct_damage(amount: float, damage_type: String = "physical") -> float:
+	var applied: float = minf(maxf(0.0, amount), current)
+	if applied <= 0.0:
+		return 0.0
+	current -= applied
+	_sync_legacy_limbs()
+	damage_taken.emit(applied, damage_type)
+	health_changed.emit(current, maximum)
+	if current <= 0.0:
+		died.emit()
+	return applied
+
+
 func heal(amount: float) -> float:
 	var prev: float = current
 	current = clampf(current + amount, 0.0, maximum)
