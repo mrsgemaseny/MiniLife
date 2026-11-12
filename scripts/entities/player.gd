@@ -453,6 +453,7 @@ func _release_bow_shot() -> void:
 			return
 
 	var stam_cost: float = (Config.STAMINA_COST_ATTACK * 1.1 if is_jav else Config.STAMINA_COST_ATTACK) * charge_ratio
+	stam_cost *= 1.0 - 0.01 * float(skills.get_combat_level("combat_athletics"))
 	if stats.stamina < stam_cost:
 		SignalBus.notification_posted.emit("Too exhausted to throw!" if is_jav else "Too exhausted to loose arrow!")
 		queue_redraw()

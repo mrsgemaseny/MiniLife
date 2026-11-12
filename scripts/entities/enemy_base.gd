@@ -13,6 +13,7 @@ enum State { PATROL, CHASE, ATTACK }
 @export var no_respawn: bool = true
 @export var ai_profile: String = ""
 @export var stats: StatsComponent
+@export var skills: SkillsComponent
 
 var _body_lunge: Vector2 = Vector2.ZERO
 
@@ -42,7 +43,10 @@ func _ready() -> void:
 	add_to_group("combatant")
 	if stats == null:
 		stats = StatsComponent.new()
+	if skills == null:
+		skills = SkillsComponent.new()
 	_apply_enemy_definition()
+	_seed_combat_skills()
 	if int(_enemy_def.get("bandit_tier", 0)) > 0:
 		var sprite_name: String = str(_enemy_def.get("sprite", enemy_id.trim_prefix("bandit_")))
 		_bandit_texture = load("res://assets/sprites/enemies/bandits/" + sprite_name + ".png") as Texture2D
@@ -74,6 +78,21 @@ func get_combat_weapon_id() -> String:
 	if enemy_id.find("club") != -1:
 		return "wooden_club"
 	return "iron_sword" if faction_id != "wildlife" else ""
+
+func _seed_combat_skills() -> void:
+	var base: int = 3
+	if enemy_id.find("boss") != -1 or enemy_id.find("warlord") != -1:
+		base = 14
+	elif enemy_id.find("chief") != -1:
+		base = 12
+	elif enemy_id.find("veteran") != -1:
+		base = 9
+	elif enemy_id.find("raider") != -1:
+		base = 6
+	skills.set_level("combat_attack", base)
+	skills.set_level("combat_defense", clampi(base - 1, 0, 20))
+	skills.set_level("combat_penetration", clampi(base - 2, 0, 20))
+	skills.set_level("combat_athletics", clampi(base + 1, 0, 20))
 
 func _apply_enemy_definition() -> void:
 	_enemy_def = DataRegistry.get_enemy(enemy_id)
