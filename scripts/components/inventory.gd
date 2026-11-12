@@ -21,7 +21,7 @@ func ensure_slots_capacity() -> void:
 		slots.append({})
 
 
-func add_item(item_id: String, count: int = 1, durability: int = -1) -> int:
+func add_item(item_id: String, count: int = 1, durability: float = -1.0) -> int:
 	if count <= 0 or item_id.is_empty():
 		return 0
 	ensure_slots_capacity()
@@ -107,7 +107,7 @@ func remove_at_index(slot_index: int, count: int = 1) -> Dictionary:
 	var out: Dictionary = {
 		"item_id": str(slot.get("item_id", "")),
 		"count": take,
-		"durability": int(slot.get("durability", -1))
+		"durability": float(slot.get("durability", -1))
 	}
 	cur -= take
 	if cur <= 0:
@@ -186,7 +186,7 @@ func split_slot(slot_index: int, split_count: int) -> bool:
 	slots.append({
 		"item_id": str(slot.get("item_id", "")),
 		"count": split_count,
-		"durability": int(slot.get("durability", -1))
+		"durability": float(slot.get("durability", -1))
 	})
 	contents_changed.emit()
 	return true
@@ -320,7 +320,7 @@ func from_dict(data: Dictionary) -> void:
 				slots.append({
 					"item_id": it_id,
 					"count": int(s.get("count", 1)),
-					"durability": int(s.get("durability", -1))
+					"durability": float(s.get("durability", -1))
 				})
 	while slots.size() < max_slots:
 		slots.append({})
@@ -337,7 +337,7 @@ func sort_and_consolidate(include_hotbar: bool = false) -> void:
 		if slots[i].is_empty():
 			continue
 		var it_id: String = str(slots[i].get("item_id", ""))
-		var dur: int = int(slots[i].get("durability", -1))
+		var dur: float = float(slots[i].get("durability", -1))
 		var def: Dictionary = _get_item_def(it_id)
 		var stack_limit: int = int(def.get("stack_limit", 64))
 		if stack_limit <= 1 or dur >= 0:
@@ -350,7 +350,7 @@ func sort_and_consolidate(include_hotbar: bool = false) -> void:
 		for j in range(i + 1, end_idx):
 			if slots[j].is_empty():
 				continue
-			if str(slots[j].get("item_id", "")) == it_id and int(slots[j].get("durability", -1)) == dur:
+			if str(slots[j].get("item_id", "")) == it_id and float(slots[j].get("durability", -1)) == dur:
 				var donor_cnt: int = int(slots[j].get("count", 1))
 				var space: int = stack_limit - cur_cnt
 				var transfer: int = mini(space, donor_cnt)

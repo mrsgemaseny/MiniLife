@@ -57,6 +57,7 @@ func update(delta: float) -> void:
 			entity.set_meta("settlement_id", agent.settlement_id)
 			entity.set_meta("alife_morale", agent.morale)
 			entity.set_meta("alife_equipment_tier", agent.equipment_tier)
+			entity.set_meta("alife_role", agent.role)
 			entity._on_player_tile_changed(player_tile)
 			var tile_info: Dictionary = {}
 			SignalBus.world_tile_queried.emit(tile, tile_info)
@@ -105,6 +106,7 @@ func materialize(agent: GlobalAgent) -> NPCBase:
 	_publish_routine(entity, agent)
 	entity.set_meta("alife_morale", agent.morale)
 	entity.set_meta("alife_equipment_tier", agent.equipment_tier)
+	entity.set_meta("alife_role", agent.role)
 	entity.position = parent.to_local(Config.world_to_iso(agent.tile))
 	if agent.world_position.size() == 2:
 		entity.position = parent.to_local(Vector2(float(agent.world_position[0]), float(agent.world_position[1])))

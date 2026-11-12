@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/combat_balance_monte_carlo.gd" id="1"]
+
+[node name="CombatBalanceMonteCarlo" type="Node"]
+script = ExtResource("1")

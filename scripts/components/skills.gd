@@ -6,6 +6,10 @@ signal leveled_up(skill: String, new_level: int)
 signal perk_unlocked(skill: String, milestone: int, perk_name: String)
 
 const ALL_SKILLS: Array[String] = [
+	"combat_attack",
+	"combat_defense",
+	"combat_penetration",
+	"combat_athletics",
 	"melee",
 	"ranged",
 	"defense",
@@ -25,6 +29,15 @@ const ALL_SKILLS: Array[String] = [
 	"tactics",
 	"athletics"
 ]
+
+const COMBAT_SKILLS: Array[String] = ["combat_attack", "combat_defense", "combat_penetration", "combat_athletics"]
+const LEGACY_COMBAT_IDS: Array[String] = ["melee", "ranged", "defense", "dodge", "athletics"]
+const LEGACY_COMBAT_SKILLS: Dictionary = {
+	"combat_attack": "melee", "combat_defense": "defense",
+	"combat_penetration": "melee", "combat_athletics": "athletics"
+}
+const COMBAT_SCHEMA_VERSION: int = 2
+var combat_schema_version: int = COMBAT_SCHEMA_VERSION
 
 const SKILL_PERKS: Dictionary = {
 	"melee": {25: "Firm Grip", 50: "Cleaving Strike", 75: "Armor Breaker", 100: "Blademaster"},
@@ -51,12 +64,19 @@ func get_level(skill: String) -> int:
 	return int(skills.get(skill, 0))
 
 
+func get_combat_level(skill: String) -> int:
+	if not COMBAT_SKILLS.has(skill):
+		return 0
+	return clampi(get_level(skill), 0, Config.MAX_COMBAT_SKILL_LEVEL)
+
+
 func has_perk(perk_id: String) -> bool:
 	return unlocked_perks.has(perk_id)
 
 
 func set_level(skill: String, level: int) -> void:
-	skills[skill] = clampi(level, 0, Config.MAX_SKILL_LEVEL)
+	var cap: int = Config.MAX_COMBAT_SKILL_LEVEL if COMBAT_SKILLS.has(skill) else Config.MAX_SKILL_LEVEL
+	skills[skill] = clampi(level, 0, cap)
 	if not xp.has(skill):
 		xp[skill] = 0.0
 	_check_perks(skill, int(skills[skill]))
@@ -69,12 +89,13 @@ func gain_xp(skill: String, amount: float) -> void:
 		skills[skill] = 0
 		xp[skill] = 0.0
 	var cur_level: int = get_level(skill)
-	if cur_level >= Config.MAX_SKILL_LEVEL:
+	var cap: int = Config.MAX_COMBAT_SKILL_LEVEL if COMBAT_SKILLS.has(skill) else Config.MAX_SKILL_LEVEL
+	if cur_level >= cap:
 		return
 	var scaled: float = amount * xp_multiplier
 	xp[skill] = float(xp.get(skill, 0.0)) + scaled
 	xp_gained.emit(skill, scaled)
-	while cur_level < Config.MAX_SKILL_LEVEL:
+	while cur_level < cap:
 		var needed: float = xp_to_next(cur_level)
 		if float(xp[skill]) < needed:
 			break
@@ -111,6 +132,7 @@ func _check_perks(skill: String, level: int) -> void:
 
 func to_dict() -> Dictionary:
 	return {
+		"combat_schema_version": combat_schema_version,
 		"skills": skills.duplicate(),
 		"xp": xp.duplicate(),
 		"unlocked_perks": unlocked_perks.duplicate()
@@ -126,7 +148,19 @@ func from_dict(data: Dictionary) -> void:
 		xp[s] = 0.0
 	var s_in: Dictionary = data.get("skills", {})
 	for k in s_in:
-		skills[str(k)] = clampi(int(s_in[k]), 0, Config.MAX_SKILL_LEVEL)
+		var key: String = str(k)
+		var cap: int = Config.MAX_COMBAT_SKILL_LEVEL if COMBAT_SKILLS.has(key) else Config.MAX_SKILL_LEVEL
+		skills[key] = clampi(int(s_in[k]), 0, cap)
+	combat_schema_version = int(data.get("combat_schema_version", 0))
+	if combat_schema_version < COMBAT_SCHEMA_VERSION:
+		for combat_skill: String in COMBAT_SKILLS:
+			if not s_in.has(combat_skill):
+				var legacy: String = str(LEGACY_COMBAT_SKILLS[combat_skill])
+				var legacy_level: int = int(skills.get(legacy, 0))
+				if combat_skill == "combat_penetration":
+					legacy_level = maxi(legacy_level, int(skills.get("ranged", 0)))
+				skills[combat_skill] = clampi(roundi(float(legacy_level) * 0.2), 0, Config.MAX_COMBAT_SKILL_LEVEL)
+		combat_schema_version = COMBAT_SCHEMA_VERSION
 	var x_in: Dictionary = data.get("xp", {})
 	for k in x_in:
 		xp[str(k)] = float(x_in[k])

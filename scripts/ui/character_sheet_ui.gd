@@ -232,6 +232,7 @@ func refresh() -> void:
 		return
 	var stats_comp: StatsComponent = player.get("stats") as StatsComponent
 	var health_comp: HealthComponent = player.get("health_comp") as HealthComponent
+	var equipment_comp: EquipmentComponent = player.get("equipment") as EquipmentComponent
 	var traits_comp: TraitsComponent = player.get("traits") as TraitsComponent
 	var skills_comp: SkillsComponent = player.get("skills") as SkillsComponent
 
@@ -242,7 +243,7 @@ func refresh() -> void:
 			for tr in traits_comp.active_traits:
 				pretty_traits.append(tr.replace("_", " ").capitalize())
 			t_str = ", ".join(pretty_traits)
-		class_label.text = "Background: %s   |   Armor Defense: %.1f   |   Traits: %s" % [stats_comp.active_class.capitalize(), stats_comp.defense, t_str]
+		class_label.text = "Background: %s   |   Traits: %s" % [stats_comp.active_class.capitalize(), t_str]
 	if _progression_label != null and ProgressionSystem.instance != null:
 		var progression: ProgressionSystem = ProgressionSystem.instance
 		_progression_label.text = "ОБЩИЙ УРОВЕНЬ %d — %s. Следующий этап: %s. Уровень открывает рецепты, исследования и постройки; навыки растут отдельно от опыта за действия." % [progression.current_level, progression.get_current_title(), progression.get_next_milestone_summary()]
@@ -285,17 +286,21 @@ func refresh() -> void:
 		var arm_vbox: VBoxContainer = VBoxContainer.new()
 		arm_vbox.add_theme_constant_override("separation", 2)
 		armor_card.add_child(arm_vbox)
-		var arm_val: float = health_comp.armor if health_comp.armor > 0.0 else stats_comp.defense
-		var arm_reduction: float = (arm_val / (arm_val + 50.0)) * 100.0 if arm_val > 0.0 else 0.0
+		var arm_val: float = 0.0
+		var arm_max: float = 0.0
+		if equipment_comp != null:
+			for layer: Dictionary in equipment_comp.get_armor_layers():
+				arm_val += float(layer.get("durability", 0.0))
+				arm_max += equipment_comp.get_armor_max_hp(str(layer.get("slot", "")))
 		var arm_lbl: Label = Label.new()
-		arm_lbl.text = "БРОНЯ И ЗАЩИТА: %.1f  (Поглощение: -%.1f%%)" % [arm_val, arm_reduction]
+		arm_lbl.text = "БРОНЯ: %.1f / %.1f Armor HP" % [arm_val, arm_max]
 		arm_lbl.add_theme_font_size_override("font_size", 10)
 		arm_lbl.modulate = Color(0.95, 0.95, 0.95, 1.0)
 		arm_vbox.add_child(arm_lbl)
 		var arm_bar: ProgressBar = ProgressBar.new()
 		arm_bar.custom_minimum_size = Vector2(320, 8)
-		arm_bar.max_value = 100.0
-		arm_bar.value = clampf(arm_val * 2.0, 0.0, 100.0)
+		arm_bar.max_value = maxf(1.0, arm_max)
+		arm_bar.value = arm_val
 		arm_bar.show_percentage = false
 		arm_bar.add_theme_stylebox_override("background", _make_card_sb(Color(0.08, 0.08, 0.08, 1.0), Color(0.20, 0.20, 0.20, 1.0)))
 		arm_bar.add_theme_stylebox_override("fill", _make_card_sb(Color(0.45, 0.52, 0.62, 1.0), Color(0.60, 0.68, 0.78, 1.0)))
@@ -368,13 +373,15 @@ func refresh() -> void:
 		b_vbox.add_child(b_bar)
 		_limbs_grid.add_child(blood_card)
 
-	# Render 18 Skills (Right column)
+	# Render active skills; legacy combat values remain in saves.
 	if _skills_grid != null and skills_comp != null:
 		for child in _skills_grid.get_children():
 			_skills_grid.remove_child(child)
 			child.queue_free()
 
 		for skill_name in SkillsComponent.ALL_SKILLS:
+			if SkillsComponent.LEGACY_COMBAT_IDS.has(skill_name):
+				continue
 			var lvl: int = skills_comp.get_level(skill_name)
 			var cur_xp: float = float(skills_comp.xp.get(skill_name, 0.0))
 			var req_xp: float = maxf(1.0, skills_comp.xp_to_next(lvl))

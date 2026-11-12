@@ -32,6 +32,8 @@ var _enemy_def: Dictionary = {}
 var _attack_count: int = 0
 var _bandit_texture: Texture2D = null
 var _appearance_gear: EquipmentComponent = EquipmentComponent.new()
+var _stagger_remaining: float = 0.0
+var _stagger_cooldown: float = 0.0
 
 func _ready() -> void:
 	y_sort_enabled = true
@@ -46,14 +48,32 @@ func _ready() -> void:
 		_bandit_texture = load("res://assets/sprites/enemies/bandits/" + sprite_name + ".png") as Texture2D
 	if not enemy_id.contains("scout"):
 		_appearance_gear._equipped["chest"] = {"item_id": "iron_armor", "durability": -1}
+	if bool(_enemy_def.get("has_shield", false)) or enemy_id.find("shield") != -1 or enemy_id.find("warlord") != -1:
+		_appearance_gear._equipped["offhand"] = {"item_id": "iron_shield", "durability": -1}
 	SignalBus.player_tile_changed.connect(_on_player_tile_changed)
 	queue_redraw()
 
 
 func has_shield() -> bool:
-	if bool(_enemy_def.get("has_shield", false)):
-		return true
-	return enemy_id.find("shield") != -1 or enemy_id.find("warlord") != -1
+	return _appearance_gear.has_shield()
+
+
+func get_combat_weapon_id() -> String:
+	if enemy_id.find("crossbow") != -1:
+		return "heavy_crossbow"
+	if enemy_id.find("archer") != -1 or enemy_id.find("ranger") != -1:
+		return "hunting_bow"
+	if enemy_id.find("war_pick") != -1:
+		return "iron_war_pick"
+	if enemy_id.find("hammer") != -1:
+		return "war_hammer"
+	if enemy_id.find("axe") != -1:
+		return "iron_axe"
+	if enemy_id.find("spear") != -1:
+		return "iron_spear"
+	if enemy_id.find("club") != -1:
+		return "wooden_club"
+	return "iron_sword" if faction_id != "wildlife" else ""
 
 func _apply_enemy_definition() -> void:
 	_enemy_def = DataRegistry.get_enemy(enemy_id)
@@ -81,6 +101,13 @@ func _apply_enemy_definition() -> void:
 
 func _physics_process(delta: float) -> void:
 	if is_permanently_dead or GameManager.is_paused():
+		return
+	if stats.stamina < stats.max_stamina:
+		stats.modify("stamina", Config.STAMINA_REGEN_PER_SEC * delta)
+	_stagger_cooldown = maxf(0.0, _stagger_cooldown - delta)
+	if _stagger_remaining > 0.0:
+		_stagger_remaining = maxf(0.0, _stagger_remaining - delta)
+		velocity = Vector2.ZERO
 		return
 
 	_body_lunge = _body_lunge.lerp(Vector2.ZERO, minf(1.0, delta * 12.0))
@@ -261,8 +288,16 @@ func apply_knockback(vel: Vector2) -> void:
 	velocity = vel
 	move_and_slide()
 
-func apply_status(_effect: String, _duration: float, _intensity: float) -> void:
-	pass
+func apply_status(effect: String, duration: float, _intensity: float) -> void:
+	if effect == "stunned" and _stagger_cooldown <= 0.0:
+		_stagger_remaining = clampf(duration, 0.0, 0.65)
+		_stagger_cooldown = 1.0
+
+
+func on_combat_contact(source: Node) -> void:
+	if source is Node2D and enemy_id.find("wolf") == -1:
+		target_entity = source as Node2D
+		current_state = State.CHASE
 
 func take_damage(amount: float, _damage_type: String = "physical", source: Node = null) -> void:
 	if is_permanently_dead:
