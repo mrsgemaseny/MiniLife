@@ -50,8 +50,22 @@ func _ready() -> void:
 	if int(_enemy_def.get("bandit_tier", 0)) > 0:
 		var sprite_name: String = str(_enemy_def.get("sprite", enemy_id.trim_prefix("bandit_")))
 		_bandit_texture = load("res://assets/sprites/enemies/bandits/" + sprite_name + ".png") as Texture2D
-	if not enemy_id.contains("scout"):
-		_appearance_gear._equipped["chest"] = {"item_id": "iron_armor", "durability": -1}
+	var armor_tier: int = int(_enemy_def.get("bandit_tier", 0))
+	if armor_tier == 0:
+		match faction_id:
+			"raiders": armor_tier = 2
+			"mercenaries": armor_tier = 3 if enemy_id.contains("guard") else 2
+	if enemy_id == "warlord_khan_boss":
+		armor_tier = 4
+	if armor_tier > 0 and not enemy_id.contains("scout"):
+		var armor_id: String = "gambeson"
+		if armor_tier >= 4:
+			armor_id = "steel_plate_armor"
+		elif armor_tier >= 3:
+			armor_id = "iron_armor"
+		elif armor_tier >= 2:
+			armor_id = "leather_armor"
+		_appearance_gear.equip(armor_id, -1, "chest")
 	if bool(_enemy_def.get("has_shield", false)) or enemy_id.find("shield") != -1 or enemy_id.find("warlord") != -1:
 		_appearance_gear._equipped["offhand"] = {"item_id": "iron_shield", "durability": -1}
 	SignalBus.player_tile_changed.connect(_on_player_tile_changed)

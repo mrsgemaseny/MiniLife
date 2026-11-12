@@ -163,5 +163,10 @@ func _run() -> void:
 	add_child(enemy)
 	assert(enemy.skills.get_combat_level("combat_attack") == 12)
 	assert(enemy.skills.get_combat_level("combat_defense") == 11)
+	assert(enemy._appearance_gear.get_item_id("chest") == "steel_plate_armor")
+	var wolf := EnemyBase.new()
+	wolf.enemy_id = "wolf"
+	add_child(wolf)
+	assert(wolf._appearance_gear.get_armor_layers().is_empty(), "Wildlife must not spawn in iron armor")
 	print("COMBAT_OVERHAUL_PASS")
 	get_tree().quit()
