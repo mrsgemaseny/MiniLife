@@ -9,6 +9,7 @@ enum State { IDLE, PATROL, TRADE, FLEE, ATTACK, GIVE_QUEST }
 @export var dialogue_id: String = "merchant_intro"
 @export var patrol_points: Array[Vector2i] = []
 @export var stats: StatsComponent
+@export var skills: SkillsComponent
 @export var inventory: InventoryComponent
 @export var equipment: EquipmentComponent
 @export var memory: MemoryComponent
@@ -31,6 +32,8 @@ func _ready() -> void:
 	add_to_group("combatant")
 	if stats == null:
 		stats = StatsComponent.new()
+	if skills == null:
+		skills = SkillsComponent.new()
 	if inventory == null:
 		inventory = InventoryComponent.new()
 	if equipment == null:
@@ -304,6 +307,11 @@ func _alife_move_toward(target: Vector2i, delta: float) -> void:
 var _clothing_tint: Color = Color.WHITE
 
 func restore_alife_state(data: Dictionary) -> void:
+	var local: Dictionary = data.get("local_state", {})
+	if local.get("combat_skills") is Dictionary:
+		skills.from_dict(local.get("combat_skills", {}))
+	else:
+		_seed_combat_skills(str(data.get("role", "civilian")))
 	display_name = str(data.get("display_name", display_name))
 	faction_id = str(data.get("faction_id", faction_id))
 	match str(data.get("role", "")):
@@ -326,7 +334,6 @@ func restore_alife_state(data: Dictionary) -> void:
 		memory.from_dict(remembered)
 	else:
 		memory.personal_opinion_of_player = int(data.get("relation_to_player", 0))
-	var local: Dictionary = data.get("local_state", {})
 	if local.get("combat_equipment") is Dictionary:
 		equipment.from_dict(local.get("combat_equipment", {}))
 	elif str(data.get("role", "")) in ["guard", "soldier", "caravan_guard"]:
@@ -344,6 +351,18 @@ func restore_alife_state(data: Dictionary) -> void:
 	if not patrol_points.is_empty():
 		_patrol_index = posmod(_patrol_index, patrol_points.size())
 
+func _seed_combat_skills(role: String) -> void:
+	var levels: Array[int] = [1, 1, 1, 1]
+	match role:
+		"guard", "soldier", "caravan_guard":
+			levels = [8, 9, 6, 7]
+		"bandit", "raider":
+			levels = [6, 5, 5, 6]
+		"hunter":
+			levels = [5, 4, 4, 7]
+	for index: int in SkillsComponent.COMBAT_SKILLS.size():
+		skills.set_level(SkillsComponent.COMBAT_SKILLS[index], levels[index])
+
 func get_alife_state() -> Dictionary:
 	var points: Array = []
 	for tile: Vector2i in patrol_points:
@@ -356,7 +375,8 @@ func get_alife_state() -> Dictionary:
 		"relation_to_player": memory.personal_opinion_of_player,
 		"local_state": {"state": current_state, "idle_timer": _idle_timer,
 			"sim_timer": _sim_timer, "patrol_index": _patrol_index, "patrol_points": points,
-			"attack_cooldown": _alife_attack_cooldown, "combat_equipment": equipment.to_dict()}
+			"attack_cooldown": _alife_attack_cooldown, "combat_equipment": equipment.to_dict(),
+			"combat_skills": skills.to_dict()}
 	}
 
 func _update_routine_pose(goal: String, target: Vector2i, delta: float) -> void:
