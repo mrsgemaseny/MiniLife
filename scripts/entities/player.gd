@@ -1134,8 +1134,6 @@ func _draw() -> void:
 	var side: bool = absf(facing_direction.x) > absf(facing_direction.y)
 	var north: bool = not side and facing_direction.y < 0.0
 	var look_x: float = signf(facing_direction.x) if side else 0.0
-	if not side or look_x < 0.0:
-		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
 	if is_instance_valid(_locked_target):
 		draw_arc(to_local(_locked_target.global_position), 14.0, 0.0, TAU, 24, Color(0.95, 0.30, 0.20, 0.8), 1.5)
 
@@ -1149,10 +1147,8 @@ func _draw() -> void:
 	if _is_charging_bow:
 		hand_pos = body_ofs + Vector2(0, -15) + facing_direction * 13.0
 
-	if not (side and is_facing_left):
-		_draw_held_shield(body_ofs, stride, is_facing_left, side)
-	if side and not is_facing_left:
-		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
+	_draw_held_shield(body_ofs, stride, is_facing_left)
+	PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
 
 	var weapon_id: String = equipment.get_item_id("weapon") if equipment != null else ""
 	if not weapon_id.is_empty():
@@ -1301,11 +1297,9 @@ func _draw() -> void:
 				draw_set_transform(held_pos, held_rot, held_scale)
 				draw_texture_rect(held_tex, Rect2(-7.0, -7.0, 14.0, 14.0), false)
 				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	if side and is_facing_left:
-		_draw_held_shield(body_ofs, stride, is_facing_left, false)
 
 
-func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, behind_body: bool) -> void:
+func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool) -> void:
 	var offhand_id: String = equipment.get_item_id("offhand") if equipment != null else ""
 	if offhand_id.is_empty():
 		return
@@ -1314,12 +1308,10 @@ func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, b
 		return
 	var is_shield: bool = offhand_id.contains("shield")
 	var shield_size: float = 36.0 if is_shield else 17.0
-	var shield_x: float = -8.0 if behind_body else -12.0
-	var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -10.0 - stride * 0.25)
-	var shield_scale: Vector2 = Vector2(-0.72 if behind_body else -1.0, 1.0) if is_facing_left else Vector2(0.72 if behind_body else 1.0, 1.0)
-	var tint: Color = Color(0.75, 0.75, 0.75, 0.55) if behind_body else Color.WHITE
+	var shield_pos: Vector2 = body_ofs + Vector2(-8.0, -16.0 - stride * 0.25)
+	var shield_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left else Vector2.ONE
 	draw_set_transform(shield_pos, 0.0, shield_scale)
-	draw_texture_rect(shield_tex, Rect2(Vector2.ONE * -shield_size * 0.5, Vector2.ONE * shield_size), false, tint)
+	draw_texture_rect(shield_tex, Rect2(Vector2.ONE * -shield_size * 0.5, Vector2.ONE * shield_size), false)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
