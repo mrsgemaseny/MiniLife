@@ -1171,7 +1171,7 @@ func _draw() -> void:
 			anchor_rect = Rect2(-22.0, -22.0, 44.0, 44.0) if is_facing_left else Rect2(-26.0, -26.0, 52.0, 52.0)
 			hand_pos.y += 2.0
 		elif is_bow:
-			base_angle = -deg_to_rad(120.0)
+			base_angle = deg_to_rad(120.0) if side and not is_facing_left else -deg_to_rad(120.0)
 			anchor_rect = Rect2(-26.0, -26.0, 52.0, 52.0)
 			hand_pos.y -= 5.0
 			hand_pos.x += 4.0 if not is_facing_left else -4.0
@@ -1194,7 +1194,7 @@ func _draw() -> void:
 			anchor_rect = Rect2(-7.0, -36.0, 44.0, 44.0)
 			hand_pos.y += 4.0
 		elif weapon_id.contains("axe"):
-			base_angle = -melee_angle if side and not is_facing_left else melee_angle
+			base_angle = -melee_angle if side else melee_angle
 			anchor_rect = Rect2(-7.0, -38.0, 45.0, 45.0)
 			hand_pos.y += 4.0
 		else:
@@ -1220,7 +1220,7 @@ func _draw() -> void:
 		if weapon_id.contains("sword") and is_facing_left:
 			hand_pos.x -= 15.0
 		if weapon_id.contains("axe") and is_facing_left:
-			hand_pos.x -= 20.0
+			hand_pos += Vector2(-40.0, 20.0)
 		if weapon_id.contains("axe") and side and not is_facing_left:
 			hand_pos += Vector2(33.0, 8.0)
 		if weapon_id.contains("dagger") and not side:
@@ -1242,7 +1242,7 @@ func _draw() -> void:
 				hand_pos.x += 4.0
 		if is_crossbow:
 			if is_facing_left:
-				hand_pos += Vector2(7.0, -20.0)
+				hand_pos += Vector2(-10.0, -20.0)
 			else:
 				hand_pos.x += 5.0 if side else 20.0
 
@@ -1252,7 +1252,7 @@ func _draw() -> void:
 		if _is_charging_bow:
 			base_angle += facing_direction.angle() - (PI if is_facing_left else 0.0)
 		var final_rot: float = base_angle
-		var invert_weapon: bool = (not is_bow and not is_javelin and (not weapon_id.contains("axe") or not side or is_facing_left)) or (is_bow and not is_crossbow and not is_facing_left)
+		var invert_weapon: bool = (not is_bow and not is_javelin and (not weapon_id.contains("axe") or not side)) or (is_bow and not is_crossbow and not side)
 		var weapon_scale: Vector2 = (Vector2(1.0, 1.0) if is_facing_left else Vector2(-1.0, 1.0)) if invert_weapon else (Vector2(-1.0, 1.0) if is_facing_left else Vector2.ONE)
 		var mirrored_rect: Rect2 = anchor_rect
 		if invert_weapon:
