@@ -1134,7 +1134,8 @@ func _draw() -> void:
 	var side: bool = absf(facing_direction.x) > absf(facing_direction.y)
 	var north: bool = not side and facing_direction.y < 0.0
 	var look_x: float = signf(facing_direction.x) if side else 0.0
-	PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
+	if not side:
+		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
 	if is_instance_valid(_locked_target):
 		draw_arc(to_local(_locked_target.global_position), 14.0, 0.0, TAU, 24, Color(0.95, 0.30, 0.20, 0.8), 1.5)
 
@@ -1143,52 +1144,57 @@ func _draw() -> void:
 	var rot_dir: float = -1.0 if is_facing_left else 1.0
 
 	# Fixed hand and shield anchor positions
-	var hand_x: float = (-7.0 if is_facing_left else 7.0) if side else 5.0
+	var hand_x: float = (17.0 if is_facing_left else 7.0) if side else 5.0
 	var hand_pos: Vector2 = body_ofs + Vector2(hand_x, -13.0)
 	if _is_charging_bow:
 		hand_pos = body_ofs + Vector2(0, -15) + facing_direction * 13.0
 
-	var offhand_id: String = equipment.get_item_id("offhand") if equipment != null else ""
-	if not offhand_id.is_empty():
-		var shield_tex: ImageTexture = IconFactory.get_world_sprite(offhand_id)
-		if shield_tex != null:
-			var is_shield: bool = offhand_id.contains("shield")
-			var shield_size: float = 36.0 if is_shield else 17.0
-			var shield_x: float = (17.0 if is_facing_left else -17.0) if is_shield else (7.0 if is_facing_left else -7.0)
-			var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -16.0 - stride * 0.25)
-			var shield_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left else Vector2(1.0, 1.0)
-			draw_set_transform(shield_pos, 0.0, shield_scale)
-			draw_texture_rect(shield_tex, Rect2(Vector2.ONE * -shield_size * 0.5, Vector2.ONE * shield_size), false)
-			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if not (side and is_facing_left):
+		_draw_held_shield(body_ofs, stride, is_facing_left, side)
+	if side and not is_facing_left:
+		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
 
 	var weapon_id: String = equipment.get_item_id("weapon") if equipment != null else ""
 	if not weapon_id.is_empty():
-		var weapon_tex: ImageTexture = IconFactory.get_world_sprite(weapon_id)
 		var is_bow: bool = weapon_id.find("bow") != -1 or weapon_id.find("crossbow") != -1
+		var is_crossbow: bool = weapon_id.contains("crossbow")
 		var is_javelin: bool = (weapon_id == "javelins" or weapon_id == "javelin")
+		var weapon_tex: ImageTexture = IconFactory.get_world_sprite("wooden_spear" if is_javelin else weapon_id)
 		var base_angle: float = 0.0
 		# The grip sits at the hand; the blade extends above the character.
 		var anchor_rect: Rect2 = Rect2(-8.0, -43.0, 52.0, 52.0)
 
-		if is_bow:
+		if is_crossbow:
+			# The stock points right or left, with the muzzle slightly lowered.
+			base_angle = deg_to_rad(60.0)
+			anchor_rect = Rect2(-26.0, -26.0, 52.0, 52.0)
+			hand_pos.y += 2.0
+		elif is_bow:
 			base_angle = deg_to_rad(135.0) * rot_dir
 			anchor_rect = Rect2(-26.0, -26.0, 52.0, 52.0)
+			hand_pos.y -= 5.0
+			hand_pos.x += 4.0 if not is_facing_left else -4.0
 		elif is_javelin:
 			base_angle = -deg_to_rad(32.0) * rot_dir
-			anchor_rect = Rect2(-9.0, -55.0, 68.0, 68.0)
+			anchor_rect = Rect2(-8.0, -48.0, 60.0, 60.0)
 		elif weapon_id.contains("spear"):
 			base_angle = -deg_to_rad(28.0) * rot_dir
-			anchor_rect = Rect2(-9.0, -53.0, 66.0, 66.0)
+			anchor_rect = Rect2(-8.0, -47.0, 59.0, 59.0)
+			hand_pos.y += 5.0
 		elif weapon_id == "torch":
 			base_angle = -deg_to_rad(28.0) * rot_dir
 			anchor_rect = Rect2(-7.0, -36.0, 44.0, 44.0)
 		elif weapon_id.contains("dagger"):
 			base_angle = -deg_to_rad(28.0) * rot_dir
 			anchor_rect = Rect2(-6.0, -30.0, 36.0, 36.0)
+		elif weapon_id.contains("sword") or weapon_id.contains("club"):
+			base_angle = -deg_to_rad(28.0) * rot_dir
+			anchor_rect = Rect2(-7.0, -36.0, 44.0, 44.0)
+			hand_pos.y += 4.0
 		else:
 			base_angle = -deg_to_rad(28.0) * rot_dir
-		if (is_javelin or weapon_id.contains("spear")) and not _is_charging_bow:
-			hand_pos.x += 6.0 if is_facing_left else -6.0
+		if (is_javelin or weapon_id.contains("spear")) and not _is_charging_bow and not is_facing_left:
+			hand_pos.x -= 6.0
 
 		# Rigid equipment follows the whole-body attack pulse.
 		if _is_charging_bow:
@@ -1294,6 +1300,27 @@ func _draw() -> void:
 				draw_set_transform(held_pos, held_rot, held_scale)
 				draw_texture_rect(held_tex, Rect2(-7.0, -7.0, 14.0, 14.0), false)
 				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if side and is_facing_left:
+		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
+		_draw_held_shield(body_ofs, stride, is_facing_left, false)
+
+
+func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, behind_body: bool) -> void:
+	var offhand_id: String = equipment.get_item_id("offhand") if equipment != null else ""
+	if offhand_id.is_empty():
+		return
+	var shield_tex: ImageTexture = IconFactory.get_world_sprite(offhand_id)
+	if shield_tex == null:
+		return
+	var is_shield: bool = offhand_id.contains("shield")
+	var shield_size: float = 36.0 if is_shield else 17.0
+	var shield_x: float = -11.0 if behind_body else -17.0
+	var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -16.0 - stride * 0.25)
+	var shield_scale: Vector2 = Vector2(-0.72 if behind_body else -1.0, 1.0) if is_facing_left else Vector2(0.72 if behind_body else 1.0, 1.0)
+	var tint: Color = Color(0.75, 0.75, 0.75, 0.55) if behind_body else Color.WHITE
+	draw_set_transform(shield_pos, 0.0, shield_scale)
+	draw_texture_rect(shield_tex, Rect2(Vector2.ONE * -shield_size * 0.5, Vector2.ONE * shield_size), false, tint)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 

@@ -34,7 +34,7 @@ func _ready() -> void:
 		player.set_physics_process(false)
 		player.set_process(false)
 		player.position = Vector2(415 + (index % 4) * 150, 265 + (index / 4) * 120)
-		player.facing_direction = Vector2.LEFT if index % 4 == 1 else Vector2.DOWN
+		player.facing_direction = Vector2.LEFT if index % 4 == 1 else (Vector2.RIGHT if index == 4 else Vector2.DOWN)
 		player.inventory.set_slot(0, {"item_id": entry["weapon"], "count": 1, "durability": 90})
 		player.active_hotbar_index = 0
 		player.sync_weapon_from_active_slot()
