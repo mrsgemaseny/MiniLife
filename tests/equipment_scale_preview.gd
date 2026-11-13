@@ -55,6 +55,7 @@ func _draw() -> void:
 func _capture() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
+	await get_tree().create_timer(0.25).timeout
 	for direction: Vector2 in [Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
 		for player: Player in _players:
 			player.facing_direction = direction

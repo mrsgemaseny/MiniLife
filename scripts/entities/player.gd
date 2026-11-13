@@ -1166,12 +1166,12 @@ func _draw() -> void:
 		var anchor_rect: Rect2 = Rect2(-8.0, -43.0, 52.0, 52.0)
 
 		if is_crossbow:
-			# The stock points right or left, with the muzzle slightly lowered.
-			base_angle = deg_to_rad(60.0)
-			anchor_rect = Rect2(-26.0, -26.0, 52.0, 52.0)
+			# The muzzle sits below the stock in the held pose.
+			base_angle = deg_to_rad((78.0 * rot_dir) if side else 70.0)
+			anchor_rect = Rect2(-22.0, -22.0, 44.0, 44.0) if is_facing_left else Rect2(-26.0, -26.0, 52.0, 52.0)
 			hand_pos.y += 2.0
 		elif is_bow:
-			base_angle = -deg_to_rad(135.0) * rot_dir
+			base_angle = -deg_to_rad(120.0)
 			anchor_rect = Rect2(-26.0, -26.0, 52.0, 52.0)
 			hand_pos.y -= 5.0
 			hand_pos.x += 4.0 if not is_facing_left else -4.0
@@ -1218,13 +1218,12 @@ func _draw() -> void:
 		if weapon_id.contains("club") and is_facing_left:
 			hand_pos.x -= 15.0
 		if weapon_id.contains("sword") and is_facing_left:
-			hand_pos.x -= 8.0
-		if weapon_id.contains("axe") and not side:
-			hand_pos.x -= 10.0
+			hand_pos.x -= 15.0
+		if weapon_id.contains("axe") and is_facing_left:
+			hand_pos.x -= 20.0
 		if weapon_id.contains("axe") and side and not is_facing_left:
 			hand_pos += Vector2(33.0, 8.0)
 		if weapon_id.contains("dagger") and not side:
-			hand_pos.x += 25.0
 			hand_pos.y += 8.0
 		if weapon_id.contains("dagger") and is_facing_left:
 			hand_pos.x -= 17.0
@@ -1243,7 +1242,7 @@ func _draw() -> void:
 				hand_pos.x += 4.0
 		if is_crossbow:
 			if is_facing_left:
-				hand_pos += Vector2(-8.0, -20.0)
+				hand_pos += Vector2(7.0, -20.0)
 			else:
 				hand_pos.x += 5.0 if side else 20.0
 
@@ -1253,7 +1252,7 @@ func _draw() -> void:
 		if _is_charging_bow:
 			base_angle += facing_direction.angle() - (PI if is_facing_left else 0.0)
 		var final_rot: float = base_angle
-		var invert_weapon: bool = (not is_bow and not is_javelin and (not weapon_id.contains("axe") or not side or is_facing_left)) or (is_bow and not is_crossbow)
+		var invert_weapon: bool = (not is_bow and not is_javelin and (not weapon_id.contains("axe") or not side or is_facing_left)) or (is_bow and not is_crossbow and not is_facing_left)
 		var weapon_scale: Vector2 = (Vector2(1.0, 1.0) if is_facing_left else Vector2(-1.0, 1.0)) if invert_weapon else (Vector2(-1.0, 1.0) if is_facing_left else Vector2.ONE)
 		var mirrored_rect: Rect2 = anchor_rect
 		if invert_weapon:
@@ -1371,7 +1370,8 @@ func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, s
 	var is_shield: bool = offhand_id.contains("shield")
 	var shield_size: float = 36.0 if is_shield else 17.0
 	var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -10.0 - stride * 0.25)
-	var shield_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left or absf(facing_direction.x) <= absf(facing_direction.y) else Vector2.ONE
+	var mirror_shield: bool = (is_facing_left and not offhand_id.contains("iron")) or absf(facing_direction.x) <= absf(facing_direction.y)
+	var shield_scale: Vector2 = Vector2(-1.0, 1.0) if mirror_shield else Vector2.ONE
 	draw_set_transform(shield_pos, 0.0, shield_scale)
 	draw_texture_rect(shield_tex, Rect2(Vector2.ONE * -shield_size * 0.5, Vector2.ONE * shield_size), false)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
