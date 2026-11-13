@@ -5,6 +5,7 @@ enum State { BOOT, PLAYING, PAUSED, DEAD }
 var _state: State = State.BOOT
 var _world_seed: int = Config.DEFAULT_WORLD_SEED
 var _active_slot: String = Config.DEFAULT_SAVE_SLOT
+var _game_id: String = Config.DEFAULT_SAVE_SLOT
 var _day: int = 1
 var _hour: float = Config.START_HOUR
 var _playtime_sec: float = 0.0
@@ -183,12 +184,13 @@ func _tick_autosave(delta: float) -> void:
 		SignalBus.save_requested.emit(_active_slot)
 
 
-func start_new_game(new_seed: int, slot: String = Config.DEFAULT_SAVE_SLOT) -> void:
+func start_new_game(new_seed: int, slot: String = "") -> void:
 	debug_god_mode = false
 	_god_code_buffer = ""
 	Config.TERRAIN_GEOGRAPHY_SIZE = Config.WORLD_SIZE_TILES
 	_world_seed = new_seed
-	_active_slot = slot
+	_active_slot = slot if not slot.is_empty() else _create_unique_save_slot()
+	_game_id = _active_slot
 	_day = 1
 	_hour = Config.START_HOUR
 	_playtime_sec = 0.0
@@ -198,9 +200,16 @@ func start_new_game(new_seed: int, slot: String = Config.DEFAULT_SAVE_SLOT) -> v
 	_paused_by_focus = false
 	_state = State.PLAYING
 	get_tree().paused = false
-	SignalBus.world_delete_requested.emit(slot)
+	SignalBus.world_delete_requested.emit(_active_slot)
 	SignalBus.game_started.emit(_world_seed, _active_slot, true)
 	SignalBus.save_requested.emit(_active_slot)
+
+
+func _create_unique_save_slot() -> String:
+	var candidate: String = ""
+	while candidate.is_empty() or DirAccess.dir_exists_absolute(Config.SAVE_ROOT + candidate):
+		candidate = "world_" + Crypto.new().generate_random_bytes(16).hex_encode()
+	return candidate
 
 
 func resume_loaded_game() -> void:
@@ -233,6 +242,10 @@ func get_world_seed() -> int:
 
 func get_active_slot() -> String:
 	return _active_slot
+
+
+func get_game_id() -> String:
+	return _game_id
 
 
 func get_selected_class() -> String:
@@ -375,7 +388,7 @@ func _on_character_creation_completed(class_id: String, chosen_traits: Array, wo
 	_selected_traits.clear()
 	for t in chosen_traits:
 		_selected_traits.append(str(t))
-	start_new_game(world_seed, Config.DEFAULT_SAVE_SLOT)
+	start_new_game(world_seed)
 
 
 func _on_player_died() -> void:
@@ -409,6 +422,7 @@ func _on_save_data_requested(bundle: Dictionary) -> void:
 		"map_projection": Config.MAP_PROJECTION,
 		"seed": _world_seed,
 		"slot": _active_slot,
+		"game_id": _game_id,
 		"day": _day,
 		"hour": _hour,
 		"playtime": _playtime_sec,
@@ -425,6 +439,7 @@ func _on_save_data_loaded(bundle: Dictionary) -> void:
 	_god_code_buffer = ""
 	_world_seed = int(meta.get("seed", 1337))
 	_active_slot = str(meta.get("slot", Config.DEFAULT_SAVE_SLOT))
+	_game_id = str(meta.get("game_id", _active_slot))
 	_day = int(meta.get("day", 1))
 	_hour = float(meta.get("hour", Config.START_HOUR))
 	_playtime_sec = float(meta.get("playtime", 0.0))

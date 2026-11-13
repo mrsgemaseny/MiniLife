@@ -96,6 +96,7 @@ func list_saves() -> Array[Dictionary]:
 				var hp_val: int = int(meta.get("hp", 100))
 				saves.append({
 					"slot": folder_name,
+				"game_id": str(meta.get("game_id", folder_name)),
 					"name": display_name,
 					"day": day,
 					"hour": hour,
@@ -158,12 +159,15 @@ func save_slot(slot: String, display_name: String = "") -> bool:
 	var meta: Dictionary = bundle.get("meta", {})
 	meta["schema_version"] = SCHEMA_VERSION
 	meta["slot"] = target_slot
+	meta["game_id"] = GameManager.get_game_id()
 	var s_name: String = display_name
 	if s_name.is_empty():
 		if target_slot == "quicksave":
 			s_name = "Быстрое сохранение"
 		elif target_slot == "autosave":
 			s_name = "Автосохранение"
+		elif target_slot.begins_with("world_") and target_slot.length() > 20:
+			s_name = "Мир %s #%s" % [Time.get_datetime_string_from_system(false, true), target_slot.substr(6, 8)]
 		else:
 			s_name = str(meta.get("name", target_slot))
 	meta["name"] = s_name
