@@ -1217,10 +1217,12 @@ func _draw() -> void:
 			hand_pos.y -= 10.0
 		if weapon_id.contains("club") and is_facing_left:
 			hand_pos.x -= 15.0
+		if weapon_id.contains("club") and side and not is_facing_left:
+			hand_pos.x -= 3.0
 		if weapon_id.contains("sword") and is_facing_left:
 			hand_pos.x -= 15.0
 		if weapon_id.contains("axe") and is_facing_left:
-			hand_pos += Vector2(-40.0, 20.0)
+			hand_pos += Vector2(-40.0, 16.0)
 		if weapon_id.contains("axe") and side and not is_facing_left:
 			hand_pos += Vector2(30.0, 8.0)
 		if weapon_id.contains("dagger") and not side:
