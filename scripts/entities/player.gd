@@ -1161,6 +1161,7 @@ func _draw() -> void:
 		var is_javelin: bool = (weapon_id == "javelins" or weapon_id == "javelin")
 		var weapon_tex: ImageTexture = IconFactory.get_world_sprite("wooden_spear" if is_javelin else weapon_id)
 		var base_angle: float = 0.0
+		var melee_angle: float = deg_to_rad(48.0 if side else 28.0) * rot_dir
 		# The grip sits at the hand; the blade extends above the character.
 		var anchor_rect: Rect2 = Rect2(-8.0, -43.0, 52.0, 52.0)
 
@@ -1175,34 +1176,74 @@ func _draw() -> void:
 			hand_pos.y -= 5.0
 			hand_pos.x += 4.0 if not is_facing_left else -4.0
 		elif is_javelin:
-			base_angle = deg_to_rad(135.0)
-			anchor_rect = Rect2(-6.0, -34.0, 44.0, 44.0)
+			base_angle = deg_to_rad(-135.0 if is_facing_left else 135.0)
+			anchor_rect = Rect2(-5.0, -28.0, 36.0, 36.0)
 			hand_pos.y -= 12.0
 		elif weapon_id.contains("spear"):
-			base_angle = deg_to_rad(28.0) * rot_dir
+			base_angle = melee_angle
 			anchor_rect = Rect2(-8.0, -47.0, 59.0, 59.0)
 			hand_pos.y += 5.0
 		elif weapon_id == "torch":
-			base_angle = deg_to_rad(28.0) * rot_dir
+			base_angle = melee_angle
 			anchor_rect = Rect2(-7.0, -36.0, 44.0, 44.0)
 		elif weapon_id.contains("dagger"):
-			base_angle = deg_to_rad(28.0) * rot_dir
+			base_angle = melee_angle
 			anchor_rect = Rect2(-6.0, -30.0, 36.0, 36.0)
 		elif weapon_id.contains("sword") or weapon_id.contains("club"):
-			base_angle = deg_to_rad(28.0) * rot_dir
+			base_angle = melee_angle
 			anchor_rect = Rect2(-7.0, -36.0, 44.0, 44.0)
 			hand_pos.y += 4.0
+		elif weapon_id.contains("axe"):
+			base_angle = melee_angle
+			anchor_rect = Rect2(-7.0, -38.0, 45.0, 45.0)
+			hand_pos.y += 4.0
 		else:
-			base_angle = deg_to_rad(28.0) * rot_dir
+			base_angle = melee_angle
 		if weapon_id.contains("spear") and not _is_charging_bow and not is_facing_left:
 			hand_pos.x -= 6.0
 		if not is_bow and not is_javelin:
 			if is_facing_left:
-				hand_pos += Vector2(18.0, -8.0)
+				hand_pos += Vector2(16.0, -20.0)
 			elif side:
-				hand_pos.x -= 30.0
+				hand_pos.x -= 20.0
+				hand_pos.y -= 12.0 if weapon_id.contains("axe") or weapon_id.contains("club") else 18.0
 			else:
 				hand_pos.x -= 16.0
+		if weapon_id.contains("spear") and is_facing_left:
+			hand_pos.y -= 8.0
+		if (weapon_id.contains("sword") or weapon_id.contains("dagger")) and side and not is_facing_left:
+			hand_pos.x += 7.0
+		if weapon_id.contains("spear") and side and not is_facing_left:
+			hand_pos.y -= 10.0
+		if weapon_id.contains("club") and is_facing_left:
+			hand_pos.x -= 15.0
+		if weapon_id.contains("axe") and not side:
+			hand_pos.x -= 10.0
+		if weapon_id.contains("axe") and side and not is_facing_left:
+			hand_pos.x += 8.0
+		if weapon_id.contains("dagger") and not side:
+			hand_pos.x += 25.0
+			hand_pos.y += 8.0
+		if weapon_id.contains("dagger") and is_facing_left:
+			hand_pos.x -= 17.0
+		if is_javelin:
+			hand_pos.y -= 8.0
+			if not side:
+				hand_pos.x += 7.0
+			elif is_facing_left:
+				hand_pos += Vector2(-17.0, -8.0)
+			elif not is_facing_left:
+				hand_pos.x += 8.0
+		if is_bow and not is_crossbow and side:
+			if is_facing_left:
+				hand_pos += Vector2(-8.0, -12.0)
+			else:
+				hand_pos.x += 4.0
+		if is_crossbow:
+			if is_facing_left:
+				hand_pos += Vector2(-8.0, -20.0)
+			else:
+				hand_pos.x += 5.0 if side else 20.0
 
 		# Rigid equipment follows the whole-body attack pulse.
 		if _is_charging_bow:

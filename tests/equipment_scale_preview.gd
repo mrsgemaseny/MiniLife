@@ -16,6 +16,7 @@ const CASES: Array[Dictionary] = [
 ]
 
 var _labels: Array[Dictionary] = []
+var _players: Array[Player] = []
 
 func _ready() -> void:
 	WorldSimulation.set_process(false)
@@ -34,13 +35,14 @@ func _ready() -> void:
 		player.set_physics_process(false)
 		player.set_process(false)
 		player.position = Vector2(415 + (index % 4) * 150, 265 + (index / 4) * 120)
-		player.facing_direction = Vector2.LEFT if index % 4 == 1 else (Vector2.RIGHT if index == 4 else Vector2.DOWN)
+		player.facing_direction = Vector2.DOWN
 		player.inventory.set_slot(0, {"item_id": entry["weapon"], "count": 1, "durability": 90})
 		player.active_hotbar_index = 0
 		player.sync_weapon_from_active_slot()
 		if entry.has("shield"):
 			player.equipment.equip(str(entry["shield"]), 90, "offhand")
 		player.queue_redraw()
+		_players.append(player)
 		_labels.append({"position": player.position + Vector2(-52, 28), "text": str(entry["weapon"]) + (" + shield" if entry.has("shield") else "")})
 	camera.make_current()
 	queue_redraw()
@@ -53,10 +55,16 @@ func _draw() -> void:
 func _capture() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
-	if DisplayServer.get_name() != "headless":
-		await RenderingServer.frame_post_draw
-		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://output"))
-		var result: Error = get_viewport().get_texture().get_image().save_png("res://output/equipment_scale_preview.png")
-		assert(result == OK)
+	for direction: Vector2 in [Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
+		for player: Player in _players:
+			player.facing_direction = direction
+			player.queue_redraw()
+		await get_tree().process_frame
+		if DisplayServer.get_name() != "headless":
+			await RenderingServer.frame_post_draw
+			DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://output"))
+			var name: String = "front" if direction == Vector2.DOWN else ("left" if direction == Vector2.LEFT else "right")
+			var result: Error = get_viewport().get_texture().get_image().save_png("res://output/equipment_scale_%s.png" % name)
+			assert(result == OK)
 	print("EQUIPMENT_SCALE_PREVIEW: PASS")
 	get_tree().quit()
