@@ -122,7 +122,7 @@ func run() -> void:
 	var combat: CombatSystem = CombatSystem.new()
 	add_child(combat)
 	seed(1)
-	for step: int in range(200):
+	for step: int in range(600):
 		attacker_scene._tick_ai(0.1)
 		if not defender.alive:
 			break

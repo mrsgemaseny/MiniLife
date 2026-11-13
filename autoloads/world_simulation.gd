@@ -34,8 +34,7 @@ func _ready() -> void:
 	SignalBus.alife_political_map_queried.connect(_on_political_map_queried)
 	SignalBus.fog_batch_updated.connect(_on_political_visibility_changed)
 	SignalBus.chunk_loaded.connect(func(chunk: Vector2i) -> void:
-		if not _settlement_chunks.has(chunk):
-			materializer.loaded_chunks[chunk] = true
+		materializer.loaded_chunks[chunk] = true
 	)
 	SignalBus.chunk_unloaded.connect(materializer.unload_chunk)
 	SignalBus.player_tile_changed.connect(func(tile: Vector2i) -> void: materializer.player_tile = tile)

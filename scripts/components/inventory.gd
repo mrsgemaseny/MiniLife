@@ -51,7 +51,7 @@ func add_item(item_id: String, count: int = 1, durability: float = -1.0) -> int:
 				slots[i] = {
 					"item_id": item_id,
 					"count": can_fit,
-					"durability": durability if durability >= 0 else default_dur
+					"durability": float(durability if durability >= 0 else default_dur)
 				}
 				placed = true
 				break
@@ -60,7 +60,7 @@ func add_item(item_id: String, count: int = 1, durability: float = -1.0) -> int:
 				slots.append({
 					"item_id": item_id,
 					"count": can_fit,
-					"durability": durability if durability >= 0 else default_dur
+					"durability": float(durability if durability >= 0 else default_dur)
 				})
 			else:
 				break

@@ -101,7 +101,7 @@ func run() -> void:
 		var parameters: Dictionary = trade_ui._trade_parameters()
 		var quote: Dictionary = MarketPricing.quote("bread", market, true, parameters.skill, parameters.memory)
 		var row: int = trade_ui._trader_stock.find("bread")
-		check(row >= 0 and trade_ui._stock_list.get_item_text(row).contains("%d silver" % int(quote["price"])), "Visible trade menu displays the service quote")
+		check(row >= 0 and trade_ui._stock_list.get_item_text(row).contains("%d %s" % [int(quote["price"]), trade_ui._currency_label(str(quote["currency"]))]), "Visible trade menu displays the service quote")
 		SignalBus.trade_transaction_requested.emit(vendor, "bread", 1, true)
 		check(player.inventory.count_of("bread") == bread_before + 1 and settlement.food == stock_before - 1.0, "Actual trade signal transfers one delivered item")
 		check(CurrencyPolicy.total_value(player.inventory) == wallet_before - int(quote["silver_value"]), "Actual trade charges the displayed amount")
