@@ -56,7 +56,7 @@ func _capture() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await get_tree().create_timer(0.25).timeout
-	for direction: Vector2 in [Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
+	for direction: Vector2 in [Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT, Vector2.UP]:
 		for player: Player in _players:
 			player.facing_direction = direction
 			player.queue_redraw()
@@ -64,7 +64,7 @@ func _capture() -> void:
 		if DisplayServer.get_name() != "headless":
 			await RenderingServer.frame_post_draw
 			DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://output"))
-			var name: String = "front" if direction == Vector2.DOWN else ("left" if direction == Vector2.LEFT else "right")
+			var name: String = "front" if direction == Vector2.DOWN else ("left" if direction == Vector2.LEFT else ("right" if direction == Vector2.RIGHT else "back"))
 			var result: Error = get_viewport().get_texture().get_image().save_png("res://output/equipment_scale_%s.png" % name)
 			assert(result == OK)
 	print("EQUIPMENT_SCALE_PREVIEW: PASS")

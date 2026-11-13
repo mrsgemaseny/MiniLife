@@ -4,6 +4,9 @@ extends CharacterBody2D
 const PawnArt = preload("res://scripts/entities/pawn_raster_art.gd")
 
 const IconFactory = preload("res://scripts/ui/item_icon_factory.gd")
+const MOVE_ACCELERATION: float = 800.0
+const MOVE_TURN_BRAKE: float = 1100.0
+const MOVE_RELEASE_BRAKE: float = 850.0
 
 @export var stats: StatsComponent
 @export var health_comp: HealthComponent
@@ -22,6 +25,7 @@ var _attack_cooldown: float = 0.0
 var _swing_timer: float = 0.0
 var _swing_duration: float = 0.26
 var _knockback_velocity: Vector2 = Vector2.ZERO
+var _move_velocity: Vector2 = Vector2.ZERO
 var _walk_phase: float = 0.0
 var _walk_blend: float = 0.0
 var _lunge_offset: Vector2 = Vector2.ZERO
@@ -219,18 +223,16 @@ func _physics_process(delta: float) -> void:
 	status_effects.tick(delta)
 
 	if status_effects.is_action_blocked():
+		_move_velocity = Vector2.ZERO
 		velocity = _knockback_velocity
 		move_and_slide()
 		return
 
 	var input_dir: Vector2 = _read_movement_input()
-	if input_dir == Vector2.ZERO and (bool(get_meta("item_action_busy", false)) or bool(get_meta("world_input_blocked", false))):
-		velocity = _knockback_velocity
 	if input_dir == Vector2.ZERO and not bool(get_meta("item_action_busy", false)) and not bool(get_meta("build_mode_active", false)) and not bool(get_meta("world_input_blocked", false)):
 		input_dir = _attack_order_movement()
+	var target_speed: float = 0.0
 	if input_dir.length_squared() > 0.0:
-		if not _is_charging_bow and not is_mining_channel:
-			facing_direction = input_dir.normalized()
 		var speed_mult: float = traits.get_modifier("move_speed")
 		speed_mult *= status_effects.get_speed_multiplier()
 		speed_mult *= inventory.get_encumbrance_speed_multiplier()
@@ -239,39 +241,45 @@ func _physics_process(delta: float) -> void:
 			speed_mult *= 0.52
 		if is_mining_channel:
 			speed_mult *= 0.38
-		var target_vel: Vector2 = input_dir * Config.BASE_MOVE_SPEED * speed_mult + _knockback_velocity
-		velocity = velocity.lerp(target_vel, clampf(delta * 15.0, 0.0, 1.0))
+		target_speed = Config.BASE_MOVE_SPEED * speed_mult
+		if _move_velocity.dot(input_dir) < -1.0:
+			_move_velocity = _move_velocity.move_toward(Vector2.ZERO, MOVE_TURN_BRAKE * delta)
+		else:
+			_move_velocity = _move_velocity.move_toward(input_dir * target_speed, MOVE_ACCELERATION * delta)
+	else:
+		_move_velocity = _move_velocity.move_toward(Vector2.ZERO, MOVE_RELEASE_BRAKE * delta)
+	velocity = _move_velocity + _knockback_velocity
+	if velocity.length_squared() > 1.0:
 		move_and_slide()
+		_move_velocity = velocity - _knockback_velocity
 		GameManager.set_player_world_pos(global_position)
-
-		_walk_phase += velocity.length() * delta * 0.065
-		_walk_blend = move_toward(_walk_blend, 1.0, delta * 8.0)
-		_step_dust_timer -= delta
-		if _step_dust_timer <= 0.0:
-			_step_dust_timer = 0.22
-			SignalBus.footstep_stepped.emit(global_position, "turf")
-			_dust_puffs.append({
-				"pos": global_position + Vector2(randf_range(-4.0, 4.0), 2.0),
-				"vel": -input_dir.normalized() * 14.0 + Vector2(0.0, -8.0),
-				"age": 0.0
-			})
-		needs_redraw = true
-
 		var new_tile: Vector2i = Config.iso_to_world(global_position)
 		if new_tile != current_tile:
 			current_tile = new_tile
 			SignalBus.player_tile_changed.emit(current_tile)
 	else:
-		if velocity.length_squared() > 2.0 or _knockback_velocity.length_squared() > 0.0:
-			velocity = velocity.lerp(_knockback_velocity, clampf(delta * 16.0, 0.0, 1.0))
-			move_and_slide()
-			GameManager.set_player_world_pos(global_position)
-			needs_redraw = true
-		else:
-			velocity = Vector2.ZERO
-		if _walk_blend > 0.0:
-			_walk_blend = move_toward(_walk_blend, 0.0, delta * 10.0)
-			needs_redraw = true
+		velocity = Vector2.ZERO
+		_move_velocity = Vector2.ZERO
+	if _move_velocity.length_squared() > 16.0 and not _is_charging_bow and not is_mining_channel:
+		facing_direction = _move_velocity.normalized()
+	var walk_speed: float = _move_velocity.length()
+	var walk_ratio: float = clampf(walk_speed / maxf(Config.BASE_MOVE_SPEED, target_speed), 0.0, 1.0)
+	_walk_blend = move_toward(_walk_blend, walk_ratio, delta * 7.0)
+	_walk_phase += walk_speed * delta * 0.065
+	if walk_speed > 40.0:
+		_step_dust_timer -= delta
+		if _step_dust_timer <= 0.0:
+			_step_dust_timer = lerpf(0.27, 0.19, walk_ratio)
+			SignalBus.footstep_stepped.emit(global_position, "turf")
+			_dust_puffs.append({
+				"pos": global_position + Vector2(randf_range(-4.0, 4.0), 2.0),
+				"vel": -_move_velocity.normalized() * 14.0 + Vector2(0.0, -8.0),
+				"age": 0.0
+			})
+	else:
+		_step_dust_timer = minf(_step_dust_timer, 0.12)
+	if walk_speed > 0.0 or _walk_blend > 0.0:
+		needs_redraw = true
 
 	if needs_redraw:
 		queue_redraw()
@@ -974,6 +982,9 @@ func _connect_bus_signals() -> void:
 		if id == "furnace":
 			set_meta("world_input_blocked", opened))
 	SignalBus.player_teleport_requested.connect(func(world_pos: Vector2) -> void:
+		_move_velocity = Vector2.ZERO
+		velocity = Vector2.ZERO
+		_walk_blend = 0.0
 		global_position = world_pos
 		current_tile = Config.iso_to_world(global_position)
 		GameManager.set_player_world_pos(global_position)
@@ -1010,6 +1021,9 @@ func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
 
 func reset_to_new_game() -> void:
 	is_dead = false
+	_move_velocity = Vector2.ZERO
+	velocity = Vector2.ZERO
+	_walk_blend = 0.0
 	_attack_cooldown = 0.0
 	_swing_timer = 0.0
 	_is_charging_bow = false
@@ -1142,7 +1156,7 @@ func _draw() -> void:
 	var rot_dir: float = -1.0 if is_facing_left else 1.0
 
 	# Fixed hand and shield anchor positions
-	var hand_x: float = (2.0 if is_facing_left else 10.0) if side else -18.0
+	var hand_x: float = (2.0 if is_facing_left else 10.0) if side else (2.0 if north else -18.0)
 	var hand_pos: Vector2 = body_ofs + Vector2(hand_x, -13.0)
 	if is_facing_left:
 		hand_pos.y += 8.0
@@ -1207,7 +1221,7 @@ func _draw() -> void:
 			elif side:
 				hand_pos.x -= 20.0
 				hand_pos.y -= 12.0 if weapon_id.contains("axe") or weapon_id.contains("club") else 18.0
-			else:
+			elif not north:
 				hand_pos.x -= 16.0
 		if weapon_id.contains("spear") and is_facing_left:
 			hand_pos.y -= 8.0
@@ -1232,7 +1246,7 @@ func _draw() -> void:
 		if is_javelin:
 			hand_pos.y -= 8.0
 			if not side:
-				hand_pos.x += 7.0
+				hand_pos.x += 15.0 if north else 7.0
 			elif is_facing_left:
 				hand_pos += Vector2(-17.0, -8.0)
 			elif not is_facing_left:
@@ -1246,7 +1260,7 @@ func _draw() -> void:
 			if is_facing_left:
 				hand_pos += Vector2(-10.0, -20.0)
 			else:
-				hand_pos.x += 5.0 if side else 20.0
+				hand_pos.x += 5.0 if side else (22.0 if north else 20.0)
 
 		# Rigid equipment follows the whole-body attack pulse.
 		if _is_charging_bow:
@@ -1359,7 +1373,7 @@ func _draw() -> void:
 	if is_facing_left:
 		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
 	if not side or is_facing_left:
-		_draw_held_shield(body_ofs, stride, is_facing_left, -8.0 if is_facing_left else 10.0)
+		_draw_held_shield(body_ofs, stride, is_facing_left, -8.0 if is_facing_left else (-10.0 if north else 10.0))
 
 
 func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, shield_x: float) -> void:
