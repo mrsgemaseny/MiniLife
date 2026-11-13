@@ -247,7 +247,7 @@ static func get_world_sprite(item_id: String) -> ImageTexture:
 		var raw_img: Image = _load_raw_image(sp_path)
 		if raw_img != null:
 			var w_img: Image = raw_img.duplicate() as Image
-			w_img.resize(64, 64, Image.INTERPOLATE_LANCZOS)
+			w_img.resize(96, 96, Image.INTERPOLATE_LANCZOS)
 			var w_tex: ImageTexture = ImageTexture.create_from_image(w_img)
 			_world_sprite_cache[item_id] = w_tex
 			return w_tex

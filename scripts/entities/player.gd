@@ -805,6 +805,8 @@ func use_slot_item(slot_index: int) -> void:
 	elif equipment.can_equip(item_id):
 		# Armor equip: swap in-place so hotbar slots do not shift
 		var prev: Dictionary = equipment.equip(item_id, dur)
+		if prev.is_empty():
+			return
 		var prev_id: String = str(prev.get("item_id", ""))
 		if not prev_id.is_empty():
 			inventory.slots[slot_index] = {
@@ -1141,7 +1143,7 @@ func _draw() -> void:
 	var rot_dir: float = -1.0 if is_facing_left else 1.0
 
 	# Fixed hand and shield anchor positions
-	var hand_x: float = -11.0 if is_facing_left else 11.0
+	var hand_x: float = (-7.0 if is_facing_left else 7.0) if side else 5.0
 	var hand_pos: Vector2 = body_ofs + Vector2(hand_x, -13.0)
 	if _is_charging_bow:
 		hand_pos = body_ofs + Vector2(0, -15) + facing_direction * 13.0
@@ -1173,10 +1175,10 @@ func _draw() -> void:
 			anchor_rect = Rect2(-26.0, -26.0, 52.0, 52.0)
 		elif is_javelin:
 			base_angle = -deg_to_rad(32.0) * rot_dir
-			anchor_rect = Rect2(-11.0, -63.0, 76.0, 76.0)
+			anchor_rect = Rect2(-9.0, -55.0, 68.0, 68.0)
 		elif weapon_id.contains("spear"):
 			base_angle = -deg_to_rad(28.0) * rot_dir
-			anchor_rect = Rect2(-11.0, -65.0, 78.0, 78.0)
+			anchor_rect = Rect2(-9.0, -53.0, 66.0, 66.0)
 		elif weapon_id == "torch":
 			base_angle = -deg_to_rad(28.0) * rot_dir
 			anchor_rect = Rect2(-7.0, -36.0, 44.0, 44.0)
@@ -1185,6 +1187,8 @@ func _draw() -> void:
 			anchor_rect = Rect2(-6.0, -30.0, 36.0, 36.0)
 		else:
 			base_angle = -deg_to_rad(28.0) * rot_dir
+		if (is_javelin or weapon_id.contains("spear")) and not _is_charging_bow:
+			hand_pos.x += 6.0 if is_facing_left else -6.0
 
 		# Rigid equipment follows the whole-body attack pulse.
 		if _is_charging_bow:
@@ -1197,8 +1201,8 @@ func _draw() -> void:
 		# If charging javelin, draw procedural large spear in hand
 		if is_javelin and _is_charging_bow:
 			var j_dir: Vector2 = facing_direction
-			var j_tip: Vector2 = hand_pos + j_dir * 47.0
-			var j_tail: Vector2 = hand_pos - j_dir * 27.0
+			var j_tip: Vector2 = hand_pos + j_dir * 40.0
+			var j_tail: Vector2 = hand_pos - j_dir * 24.0
 			# Ash shaft
 			draw_line(j_tail, j_tip, Color(0.12, 0.09, 0.06), 3.8) # Outline
 			draw_line(j_tail, j_tip - j_dir * 10.0, Color(0.68, 0.50, 0.30), 2.6)
