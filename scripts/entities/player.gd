@@ -1150,7 +1150,7 @@ func _draw() -> void:
 		hand_pos = body_ofs + Vector2(0, -15) + facing_direction * 13.0
 
 	if side and not is_facing_left:
-		_draw_held_shield(body_ofs, stride, is_facing_left, -8.0)
+		_draw_held_shield(body_ofs, stride, is_facing_left, -4.0)
 	if not is_facing_left:
 		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
 
@@ -1179,23 +1179,30 @@ func _draw() -> void:
 			anchor_rect = Rect2(-6.0, -34.0, 44.0, 44.0)
 			hand_pos.y -= 12.0
 		elif weapon_id.contains("spear"):
-			base_angle = -deg_to_rad(28.0) * rot_dir
+			base_angle = deg_to_rad(28.0) * rot_dir
 			anchor_rect = Rect2(-8.0, -47.0, 59.0, 59.0)
 			hand_pos.y += 5.0
 		elif weapon_id == "torch":
-			base_angle = -deg_to_rad(28.0) * rot_dir
+			base_angle = deg_to_rad(28.0) * rot_dir
 			anchor_rect = Rect2(-7.0, -36.0, 44.0, 44.0)
 		elif weapon_id.contains("dagger"):
-			base_angle = -deg_to_rad(28.0) * rot_dir
+			base_angle = deg_to_rad(28.0) * rot_dir
 			anchor_rect = Rect2(-6.0, -30.0, 36.0, 36.0)
 		elif weapon_id.contains("sword") or weapon_id.contains("club"):
-			base_angle = -deg_to_rad(28.0) * rot_dir
+			base_angle = deg_to_rad(28.0) * rot_dir
 			anchor_rect = Rect2(-7.0, -36.0, 44.0, 44.0)
 			hand_pos.y += 4.0
 		else:
-			base_angle = -deg_to_rad(28.0) * rot_dir
+			base_angle = deg_to_rad(28.0) * rot_dir
 		if weapon_id.contains("spear") and not _is_charging_bow and not is_facing_left:
 			hand_pos.x -= 6.0
+		if not is_bow and not is_javelin:
+			if is_facing_left:
+				hand_pos += Vector2(18.0, -8.0)
+			elif side:
+				hand_pos.x -= 30.0
+			else:
+				hand_pos.x -= 16.0
 
 		# Rigid equipment follows the whole-body attack pulse.
 		if _is_charging_bow:
@@ -1203,7 +1210,11 @@ func _draw() -> void:
 		if _is_charging_bow:
 			base_angle += facing_direction.angle() - (PI if is_facing_left else 0.0)
 		var final_rot: float = base_angle
-		var weapon_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left else Vector2(1.0, 1.0)
+		var invert_weapon: bool = not is_bow and not is_javelin
+		var weapon_scale: Vector2 = (Vector2(1.0, 1.0) if is_facing_left else Vector2(-1.0, 1.0)) if invert_weapon else (Vector2(-1.0, 1.0) if is_facing_left else Vector2.ONE)
+		var mirrored_rect: Rect2 = anchor_rect
+		if invert_weapon:
+			mirrored_rect.position.x = -anchor_rect.end.x
 
 		# If charging javelin, draw procedural large spear in hand
 		if is_javelin and _is_charging_bow:
@@ -1222,7 +1233,7 @@ func _draw() -> void:
 			draw_circle(j_tip, 1.6, Color(0.95, 0.96, 1.0))
 		elif weapon_tex != null:
 			draw_set_transform(hand_pos, final_rot, weapon_scale)
-			draw_texture_rect(weapon_tex, anchor_rect, false)
+			draw_texture_rect(weapon_tex, mirrored_rect, false)
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		else:
 			var tip_local: Vector2 = Vector2(cos(final_rot), sin(final_rot)) * (42.0 if is_javelin else 19.0)
@@ -1304,7 +1315,7 @@ func _draw() -> void:
 	if is_facing_left:
 		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
 	if not side or is_facing_left:
-		_draw_held_shield(body_ofs, stride, is_facing_left, -12.0 if is_facing_left else 6.0)
+		_draw_held_shield(body_ofs, stride, is_facing_left, -8.0 if is_facing_left else 10.0)
 
 
 func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, shield_x: float) -> void:
