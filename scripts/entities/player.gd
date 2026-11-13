@@ -1304,7 +1304,7 @@ func _draw() -> void:
 	if is_facing_left:
 		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
 	if not side or is_facing_left:
-		_draw_held_shield(body_ofs, stride, is_facing_left, -16.0 if is_facing_left else 12.0)
+		_draw_held_shield(body_ofs, stride, is_facing_left, -12.0 if is_facing_left else 6.0)
 
 
 func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, shield_x: float) -> void:
@@ -1316,7 +1316,7 @@ func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, s
 		return
 	var is_shield: bool = offhand_id.contains("shield")
 	var shield_size: float = 36.0 if is_shield else 17.0
-	var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -16.0 - stride * 0.25)
+	var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -10.0 - stride * 0.25)
 	var shield_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left else Vector2.ONE
 	draw_set_transform(shield_pos, 0.0, shield_scale)
 	draw_texture_rect(shield_tex, Rect2(Vector2.ONE * -shield_size * 0.5, Vector2.ONE * shield_size), false)
