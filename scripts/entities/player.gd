@@ -1134,7 +1134,7 @@ func _draw() -> void:
 	var side: bool = absf(facing_direction.x) > absf(facing_direction.y)
 	var north: bool = not side and facing_direction.y < 0.0
 	var look_x: float = signf(facing_direction.x) if side else 0.0
-	if not side:
+	if not side or look_x < 0.0:
 		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
 	if is_instance_valid(_locked_target):
 		draw_arc(to_local(_locked_target.global_position), 14.0, 0.0, TAU, 24, Color(0.95, 0.30, 0.20, 0.8), 1.5)
@@ -1144,7 +1144,7 @@ func _draw() -> void:
 	var rot_dir: float = -1.0 if is_facing_left else 1.0
 
 	# Fixed hand and shield anchor positions
-	var hand_x: float = (17.0 if is_facing_left else 7.0) if side else 5.0
+	var hand_x: float = 10.0 if side else 8.0
 	var hand_pos: Vector2 = body_ofs + Vector2(hand_x, -13.0)
 	if _is_charging_bow:
 		hand_pos = body_ofs + Vector2(0, -15) + facing_direction * 13.0
@@ -1175,8 +1175,9 @@ func _draw() -> void:
 			hand_pos.y -= 5.0
 			hand_pos.x += 4.0 if not is_facing_left else -4.0
 		elif is_javelin:
-			base_angle = -deg_to_rad(32.0) * rot_dir
-			anchor_rect = Rect2(-8.0, -48.0, 60.0, 60.0)
+			base_angle = deg_to_rad(135.0)
+			anchor_rect = Rect2(-6.0, -34.0, 44.0, 44.0)
+			hand_pos.y -= 12.0
 		elif weapon_id.contains("spear"):
 			base_angle = -deg_to_rad(28.0) * rot_dir
 			anchor_rect = Rect2(-8.0, -47.0, 59.0, 59.0)
@@ -1193,7 +1194,7 @@ func _draw() -> void:
 			hand_pos.y += 4.0
 		else:
 			base_angle = -deg_to_rad(28.0) * rot_dir
-		if (is_javelin or weapon_id.contains("spear")) and not _is_charging_bow and not is_facing_left:
+		if weapon_id.contains("spear") and not _is_charging_bow and not is_facing_left:
 			hand_pos.x -= 6.0
 
 		# Rigid equipment follows the whole-body attack pulse.
@@ -1301,7 +1302,6 @@ func _draw() -> void:
 				draw_texture_rect(held_tex, Rect2(-7.0, -7.0, 14.0, 14.0), false)
 				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if side and is_facing_left:
-		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
 		_draw_held_shield(body_ofs, stride, is_facing_left, false)
 
 
@@ -1314,8 +1314,8 @@ func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, b
 		return
 	var is_shield: bool = offhand_id.contains("shield")
 	var shield_size: float = 36.0 if is_shield else 17.0
-	var shield_x: float = -11.0 if behind_body else -17.0
-	var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -16.0 - stride * 0.25)
+	var shield_x: float = -8.0 if behind_body else -12.0
+	var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -10.0 - stride * 0.25)
 	var shield_scale: Vector2 = Vector2(-0.72 if behind_body else -1.0, 1.0) if is_facing_left else Vector2(0.72 if behind_body else 1.0, 1.0)
 	var tint: Color = Color(0.75, 0.75, 0.75, 0.55) if behind_body else Color.WHITE
 	draw_set_transform(shield_pos, 0.0, shield_scale)
