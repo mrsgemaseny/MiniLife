@@ -69,8 +69,6 @@ func _apply_npc_def() -> void:
 func _physics_process(delta: float) -> void:
 	if GameManager.is_paused():
 		return
-	if stats.stamina < stats.max_stamina:
-		stats.modify("stamina", Config.STAMINA_REGEN_PER_SEC * delta)
 	_stagger_cooldown = maxf(0.0, _stagger_cooldown - delta)
 	if _stagger_remaining > 0.0:
 		_stagger_remaining = maxf(0.0, _stagger_remaining - delta)
@@ -103,6 +101,8 @@ func frighten_for(seconds: float) -> void:
 	_witness_fear = maxf(_witness_fear, seconds)
 
 func _tick_ai(delta: float) -> void:
+	if stats.stamina < stats.max_stamina:
+		stats.modify("stamina", Config.STAMINA_REGEN_PER_SEC * delta)
 	if has_meta("global_agent_id"):
 		if AlifeCombatBehavior.tick(self, delta):
 			_body_notice_time = 0.0
@@ -199,6 +199,8 @@ func is_alive() -> bool:
 
 func get_combat_weapon_id() -> String:
 	var tier: int = int(get_meta("alife_equipment_tier", 0))
+	if tier >= 4:
+		return "steel_sword"
 	if tier >= 3:
 		return "iron_sword"
 	if tier >= 2:
