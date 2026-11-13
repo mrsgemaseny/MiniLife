@@ -1156,7 +1156,7 @@ func _draw() -> void:
 	var rot_dir: float = -1.0 if is_facing_left else 1.0
 
 	# Fixed hand and shield anchor positions
-	var hand_x: float = (2.0 if is_facing_left else 10.0) if side else (2.0 if north else -18.0)
+	var hand_x: float = (2.0 if is_facing_left else 10.0) if side else -18.0
 	var hand_pos: Vector2 = body_ofs + Vector2(hand_x, -13.0)
 	if is_facing_left:
 		hand_pos.y += 8.0
@@ -1221,7 +1221,7 @@ func _draw() -> void:
 			elif side:
 				hand_pos.x -= 20.0
 				hand_pos.y -= 12.0 if weapon_id.contains("axe") or weapon_id.contains("club") else 18.0
-			elif not north:
+			else:
 				hand_pos.x -= 16.0
 		if weapon_id.contains("spear") and is_facing_left:
 			hand_pos.y -= 8.0
@@ -1246,7 +1246,7 @@ func _draw() -> void:
 		if is_javelin:
 			hand_pos.y -= 8.0
 			if not side:
-				hand_pos.x += 15.0 if north else 7.0
+				hand_pos.x += 7.0
 			elif is_facing_left:
 				hand_pos += Vector2(-17.0, -8.0)
 			elif not is_facing_left:
@@ -1260,7 +1260,7 @@ func _draw() -> void:
 			if is_facing_left:
 				hand_pos += Vector2(-10.0, -20.0)
 			else:
-				hand_pos.x += 5.0 if side else (22.0 if north else 20.0)
+				hand_pos.x += 5.0 if side else 20.0
 
 		# Rigid equipment follows the whole-body attack pulse.
 		if _is_charging_bow:
@@ -1273,6 +1273,10 @@ func _draw() -> void:
 		var mirrored_rect: Rect2 = anchor_rect
 		if invert_weapon:
 			mirrored_rect.position.x = -anchor_rect.end.x
+		if north and not _is_charging_bow:
+			hand_pos.x = body_ofs.x * 2.0 - hand_pos.x
+			final_rot = -final_rot
+			weapon_scale.x = -weapon_scale.x
 
 		# If charging javelin, draw procedural large spear in hand
 		if is_javelin and _is_charging_bow:
@@ -1386,7 +1390,7 @@ func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, s
 	var is_shield: bool = offhand_id.contains("shield")
 	var shield_size: float = 36.0 if is_shield else 17.0
 	var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -10.0 - stride * 0.25)
-	var mirror_shield: bool = (is_facing_left and not offhand_id.contains("iron")) or absf(facing_direction.x) <= absf(facing_direction.y)
+	var mirror_shield: bool = (is_facing_left and not offhand_id.contains("iron")) or (absf(facing_direction.x) <= absf(facing_direction.y) and facing_direction.y >= 0.0)
 	var shield_scale: Vector2 = Vector2(-1.0, 1.0) if mirror_shield else Vector2.ONE
 	draw_set_transform(shield_pos, 0.0, shield_scale)
 	draw_texture_rect(shield_tex, Rect2(Vector2.ONE * -shield_size * 0.5, Vector2.ONE * shield_size), false)
