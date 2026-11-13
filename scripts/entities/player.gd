@@ -1142,13 +1142,17 @@ func _draw() -> void:
 	var rot_dir: float = -1.0 if is_facing_left else 1.0
 
 	# Fixed hand and shield anchor positions
-	var hand_x: float = 10.0 if side else 8.0
+	var hand_x: float = (2.0 if is_facing_left else 10.0) if side else -18.0
 	var hand_pos: Vector2 = body_ofs + Vector2(hand_x, -13.0)
+	if is_facing_left:
+		hand_pos.y += 8.0
 	if _is_charging_bow:
 		hand_pos = body_ofs + Vector2(0, -15) + facing_direction * 13.0
 
-	_draw_held_shield(body_ofs, stride, is_facing_left)
-	PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
+	if side and not is_facing_left:
+		_draw_held_shield(body_ofs, stride, is_facing_left, -8.0)
+	if not is_facing_left:
+		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
 
 	var weapon_id: String = equipment.get_item_id("weapon") if equipment != null else ""
 	if not weapon_id.is_empty():
@@ -1297,9 +1301,13 @@ func _draw() -> void:
 				draw_set_transform(held_pos, held_rot, held_scale)
 				draw_texture_rect(held_tex, Rect2(-7.0, -7.0, 14.0, 14.0), false)
 				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if is_facing_left:
+		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
+	if not side or is_facing_left:
+		_draw_held_shield(body_ofs, stride, is_facing_left, -16.0 if is_facing_left else 12.0)
 
 
-func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool) -> void:
+func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, shield_x: float) -> void:
 	var offhand_id: String = equipment.get_item_id("offhand") if equipment != null else ""
 	if offhand_id.is_empty():
 		return
@@ -1308,7 +1316,7 @@ func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool) -
 		return
 	var is_shield: bool = offhand_id.contains("shield")
 	var shield_size: float = 36.0 if is_shield else 17.0
-	var shield_pos: Vector2 = body_ofs + Vector2(-8.0, -16.0 - stride * 0.25)
+	var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -16.0 - stride * 0.25)
 	var shield_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left else Vector2.ONE
 	draw_set_transform(shield_pos, 0.0, shield_scale)
 	draw_texture_rect(shield_tex, Rect2(Vector2.ONE * -shield_size * 0.5, Vector2.ONE * shield_size), false)
