@@ -1014,37 +1014,33 @@ func reset_to_new_game() -> void:
 	_bow_charge_time = 0.0
 	_knockback_velocity = Vector2.ZERO
 	_current_mining_target = null
+	_locked_target = null
+	_order_path.clear()
+	_order_path_goal = Vector2i(-99999, -99999)
+	if skills != null:
+		skills.from_dict({"combat_schema_version": SkillsComponent.COMBAT_SCHEMA_VERSION})
+	if traits != null:
+		traits.from_dict({})
 	if inventory != null:
-		inventory.slots.clear()
-		inventory.gold = 0
+		inventory.from_dict({})
 		_grant_starter_kit()
 		SignalBus.inventory_changed.emit(self, inventory.snapshot())
 		SignalBus.player_gold_changed.emit(0)
 	if equipment != null:
-		equipment.unequip("weapon")
-		equipment.unequip("chest")
-		equipment.unequip("clothing")
-		equipment.unequip("legs")
-		equipment.unequip("head")
-		equipment.unequip("offhand")
+		equipment.from_dict({})
 	sync_weapon_from_active_slot()
 	if stats != null:
-		stats.health = stats.max_health
-		stats.hunger = stats.max_hunger
-		stats.stamina = stats.max_stamina
-		stats.blood = stats.max_blood
+		stats.from_dict({})
 		SignalBus.player_stat_changed.emit("health", stats.health, stats.max_health)
 		SignalBus.player_stat_changed.emit("hunger", stats.hunger, stats.max_hunger)
 		SignalBus.player_stat_changed.emit("stamina", stats.stamina, stats.max_stamina)
 		SignalBus.player_stat_changed.emit("blood", stats.blood, stats.max_blood)
 	if health_comp != null:
-		health_comp.current = health_comp.maximum
+		health_comp.from_dict({})
 	if status_effects != null:
 		status_effects.clear_all()
 	if needs != null:
-		needs.rest = 100.0
-		needs.comfort = 100.0
-		needs.morale = 100.0
+		needs.from_dict({})
 	queue_redraw()
 
 func get_save_data() -> Dictionary:
@@ -1154,11 +1150,13 @@ func _draw() -> void:
 	if not offhand_id.is_empty():
 		var shield_tex: ImageTexture = IconFactory.get_world_sprite(offhand_id)
 		if shield_tex != null:
-			var shield_x: float = 7.0 if is_facing_left else -7.0
-			var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -13.0 - stride * 0.25)
+			var is_shield: bool = offhand_id.contains("shield")
+			var shield_size: float = 36.0 if is_shield else 17.0
+			var shield_x: float = (17.0 if is_facing_left else -17.0) if is_shield else (7.0 if is_facing_left else -7.0)
+			var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -16.0 - stride * 0.25)
 			var shield_scale: Vector2 = Vector2(-1.0, 1.0) if is_facing_left else Vector2(1.0, 1.0)
 			draw_set_transform(shield_pos, 0.0, shield_scale)
-			draw_texture_rect(shield_tex, Rect2(-8.5, -8.5, 17.0, 17.0), false)
+			draw_texture_rect(shield_tex, Rect2(Vector2.ONE * -shield_size * 0.5, Vector2.ONE * shield_size), false)
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	var weapon_id: String = equipment.get_item_id("weapon") if equipment != null else ""
@@ -1167,23 +1165,26 @@ func _draw() -> void:
 		var is_bow: bool = weapon_id.find("bow") != -1 or weapon_id.find("crossbow") != -1
 		var is_javelin: bool = (weapon_id == "javelins" or weapon_id == "javelin")
 		var base_angle: float = 0.0
-		var anchor_rect: Rect2 = Rect2(-6.0, -18.0, 24.0, 24.0)
+		# The grip sits at the hand; the blade extends above the character.
+		var anchor_rect: Rect2 = Rect2(-8.0, -43.0, 52.0, 52.0)
 
 		if is_bow:
-			# Bow is held centered in the hand, standing upright facing outward
 			base_angle = deg_to_rad(135.0) * rot_dir
-			anchor_rect = Rect2(-12.0, -12.0, 24.0, 24.0)
+			anchor_rect = Rect2(-26.0, -26.0, 52.0, 52.0)
 		elif is_javelin:
-			# Javelin is a long throwing spear (nearly 4x arrow size)
 			base_angle = -deg_to_rad(32.0) * rot_dir
-			anchor_rect = Rect2(-10.0, -42.0, 52.0, 52.0)
+			anchor_rect = Rect2(-11.0, -63.0, 76.0, 76.0)
+		elif weapon_id.contains("spear"):
+			base_angle = -deg_to_rad(28.0) * rot_dir
+			anchor_rect = Rect2(-11.0, -65.0, 78.0, 78.0)
 		elif weapon_id == "torch":
 			base_angle = -deg_to_rad(28.0) * rot_dir
-			anchor_rect = Rect2(-8.0, -24.0, 30.0, 30.0)
-		else:
-			# Melee weapon (sword, axe, hammer, spear, dagger) idle angle ~70 deg upright
+			anchor_rect = Rect2(-7.0, -36.0, 44.0, 44.0)
+		elif weapon_id.contains("dagger"):
 			base_angle = -deg_to_rad(28.0) * rot_dir
-			anchor_rect = Rect2(-6.0, -18.0, 24.0, 24.0)
+			anchor_rect = Rect2(-6.0, -30.0, 36.0, 36.0)
+		else:
+			base_angle = -deg_to_rad(28.0) * rot_dir
 
 		# Rigid equipment follows the whole-body attack pulse.
 		if _is_charging_bow:
@@ -1196,8 +1197,8 @@ func _draw() -> void:
 		# If charging javelin, draw procedural large spear in hand
 		if is_javelin and _is_charging_bow:
 			var j_dir: Vector2 = facing_direction
-			var j_tip: Vector2 = hand_pos + j_dir * 36.0
-			var j_tail: Vector2 = hand_pos - j_dir * 20.0
+			var j_tip: Vector2 = hand_pos + j_dir * 47.0
+			var j_tail: Vector2 = hand_pos - j_dir * 27.0
 			# Ash shaft
 			draw_line(j_tail, j_tip, Color(0.12, 0.09, 0.06), 3.8) # Outline
 			draw_line(j_tail, j_tip - j_dir * 10.0, Color(0.68, 0.50, 0.30), 2.6)

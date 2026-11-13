@@ -34,10 +34,14 @@ static func draw_pawn(canvas: Node2D, offset: Vector2, facing: Vector2, equipmen
 			if not equipment.get_item_id(slot).is_empty():
 				starter = false
 				break
-	if steel_set or starter:
-		# Each view shares the same baseline and scale within the atlas.
+	if starter:
+		var starter_source: Rect2 = BASE_REGIONS[view]
+		var starter_size: Vector2 = starter_source.size * (48.0 / starter_source.size.y)
+		canvas.draw_texture_rect_region(BASE, Rect2(offset + Vector2(-starter_size.x * 0.5, -starter_size.y), starter_size), starter_source)
+		return
+	if steel_set:
 		var cell_width: float = MINIMAL.get_width() / 4.0
-		var source: Rect2 = Rect2(view * cell_width, 450.0 if steel_set else 10.0, cell_width, 423.0)
+		var source: Rect2 = Rect2(view * cell_width, 450.0, cell_width, 423.0)
 		var size: Vector2 = source.size * (48.0 / source.size.y)
 		var destination: Rect2 = Rect2(offset + Vector2(-size.x * 0.5, -size.y), size)
 		canvas.draw_texture_rect_region(MINIMAL, destination, source)

@@ -168,5 +168,11 @@ func _run() -> void:
 	wolf.enemy_id = "wolf"
 	add_child(wolf)
 	assert(wolf._appearance_gear.get_armor_layers().is_empty(), "Wildlife must not spawn in iron armor")
+	assert(wolf.attack_damage > 0.0 and wolf.aggro_range > 0.0)
+	wolf.global_position = player.global_position + Vector2(20.0, 0.0)
+	wolf._tick_fsm(0.1)
+	wolf._tick_fsm(0.1)
+	wolf._tick_fsm(0.1)
+	assert(wolf._attack_count == 1, "Wolf must attack the player at close range")
 	print("COMBAT_OVERHAUL_PASS")
 	get_tree().quit()

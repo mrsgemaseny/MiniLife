@@ -127,10 +127,6 @@ func _apply_enemy_definition() -> void:
 	attack_cooldown = float(_enemy_def.get("attack_cooldown", attack_cooldown))
 	ai_profile = str(_enemy_def.get("ai_profile", ai_profile))
 
-	# Wolves are non-aggressive fauna: attacks and damage completely disabled
-	if enemy_id == "wolf" or enemy_id.find("wolf") != -1:
-		attack_damage = 0.0
-		aggro_range = 0.0
 
 func _physics_process(delta: float) -> void:
 	if is_permanently_dead or GameManager.is_paused():
@@ -172,34 +168,12 @@ func _tick_fsm(delta: float) -> void:
 			if sim_tier == SimulationBubble.Tier.FULL:
 				move_and_slide()
 
-			# Wolves never chase or attack player; they evade if approached closely
-			if enemy_id == "wolf" or enemy_id.find("wolf") != -1:
-				if target_entity != null and global_position.distance_to(target_entity.global_position) <= 55.0:
-					velocity = (global_position - target_entity.global_position).normalized() * (move_speed * 0.70)
-					if sim_tier == SimulationBubble.Tier.FULL:
-						move_and_slide()
-				return
-
 			if target_entity != null and global_position.distance_to(target_entity.global_position) <= aggro_range:
 				current_state = State.CHASE
 		State.CHASE:
 			if target_entity == null:
 				current_state = State.PATROL
 				return
-
-			# Wolf Torch Fear: Wolves flee from active torches and light sources
-			if enemy_id == "wolf" and target_entity.is_in_group("player"):
-				var has_torch: bool = false
-				if "equipment" in target_entity and target_entity.get("equipment") != null:
-					var peq: EquipmentComponent = target_entity.get("equipment") as EquipmentComponent
-					if peq != null and (peq.get_item_id("weapon") == "torch" or peq.get_item_id("offhand") == "torch"):
-						has_torch = true
-				if has_torch:
-					# Flee outward
-					velocity = (global_position - target_entity.global_position).normalized() * (move_speed * 0.8)
-					if sim_tier == SimulationBubble.Tier.FULL:
-						move_and_slide()
-					return
 
 			var dist: float = global_position.distance_to(target_entity.global_position)
 			if dist > aggro_range * 1.6:
@@ -263,7 +237,7 @@ func _tick_fsm(delta: float) -> void:
 					global_position += velocity * delta
 		State.ATTACK:
 			velocity = Vector2.ZERO
-			if target_entity == null or enemy_id == "wolf" or enemy_id.find("wolf") != -1 or attack_damage <= 0.0:
+			if target_entity == null or attack_damage <= 0.0:
 				current_state = State.PATROL
 				return
 			var dist: float = global_position.distance_to(target_entity.global_position)
@@ -328,7 +302,7 @@ func apply_status(effect: String, duration: float, _intensity: float) -> void:
 
 
 func on_combat_contact(source: Node) -> void:
-	if source is Node2D and enemy_id.find("wolf") == -1:
+	if source is Node2D:
 		target_entity = source as Node2D
 		current_state = State.CHASE
 
@@ -337,14 +311,8 @@ func take_damage(amount: float, _damage_type: String = "physical", source: Node 
 		return
 	stats.modify("health", -amount)
 	if source is Node2D:
-		if enemy_id == "wolf" or enemy_id.find("wolf") != -1:
-			# Wolves flee in panic when hit rather than attacking back
-			current_state = State.PATROL
-			velocity = (global_position - (source as Node2D).global_position).normalized() * move_speed
-			move_and_slide()
-		else:
-			target_entity = source as Node2D
-			current_state = State.CHASE
+		target_entity = source as Node2D
+		current_state = State.CHASE
 	queue_redraw()
 	if stats.health <= 0.0:
 		_handle_death(source)

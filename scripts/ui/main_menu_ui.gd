@@ -285,13 +285,13 @@ func _on_continue_clicked() -> void:
 			SignalBus.notification_posted.emit("Кампания продолжена: " + str(saves[0].get("name", newest_slot)))
 			return
 	# Fallback if no save exists
-	GameManager.start_new_game(Config.DEFAULT_WORLD_SEED, Config.DEFAULT_SAVE_SLOT)
+	GameManager.start_new_game(Config.DEFAULT_WORLD_SEED)
 	close_menu()
 	SignalBus.notification_posted.emit("Начата новая игра выживания.")
 
 
 func _on_new_game_clicked() -> void:
-	GameManager.start_new_game(Config.DEFAULT_WORLD_SEED, Config.DEFAULT_SAVE_SLOT)
+	GameManager.start_new_game(Config.DEFAULT_WORLD_SEED)
 	close_menu()
 	SignalBus.notification_posted.emit("Новый мир создан. Удачи в выживании!")
 
