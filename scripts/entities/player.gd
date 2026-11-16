@@ -1274,7 +1274,7 @@ func _draw() -> void:
 		if invert_weapon:
 			mirrored_rect.position.x = -anchor_rect.end.x
 		if north and not _is_charging_bow:
-			hand_pos.x = body_ofs.x * 2.0 - hand_pos.x
+			hand_pos.x = body_ofs.x * 2.0 - hand_pos.x - 4.0
 			final_rot = -final_rot
 			weapon_scale.x = -weapon_scale.x
 
