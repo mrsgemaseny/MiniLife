@@ -1384,10 +1384,12 @@ func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, s
 	var offhand_id: String = equipment.get_item_id("offhand") if equipment != null else ""
 	if offhand_id.is_empty():
 		return
-	var shield_tex: ImageTexture = IconFactory.get_world_sprite(offhand_id)
+	var is_shield: bool = offhand_id.contains("shield")
+	var has_back_sprite: bool = offhand_id == "wooden_shield" or offhand_id == "iron_shield"
+	var sprite_id: String = offhand_id + "_back" if has_back_sprite and facing_direction.y < 0.0 and absf(facing_direction.y) >= absf(facing_direction.x) else offhand_id
+	var shield_tex: ImageTexture = IconFactory.get_world_sprite(sprite_id)
 	if shield_tex == null:
 		return
-	var is_shield: bool = offhand_id.contains("shield")
 	var shield_size: float = 36.0 if is_shield else 17.0
 	var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -10.0 - stride * 0.25)
 	var mirror_shield: bool = (is_facing_left and not offhand_id.contains("iron")) or (absf(facing_direction.x) <= absf(facing_direction.y) and facing_direction.y >= 0.0)
