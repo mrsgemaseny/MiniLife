@@ -1374,10 +1374,12 @@ func _draw() -> void:
 				draw_set_transform(held_pos, held_rot, held_scale)
 				draw_texture_rect(held_tex, Rect2(-7.0, -7.0, 14.0, 14.0), false)
 				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if north:
+		_draw_held_shield(body_ofs, stride, false, -10.0)
 	if is_facing_left or north:
 		PawnArt.draw_pawn(self, body_ofs, facing_direction, equipment)
-	if not side or is_facing_left:
-		_draw_held_shield(body_ofs, stride, is_facing_left, -8.0 if is_facing_left else (-10.0 if north else 10.0))
+	if (not side and not north) or is_facing_left:
+		_draw_held_shield(body_ofs, stride, is_facing_left, -8.0 if is_facing_left else 10.0)
 
 
 func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, shield_x: float) -> void:
