@@ -57,4 +57,7 @@ static func draw_pawn(canvas: Node2D, offset: Vector2, facing: Vector2, equipmen
 	if equipment != null and WearableArt.texture_for(head) != null:
 		WearableArt.draw_slot(canvas,offset,facing,equipment,"head")
 	else:
-		canvas.draw_texture_rect_region(BASE,Rect2(offset+Vector2(-10,-45),Vector2(20,21)),Rect2(region.position,Vector2(region.size.x,262)))
+		var head_scale: float = 48.0 / region.size.y
+		var head_size: Vector2 = Vector2(region.size.x, 262.0) * head_scale
+		var head_rect: Rect2 = Rect2(offset + Vector2(-head_size.x * 0.5, -48.0), head_size)
+		canvas.draw_texture_rect_region(BASE, head_rect, Rect2(region.position, Vector2(region.size.x, 262.0)))

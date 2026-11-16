@@ -13,6 +13,10 @@ const CASES: Array[Dictionary] = [
 	{"weapon": "wooden_club"},
 	{"weapon": "hunting_bow"},
 	{"weapon": "crossbow"},
+	{"label": "no armor"},
+	{"label": "clothing", "clothing": "gambeson"},
+	{"label": "chest armor", "chest": "leather_lamellar"},
+	{"label": "leg armor", "legs": "leather_greaves"},
 ]
 
 var _labels: Array[Dictionary] = []
@@ -34,16 +38,22 @@ func _ready() -> void:
 		player.get_node("Camera2D").enabled = false
 		player.set_physics_process(false)
 		player.set_process(false)
-		player.position = Vector2(415 + (index % 4) * 150, 265 + (index / 4) * 120)
+		player.position = Vector2(415 + (index % 4) * 150, 245 + (index / 4) * 90)
 		player.facing_direction = Vector2.DOWN
-		player.inventory.set_slot(0, {"item_id": entry["weapon"], "count": 1, "durability": 90})
+		if entry.has("weapon"):
+			player.inventory.set_slot(0, {"item_id": entry["weapon"], "count": 1, "durability": 90})
+		else:
+			player.inventory.set_slot(0, {})
 		player.active_hotbar_index = 0
 		player.sync_weapon_from_active_slot()
 		if entry.has("shield"):
 			player.equipment.equip(str(entry["shield"]), 90, "offhand")
+		for slot: String in ["clothing", "chest", "legs"]:
+			if entry.has(slot):
+				player.equipment.equip(str(entry[slot]), 90, slot)
 		player.queue_redraw()
 		_players.append(player)
-		_labels.append({"position": player.position + Vector2(-52, 28), "text": str(entry["weapon"]) + (" + shield" if entry.has("shield") else "")})
+		_labels.append({"position": player.position + Vector2(-52, 28), "text": str(entry.get("label", entry.get("weapon", ""))) + (" + shield" if entry.has("shield") else "")})
 	camera.make_current()
 	queue_redraw()
 	call_deferred("_capture")
