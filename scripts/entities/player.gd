@@ -1394,7 +1394,7 @@ func _draw_held_shield(body_ofs: Vector2, stride: float, is_facing_left: bool, s
 		return
 	var shield_size: float = 36.0 if is_shield else 17.0
 	var shield_pos: Vector2 = body_ofs + Vector2(shield_x, -10.0 - stride * 0.25)
-	var mirror_shield: bool = (is_facing_left and not offhand_id.contains("iron")) or (absf(facing_direction.x) <= absf(facing_direction.y) and facing_direction.y >= 0.0)
+	var mirror_shield: bool = (is_facing_left and not offhand_id.contains("iron")) or (absf(facing_direction.x) <= absf(facing_direction.y) and (facing_direction.y >= 0.0 or offhand_id == "iron_shield"))
 	var shield_scale: Vector2 = Vector2(-1.0, 1.0) if mirror_shield else Vector2.ONE
 	draw_set_transform(shield_pos, 0.0, shield_scale)
 	draw_texture_rect(shield_tex, Rect2(Vector2.ONE * -shield_size * 0.5, Vector2.ONE * shield_size), false)
