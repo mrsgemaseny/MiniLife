@@ -42,7 +42,7 @@ func run() -> void:
 	for agent: GlobalAgent in WorldSimulation.world.agents.by_settlement(settlement.settlement_id):
 		if WorldSimulation.world.agents.materialized.has(agent.agent_id):
 			live.append(agent.agent_id)
-	check(not live.is_empty() and live.size() <= AgentMaterializer.MAX_ACTIVE_RESIDENTS, "City residents materialize within the active NPC budget")
+	check(live.is_empty(), "Settlement residents remain on the global map when local settlements are absent")
 	var seen: Dictionary = {}
 	for npc: Node in get_tree().get_nodes_in_group("npc"):
 		if npc.has_meta("global_agent_id"):
@@ -50,11 +50,12 @@ func run() -> void:
 			check(not seen.has(id), "No duplicate agent scenes")
 			seen[id] = true
 	var vendor: NPCBase = null
+	WorldSimulation.set_process(false)
 	for agent: GlobalAgent in WorldSimulation.world.agents.by_settlement(settlement.settlement_id):
-		if agent.role == "trader" and agent.caravan_id.is_empty() and WorldSimulation.world.agents.materialized.has(agent.agent_id):
-			vendor = WorldSimulation.world.agents.materialized[agent.agent_id] as NPCBase
+		if agent.role == "trader" and agent.caravan_id.is_empty():
+			vendor = WorldSimulation.materializer.materialize(agent)
 			break
-	check(vendor != null, "City has a local vendor not assigned to an expedition")
+	check(vendor != null, "Trade test can materialize a vendor explicitly")
 	var donor: AlifeSettlement = null
 	for neighbor: AlifeSettlement in WorldSimulation.world.settlements.get_connected(settlement.settlement_id):
 		if not WorldSimulation.world.travel.path(WorldSimulation.world.world_seed, neighbor.tile, settlement.tile + Vector2i(2, 2)).is_empty():
@@ -106,6 +107,12 @@ func run() -> void:
 		check(player.inventory.count_of("bread") == bread_before + 1 and settlement.food == stock_before - 1.0, "Actual trade signal transfers one delivered item")
 		check(CurrencyPolicy.total_value(player.inventory) == wallet_before - int(quote["silver_value"]), "Actual trade charges the displayed amount")
 		trade_ui.close_trade()
+	for agent: GlobalAgent in WorldSimulation.world.agents.by_settlement(settlement.settlement_id):
+		if Config.tile_to_chunk(agent.tile) == chunk and agent.caravan_id.is_empty():
+			var fixture: NPCBase = WorldSimulation.materializer.materialize(agent)
+			if fixture != null:
+				live.append(agent.agent_id)
+				break
 	var local_residents: Array[String] = []
 	for id: String in live:
 		var reference: Variant = WorldSimulation.world.agents.materialized.get(id)

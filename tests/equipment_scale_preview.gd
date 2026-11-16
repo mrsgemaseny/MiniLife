@@ -17,6 +17,10 @@ const CASES: Array[Dictionary] = [
 	{"label": "clothing", "clothing": "gambeson"},
 	{"label": "chest armor", "chest": "leather_lamellar"},
 	{"label": "leg armor", "legs": "leather_greaves"},
+	{"label": "leather helmet", "head": "leather_helmet"},
+	{"label": "iron helmet", "head": "iron_helmet"},
+	{"label": "bronze helmet", "head": "bronze_helmet"},
+	{"label": "steel helmet", "head": "steel_helmet"},
 ]
 
 var _labels: Array[Dictionary] = []
@@ -28,7 +32,7 @@ func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color("454d3c"))
 	var camera := Camera2D.new()
 	camera.position = Vector2(640, 360)
-	camera.zoom = Vector2.ONE * 1.8
+	camera.zoom = Vector2.ONE * 1.6
 	add_child(camera)
 	camera.make_current()
 	for index: int in range(CASES.size()):
@@ -38,7 +42,7 @@ func _ready() -> void:
 		player.get_node("Camera2D").enabled = false
 		player.set_physics_process(false)
 		player.set_process(false)
-		player.position = Vector2(415 + (index % 4) * 150, 245 + (index / 4) * 90)
+		player.position = Vector2(415 + (index % 4) * 150, 225 + (index / 4) * 80)
 		player.facing_direction = Vector2.DOWN
 		if entry.has("weapon"):
 			player.inventory.set_slot(0, {"item_id": entry["weapon"], "count": 1, "durability": 90})
@@ -48,7 +52,7 @@ func _ready() -> void:
 		player.sync_weapon_from_active_slot()
 		if entry.has("shield"):
 			player.equipment.equip(str(entry["shield"]), 90, "offhand")
-		for slot: String in ["clothing", "chest", "legs"]:
+		for slot: String in ["clothing", "chest", "legs", "head"]:
 			if entry.has(slot):
 				player.equipment.equip(str(entry[slot]), 90, slot)
 		player.queue_redraw()

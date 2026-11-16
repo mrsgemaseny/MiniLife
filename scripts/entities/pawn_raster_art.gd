@@ -54,10 +54,19 @@ static func draw_pawn(canvas: Node2D, offset: Vector2, facing: Vector2, equipmen
 	if equipment != null:
 		for slot: String in ["legs", "feet", "clothing", "chest"]:
 			WearableArt.draw_slot(canvas,offset,facing,equipment,slot)
-	if equipment != null and WearableArt.texture_for(head) != null:
-		WearableArt.draw_slot(canvas,offset,facing,equipment,"head")
-	else:
-		var head_scale: float = 48.0 / region.size.y
-		var head_size: Vector2 = Vector2(region.size.x, 262.0) * head_scale
-		var head_rect: Rect2 = Rect2(offset + Vector2(-head_size.x * 0.5, -48.0), head_size)
-		canvas.draw_texture_rect_region(BASE, head_rect, Rect2(region.position, Vector2(region.size.x, 262.0)))
+	var head_scale: float = 48.0 / region.size.y
+	var head_size: Vector2 = Vector2(region.size.x, 262.0) * head_scale
+	var head_rect: Rect2 = Rect2(offset + Vector2(-head_size.x * 0.5, -48.0), head_size)
+	canvas.draw_texture_rect_region(BASE, head_rect, Rect2(region.position, Vector2(region.size.x, 262.0)))
+	var head_texture: Texture2D = WearableArt.texture_for(head) if equipment != null else null
+	if head_texture != null:
+		if head == "leather_helmet" or head == "iron_helmet" or head == "bronze_helmet":
+			var head_source: Rect2 = WearableArt.region_for(head, facing)
+			var helmet_rect: Rect2 = WearableArt.destination("head", facing)
+			helmet_rect.position += offset
+			if view != 2:
+				head_source.size.y *= 0.53
+				helmet_rect.size.y *= 0.53
+			canvas.draw_texture_rect_region(head_texture, helmet_rect, head_source)
+		else:
+			WearableArt.draw_slot(canvas, offset, facing, equipment, "head")

@@ -43,7 +43,7 @@ func update(delta: float) -> void:
 				world.agents.materialized.erase(id)
 				continue
 			var tile: Vector2i = Config.iso_to_world(entity.global_position)
-			if agent == null or not agent.alive or not loaded_chunks.has(Config.tile_to_chunk(tile)) or Config.tile_distance(player_tile, tile) > DEMATERIALIZE_RADIUS:
+			if agent == null or not agent.alive or not _should_auto_materialize(agent) or not loaded_chunks.has(Config.tile_to_chunk(tile)) or Config.tile_distance(player_tile, tile) > DEMATERIALIZE_RADIUS:
 				dematerialize(id)
 				continue
 			agent.tile = tile
@@ -63,7 +63,7 @@ func update(delta: float) -> void:
 			SignalBus.world_tile_queried.emit(tile, tile_info)
 			entity.visible = true
 		for agent: GlobalAgent in world.agents.get_all_global():
-			if loaded_chunks.has(Config.tile_to_chunk(agent.tile)) and Config.tile_distance(player_tile, agent.tile) <= MATERIALIZE_RADIUS:
+			if _should_auto_materialize(agent) and loaded_chunks.has(Config.tile_to_chunk(agent.tile)) and Config.tile_distance(player_tile, agent.tile) <= MATERIALIZE_RADIUS:
 				_candidates.append(agent.agent_id)
 	var created: int = 0
 	while not _candidates.is_empty() and created < CREATIONS_PER_FRAME and world.agents.materialized.size() < MAX_ACTIVE_RESIDENTS:
@@ -72,6 +72,11 @@ func update(delta: float) -> void:
 		if agent != null and agent.alive and loaded_chunks.has(Config.tile_to_chunk(agent.tile)):
 			materialize(agent)
 			created += 1
+
+func _should_auto_materialize(agent: GlobalAgent) -> bool:
+	if agent.settlement_id.is_empty():
+		return true
+	return not agent.caravan_id.is_empty() or not agent.deployment_id.is_empty() or not agent.ambush_route_id.is_empty() or world.narrative.get("refugee_travelers", {}).has(agent.agent_id)
 
 func materialize(agent: GlobalAgent) -> NPCBase:
 	if world == null or not agent.alive or not is_instance_valid(parent):
