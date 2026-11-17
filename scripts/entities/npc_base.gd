@@ -435,7 +435,7 @@ func _draw() -> void:
 		var toward: Vector2 = (Config.world_to_iso(_routine_fixture) - global_position).normalized()
 		var pivot: Vector2 = toward * 12.0 + Vector2(0, -10)
 		draw_set_transform(pivot)
-		NpcModelArt.draw_lying(self, NpcModelArt.texture(model), NpcModelArt.pivot(model), NpcModelArt.BODY_SOURCE, NpcModelArt.BODY_HEIGHT, Color.WHITE)
+		NpcModelArt.draw_lying(self, NpcModelArt.texture(model), NpcModelArt.pivot(model), NpcModelArt.BODY_SOURCE, NpcModelArt.body_height(model), Color.WHITE)
 		draw_set_transform(Vector2.ZERO)
 		draw_string(ThemeDB.fallback_font, pivot + Vector2(4, -17), "z", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 12, Color("dfebf4"))
 	elif _routine_pose == "workbench":

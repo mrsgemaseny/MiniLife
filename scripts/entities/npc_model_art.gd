@@ -22,11 +22,15 @@ static func pivot(model_id: String) -> Vector2:
 	var raw: Array = DataRegistry.get_entry("npc_models", model_id).get("pivot", [0, 0])
 	return Vector2(float(raw[0]), float(raw[1]))
 
+# Knights and palace guards stand taller than ordinary figures (npc_models.json "scale").
+static func body_height(model_id: String) -> float:
+	return BODY_HEIGHT * float(DataRegistry.get_entry("npc_models", model_id).get("scale", 1.0))
+
 static func draw(canvas: CanvasItem, model_id: String, offset: Vector2, facing: Vector2, tint: Color = Color.WHITE) -> bool:
 	var tex: Texture2D = texture(model_id)
 	if tex == null:
 		return false
-	var scale: float = BODY_HEIGHT / BODY_SOURCE
+	var scale: float = body_height(model_id) / BODY_SOURCE
 	var size: Vector2 = Vector2(tex.get_width(), tex.get_height()) * scale
 	var feet: Vector2 = pivot(model_id) * scale
 	if facing.x < -0.01:
@@ -53,7 +57,7 @@ static func draw_corpse(canvas: CanvasItem, model_id: String) -> bool:
 	var tex: Texture2D = texture(model_id)
 	if tex == null:
 		return false
-	draw_lying(canvas, tex, pivot(model_id), BODY_SOURCE)
+	draw_lying(canvas, tex, pivot(model_id), BODY_SOURCE, body_height(model_id))
 	return true
 
 # A-Life agents carry a role, not a model: pick a stable model for the role from its id.
