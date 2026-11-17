@@ -22,6 +22,7 @@ func _ready() -> void:
 			add_child(living)
 		var body: CorpseEntity = CorpseEntity.new()
 		body.species = species
+		body.model_id = str(DataRegistry.get_enemy(species).get("model", ""))
 		body.position = Vector2(x, 440.0)
 		body.scale = Vector2(3.0, 3.0)
 		add_child(body)

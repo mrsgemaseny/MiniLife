@@ -196,6 +196,36 @@ func interact(_interactor: Node) -> void:
 func is_alive() -> bool:
 	return stats.health > 0.0
 
+# Drawn model of this NPC: squad members carry one, A-Life agents get one from their role.
+func model_id() -> String:
+	var assigned: String = str(get_meta("npc_model", ""))
+	if not assigned.is_empty():
+		return assigned
+	var role: String = str(get_meta("alife_role", ""))
+	if role.is_empty():
+		role = "trader" if npc_id == "merchant_common" else ("guard" if npc_id == "border_guard" else ("elder" if npc_id == "village_elder" else "civilian"))
+	return NpcModelArt.model_for_role(role, spawn_uid if not spawn_uid.is_empty() else str(get_instance_id()))
+
+func apply_squad_member(member_name: String, squad_faction: String) -> void:
+	display_name = member_name
+	if not squad_faction.is_empty():
+		faction_id = squad_faction
+	apply_unit_stats(str(get_meta("npc_model", "")))
+
+# Combat profile of a drawn unit (data/unit_stats.json): health, skills, body armor, shield.
+func apply_unit_stats(model: String) -> void:
+	var row: Dictionary = DataRegistry.get_entry("unit_stats", model)
+	if row.is_empty():
+		return
+	stats.set_max("health", float(row["hp"]))
+	stats.health = stats.max_health
+	skills.set_level("combat_attack", int(row["attack"]))
+	skills.set_level("combat_defense", int(row["defense"]))
+	equipment.set_innate_armor(float(row["armor"]))
+
+func has_shield() -> bool:
+	return bool(DataRegistry.get_entry("unit_stats", str(get_meta("npc_model", ""))).get("shield", false))
+
 
 func get_combat_weapon_id() -> String:
 	var tier: int = int(get_meta("alife_equipment_tier", 0))
@@ -232,6 +262,14 @@ func take_damage(amount: float, _damage_type: String = "physical", source: Node 
 		var killer_id: String = "player" if (source != null and source.is_in_group("player")) else "world"
 		SignalBus.npc_killed.emit(npc_id, faction_id, killer_id)
 		SignalBus.entity_died.emit(self, killer_id)
+		if has_meta("squad_id") and get_parent() != null:
+			var body: CorpseEntity = CorpseEntity.new()
+			body.species = "resident"
+			body.model_id = model_id()
+			body.settlement_id = str(get_meta("settlement_id", ""))
+			body.faction_id = faction_id
+			body.position = position
+			get_parent().add_child(body)
 		queue_free()
 	elif stats.health < stats.max_health * 0.4:
 		transition_to(State.FLEE)
@@ -306,8 +344,6 @@ func _alife_move_toward(target: Vector2i, delta: float) -> void:
 	else:
 		global_position = global_position.move_toward(destination, velocity.length() * delta)
 
-var _clothing_tint: Color = Color.WHITE
-
 func restore_alife_state(data: Dictionary) -> void:
 	var local: Dictionary = data.get("local_state", {})
 	if local.get("combat_skills") is Dictionary:
@@ -316,16 +352,6 @@ func restore_alife_state(data: Dictionary) -> void:
 		_seed_combat_skills(str(data.get("role", "civilian")))
 	display_name = str(data.get("display_name", display_name))
 	faction_id = str(data.get("faction_id", faction_id))
-	match str(data.get("role", "")):
-		"guard", "soldier", "caravan_guard":
-			_clothing_tint = Color(0.68, 0.98, 1.34)
-		"merchant", "trader":
-			_clothing_tint = Color(1.29, 0.78, 1.05)
-		"leader":
-			_clothing_tint = Color(1.35, 1.13, 0.65)
-		_:
-			var palette: Array[Color] = [Color.WHITE, Color(0.86, 1.12, 0.68), Color(1.25, 0.81, 0.70), Color(0.76, 1.10, 1.14)]
-			_clothing_tint = palette[posmod(str(data.get("agent_id", display_name)).hash(), palette.size())]
 	stats.set_max("health", float(data.get("max_health", 100.0)))
 	stats.health = clampf(float(data.get("health", stats.max_health)), 0.0, stats.max_health)
 	var inv: Dictionary = data.get("inventory", {})
@@ -404,24 +430,24 @@ func _draw() -> void:
 	var facing: Vector2 = velocity.normalized() if velocity.length_squared() > 1.0 else Vector2.DOWN
 	if _body_notice_time > 0.0:
 		facing = (_body_notice_position - global_position).normalized()
-	var art = preload("res://scripts/entities/pawn_art.gd")
+	var model: String = model_id()
 	if _routine_pose == "bed":
 		var toward: Vector2 = (Config.world_to_iso(_routine_fixture) - global_position).normalized()
 		var pivot: Vector2 = toward * 12.0 + Vector2(0, -10)
-		draw_set_transform(pivot, PI * 0.5)
-		art.draw_pawn(self, Vector2(-5, 10), Vector2.DOWN, null, _clothing_tint)
+		draw_set_transform(pivot)
+		NpcModelArt.draw_lying(self, NpcModelArt.texture(model), NpcModelArt.pivot(model), NpcModelArt.BODY_SOURCE, NpcModelArt.BODY_HEIGHT, Color.WHITE)
 		draw_set_transform(Vector2.ZERO)
 		draw_string(ThemeDB.fallback_font, pivot + Vector2(4, -17), "z", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 12, Color("dfebf4"))
 	elif _routine_pose == "workbench":
 		var toward: Vector2 = (Config.world_to_iso(_routine_fixture) - global_position).normalized()
 		var swing: float = sin(_routine_pose_time / 1.15 * TAU)
-		art.draw_pawn(self, toward * (2.0 + swing * 2.0), toward, null, _clothing_tint)
+		NpcModelArt.draw(self, model, toward * (2.0 + swing * 2.0), toward)
 		var hand: Vector2 = Vector2(0, -16) + toward * 12.0
 		var tip: Vector2 = hand + Vector2(toward.x * 9.0 + 3.0, -9.0 + 5.0 * swing)
 		draw_line(hand, tip, Color("64472e"), 2.4, true)
 		draw_line(tip + Vector2(-3, -2), tip + Vector2(3, 2), Color("9eabb1"), 3.0, true)
 	else:
-		art.draw_pawn(self, Vector2.ZERO, facing, null, _clothing_tint)
+		NpcModelArt.draw(self, model, Vector2.ZERO, facing)
 	if get_local_mouse_position().distance_to(Vector2(0, -20)) < 30.0:
 		draw_string_outline(ThemeDB.fallback_font, Vector2(-55, -49), display_name + " [ПКМ]", HORIZONTAL_ALIGNMENT_CENTER, 110, 11, 3, Color("191b17"))
 		draw_string(ThemeDB.fallback_font, Vector2(-55, -49), display_name + " [ПКМ]", HORIZONTAL_ALIGNMENT_CENTER, 110, 11, Color("ece5d4"))

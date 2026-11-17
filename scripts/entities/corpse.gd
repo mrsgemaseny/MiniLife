@@ -6,6 +6,9 @@ var lifetime: float = 240.0
 var resident_id: String = ""
 var settlement_id: String = ""
 var faction_id: String = ""
+# Humans: a drawn model, or the sprite of a bandit, lying on its side.
+var model_id: String = ""
+var body_texture: Texture2D = null
 
 func _ready() -> void:
 	keep_empty = true
@@ -31,9 +34,10 @@ func _draw() -> void:
 		draw_set_transform(Vector2.ZERO)
 		return
 	if not species.contains("wolf") and species not in ["cow", "sheep", "chicken", "deer", "hare", "boar", "bear", "donkey", "horse", "dog", "cat"]:
-		draw_set_transform(Vector2(-16, 5), PI * 0.5, Vector2(0.8, 0.8))
-		preload("res://scripts/entities/pawn_art.gd").draw_pawn(self, Vector2.ZERO, Vector2.RIGHT, null)
-		draw_set_transform(Vector2.ZERO)
+		if body_texture != null:
+			NpcModelArt.draw_lying(self, body_texture, Vector2(body_texture.get_width() * 0.5, body_texture.get_height()), body_texture.get_height() * 0.92)
+		elif not NpcModelArt.draw_corpse(self, model_id):
+			NpcModelArt.draw_corpse(self, NpcModelArt.model_for_role("civilian", resident_id))
 		return
 	var animal: bool = species in ["cow", "sheep", "chicken", "deer", "hare", "boar", "bear", "donkey", "horse", "dog", "cat"] or species.contains("wolf")
 	var outline: Color = Color("211f1c")

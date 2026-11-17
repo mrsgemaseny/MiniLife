@@ -63,7 +63,7 @@
 		"has_shield": true, "is_boss": true, "color": "#611d25", "respawns": false
 	},
 	{
-		"id": "bandit_scout",
+		"id": "bandit_scout", "model": "bandit_knife",
 		"name": "Bandit Scout",
 		"biome": "plains",
 		"faction": "bandits",
@@ -81,7 +81,7 @@
 		"respawns": false
 	},
 	{
-		"id": "bandit_raider",
+		"id": "bandit_raider", "model": "brigand_axe",
 		"name": "Outlaw Axeman",
 		"biome": "forest",
 		"faction": "bandits",
@@ -99,19 +99,19 @@
 		"respawns": false
 	},
 	{
-		"id": "bandit_veteran", "name": "Bandit Veteran", "biome": "forest", "faction": "bandits",
+		"id": "bandit_veteran", "model": "brigand_sword", "name": "Bandit Veteran", "biome": "forest", "faction": "bandits",
 		"bandit_tier": 3, "ai_profile": "bandit_veteran", "hp": 155, "defense": 15,
 		"damage": 23, "speed": 145, "attack_cooldown": 1.55, "has_shield": true,
 		"color": "#783f36", "is_boss": false, "respawns": false
 	},
 	{
-		"id": "bandit_chief", "name": "Bandit Chief", "biome": "forest", "faction": "bandits",
+		"id": "bandit_chief", "model": "brigand_chief", "name": "Bandit Chief", "biome": "forest", "faction": "bandits",
 		"bandit_tier": 4, "ai_profile": "bandit_chief", "hp": 295, "defense": 20,
 		"damage": 29, "speed": 155, "attack_cooldown": 1.4, "has_shield": true,
 		"color": "#611d25", "is_boss": true, "respawns": false
 	},
 	{
-		"id": "raider_marauder",
+		"id": "raider_marauder", "model": "brigand_greataxe",
 		"name": "Desert Raider",
 		"biome": "desert",
 		"faction": "raiders",
@@ -129,7 +129,7 @@
 		"respawns": false
 	},
 	{
-		"id": "mercenary_guard",
+		"id": "mercenary_guard", "model": "merc_sword",
 		"name": "Mercenary Guard",
 		"biome": "mountains",
 		"faction": "mercenaries",
@@ -147,7 +147,7 @@
 		"respawns": false
 	},
 	{
-		"id": "mercenary_skirmisher",
+		"id": "mercenary_skirmisher", "model": "merc_bow",
 		"name": "Mercenary Skirmisher",
 		"biome": "forest",
 		"faction": "mercenaries",
@@ -224,7 +224,7 @@
 		"respawns": false
 	},
 	{
-		"id": "warlord_khan_boss",
+		"id": "warlord_khan_boss", "model": "horned_knight",
 		"name": "Iron Warlord",
 		"biome": "mountains",
 		"hp": 420,

@@ -10,9 +10,6 @@ class Portrait extends Node2D:
 	func _draw() -> void:
 		if not is_instance_valid(subject):
 			return
-		var gear: EquipmentComponent = subject.get("_appearance_gear") if "_appearance_gear" in subject else null
-		if "equipment" in subject:
-			gear = subject.get("equipment")
 		var species: String = str(subject.get("animal_type")) if "animal_type" in subject else ""
 		if "enemy_id" in subject:
 			var species_map: Dictionary = {"wolf": "wolf", "dire_wolf": "direwolf", "bear": "bear", "wild_boar": "boar", "swamp_crawler": "spider", "desert_stalker": "fox"}
@@ -20,7 +17,11 @@ class Portrait extends Node2D:
 		if not species.is_empty():
 			AnimalRig.draw_animal(self, species, 0.0, 0.0, 1.0, false, false)
 			return
-		preload("res://scripts/entities/pawn_art.gd").draw_pawn(self, Vector2.ZERO, Vector2.DOWN, gear)
+		var bandit: Texture2D = subject.get("_bandit_texture") if "_bandit_texture" in subject else null
+		if bandit != null:
+			draw_texture_rect(bandit, Rect2(-28.0, -58.0, 56.0, 56.0), false)
+		elif subject.has_method("model_id"):
+			NpcModelArt.draw(self, str(subject.call("model_id")), Vector2.ZERO, Vector2.DOWN)
 
 static func show_target(owner_node: Node, subject: Node2D) -> void:
 	for previous in owner_node.get_tree().get_nodes_in_group("enemy_inspect"):

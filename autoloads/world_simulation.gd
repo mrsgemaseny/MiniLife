@@ -16,6 +16,11 @@ var _cargo_busy: bool = false
 var _encounter_views: Dictionary = {}
 var _escort_reward_check: bool = false
 var _settlement_chunks: Dictionary = {}
+var _squads_by_chunk: Dictionary = {}
+# A-Life is off for now: settlements are static squads, nothing travels or ticks.
+# Bandit camps and animals are local spawns and keep living. Tests of the A-Life layer
+# switch it back on explicitly.
+var alife_enabled: bool = false
 var _territorial_claims: Dictionary = {}
 var _last_published_event: int = 0
 var _last_published_rumor: int = 0
@@ -31,6 +36,7 @@ func _ready() -> void:
 	SignalBus.save_data_loaded.connect(_on_save_loaded)
 	SignalBus.alife_entity_layer_ready.connect(_on_entity_layer_ready)
 	SignalBus.alife_settlement_queried.connect(_on_settlement_queried)
+	SignalBus.settlement_squads_queried.connect(_on_squads_queried)
 	SignalBus.alife_political_map_queried.connect(_on_political_map_queried)
 	SignalBus.fog_batch_updated.connect(_on_political_visibility_changed)
 	SignalBus.chunk_loaded.connect(func(chunk: Vector2i) -> void:
@@ -61,6 +67,10 @@ var _refugee_camp_views: Dictionary = {}
 
 func _process(_delta: float) -> void:
 	if not _initialized or GameManager.is_paused() or GameManager.is_dead():
+		return
+	if not alife_enabled:
+		# Keep the clock aligned so switching A-Life on later does not replay the gap.
+		world.simulated_hour = float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour()
 		return
 	world.travel.background_enabled = true
 	world.travel.poll()
@@ -268,6 +278,25 @@ func _index_settlements() -> void:
 					break
 
 	_territorial_claims = preload("res://scripts/alife/settlements/territorial_claims.gd").build(world.settlements.all(), _settlement_chunks, terrain)
+	_squads_by_chunk.clear()
+	for settlement: AlifeSettlement in world.settlements.all():
+		for squad: SettlementSquad in SettlementSquads.plan(world.world_seed, settlement, terrain):
+			var chunk: Vector2i = Config.tile_to_chunk(squad.anchor_tile)
+			var list: Array = _squads_by_chunk.get(chunk, [])
+			list.append(squad)
+			_squads_by_chunk[chunk] = list
+
+func _on_squads_queried(chunk: Vector2i, result: Array) -> void:
+	if _initialized:
+		result.append_array(_squads_by_chunk.get(chunk, []))
+
+func squads_of(settlement_id: String) -> Array[SettlementSquad]:
+	var found: Array[SettlementSquad] = []
+	for list: Array in _squads_by_chunk.values():
+		for squad: SettlementSquad in list:
+			if squad.settlement_id == settlement_id:
+				found.append(squad)
+	return found
 
 func _district_has_land(terrain: TerrainGenerator, chunk: Vector2i) -> bool:
 	var origin: Vector2i = Config.chunk_origin(chunk)
@@ -601,6 +630,7 @@ func _spawn_resident_body(entity: NPCBase, agent: GlobalAgent) -> void:
 		return
 	var body: CorpseEntity = CorpseEntity.new()
 	body.species = "resident"
+	body.model_id = entity.model_id()
 	body.resident_id = agent.agent_id
 	body.settlement_id = agent.settlement_id
 	body.faction_id = agent.faction_id

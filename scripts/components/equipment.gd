@@ -137,6 +137,28 @@ func get_effective_armor_hp(slot: String) -> float:
 	return clampf(get_armor_hp(slot) / catalog_max, 0.0, 1.0) * effective_max
 
 
+# Armor that is part of a drawn unit rather than an item: one body layer whose material
+# follows the full-set totals of ARMOR_SET_SLOT_HP (cloth 80 ... steel 540).
+var _innate_armor: Dictionary = {}
+
+func set_innate_armor(durability: float) -> void:
+	if durability <= 0.0:
+		_innate_armor = {}
+		return
+	var material: String = "cloth"
+	if durability > 380.0:
+		material = "steel"
+	elif durability > 260.0:
+		material = "iron"
+	elif durability > 140.0:
+		material = "chainmail"
+	elif durability > 80.0:
+		material = "leather"
+	_innate_armor = {"durability": durability, "max": durability, "material": material}
+
+func get_innate_armor() -> float:
+	return float(_innate_armor.get("durability", 0.0))
+
 func get_armor_layers() -> Array[Dictionary]:
 	var layers: Array[Dictionary] = []
 	for slot: String in CombatBalance.ARMOR_ORDER:
@@ -150,10 +172,19 @@ func get_armor_layers() -> Array[Dictionary]:
 			"material": material,
 			"deflection": float(CombatBalance.ARMOR_DEFLECTION.get(material, 0.05))
 		})
+	if get_innate_armor() > 0.0:
+		var innate_material: String = str(_innate_armor["material"])
+		layers.append({
+			"slot": "innate", "item_id": "", "durability": get_innate_armor(),
+			"material": innate_material,
+			"deflection": float(CombatBalance.ARMOR_DEFLECTION.get(innate_material, 0.05))
+		})
 	return layers
 
 
 func apply_armor_damage(wear_by_slot: Dictionary) -> void:
+	if not _innate_armor.is_empty():
+		_innate_armor["durability"] = maxf(0.0, get_innate_armor() - maxf(0.0, float(wear_by_slot.get("innate", 0.0))))
 	for slot: String in CombatBalance.ARMOR_ORDER:
 		var wear: float = maxf(0.0, float(wear_by_slot.get(slot, 0.0)))
 		if wear <= 0.0:

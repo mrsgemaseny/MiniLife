@@ -75,6 +75,12 @@ func _ready() -> void:
 func has_shield() -> bool:
 	return _appearance_gear.has_shield()
 
+# Humanoid enemies without a bandit sprite are drawn with a model (enemies.json "model").
+func model_id() -> String:
+	if _bandit_texture != null:
+		return ""
+	return str(_enemy_def.get("model", ""))
+
 
 func get_combat_weapon_id() -> String:
 	if enemy_id.find("crossbow") != -1:
@@ -341,6 +347,8 @@ func _spawn_loot_drop() -> void:
 		gold = int(rolled["gold"])
 	var bag: CorpseEntity = CorpseEntity.new()
 	bag.species = enemy_id
+	bag.model_id = model_id()
+	bag.body_texture = _bandit_texture
 	bag.items = drops
 	bag.gold = gold
 	bag.global_position = global_position
@@ -367,7 +375,8 @@ func _draw() -> void:
 		var bob: float = -1.5 if velocity.length_squared() > 20.0 and int(Time.get_ticks_msec() / 160) % 2 == 0 else 0.0
 		draw_texture_rect(_bandit_texture, Rect2(-28.0 + _body_lunge.x, -58.0 + bob + _body_lunge.y, 56.0, 56.0), false)
 	else:
-		preload("res://scripts/entities/pawn_art.gd").draw_pawn(self, _body_lunge, facing_direction, _appearance_gear)
+		var bob_model: float = -1.5 if velocity.length_squared() > 20.0 and int(Time.get_ticks_msec() / 160) % 2 == 0 else 0.0
+		NpcModelArt.draw(self, model_id(), _body_lunge + Vector2(0.0, bob_model), facing_direction)
 	if stats != null and stats.health < stats.max_health:
 		var ratio: float = clampf(stats.health / maxf(1.0, stats.max_health), 0.0, 1.0)
 		draw_rect(Rect2(-16, -51, 32, 4), Color("28251f"))

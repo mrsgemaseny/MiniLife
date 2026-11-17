@@ -948,6 +948,7 @@ func _spawn_chunk_inhabitants(cpos: Vector2i, _biome_id: String, _delta: Diction
 								wolf.global_position = Vector2(float(pos_arr[0]), float(pos_arr[1]))
 						spawned_list.append(wolf)
 
+	_spawn_settlement_squads(cpos, spawned_list, killed, _delta)
 	_spawn_location_inhabitants(cpos, spawned_list, killed)
 	for entity: Node in spawned_list.duplicate():
 		if entity is Node2D and not _terrain.is_in_world(Config.iso_to_world(entity.global_position)):
@@ -1355,6 +1356,56 @@ func _spawn_minor_location(info: Dictionary) -> void:
 	if id in ["ruins", "cave", "dungeon"]:
 		for x in range(5):
 			SignalBus.structure_restored.emit("wall", anchor + Vector2i(x, 0))
+
+# Leader on the anchor, members around it; the first free tiles in this order.
+const SQUAD_FORMATION: Array[Vector2i] = [
+	Vector2i(0, 0), Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 1), Vector2i(-1, 1),
+	Vector2i(0, -1), Vector2i(1, -1), Vector2i(-1, -1), Vector2i(2, 0), Vector2i(-2, 0), Vector2i(0, 2),
+	Vector2i(2, 1), Vector2i(-2, 1), Vector2i(2, -1), Vector2i(-2, -1), Vector2i(0, -2), Vector2i(1, 2),
+	Vector2i(-1, 2), Vector2i(2, 2), Vector2i(-2, 2), Vector2i(1, -2), Vector2i(-1, -2), Vector2i(2, -2)]
+
+func _spawn_settlement_squads(cpos: Vector2i, spawned: Array[Node], killed: Array, delta: Dictionary) -> void:
+	var squads: Array = []
+	SignalBus.settlement_squads_queried.emit(cpos, squads)
+	if squads.is_empty():
+		return
+	var saved: Dictionary = delta.get("npcs", {})
+	var taken: Dictionary = {}
+	for squad: SettlementSquad in squads:
+		var cursor: int = 0
+		for slot: int in range(squad.members.size()):
+			var tile: Vector2i = Vector2i(-1, -1)
+			while cursor < SQUAD_FORMATION.size():
+				var candidate: Vector2i = squad.anchor_tile + SQUAD_FORMATION[cursor]
+				cursor += 1
+				if not taken.has(candidate) and _terrain.is_in_world(candidate) and is_passable(candidate):
+					tile = candidate
+					break
+			if tile.x == -1 and tile.y == -1:
+				break
+			taken[tile] = true
+			var uid: String = squad.member_uid(slot)
+			if killed.has(uid):
+				continue
+			var member: Dictionary = squad.members[slot]
+			var npc: NPCBase = NPC_SCENE.instantiate() as NPCBase
+			npc.npc_id = squad.npc_id
+			npc.spawn_uid = uid
+			npc.patrol_points = [tile] as Array[Vector2i]
+			npc.set_meta("spawn_chunk", cpos)
+			npc.set_meta("npc_model", str(member["model"]))
+			npc.set_meta("squad_id", squad.squad_id)
+			npc.set_meta("settlement_id", squad.settlement_id)
+			npc.global_position = Config.world_to_iso(tile)
+			add_child(npc)
+			npc.apply_squad_member(str(member["name"]), squad.faction_id)
+			if saved.has(uid):
+				var state: Dictionary = saved[uid]
+				npc.stats.health = clampf(float(state.get("health", npc.stats.health)), 1.0, npc.stats.max_health)
+				var at: Array = state.get("position", [])
+				if at.size() >= 2:
+					npc.global_position = Vector2(float(at[0]), float(at[1]))
+			spawned.append(npc)
 
 func _spawn_location_inhabitants(cpos: Vector2i, spawned: Array[Node], killed: Array) -> void:
 	var info: Dictionary = _chunk_pois.get(cpos, {})

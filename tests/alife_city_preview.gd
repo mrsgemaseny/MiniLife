@@ -42,9 +42,10 @@ func _ready() -> void:
 		await get_tree().process_frame
 		if can_render:
 			await RenderingServer.frame_post_draw
+	# A-Life is off: the city is its static squads.
 	var active: int = 0
-	for agent: GlobalAgent in WorldSimulation.world.agents.by_settlement(city.settlement_id):
-		if is_instance_valid(WorldSimulation.world.agents.materialized.get(agent.agent_id)):
+	for node: Node in get_tree().get_nodes_in_group("npc"):
+		if node.get_meta("settlement_id", "") == city.settlement_id and node.has_meta("squad_id"):
 			active += 1
 	var screenshot: String = "city_materials_%s_%s.png" % ["center" if center_view else "streets", "night" if night else "day"]
 	var result: Error = get_viewport().get_texture().get_image().save_png("user://" + screenshot) if can_render else OK
