@@ -5,7 +5,7 @@ func _ready() -> void:
 	world.seed_world(12345, 6.0)
 	WorldSeedBuilder.populate(world)
 	var codec: AlifeAgentSaveDelta = AlifeAgentSaveDelta.new()
-	codec.capture(world, Config.TERRAIN_GEOGRAPHY_SIZE)
+	codec.capture(world, TerrainGenerator.GENERATOR_VERSION)
 	var initial: Dictionary = codec.encode(world)
 	var baseline_count: int = world.agents.all().size()
 	var passed: bool = initial.agent_delta.changed.is_empty() and initial.agent_delta.added.is_empty()
@@ -22,7 +22,7 @@ func _ready() -> void:
 	var delta_json: String = JSON.stringify(codec.encode(world), "", true, true)
 	var payload: Dictionary = JSON.parse_string(delta_json)
 	var loader: AlifeAgentSaveDelta = AlifeAgentSaveDelta.new()
-	var loaded: AlifeWorldContext = loader.decode(payload, Config.TERRAIN_GEOGRAPHY_SIZE)
+	var loaded: AlifeWorldContext = loader.decode(payload, TerrainGenerator.GENERATOR_VERSION)
 	var expected: Dictionary = JSON.parse_string(full_json)
 	var actual: Dictionary = JSON.parse_string(JSON.stringify(loaded.to_dict(), "", true, true)) if loaded != null else {}
 	for key: String in expected:
@@ -37,13 +37,13 @@ func _ready() -> void:
 				print("Agent delta re-encode mismatch: ", key)
 		passed = passed and reencoded == payload
 	payload.agent_delta.changed[agent.agent_id]["agent_id"] = "bad_id"
-	passed = passed and loader.decode(payload, Config.TERRAIN_GEOGRAPHY_SIZE) == null
-	var legacy: AlifeWorldContext = loader.decode(JSON.parse_string(full_json), Config.TERRAIN_GEOGRAPHY_SIZE)
+	passed = passed and loader.decode(payload, TerrainGenerator.GENERATOR_VERSION) == null
+	var legacy: AlifeWorldContext = loader.decode(JSON.parse_string(full_json), TerrainGenerator.GENERATOR_VERSION)
 	var migrated: Dictionary = JSON.parse_string(JSON.stringify(loader.encode(legacy), "", true, true)) if legacy != null else {}
 	payload.agent_delta.changed[agent.agent_id].erase("agent_id")
 	passed = passed and migrated == payload
 	payload["travel_routes"] = {"invalid": {"route": [[-1, 0]], "destination": [0, 0], "position": [0, 0]}}
-	passed = passed and loader.decode(payload, Config.TERRAIN_GEOGRAPHY_SIZE) == null
+	passed = passed and loader.decode(payload, TerrainGenerator.GENERATOR_VERSION) == null
 	for index: int in range(600):
 		world.record_event("test_event", Vector2i.ZERO, [])
 	world.rumor_cursor = 50

@@ -1,7 +1,8 @@
 class_name SaveSystem
 extends Node
 
-const SCHEMA_VERSION: int = 1
+# 2: authored 21x15 world (TerrainGenerator v2). Version 1 saves describe the old 1000x1000 map.
+const SCHEMA_VERSION: int = 2
 
 static var instance: SaveSystem = null
 
@@ -240,8 +241,10 @@ func load_slot(slot: String) -> bool:
 	var furnaces_data: Dictionary = _read_json(base_dir + "furnaces.json")
 
 	var loaded_seed: int = int(world_data.get("world_seed", Config.DEFAULT_WORLD_SEED))
-	# Expand legacy saves without stretching their existing rivers, lakes and biomes.
-	Config.TERRAIN_GEOGRAPHY_SIZE = int(world_data.get("terrain_geography_size", 256))
+	if int(world_data.get("generator_version", 0)) != TerrainGenerator.GENERATOR_VERSION:
+		# Deltas are offsets from one generator's output; on another generator they corrupt the map.
+		push_warning("SaveSystem: slot %s was made by generator %s, current is %d" % [slot, str(world_data.get("generator_version", "none")), TerrainGenerator.GENERATOR_VERSION])
+		return false
 	GameManager._world_seed = loaded_seed
 	GameManager.set_day_and_hour(int(meta.get("day", 1)), float(meta.get("hour", Config.START_HOUR)))
 

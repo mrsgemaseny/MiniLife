@@ -16,7 +16,7 @@ func run() -> void:
 	world.seed_world(12345, 8.0)
 	WorldSeedBuilder.populate(world)
 	var codec: AlifeAgentSaveDelta = AlifeAgentSaveDelta.new()
-	codec.capture(world, Config.TERRAIN_GEOGRAPHY_SIZE)
+	codec.capture(world, TerrainGenerator.GENERATOR_VERSION)
 	var agents: AgentTick = AgentTick.new()
 	var economy: EconomyTick = EconomyTick.new()
 	var factions: FactionTick = FactionTick.new()
@@ -65,7 +65,7 @@ func run() -> void:
 		if step == 17:
 			reference = world
 			reference_agents._elapsed = agents._elapsed
-			var loaded: AlifeWorldContext = codec.decode(JSON.parse_string(JSON.stringify(codec.encode(world))), Config.TERRAIN_GEOGRAPHY_SIZE)
+			var loaded: AlifeWorldContext = codec.decode(JSON.parse_string(JSON.stringify(codec.encode(world))), TerrainGenerator.GENERATOR_VERSION)
 			check(loaded != null, "Campaign can load mid-war")
 			if loaded == null:
 				get_tree().quit(1)

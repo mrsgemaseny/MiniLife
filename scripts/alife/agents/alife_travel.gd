@@ -1,6 +1,9 @@
 class_name AlifeTravel
 extends RefCounted
 
+# Dense prefix of a long route, in tiles.
+const LEAD_DISTANCE: float = 200.0
+
 var _grid: AlifeRouteGrid
 var _seed: int = 0
 var _agent_routes: Dictionary = {}
@@ -67,9 +70,49 @@ func path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i) -> Array[Vect
 	_prepare(seed_value)
 	if _grid.blocked(from_tile) or _grid.blocked(to_tile):
 		return []
+	if not _grid.prepare_window(from_tile, to_tile):
+		return _long_path(from_tile, to_tile)
 	var direct: Array[Vector2i] = _grid.line(from_tile, to_tile)
 	if not direct.is_empty():
 		return direct
+	return _local_path(from_tile, to_tile)
+
+
+# Long trips: a dense first leg (so ambushes and escorts see real tiles near the agent),
+# then sparse waypoints through dry border crossings. advance() walks it by distance;
+# the materializer snaps an agent to walkable ground when it enters the player's bubble.
+func _long_path(from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = _grid.macro_path(GlobalLandscapeMap.cell_for_tile(from_tile), GlobalLandscapeMap.cell_for_tile(to_tile))
+	if cells.is_empty():
+		return []
+	var waypoints: Array[Vector2i] = []
+	for i: int in range(cells.size() - 1):
+		var gate: Vector2i = _grid.crossing(cells[i], cells[i + 1])
+		if gate.x < 0:
+			return []
+		waypoints.append(gate)
+	waypoints.append(to_tile)
+	var first: Vector2i = waypoints[0]
+	var lead: Vector2 = Vector2(first - from_tile)
+	var reach: float = minf(LEAD_DISTANCE, lead.length())
+	var result: Array[Vector2i] = [from_tile]
+	var lead_target: Vector2i = from_tile + Vector2i((lead.normalized() * reach).round())
+	for radius: int in range(6):
+		var candidate: Vector2i = lead_target + Vector2i(radius * 2, 0)
+		if not _grid.blocked(candidate) and _grid.prepare_window(from_tile, candidate):
+			var leg: Array[Vector2i] = _grid.line(from_tile, candidate)
+			if leg.is_empty():
+				leg = _local_path(from_tile, candidate)
+			if not leg.is_empty():
+				result = leg
+				break
+	for point: Vector2i in waypoints:
+		if point != result.back():
+			result.append(point)
+	return result
+
+
+func _local_path(from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
 	var start: Vector2i = _grid.endpoint(from_tile)
 	var finish: Vector2i = _grid.endpoint(to_tile)
 	if start.x < 0 or finish.x < 0:
@@ -104,9 +147,30 @@ func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = 8
 		route = request_path(seed_value, agent.tile, agent.destination_tile)
 	if route.is_empty():
 		return false
-	var step: int = mini(route.size() - 1, maxi(1, int(hours * speed)))
-	agent.tile = route[step]
-	_agent_routes[key] = {"destination": agent.destination_tile, "position": agent.tile, "route": route.slice(step)}
+	# Walk the polyline by distance. Adjacent entries cost one step (as on the dense grid),
+	# sparse waypoints cost their real length and may be reached partially.
+	var budget: float = maxf(1.0, hours * speed)
+	var position := Vector2(route[0])
+	var index: int = 0
+	while index < route.size() - 1 and budget > 0.0:
+		var next := Vector2(route[index + 1])
+		var length: float = position.distance_to(next)
+		var cost: float = 1.0 if length <= 1.5 else length
+		if cost <= budget:
+			budget -= cost
+			position = next
+			index += 1
+		elif length > 1.5:
+			position = position.move_toward(next, budget)
+			budget = 0.0
+		else:
+			break
+	agent.tile = Vector2i(position.round())
+	var remaining: Array[Vector2i] = [agent.tile]
+	for i: int in range(index + 1, route.size()):
+		if route[i] != agent.tile:
+			remaining.append(route[i])
+	_agent_routes[key] = {"destination": agent.destination_tile, "position": agent.tile, "route": remaining}
 	agent.world_position.clear()
 	return agent.tile == agent.destination_tile
 
@@ -141,7 +205,7 @@ static func _valid_tile_pair(value: Variant) -> bool:
 		if not (coordinate is int or coordinate is float):
 			return false
 		var number: float = float(coordinate)
-		if not is_finite(number) or number != floorf(number) or number < 0.0 or number >= Config.WORLD_SIZE_TILES:
+		if not is_finite(number) or number != floorf(number) or number < 0.0 or number >= float(maxi(WorldLayout.size_tiles().x, WorldLayout.size_tiles().y)):
 			return false
 	return true
 

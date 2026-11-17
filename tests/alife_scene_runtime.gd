@@ -127,7 +127,7 @@ func run() -> void:
 		var bundle: Dictionary = {"world": {}, "player": {}, "meta": {}}
 		SignalBus.save_data_requested.emit(bundle)
 		check(bundle.world.has("alife") and bundle.world.has("fog"), "Shared save bundle keeps both simulation and terrain")
-		var snapshot: AlifeWorldContext = preload("res://scripts/alife/agent_save_delta.gd").new().decode(JSON.parse_string(JSON.stringify(bundle.world.alife)), Config.TERRAIN_GEOGRAPHY_SIZE)
+		var snapshot: AlifeWorldContext = preload("res://scripts/alife/agent_save_delta.gd").new().decode(JSON.parse_string(JSON.stringify(bundle.world.alife)), TerrainGenerator.GENERATOR_VERSION)
 		check(snapshot != null and preload("res://scripts/alife/save_reference_validator.gd").validate(snapshot).is_empty(),
 			"Real gameplay snapshot passes the same reference checks as slot loading")
 		check(snapshot != null and (snapshot.agents.find(resident_id) as GlobalAgent).health == 51.0, "Save captures live resident health")

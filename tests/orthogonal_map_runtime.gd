@@ -95,7 +95,8 @@ func run() -> void:
 	var motion: InputEventMouseMotion = InputEventMouseMotion.new()
 	motion.position = atlas._pan_offset + Vector2(40,60) * (2.0*atlas.MAP_TILE_SCALE*atlas._zoom)
 	atlas._on_canvas_gui_input(motion)
-	check(atlas._hovered_tile == Vector2i(40,60), "Atlas pointer matches unrotated tile coordinates")
+	# The atlas shows the player's current cell: pixel (40,60) is that cell's tile (40,60).
+	check(atlas._hovered_tile == atlas._map_origin + Vector2i(40,60), "Atlas pointer matches unrotated tile coordinates")
 	atlas.center_on_player()
 	await get_tree().process_frame
 	if DisplayServer.get_name() != "headless":

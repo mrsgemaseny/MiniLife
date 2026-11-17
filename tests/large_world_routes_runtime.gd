@@ -1,8 +1,12 @@
 extends Node
 
+# Fixture in the start cell, outside the start clearing (clearings never hold water).
+const BASE: Vector2i = Vector2i(9700, 14300)
+
 class TestTerrain extends TerrainGenerator:
 	func get_biome_at(tile: Vector2i) -> String:
-		return "water" if tile.x == 110 and tile.y >= 90 and tile.y <= 110 else "plains"
+		var local: Vector2i = tile - BASE
+		return "water" if local.x == 110 and local.y >= 90 and local.y <= 110 else "plains"
 
 func _ready() -> void:
 	var travel := AlifeTravel.new()
@@ -11,17 +15,17 @@ func _ready() -> void:
 	travel._worker_solver._prepare(42)
 	travel._worker_solver._grid.terrain = TestTerrain.new(42)
 	var start: int = Time.get_ticks_usec()
-	assert(travel.request_path(42, Vector2i(100, 100), Vector2i(120, 100)).is_empty())
+	assert(travel.request_path(42, BASE + Vector2i(100, 100), BASE + Vector2i(120, 100)).is_empty())
 	var request_ms: float = (Time.get_ticks_usec() - start) / 1000.0
 	var route: Array[Vector2i] = []
 	for frame: int in range(1800):
 		await get_tree().process_frame
 		travel.poll()
-		route = travel.request_path(42, Vector2i(100, 100), Vector2i(120, 100))
+		route = travel.request_path(42, BASE + Vector2i(100, 100), BASE + Vector2i(120, 100))
 		if not route.is_empty():
 			break
 	assert(not route.is_empty())
-	assert(route.front() == Vector2i(100, 100) and route.back() == Vector2i(120, 100))
+	assert(route.front() == BASE + Vector2i(100, 100) and route.back() == BASE + Vector2i(120, 100))
 	for i: int in range(route.size()):
 		assert(travel._worker_solver._grid.terrain.get_biome_at(route[i]) != "water")
 		if i > 0:

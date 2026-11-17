@@ -1,336 +1,574 @@
 class_name TerrainGenerator
 extends RefCounted
 
-var _seed: int = 1337
-var _geography_size: int = Config.WORLD_SIZE_TILES
-var _elevation_noise: FastNoiseLite = FastNoiseLite.new()
-var _moisture_noise: FastNoiseLite = FastNoiseLite.new()
-var _forest_noise: FastNoiseLite = FastNoiseLite.new()
-var _river_noise: FastNoiseLite = FastNoiseLite.new()
-var _warp_noise: FastNoiseLite = FastNoiseLite.new()
+# Local generation: tile = f(seed, world tile, authored global map).
+# Order per tile: cell anchors -> E -> T, M -> landscape family -> 85/15 mix-in -> subtype
+# -> water (rivers, lakes, ponds) -> resources. Noise is sampled in world coordinates
+# and anchors blend across borders, so neighbouring cells meet without a seam.
+# Biome ids: plains, forest, swamp, hills, mountains (impassable ridge), snow,
+# desert (dunes, sand bars), steppe (dry semi-desert ground), water.
+
+const GENERATOR_VERSION: int = 2
+const CELL: int = GlobalLandscapeMap.CELL_TILES
+# Half-width of the anchor transition band, as a fraction of a cell (200 tiles).
+const BLEND: float = 0.2
+# Border noise: organic tongues of a neighbour landscape. Must stay below 0.5 so a
+# neighbour that just entered the blend band (weight 0) cannot win abruptly.
+const BORDER_AMP: float = 0.45
+# Lapse rate: anchor temperatures are the table values at the anchor elevation.
+const K_ALT: float = 0.35
+const DOMINANT_SHARE: float = 0.85
+const QUOTA_GRID: int = 32
+const SNOW_T: float = 0.19
+const DUNE_M: float = 0.16
+const NO_QUOTA: float = 2.0
+const POND_LEVEL: float = 0.55
+# Clay bank ring around ponds (pond noise just below the water level).
+const POND_SHORE: float = 0.50
+
+const ANCHORS: Dictionary = {
+	"plains": {"e": 0.32, "t": 0.52, "m": 0.50, "amp": 0.08},
+	"forest": {"e": 0.40, "t": 0.45, "m": 0.70, "amp": 0.10},
+	"mountains": {"e": 0.80, "t": 0.22, "m": 0.28, "amp": 0.20},
+	"desert": {"e": 0.30, "t": 0.82, "m": 0.14, "amp": 0.07},
+}
+
+# Cumulative roll thresholds per biome (built once, not per tile).
+const RESOURCE_TABLES: Dictionary = {
+	"hills": [[0.035, "iron_vein"], [0.065, "tin_vein"], [0.095, "copper_vein"], [0.125, "coal_deposit"], [0.165, "forest_pine"], [0.190, "stone_boulder"], [0.195, "silver_vein"], [0.210, "wild_berry_bush"], [0.225, "vigor_herb"]],
+	"mountains": [[0.050, "iron_vein"], [0.080, "tin_vein"], [0.105, "copper_vein"], [0.145, "coal_deposit"], [0.150, "silver_vein"], [0.180, "stone_boulder"], [0.195, "vigor_herb"]],
+	"snow": [[0.025, "iron_vein"], [0.045, "coal_deposit"], [0.050, "silver_vein"], [0.065, "vigor_herb"], [0.080, "stone_boulder"]],
+	"desert": [[0.014, "fire_herb"], [0.022, "wild_berry_bush"], [0.025, "stone_boulder"]],
+	"steppe": [[0.012, "fire_herb"], [0.026, "wild_berry_bush"], [0.036, "stone_boulder"], [0.070, "wild_grass"]],
+	"swamp": [[0.014, "tin_vein"], [0.050, "poison_herb"], [0.075, "swamp_herb_patch"], [0.095, "oak_tree"]],
+	"forest": [[0.080, "forest_pine"], [0.120, "oak_tree"], [0.138, "wild_berry_bush"], [0.160, "healing_herb"], [0.168, "stone_boulder"]],
+	"plains": [[0.011, "oak_tree"], [0.024, "wild_berry_bush"], [0.038, "healing_herb"], [0.072, "wild_grass"]],
+}
+const SPARSE_BIOMES: Array[String] = ["mountains", "snow", "hills"]
+
+static var _quota_cache: Dictionary = {}
+static var _quota_mutex: Mutex = Mutex.new()
+
+var _seed: int = 0
+var _land: GlobalLandscapeMap
+var _graph: WorldGraph
+var _n_e: FastNoiseLite
+var _n_t: FastNoiseLite
+var _n_m: FastNoiseLite
+var _n_border: FastNoiseLite
+var _n_var: FastNoiseLite
+var _n_ridge: FastNoiseLite
+var _n_pond: FastNoiseLite
+var _n_shore: FastNoiseLite
+var _quota_local: Dictionary = {}
+# cell -> Vector4(e, sea-level t, m, relief amp); family -> Vector3(e, t, m). Built once.
+var _cell_anchor: Dictionary = {}
+var _family_anchor: Dictionary = {}
+
+# Per-tile scratch. An instance is never shared between threads.
+var _bc: Array[Vector2i] = [Vector2i.ZERO, Vector2i.ZERO, Vector2i.ZERO, Vector2i.ZERO]
+var _bw: PackedFloat32Array = PackedFloat32Array([0.0, 0.0, 0.0, 0.0])
+var _bn: int = 0
+var _x: float = 0.0
+var _y: float = 0.0
+var _e: float = 0.0
+var _t: float = 0.0
+var _m: float = 0.0
+var _base: String = ""
+var _dominant: Vector2i = Vector2i.ZERO
+var _river: Vector4 = Vector4.ZERO
+var _lake: float = 0.0
+# Chunk-level proofs set by generate_chunk: the per-tile check is a no-op for the whole
+# chunk, so it is skipped. Always false outside generate_chunk.
+var _no_clearing: bool = false
+var _no_lake: bool = false
+var _no_mine: bool = false
+var _far_from_start: bool = false
 
 
-func _init(world_seed: int = 1337) -> void:
+func _init(world_seed: int = Config.DEFAULT_WORLD_SEED) -> void:
 	setup(world_seed)
 
 
 func setup(world_seed: int) -> void:
 	_seed = world_seed
-	_geography_size = Config.TERRAIN_GEOGRAPHY_SIZE
+	_land = WorldLayout.landscape()
+	_graph = WorldGraph.for_seed(world_seed)
+	_quota_local.clear()
+	_family_anchor.clear()
+	for kind: String in ANCHORS:
+		var a: Dictionary = ANCHORS[kind]
+		_family_anchor[kind] = Vector3(float(a["e"]), float(a["t"]), float(a["m"]))
+	_cell_anchor.clear()
+	for cell: Vector2i in _land.land_cells():
+		var anchor: Dictionary = ANCHORS[_land.kind_at(cell)]
+		_cell_anchor[cell] = Vector4(float(anchor["e"]), float(anchor["t"]) + K_ALT * float(anchor["e"]), float(anchor["m"]), float(anchor["amp"]))
+	_n_e = _make_noise(1, 1.0 / 220.0, 4, FastNoiseLite.FRACTAL_FBM)
+	_n_t = _make_noise(2, 1.0 / 700.0, 2, FastNoiseLite.FRACTAL_FBM)
+	_n_m = _make_noise(3, 1.0 / 260.0, 3, FastNoiseLite.FRACTAL_FBM)
+	_n_border = _make_noise(4, 1.0 / 180.0, 3, FastNoiseLite.FRACTAL_FBM)
+	_n_var = _make_noise(5, 1.0 / 140.0, 3, FastNoiseLite.FRACTAL_FBM)
+	_n_ridge = _make_noise(6, 1.0 / 160.0, 3, FastNoiseLite.FRACTAL_RIDGED)
+	_n_pond = _make_noise(7, 1.0 / 90.0, 2, FastNoiseLite.FRACTAL_FBM)
+	_n_shore = _make_noise(8, 1.0 / 30.0, 2, FastNoiseLite.FRACTAL_FBM)
 
-	# Elevation noise: broad continental gradients
-	_elevation_noise.seed = world_seed
-	_elevation_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
-	_elevation_noise.fractal_octaves = 3
-	_elevation_noise.frequency = 0.006
 
-	# Moisture noise: large climate patches
-	_moisture_noise.seed = world_seed ^ 0x6C8E9CF5
-	_moisture_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
-	_moisture_noise.fractal_octaves = 2
-	_moisture_noise.frequency = 0.007
+func _make_noise(salt: int, frequency: float, octaves: int, fractal: FastNoiseLite.FractalType) -> FastNoiseLite:
+	var noise := FastNoiseLite.new()
+	noise.seed = (_seed ^ (salt * 0x2545F491)) & 0x7fffffff
+	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	noise.frequency = frequency
+	noise.fractal_type = fractal
+	noise.fractal_octaves = octaves
+	return noise
 
-	# Forest noise: organic woodland clumps
-	_forest_noise.seed = world_seed ^ 0x3D7A9F1B
-	_forest_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
-	_forest_noise.fractal_octaves = 2
-	_forest_noise.frequency = 0.012
 
-	# River noise: natural meandering curves
-	_river_noise.seed = world_seed ^ 0x9B1E4A7F
-	_river_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
-	_river_noise.fractal_octaves = 3
-	_river_noise.frequency = 0.014
+func get_seed() -> int:
+	return _seed
 
-	# Domain warp noise: distorts all coordinate lookups by +/-18 tiles to destroy straight borders
-	_warp_noise.seed = world_seed ^ 0x51A82C3D
-	_warp_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
-	_warp_noise.fractal_octaves = 2
-	_warp_noise.frequency = 0.014
+
+func get_graph() -> WorldGraph:
+	return _graph
 
 
 func is_in_world(pos: Vector2i) -> bool:
-	return pos.x >= 0 and pos.y >= 0 and pos.x < Config.WORLD_SIZE_TILES and pos.y < Config.WORLD_SIZE_TILES
+	return WorldLayout.contains_tile(pos)
 
 
-func is_border_mountain(pos: Vector2i) -> bool:
-	var b: int = Config.BORDER_MOUNTAIN_THICKNESS
-	var limit: int = Config.WORLD_SIZE_TILES - b
-	return pos.x < b or pos.y < b or pos.x >= limit or pos.y >= limit
+# Walkable ground for macro planners. Settlement clearings are dry by construction,
+# so district and claim checks around settlements skip the field evaluation.
+func is_dry_land(pos: Vector2i) -> bool:
+	if not WorldLayout.contains_tile(pos):
+		return false
+	if _graph.is_cleared(Vector2(pos) + Vector2(0.5, 0.5)):
+		return true
+	return get_biome_at(pos) not in ["water", "mountains"]
 
 
-func get_warped_pos(pos: Vector2i) -> Vector2:
-	var wx: float = _warp_noise.get_noise_2d(float(pos.x) * 1.6, float(pos.y) * 1.6) * 20.0
-	var wy: float = _warp_noise.get_noise_2d(float(pos.x) * 1.6 + 600.0, float(pos.y) * 1.6 + 600.0) * 20.0
-	return Vector2(float(pos.x) + wx, float(pos.y) + wy)
+# ---------------------------------------------------------------- anchors and fields
+
+# One axis of the plateau + smoothstep blend. Returns (low cell index, weight low, weight high).
+static func _axis(p: float) -> Vector3:
+	var i: int = floori(p)
+	var f: float = p - float(i)
+	if f < BLEND:
+		var s: float = smoothstep(0.0, 1.0, (f + BLEND) / (2.0 * BLEND))
+		return Vector3(float(i - 1), 1.0 - s, s)
+	if f > 1.0 - BLEND:
+		var s2: float = smoothstep(0.0, 1.0, (f - (1.0 - BLEND)) / (2.0 * BLEND))
+		return Vector3(float(i), 1.0 - s2, s2)
+	return Vector3(float(i), 1.0, 0.0)
 
 
-func get_river_center_x(ny: float) -> float:
-	var w_size: float = float(_geography_size)
-	if ny < -0.05 or ny > 0.85:
-		return -9999.0
-	var progress: float = clampf((ny - 0.02) / 0.70, 0.0, 1.0)
-	var base_rx: float = lerpf(0.88, 0.04, progress)
-	var curve1: float = sin(progress * PI * 2.8) * 0.070
-	var curve2: float = cos(progress * PI * 4.4) * 0.038
-	var noise_val: float = _river_noise.get_noise_2d(ny * 320.0, progress * 420.0) * 0.035
-	return (base_rx + curve1 + curve2 + noise_val) * w_size
+func _gather(pos: Vector2i, _own: Vector2i) -> void:
+	var ax: Vector3 = _axis((float(pos.x) + 0.5) / CELL)
+	var ay: Vector3 = _axis((float(pos.y) + 0.5) / CELL)
+	_bn = 0
+	for ix: int in range(2):
+		var wx: float = ax.y if ix == 0 else ax.z
+		if wx <= 0.0:
+			continue
+		for iy: int in range(2):
+			var wy: float = ay.y if iy == 0 else ay.z
+			if wy <= 0.0:
+				continue
+			var cell := Vector2i(int(ax.x) + ix, int(ay.x) + iy)
+			# Void has no anchor and takes no share; land weights are renormalized below.
+			# Substituting the tile's own cell instead would differ on the two sides of a
+			# border next to a void corner and break the seam.
+			if not _land.is_land(cell):
+				continue
+			var merged: bool = false
+			for k: int in range(_bn):
+				if _bc[k] == cell:
+					_bw[k] += wx * wy
+					merged = true
+					break
+			if not merged:
+				_bc[_bn] = cell
+				_bw[_bn] = wx * wy
+				_bn += 1
+	# Weights depend on position only, so the sum is the same on both sides of a border.
+	# The tile's own cell always has weight >= 0.25, so the sum is never zero.
+	var total: float = 0.0
+	for k: int in range(_bn):
+		total += _bw[k]
+	if total > 0.0 and total < 0.9999:
+		for k: int in range(_bn):
+			_bw[k] /= total
 
 
-func get_distance_to_river_at(pos: Vector2i) -> float:
-	var w_size: float = float(_geography_size)
-	var ny: float = float(pos.y) / w_size
-	var rx: float = get_river_center_x(ny)
-	return absf(float(pos.x) - rx)
+func _compute(pos: Vector2i) -> bool:
+	var own: Vector2i = GlobalLandscapeMap.cell_for_tile(pos)
+	if pos.x < 0 or pos.y < 0 or not _land.is_land(own):
+		return false
+	_gather(pos, own)
+	_x = float(pos.x)
+	_y = float(pos.y)
+	var ea: float = 0.0
+	var ta: float = 0.0
+	var ma: float = 0.0
+	var amp: float = 0.0
+	var dominant_w: float = -1.0
+	for k: int in range(_bn):
+		var anchor: Vector4 = _cell_anchor[_bc[k]]
+		var w: float = _bw[k]
+		ea += w * anchor.x
+		ta += w * anchor.y
+		ma += w * anchor.z
+		amp += w * anchor.w
+		if w > dominant_w:
+			dominant_w = w
+			_dominant = _bc[k]
+	_e = clampf(ea + _n_e.get_noise_2d(_x, _y) * amp, 0.0, 1.0)
+	_t = clampf(ta - K_ALT * _e + _n_t.get_noise_2d(_x, _y) * 0.06, 0.0, 1.0)
+	_river = _graph.river_sample(Vector2(_x + 0.5, _y + 0.5))
+	var wet: float = 0.0
+	var bank: float = _river.x - _river.y
+	if bank < WorldGraph.BUCKET_REACH:
+		wet = 0.25 * exp(-maxf(bank, 0.0) / 60.0)
+	_m = clampf(ma + _n_m.get_noise_2d(_x, _y) * 0.10 + wet, 0.0, 1.0)
+	if _bn == 1:
+		_base = _land.kind_at(_bc[0])
+	else:
+		var best: float = -INF
+		for k: int in range(_bn):
+			var c: Vector2i = _bc[k]
+			var score: float = _bw[k] + BORDER_AMP * _n_border.get_noise_2d(_x + float(c.x) * 7919.0, _y + float(c.y) * 6271.0)
+			if score > best:
+				best = score
+				_base = _land.kind_at(c)
+	return true
 
 
-func get_elevation_at(pos: Vector2i) -> float:
-	var w_size: float = float(_geography_size)
-	var warped: Vector2 = get_warped_pos(pos)
-	var mtn_center: Vector2 = Vector2(w_size * 0.24, w_size * 0.12)
-	var dist_mtn: float = warped.distance_to(mtn_center)
-	var mtn_radial: float = 1.0 - clampf(dist_mtn / (w_size * 0.38), 0.0, 1.0)
-	var elev_noise: float = _elevation_noise.get_noise_2d(warped.x * 1.2, warped.y * 1.2) * 0.5 + 0.5
-	return mtn_radial * 0.70 + elev_noise * 0.30
+func _variation() -> float:
+	var anchor: Vector3 = _family_anchor[_base]
+	var deviation: float = (absf(_e - anchor.x) + absf(_t - anchor.y) + absf(_m - anchor.z)) / 0.45
+	return 0.65 * (_n_var.get_noise_2d(_x, _y) * 0.5 + 0.5) + 0.35 * clampf(deviation, 0.0, 1.0)
 
 
-func get_biome_at(pos: Vector2i) -> String:
-	if is_border_mountain(pos):
-		return "mountains"
+# ---------------------------------------------------------------- 85/15 quota
 
-	var w_size: float = float(_geography_size)
-	var warped: Vector2 = get_warped_pos(pos)
-	var ny: float = float(pos.y) / w_size
+# Threshold per cell: the variation quantile that leaves 15% of the cell's dry land to
+# other landscapes, counting neighbour tongues first. Sampled on a fixed 32x32 grid.
+func _quota_threshold_uncached(cell: Vector2i) -> float:
+	var kind: String = _land.kind_at(cell)
+	var values: PackedFloat32Array = PackedFloat32Array()
+	var total: int = 0
+	var tongues: int = 0
+	var step: float = float(CELL) / float(QUOTA_GRID)
+	for gx: int in range(QUOTA_GRID):
+		for gy: int in range(QUOTA_GRID):
+			var pos: Vector2i = cell * CELL + Vector2i(int((float(gx) + 0.5) * step), int((float(gy) + 0.5) * step))
+			if not _compute(pos):
+				continue
+			if _water_override(pos, _graph.is_cleared(Vector2(pos) + Vector2(0.5, 0.5))) == "water":
+				continue
+			total += 1
+			if _base != kind:
+				tongues += 1
+				continue
+			values.append(_variation())
+	if total == 0 or values.is_empty():
+		return NO_QUOTA
+	var tongue_share: float = float(tongues) / float(total)
+	var wanted: float = clampf(((1.0 - DOMINANT_SHARE) - tongue_share) / maxf(1.0 - tongue_share, 0.001), 0.0, 1.0)
+	if wanted <= 0.0:
+		return NO_QUOTA
+	values.sort()
+	return values[clampi(int((1.0 - wanted) * float(values.size())), 0, values.size() - 1)]
 
-	# 1. MEANDERING RIVER (Organic meandering curve with varying shoreline)
-	if ny >= 0.02 and ny <= 0.76:
-		var dist_to_river_tiles: float = get_distance_to_river_at(pos)
-		var bank_var: float = _river_noise.get_noise_2d(float(pos.x) * 2.2, float(pos.y) * 2.2)
-		var water_w: float = 2.4 + bank_var * 0.35
-		# Water stream (width ~ 2.2 to 2.8 tiles)
-		if dist_to_river_tiles < water_w:
+
+func _ensure_quota(pos: Vector2i) -> void:
+	var own: Vector2i = GlobalLandscapeMap.cell_for_tile(pos)
+	_gather(pos, own)
+	var cells: Array[Vector2i] = []
+	for k: int in range(_bn):
+		if not _quota_local.has(_bc[k]):
+			cells.append(_bc[k])
+	if cells.is_empty():
+		return
+	_quota_mutex.lock()
+	for cell: Vector2i in cells:
+		var key := Vector3i(_seed, cell.x, cell.y)
+		if not _quota_cache.has(key):
+			_quota_cache[key] = _quota_threshold_uncached(cell)
+		_quota_local[cell] = _quota_cache[key]
+	_quota_mutex.unlock()
+
+
+func _blended_threshold() -> float:
+	var threshold: float = 0.0
+	for k: int in range(_bn):
+		threshold += _bw[k] * float(_quota_local[_bc[k]])
+	return threshold
+
+
+# ---------------------------------------------------------------- landscape
+
+func _water_override(pos: Vector2i, cleared: bool) -> String:
+	if cleared:
+		return ""
+	var point := Vector2(_x + 0.5, _y + 0.5)
+	_lake = WorldGraph.FAR if _no_lake else _graph.lake_sdf(point)
+	# Shore noise is bounded by 6 tiles: skip it when no lake is near.
+	if _lake < 9.0:
+		var shore: float = _lake + _n_shore.get_noise_2d(_x, _y) * 6.0
+		if shore < 0.0:
 			return "water"
-		# Sandy shores & beaches (width fluctuating organically ~ 3.5 to 5.5 tiles)
-		var beach_w: float = 4.2 + bank_var * 1.3
-		if dist_to_river_tiles < beach_w and bank_var > -0.45:
+		if shore < 2.5:
 			return "desert"
-
-	# 2. SOUTHEAST SCENIC LAKE (With natural organic shores)
-	var lake_se_center: Vector2 = Vector2(w_size * 0.74, w_size * 0.76)
-	var dist_lake_se: float = warped.distance_to(lake_se_center)
-	var lake_noise: float = _river_noise.get_noise_2d(warped.x * 1.8, warped.y * 1.8) * 5.0
-	var lake_se_radius: float = w_size * 0.055 + lake_noise
-	if dist_lake_se < lake_se_radius:
+	if _river.x < _river.y:
+		return "desert" if _river.z > 0.5 else "water"
+	if _is_pond_basin() and _n_pond.get_noise_2d(_x, _y) > POND_LEVEL:
 		return "water"
-	elif dist_lake_se < lake_se_radius + 3.2 + (lake_noise * 0.25):
-		return "desert"
+	return ""
 
-	# 3. NORTHWEST NATURAL POND (Nestled near mountain foothills)
-	var pond_nw_center: Vector2 = Vector2(w_size * 0.15, w_size * 0.33)
-	var dist_pond_nw: float = warped.distance_to(pond_nw_center)
-	var pond_noise: float = _river_noise.get_noise_2d(warped.x * 2.0, warped.y * 2.0) * 3.5
-	var pond_nw_radius: float = w_size * 0.034 + pond_noise
-	if dist_pond_nw < pond_nw_radius:
-		return "water"
-	elif dist_pond_nw < pond_nw_radius + 2.2:
-		return "desert"
 
-	# 4. NORTHWEST SNOW & ROCKY MOUNTAINS (Top-left quadrant, organically warped)
-	var elev: float = get_elevation_at(pos)
-	if elev > 0.66:
-		return "snow"
-	elif elev > 0.44:
-		return "mountains"
+func _is_pond_basin() -> bool:
+	return (_base == "plains" or _base == "forest") and _e < 0.45
 
-	# 5. EASTERN ARID DESERT (Organic dunes on East / Northeast — NO straight vertical lines!)
-	var desert_center: Vector2 = Vector2(w_size * 0.88, w_size * 0.35)
-	var dist_desert: float = warped.distance_to(desert_center)
-	var desert_noise: float = _moisture_noise.get_noise_2d(warped.x * 1.6, warped.y * 1.6) * 0.28
-	var desert_radial: float = 1.0 - clampf(dist_desert / (w_size * 0.38), 0.0, 1.0)
-	if (desert_radial + desert_noise) > 0.24 and warped.x > w_size * 0.58:
-		return "desert"
 
-	# 6. SOUTHWEST MARSH & SWAMP (Lowland wetlands, organically warped)
-	var swamp_center: Vector2 = Vector2(w_size * 0.18, w_size * 0.78)
-	var dist_swamp: float = warped.distance_to(swamp_center)
-	var swamp_radial: float = 1.0 - clampf(dist_swamp / (w_size * 0.30), 0.0, 1.0)
-	var swamp_moist: float = _moisture_noise.get_noise_2d(warped.x * 1.4, warped.y * 1.4) * 0.32
-	if (swamp_radial + swamp_moist) > 0.32 and elev < 0.28:
-		return "swamp"
-
-	# 7. CENTRAL & SOUTHERN PLAINS WITH ORGANIC FORESTS
-	# High foothills near mountains have dense woodland
-	if elev > 0.34:
-		return "forest"
-
-	# Organic woodland clumps across the plains
-	var forest_val: float = _forest_noise.get_noise_2d(warped.x, warped.y)
-	if forest_val > 0.09:
-		return "forest"
-
+func _subtype(family: String, cleared: bool) -> String:
+	match family:
+		"forest":
+			return "forest"
+		"desert":
+			return "desert" if _m < DUNE_M else "steppe"
+		"mountains":
+			if cleared:
+				return "hills"
+			var ridge: float = _n_ridge.get_noise_2d(_x, _y) * 0.5 + 0.5
+			if ridge > 0.76 and _e > 0.62 and _river.x - _river.y > 12.0 \
+					and (_no_mine or _graph.mine_distance(Vector2(_x, _y)) > WorldGraph.MINE_CLEARING):
+				return "mountains"
+			if _graph.snow_cells.has(_dominant) and _t < SNOW_T:
+				return "snow"
+			return "hills"
 	return "plains"
 
 
-func get_resource_node_at(pos: Vector2i) -> String:
-	if is_border_mountain(pos):
+# The 15%: a neighbouring landscape by parameters, never a polar jump (no snow, no dunes).
+func _mixin(family: String) -> String:
+	match family:
+		"plains":
+			if _m > 0.62 and _e < 0.30:
+				return "swamp"
+			return "forest" if _m > 0.48 else "hills"
+		"forest":
+			return "swamp" if _m > 0.75 and _e < 0.40 else "plains"
+		"mountains":
+			return "forest" if _m > 0.28 else "plains"
+		"desert":
+			return "plains" if _m > 0.30 else "hills"
+	return "plains"
+
+
+func get_biome_at(pos: Vector2i) -> String:
+	if pos.x < 0 or pos.y < 0 or not _land.is_land(GlobalLandscapeMap.cell_for_tile(pos)):
 		return ""
+	_ensure_quota(pos)
+	return _biome_after_quota(pos)
 
-	var center: Vector2i = Vector2i(_geography_size / 2, _geography_size / 2)
-	if Config.tile_distance(pos, center) <= 4:
-		return ""
 
-	var biome_id: String = get_biome_at(pos)
-	if biome_id == "water":
-		return ""
-	# Stable thinning leaves walking space between resource silhouettes.
-	var density: float = 0.45 if biome_id in ["mountains", "snow"] else 0.75
-	if RngService.make_tile_rng(_seed, pos, 1709).randf() > density:
-		return ""
+# Requires the quota of every candidate cell of pos to be in _quota_local.
+func _biome_after_quota(pos: Vector2i) -> String:
+	_compute(pos)
+	_lake = WorldGraph.FAR
+	var cleared: bool = false if _no_clearing else _graph.is_cleared(Vector2(_x + 0.5, _y + 0.5))
+	var water: String = _water_override(pos, cleared)
+	if not water.is_empty():
+		return water
+	if _variation() > _blended_threshold():
+		return _mixin(_base)
+	return _subtype(_base, cleared)
 
-	var elev: float = get_elevation_at(pos)
-	var dist_river: float = get_distance_to_river_at(pos)
-	var w_size: float = float(_geography_size)
-	var lake_se_center: Vector2 = Vector2(w_size * 0.74, w_size * 0.76)
-	var dist_lake_se: float = Vector2(float(pos.x), float(pos.y)).distance_to(lake_se_center)
 
-	# 1. TIN ORE (Alluvial riverbank and lake shore deposits — gravel beds near water)
-	var is_water_shore: bool = (dist_river >= 2.4 and dist_river <= 8.5) or (dist_lake_se >= w_size * 0.055 and dist_lake_se <= w_size * 0.055 + 7.0)
-	if (is_water_shore or biome_id == "swamp") and RngService.make_tile_rng(_seed, pos, 911).randf() < 0.065:
-		return "clay_bank"
-	if is_water_shore and biome_id != "water":
-		var tin_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 909)
-		if tin_rng.randf() < 0.042:
-			return "tin_vein"
-
-	# 2. GOLD ORE: strictly in high mountains near river or mountain streams
-	if elev > 0.40 and dist_river < 12.0:
-		var gold_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 808)
-		if gold_rng.randf() < 0.025:
-			return "gold_quartz_vein"
-
-	# 3. MOUNTAINS (Rocky Foothills vs High Cliffs)
-	# Iron, Tin, Copper, and Coal across slopes; Silver is strictly rare precious ore
-	if biome_id == "mountains":
-		var mtn_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 202)
-		var mtn_roll: float = mtn_rng.randf()
-		if elev < 0.52:
-			# Rocky foothills: Iron, Tin, Copper, Coal, pines, boulders
-			if mtn_roll < 0.035:
-				return "iron_vein"
-			elif mtn_roll < 0.065:
-				return "tin_vein"
-			elif mtn_roll < 0.095:
-				return "copper_vein"
-			elif mtn_roll < 0.125:
-				return "coal_deposit"
-			elif mtn_roll < 0.165:
-				return "forest_pine"
-			elif mtn_roll < 0.190:
-				return "stone_boulder"
-			elif mtn_roll < 0.195:
-				return "silver_vein"
-			elif mtn_roll < 0.210:
-				return "wild_berry_bush"
-			elif mtn_roll < 0.225:
-				return "vigor_herb"
+# Biomes at (xs[i], y), xs ascending, for map rendering. Quota is ensured once at both
+# ends of the run (candidates of any tile between them lie between theirs).
+func get_biome_row(y: int, xs: PackedInt32Array) -> PackedStringArray:
+	var count: int = xs.size()
+	var out := PackedStringArray()
+	out.resize(count)
+	if count == 0:
+		return out
+	var first := Vector2i(xs[0], y)
+	var last := Vector2i(xs[count - 1], y)
+	var ensured: bool = false
+	if WorldLayout.contains_tile(first) and WorldLayout.contains_tile(last) \
+			and GlobalLandscapeMap.cell_for_tile(first) == GlobalLandscapeMap.cell_for_tile(last):
+		_ensure_quota(first)
+		_ensure_quota(last)
+		ensured = true
+	for i: int in range(count):
+		var tile := Vector2i(xs[i], y)
+		if ensured:
+			out[i] = _biome_after_quota(tile)
 		else:
-			# High rocky cliffs: abundant Iron, Tin, Copper, Coal, very rare Silver (0.5%), zero trees
-			if mtn_roll < 0.050:
-				return "iron_vein"
-			elif mtn_roll < 0.080:
-				return "tin_vein"
-			elif mtn_roll < 0.105:
-				return "copper_vein"
-			elif mtn_roll < 0.145:
-				return "coal_deposit"
-			elif mtn_roll < 0.150:
-				return "silver_vein"
-			elif mtn_roll < 0.180:
-				return "stone_boulder"
-			elif mtn_roll < 0.195:
-				return "vigor_herb"
-		return ""
+			out[i] = get_biome_at(tile)
+	return out
 
-	# 4. SNOW PEAKS (High frozen ridges: Iron, Coal, rare Silver, boulders, alpine vigor herbs)
-	if biome_id == "snow":
-		var snow_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 303)
-		var snow_roll: float = snow_rng.randf()
-		if snow_roll < 0.025:
-			return "iron_vein"
-		elif snow_roll < 0.045:
-			return "coal_deposit"
-		elif snow_roll < 0.050:
-			return "silver_vein"
-		elif snow_roll < 0.065:
-			return "vigor_herb"
-		elif snow_roll < 0.080:
-			return "stone_boulder"
-		return ""
 
-	# 5. DESERT (Pure barren sand and dunes — rare fireflowers, zero copper/coal/trees)
-	if biome_id == "desert":
-		var des_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 404)
-		var des_roll: float = des_rng.randf()
-		if des_roll < 0.014:
-			return "fire_herb"
-		elif des_roll < 0.022:
-			return "wild_berry_bush"
-		elif des_roll < 0.025:
-			return "stone_boulder"
+# Landscape family that owns the tile, or "" for water / mix-ins. Used by quota tests.
+func get_family_at(pos: Vector2i) -> String:
+	if pos.x < 0 or pos.y < 0 or not _land.is_land(GlobalLandscapeMap.cell_for_tile(pos)):
 		return ""
+	_ensure_quota(pos)
+	_compute(pos)
+	var cleared: bool = _graph.is_cleared(Vector2(_x + 0.5, _y + 0.5))
+	if _water_override(pos, cleared) == "water":
+		return "water"
+	if _variation() > _blended_threshold():
+		return "mixin"
+	return _base
 
-	# 6. SWAMP (Bog herbs, swamp nightshade, sparse gnarled oaks, occasional alluvial tin in mud)
-	if biome_id == "swamp":
-		var sw_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 505)
-		var sw_roll: float = sw_rng.randf()
-		if sw_roll < 0.014:
-			return "tin_vein"
-		elif sw_roll < 0.050:
-			return "poison_herb"
-		elif sw_roll < 0.075:
-			return "swamp_herb_patch"
-		elif sw_roll < 0.095:
-			return "oak_tree"
+
+func get_elevation_at(pos: Vector2i) -> float:
+	return _e if _compute(pos) else 0.0
+
+
+func get_temperature_at(pos: Vector2i) -> float:
+	return _t if _compute(pos) else 0.0
+
+
+func get_moisture_at(pos: Vector2i) -> float:
+	return _m if _compute(pos) else 0.0
+
+
+func get_distance_to_river_at(pos: Vector2i) -> float:
+	return _graph.river_sample(Vector2(pos) + Vector2(0.5, 0.5)).x
+
+
+# ---------------------------------------------------------------- resources
+
+func get_resource_node_at(pos: Vector2i) -> String:
+	return get_resource_node_for(pos, get_biome_at(pos))
+
+
+# Whole chunk in one pass: quota is ensured once from the four corners (an interior tile's
+# candidate cells always lie between the corners' candidates, axis by axis), and each
+# tile's resource reuses the river and lake samples of its biome evaluation.
+func generate_chunk(chunk: Vector2i, with_resources: bool = true) -> Dictionary:
+	var origin: Vector2i = Config.chunk_origin(chunk)
+	var last: int = Config.CHUNK_SIZE - 1
+	for corner: Vector2i in [origin, origin + Vector2i(last, 0), origin + Vector2i(0, last), origin + Vector2i(last, last)]:
+		if WorldLayout.contains_tile(corner):
+			_ensure_quota(corner)
+	var all_land: bool = true
+	for corner: Vector2i in [origin, origin + Vector2i(last, 0), origin + Vector2i(0, last), origin + Vector2i(last, last)]:
+		all_land = all_land and WorldLayout.contains_tile(corner)
+	_prove_chunk(origin)
+	var biomes: Dictionary = {}
+	var resources: Dictionary = {}
+	for x: int in range(Config.CHUNK_SIZE):
+		for y: int in range(Config.CHUNK_SIZE):
+			var tile: Vector2i = origin + Vector2i(x, y)
+			if not all_land and not WorldLayout.contains_tile(tile):
+				continue
+			var biome: String = _biome_after_quota(tile)
+			biomes[tile] = biome
+			if with_resources:
+				resources[tile] = _resource_from_scratch(tile, biome)
+	_no_clearing = false
+	_no_lake = false
+	_no_mine = false
+	_far_from_start = false
+	return {"biomes": biomes, "resources": resources}
+
+
+# Sets the chunk-level proofs. Distances are measured from the chunk centre with the
+# chunk's half-diagonal added, plus each check's own reach, so a skipped check could
+# never have fired for any tile of the chunk.
+func _prove_chunk(origin: Vector2i) -> void:
+	var half: float = float(Config.CHUNK_SIZE) * 0.5
+	var center: Vector2 = Vector2(origin) + Vector2(half, half)
+	var reach: float = half * 1.4143 + 1.0
+	var cells: Array[Vector2i] = []
+	for corner: Vector2i in [origin, origin + Vector2i(Config.CHUNK_SIZE, 0), origin + Vector2i(0, Config.CHUNK_SIZE), origin + Vector2i(Config.CHUNK_SIZE, Config.CHUNK_SIZE)]:
+		var cell: Vector2i = GlobalLandscapeMap.cell_for_tile(corner)
+		if not cells.has(cell):
+			cells.append(cell)
+	_no_clearing = true
+	_no_lake = true
+	_no_mine = true
+	for cell: Vector2i in cells:
+		for clearing: Vector3 in _graph._clearings.get(cell, []):
+			if center.distance_to(Vector2(clearing.x, clearing.y)) <= clearing.z + reach:
+				_no_clearing = false
+		for lake: Vector3 in _graph.lakes.get(cell, []):
+			# Water override reads _lake below 9 tiles, resources up to 7.
+			if center.distance_to(Vector2(lake.x, lake.y)) <= lake.z + 9.0 + reach:
+				_no_lake = false
+		for mine: Vector2i in _graph.mines.get(cell, []):
+			if center.distance_to(Vector2(mine)) <= maxf(4.0, WorldGraph.MINE_CLEARING) + reach:
+				_no_mine = false
+	_far_from_start = center.distance_to(Vector2(WorldLayout.start_tile())) > 4.0 * 1.4143 + reach
+
+
+# Uses the already computed biome; the chunk job calls this once per tile.
+func get_resource_node_for(pos: Vector2i, biome_id: String) -> String:
+	if biome_id.is_empty() or biome_id == "water":
 		return ""
-
-	# 7. FOREST (Dense pine and oak trees, healing herbs, berries, minimal stone)
-	if biome_id == "forest":
-		var for_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 606)
-		var for_roll: float = for_rng.randf()
-		if for_roll < 0.080:
-			return "forest_pine"
-		elif for_roll < 0.120:
-			return "oak_tree"
-		elif for_roll < 0.138:
-			return "wild_berry_bush"
-		elif for_roll < 0.160:
-			return "healing_herb"
-		elif for_roll < 0.168:
-			return "stone_boulder"
+	# Fields of pos must be current: callers may pass a cached biome.
+	if not _compute(pos):
 		return ""
+	_lake = WorldGraph.FAR
+	return _resource_from_scratch(pos, biome_id)
 
-	# 8. PLAINS (Sweeping open grass: wild grass tufts for wheat seeds, rare healing herbs, trees, berries)
+
+# Uses the fields of pos (_compute already ran for it) and its _river sample.
+func _resource_from_scratch(pos: Vector2i, biome_id: String) -> String:
+	if biome_id.is_empty() or biome_id == "water":
+		return ""
+	if not _far_from_start and Config.tile_distance(pos, WorldLayout.start_tile()) <= 4:
+		return ""
+	var point := Vector2(pos) + Vector2(0.5, 0.5)
+	var mine: float = WorldGraph.FAR if _no_mine else _graph.mine_distance(point)
+	if mine <= 4.0:
+		# Mine: a dense ore cluster beside the branch channel.
+		if mine < 1.0 or _roll(pos, 1201) > 0.45:
+			return ""
+		var ores: Array[String] = ["iron_vein", "copper_vein", "tin_vein", "coal_deposit", "iron_vein", "gold_quartz_vein"]
+		return ores[mini(int(_roll(pos, 1202) * ores.size()), ores.size() - 1)]
+	# hills carry the old mountain foothill table, so they keep the mountain thinning.
+	var density: float = 0.45 if biome_id in SPARSE_BIOMES else 0.75
+	if _roll(pos, 1709) > density:
+		return ""
+	if _lake >= WorldGraph.FAR and not _no_lake:
+		_lake = _graph.lake_sdf(point)
+	var bank: float = _river.x - _river.y
+	var lake: float = _lake
+	var pond_shore: bool = false
+	if _is_pond_basin():
+		var pond: float = _n_pond.get_noise_2d(_x, _y)
+		pond_shore = pond > POND_SHORE and pond <= POND_LEVEL
+	var shore: bool = (bank >= 0.0 and bank <= 6.0) or (lake >= 0.0 and lake <= 7.0) or pond_shore
+	if (shore or biome_id == "swamp") and _roll(pos, 911) < 0.065:
+		return "clay_bank"
+	if shore and _roll(pos, 909) < 0.042:
+		return "tin_vein"
+	if (biome_id == "hills" or biome_id == "mountains") and bank < 12.0 and _roll(pos, 808) < 0.025:
+		return "gold_quartz_vein"
+	var roll: float = _roll(pos, 202)
 	if biome_id == "plains":
-		# Rare compact stone clusters (strictly 1 boulder per cluster)
-		var cluster_x: int = pos.x / 6
-		var cluster_y: int = pos.y / 6
-		var c_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, Vector2i(cluster_x, cluster_y), 707)
-		if c_rng.randf() < 0.08:
-			var ox: int = c_rng.randi_range(1, 4)
-			var oy: int = c_rng.randi_range(1, 4)
-			if (pos.x % 6 == ox) and (pos.y % 6 == oy):
+		# Rare compact stone clusters: one boulder per 6x6 block.
+		var block := Vector2i(floori(pos.x / 6.0), floori(pos.y / 6.0))
+		if _roll(block, 707) < 0.08:
+			var ox: int = 1 + mini(int(_roll(block, 708) * 4.0), 3)
+			var oy: int = 1 + mini(int(_roll(block, 709) * 4.0), 3)
+			if posmod(pos.x, 6) == ox and posmod(pos.y, 6) == oy:
 				return "stone_boulder"
+	var table: Array = RESOURCE_TABLES.get(biome_id, [])
+	return _pick(roll, table)
 
-		# Normal vegetative rolls on plains: trees reduced 3x (from 0.035 to 0.011)
-		var pl_rng: RandomNumberGenerator = RngService.make_tile_rng(_seed, pos, 101)
-		var pl_roll: float = pl_rng.randf()
-		if pl_roll < 0.011:
-			return "oak_tree"
-		elif pl_roll < 0.024:
-			return "wild_berry_bush"
-		elif pl_roll < 0.038:
-			return "healing_herb"
-		elif pl_roll < 0.072:
-			return "wild_grass"
 
+# Stateless per-tile roll in [0, 1]: no RandomNumberGenerator allocation per tile.
+func _roll(pos: Vector2i, salt: int) -> float:
+	return WorldGraph.hash01(pos.x, pos.y, _seed, salt)
+
+
+static func _pick(roll: float, table: Array) -> String:
+	for row: Array in table:
+		if roll < float(row[0]):
+			return str(row[1])
 	return ""

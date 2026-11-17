@@ -6,11 +6,8 @@ const CHUNK_SIZE: int = 16
 const TILE_SIZE: Vector2i = Vector2i(48, 48)
 const HALF_TILE: Vector2i = Vector2i(24, 24)
 const MAP_PROJECTION: String = "orthogonal_v1"
-const WORLD_SIZE_TILES: int = 1000
-const WORLD_SIZE_CHUNKS: int = (WORLD_SIZE_TILES + CHUNK_SIZE - 1) / CHUNK_SIZE
-var TERRAIN_GEOGRAPHY_SIZE: int = WORLD_SIZE_TILES
+# World shape lives in WorldLayout (21x15 authored cells of 1000x1000 tiles, with void).
 const CHUNK_LOAD_RADIUS: int = 2
-const BORDER_MOUNTAIN_THICKNESS: int = 4
 
 # Simulation & Time
 const AUTOSAVE_INTERVAL: float = 300.0

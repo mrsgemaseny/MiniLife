@@ -29,17 +29,24 @@ func run() -> void:
 	print("GLOBAL_MAP_OPEN_MS=", Time.get_ticks_msec() - opened_at)
 	check(global_map.visible, "G opens the separate global map")
 	check(not local_map.visible, "Local atlas remains closed")
-	check(GlobalRegionMap.WIDTH == 44 and GlobalRegionMap.HEIGHT == 32, "Global reference grid is doubled on both axes")
-	check(global_map._regions != null and global_map._canvas.custom_minimum_size == Vector2(44, 32) * GlobalMapUI.CELL_SIZE,
-		"Global map renders its own regional world")
+	check(WorldLayout.size_cells() == Vector2i(21, 15), "Global map is the authored 21x15 grid")
+	check(global_map._regions != null and global_map._canvas.custom_minimum_size == Vector2(21, 15) * GlobalMapUI.CELL_SIZE,
+		"Global map renders the authored landscape cells")
 	Input.parse_input_event(event)
 	await get_tree().process_frame
 	check(not global_map.visible, "G closes the global map")
 	Input.parse_input_event(event)
 	await get_tree().process_frame
 	check(global_map.visible, "G reopens the global map")
-	var origin_region: Vector2i = GlobalRegionMap.region_for_tile(GameManager.get_player_tile())
-	var destination: Vector2i = origin_region + Vector2i(2, 0)
+	var origin_region: Vector2i = GlobalLandscapeMap.cell_for_tile(GameManager.get_player_tile())
+	# Start cell (9,14): two cells west is (7,14), plains. Void cells cannot be selected.
+	var destination: Vector2i = origin_region + Vector2i(-2, 0)
+	var void_click := InputEventMouseButton.new()
+	void_click.button_index = MOUSE_BUTTON_LEFT
+	void_click.pressed = true
+	void_click.position = (Vector2(0, 0) + Vector2.ONE * 0.5) * GlobalMapUI.CELL_SIZE
+	global_map._on_map_input(void_click)
+	check(global_map._selected_region == origin_region, "Void cell is not selectable")
 	var click := InputEventMouseButton.new()
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.pressed = true
@@ -52,11 +59,11 @@ func run() -> void:
 		global_map._enter_selected_chunk()
 		await get_tree().process_frame
 		check(not global_map.visible, "Entering a local region closes the global map")
-		check(GlobalRegionMap.region_for_tile(GameManager.get_player_tile()) == destination, "Transition places player in selected local region")
+		check(GlobalLandscapeMap.cell_for_tile(GameManager.get_player_tile()) == destination, "Transition places player in selected local region")
 		var bundle: Dictionary = {"world": {}, "player": {}, "meta": {}}
 		SignalBus.save_data_requested.emit(bundle)
 		var saved_position: Array = bundle.player.get("position", [])
-		check(saved_position.size() == 2 and GlobalRegionMap.region_for_tile(Config.iso_to_world(Vector2(saved_position[0], saved_position[1]))) == destination,
+		check(saved_position.size() == 2 and GlobalLandscapeMap.cell_for_tile(Config.iso_to_world(Vector2(saved_position[0], saved_position[1]))) == destination,
 			"Destination is recorded by the existing save format")
 	SignalBus.ui_panel_requested.emit("map")
 	check(local_map.visible, "Existing local map still opens")

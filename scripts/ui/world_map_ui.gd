@@ -8,11 +8,14 @@ const PANEL_ID: String = "map"
 const MAP_TEX_W: int = 512
 const MAP_TEX_H: int = 512
 const MAP_SAMPLES: int = 256
-const MAP_TILE_SCALE: float = float(MAP_SAMPLES) / Config.WORLD_SIZE_TILES
+const ROW_SEGMENT: int = 64
+# The local map shows the player's current 1000x1000 cell; _map_origin is its first tile.
+const MAP_TILE_SCALE: float = float(MAP_SAMPLES) / GlobalLandscapeMap.CELL_TILES
 var _map_seed: int = -1
 var _map_row: int = MAP_SAMPLES
 var _map_column: int = 0
 var _map_terrain: TerrainGenerator
+var _map_origin: Vector2i = Vector2i.ZERO
 var _dirty_samples: Dictionary = {}
 
 var _map_image: Image = null
@@ -56,12 +59,17 @@ func _ready() -> void:
 	SignalBus.ui_close_all_requested.connect(close_panel)
 	SignalBus.fog_batch_updated.connect(func(changes: Array) -> void:
 		for change: Dictionary in changes:
-			var tile: Vector2i = change["pos"]
+			var tile: Vector2i = change["pos"] - _map_origin
+			if tile.x < 0 or tile.y < 0 or tile.x >= GlobalLandscapeMap.CELL_TILES or tile.y >= GlobalLandscapeMap.CELL_TILES:
+				continue
 			_dirty_samples[Vector2i(clampi(int(tile.x * MAP_TILE_SCALE), 0, MAP_SAMPLES - 1), clampi(int(tile.y * MAP_TILE_SCALE), 0, MAP_SAMPLES - 1))] = true
 	)
 	SignalBus.game_started.connect(func(_seed: int, _slot: String, _new: bool): _map_seed = -1)
 	SignalBus.fog_snapshot_loaded.connect(func(_tiles: Array): _map_seed = -1)
-	SignalBus.player_tile_changed.connect(func(_p: Vector2i) -> void:
+	SignalBus.player_tile_changed.connect(func(p: Vector2i) -> void:
+		# Crossing into another cell repaints the local map for that cell.
+		if GlobalLandscapeMap.cell_for_tile(p) * GlobalLandscapeMap.CELL_TILES != _map_origin:
+			_map_seed = -1
 		if visible and _map_canvas != null:
 			_map_canvas.queue_redraw()
 	)
@@ -130,7 +138,7 @@ func refresh() -> void:
 func center_on_player() -> void:
 	if _map_canvas == null:
 		return
-	var ptile: Vector2i = GameManager.get_player_tile()
+	var ptile: Vector2i = GameManager.get_player_tile() - _map_origin
 	var player_px: float = float(ptile.x) * 2.0 * MAP_TILE_SCALE
 	var player_py: float = float(ptile.y) * 2.0 * MAP_TILE_SCALE
 	var c_sz: Vector2 = _map_canvas.size
@@ -166,6 +174,10 @@ func _get_cartographic_biome_color(bname: String) -> Color:
 			return Color(0.48, 0.50, 0.54, 1.0) # Weathered granite slate
 		"snow":
 			return Color(0.88, 0.92, 0.96, 1.0) # Alpine snow peak
+		"steppe":
+			return Color(0.70, 0.64, 0.42, 1.0) # Dry semi-desert ground
+		"hills":
+			return Color(0.50, 0.52, 0.40, 1.0) # Rocky foothills
 		_:
 			return Color(0.40, 0.52, 0.36, 1.0)
 
@@ -176,6 +188,7 @@ func _rebuild_world_map_texture() -> void:
 	var seed_value: int = GameManager.get_world_seed()
 	if _map_seed != seed_value:
 		_map_seed = seed_value
+		_map_origin = GlobalLandscapeMap.cell_for_tile(GameManager.get_player_tile()) * GlobalLandscapeMap.CELL_TILES
 		_map_row = 0
 		_map_column = 0
 		_map_terrain = TerrainGenerator.new(seed_value)
@@ -189,9 +202,12 @@ func _process(_delta: float) -> void:
 		return
 	var deadline: int = Time.get_ticks_usec() + 4000
 	var changed: bool = false
+	# Row segments: one terrain call per segment lets the generator skip per-sample quota
+	# checks, while a segment (~1.7 ms) keeps the 4 ms frame budget.
 	while _map_row < MAP_SAMPLES and Time.get_ticks_usec() < deadline:
-		_paint_sample(Vector2i(_map_column, _map_row), world_sys, false)
-		_map_column += 1
+		var count: int = mini(ROW_SEGMENT, MAP_SAMPLES - _map_column)
+		_paint_row(_map_row, _map_column, count, world_sys)
+		_map_column += count
 		if _map_column == MAP_SAMPLES:
 			_map_column = 0
 			_map_row += 1
@@ -207,12 +223,27 @@ func _process(_delta: float) -> void:
 		_map_texture.update(_map_image)
 		_map_canvas.queue_redraw()
 
+func _paint_row(row: int, first_column: int, count: int, world_sys: WorldSystem) -> void:
+	var xs := PackedInt32Array()
+	xs.resize(count)
+	for i: int in range(count):
+		xs[i] = _map_origin.x + int((first_column + i) / MAP_TILE_SCALE)
+	var y: int = _map_origin.y + int(row / MAP_TILE_SCALE)
+	var biomes: PackedStringArray = _map_terrain.get_biome_row(y, xs)
+	for i: int in range(count):
+		_paint_color(Vector2i(first_column + i, row), Vector2i(xs[i], y), biomes[i], world_sys, false)
+
+
 func _paint_sample(sample: Vector2i, world_sys: WorldSystem, aggregate_fog: bool) -> void:
-	var tile := Vector2i(int(sample.x / MAP_TILE_SCALE), int(sample.y / MAP_TILE_SCALE))
-	var color: Color = _get_cartographic_biome_color(_map_terrain.get_biome_at(tile))
+	var tile := _map_origin + Vector2i(int(sample.x / MAP_TILE_SCALE), int(sample.y / MAP_TILE_SCALE))
+	_paint_color(sample, tile, _map_terrain.get_biome_at(tile), world_sys, aggregate_fog)
+
+
+func _paint_color(sample: Vector2i, tile: Vector2i, biome: String, world_sys: WorldSystem, aggregate_fog: bool) -> void:
+	var color: Color = _get_cartographic_biome_color(biome)
 	var state: int = int(world_sys.get_fog_state(tile))
 	if aggregate_fog:
-		var end := Vector2i(mini(Config.WORLD_SIZE_TILES, ceili((sample.x + 1) / MAP_TILE_SCALE)), mini(Config.WORLD_SIZE_TILES, ceili((sample.y + 1) / MAP_TILE_SCALE)))
+		var end := _map_origin + Vector2i(mini(GlobalLandscapeMap.CELL_TILES, ceili((sample.x + 1) / MAP_TILE_SCALE)), mini(GlobalLandscapeMap.CELL_TILES, ceili((sample.y + 1) / MAP_TILE_SCALE)))
 		for x: int in range(tile.x, end.x):
 			for y: int in range(tile.y, end.y):
 				state = maxi(state, int(world_sys.get_fog_state(Vector2i(x, y))))
@@ -446,8 +477,8 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 		var tx: int = roundi(local_px.x / (2.0 * MAP_TILE_SCALE))
 		var ty: int = roundi(local_px.y / (2.0 * MAP_TILE_SCALE))
 
-		if tx >= 0 and tx < Config.WORLD_SIZE_TILES and ty >= 0 and ty < Config.WORLD_SIZE_TILES:
-			_hovered_tile = Vector2i(tx, ty)
+		if tx >= 0 and tx < GlobalLandscapeMap.CELL_TILES and ty >= 0 and ty < GlobalLandscapeMap.CELL_TILES:
+			_hovered_tile = _map_origin + Vector2i(tx, ty)
 			_map_canvas.tooltip_text = ""
 			var world_sys: WorldSystem = get_tree().get_first_node_in_group("world_system") as WorldSystem
 			if world_sys != null and _status_label != null:
@@ -462,6 +493,11 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 			_map_canvas.tooltip_text = ""
 			if _status_label != null:
 				_status_label.text = "Курсор: За пределами мира"
+
+
+# Screen offset for world-tile coordinates: the texture starts at the cell origin.
+func _view_offset() -> Vector2:
+	return _pan_offset - Vector2(_map_origin) * (2.0 * MAP_TILE_SCALE * _zoom)
 
 
 func _refresh_political_layer() -> void:
@@ -497,7 +533,7 @@ func _draw_political_layer() -> void:
 	for entry: Dictionary in _political_territory:
 		var coords: Array = entry["chunk"]
 		var chunk: Vector2i = Vector2i(coords[0], coords[1])
-		var start: Vector2 = _pan_offset + Vector2(chunk) * chunk_px
+		var start: Vector2 = _view_offset() + Vector2(chunk) * chunk_px
 		var bounds: Rect2 = Rect2(start, Vector2.ONE * chunk_px)
 		var color: Color = Color.from_string(entry["color"], Color.GRAY)
 		colors_by_chunk[chunk] = color
@@ -505,7 +541,7 @@ func _draw_political_layer() -> void:
 		_map_canvas.draw_rect(bounds, Color(color, 0.45 if district else 0.25))
 	for chunk: Vector2i in colors_by_chunk:
 		var color: Color = colors_by_chunk[chunk]
-		var nw: Vector2 = _pan_offset + Vector2(chunk) * chunk_px
+		var nw: Vector2 = _view_offset() + Vector2(chunk) * chunk_px
 		var ne: Vector2 = nw + Vector2(chunk_px, 0)
 		var sw: Vector2 = nw + Vector2(0, chunk_px)
 		var se: Vector2 = nw + Vector2.ONE * chunk_px
@@ -524,7 +560,7 @@ func _draw_political_layer() -> void:
 		var started: bool = false
 		for sample: Dictionary in track["points"]:
 			var coords: Array = sample["tile"]
-			var point: Vector2 = _pan_offset + Vector2(coords[0], coords[1]) * scale_px
+			var point: Vector2 = _view_offset() + Vector2(coords[0], coords[1]) * scale_px
 			if started and bool(sample["joined"]):
 				_map_canvas.draw_line(previous, point, color, 2.0, true)
 			_map_canvas.draw_circle(point, 2.5, color)
@@ -536,7 +572,7 @@ func _draw_political_layer() -> void:
 			_map_canvas.draw_string(ThemeDB.fallback_font, previous + Vector2(8, 8), str(track["faction"]), HORIZONTAL_ALIGNMENT_LEFT, -1.0, 10, Color.WHITE)
 	for entry: Dictionary in _political_settlements:
 		var coords: Array = entry["tile"]
-		var point: Vector2 = _pan_offset + Vector2(coords[0], coords[1]) * (2.0 * MAP_TILE_SCALE * _zoom)
+		var point: Vector2 = _view_offset() + Vector2(coords[0], coords[1]) * (2.0 * MAP_TILE_SCALE * _zoom)
 		var faction_color: Color = Color.from_string(entry["color"], Color.GRAY)
 		if int(entry["status"]) in [AlifeSettlement.Status.RAZED, AlifeSettlement.Status.RUINS]:
 			faction_color = Color.GRAY
@@ -599,7 +635,7 @@ func _draw_canvas() -> void:
 		if is_discovered:
 			var px: float = float(ptile.x) * 2.0 * MAP_TILE_SCALE
 			var py: float = float(ptile.y) * 2.0 * MAP_TILE_SCALE
-			var screen_pt: Vector2 = _pan_offset + Vector2(px, py) * _zoom
+			var screen_pt: Vector2 = _view_offset() + Vector2(px, py) * _zoom
 
 			# POI Diamond Icon
 			var poi_poly: PackedVector2Array = IsoMath.diamond_polygon(screen_pt, 7.0 * _zoom, 3.5 * _zoom)
@@ -630,7 +666,7 @@ func _draw_canvas() -> void:
 	var ptile: Vector2i = GameManager.get_player_tile()
 	var player_px: float = float(ptile.x) * 2.0 * MAP_TILE_SCALE
 	var player_py: float = float(ptile.y) * 2.0 * MAP_TILE_SCALE
-	var player_screen: Vector2 = _pan_offset + Vector2(player_px, player_py) * _zoom
+	var player_screen: Vector2 = _view_offset() + Vector2(player_px, player_py) * _zoom
 
 	# Pulsing beacon ring
 	_map_canvas.draw_arc(player_screen, 9.0 * _zoom, 0.0, TAU, 24, Color(0.96, 0.94, 0.88, 0.85), 2.0)

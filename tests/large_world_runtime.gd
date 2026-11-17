@@ -5,14 +5,18 @@ func _ready() -> void:
 
 func _run() -> void:
 	var metrics: Dictionary = {}
-	assert(Config.WORLD_SIZE_TILES == 1000 and Config.WORLD_SIZE_CHUNKS == 63)
+	assert(WorldLayout.size_tiles() == Vector2i(21000, 15000))
 	var terrain := TerrainGenerator.new(Config.DEFAULT_WORLD_SEED)
-	assert(terrain.is_in_world(Vector2i(999, 999)))
-	assert(not terrain.is_in_world(Vector2i(1000, 999)))
+	var origin: Vector2i = WorldLayout.start_tile()
+	# Start cell (9,14): its east neighbour (10,14) is void, the map ends at y = 15000.
+	assert(terrain.is_in_world(Vector2i(9999, 14999)))
+	assert(not terrain.is_in_world(Vector2i(10000, 14500)))
+	assert(not terrain.is_in_world(Vector2i(9500, 15000)))
 	var edge_job := ChunkTerrainJob.new()
-	edge_job.start(Config.DEFAULT_WORLD_SEED, Vector2i(62, 62))
+	edge_job.start(Config.DEFAULT_WORLD_SEED, Config.tile_to_chunk(Vector2i(9500, 14999)))
 	var edge_data: Dictionary = edge_job.collect()
-	assert(edge_data["biomes"].size() == 64)
+	# Bottom edge chunk straddles y = 15000: only its upper 16x8 tiles exist.
+	assert(edge_data["biomes"].size() == 128)
 	for edge_tile: Vector2i in edge_data["biomes"]:
 		assert(terrain.is_in_world(edge_tile))
 	var start: int = Time.get_ticks_usec()
@@ -22,11 +26,11 @@ func _run() -> void:
 	metrics["alife_seed_ms"] = (Time.get_ticks_usec() - start) / 1000.0
 	metrics["settlements"] = context.settlements.all().size()
 	metrics["abstract_agents"] = context.agents.all().size()
-	assert(context.settlements.all().size() <= 48)
+	assert(context.settlements.all().size() == 102)
 	var world: WorldSystem = load("res://scenes/world/world.tscn").instantiate()
 	add_child(world)
 	start = Time.get_ticks_usec()
-	world._on_player_tile_changed(Vector2i(500, 500))
+	world._on_player_tile_changed(origin)
 	metrics["initial_chunk_ms"] = (Time.get_ticks_usec() - start) / 1000.0
 	assert(world._loaded_chunks.size() == 1)
 	for frame: int in range(35):
@@ -35,10 +39,11 @@ func _run() -> void:
 	metrics["resident_chunks"] = world._loaded_chunks.size()
 	var longest: int = 0
 	var teleport_ms: float = 0.0
-	for tile: Vector2i in [Vector2i(516, 500), Vector2i(532, 500), Vector2i(548, 500), Vector2i(996, 996)]:
+	var far_cell: Vector2i = Vector2i(12, 6) * GlobalLandscapeMap.CELL_TILES + Vector2i(500, 500)
+	for tile: Vector2i in [origin + Vector2i(16, 0), origin + Vector2i(32, 0), origin + Vector2i(48, 0), far_cell]:
 		start = Time.get_ticks_usec()
 		world._on_player_tile_changed(tile)
-		if tile.x < 900:
+		if tile != far_cell:
 			longest = maxi(longest, Time.get_ticks_usec() - start)
 		else:
 			teleport_ms = (Time.get_ticks_usec() - start) / 1000.0
@@ -67,19 +72,28 @@ func _run() -> void:
 	metrics["max_map_build_slice_ms"] = max_map_frame / 1000.0
 	var travel := AlifeTravel.new()
 	start = Time.get_ticks_usec()
-	var path: Array[Vector2i] = travel.path(Config.DEFAULT_WORLD_SEED, Vector2i(500, 500), Vector2i(520, 500))
+	var path: Array[Vector2i] = travel.path(Config.DEFAULT_WORLD_SEED, origin, origin + Vector2i(20, 0))
 	metrics["nearby_path_ms"] = (Time.get_ticks_usec() - start) / 1000.0
+	assert(not path.is_empty())
 	for point: Vector2i in path:
 		assert(terrain.get_biome_at(point) not in ["water", "mountains"])
+	# Cross-map trip between two authored settlements: sparse waypoints, not 10k tiles.
+	var settlements: Array = context.settlements.all()
+	var from_tile: Vector2i = (settlements[0] as AlifeSettlement).tile
+	var to_tile: Vector2i = (settlements[settlements.size() - 1] as AlifeSettlement).tile
+	start = Time.get_ticks_usec()
+	var long_path: Array[Vector2i] = travel.path(Config.DEFAULT_WORLD_SEED, from_tile, to_tile)
+	metrics["cross_map_path_ms"] = (Time.get_ticks_usec() - start) / 1000.0
+	metrics["cross_map_path_points"] = long_path.size()
+	assert(not long_path.is_empty() and long_path[0] == from_tile and long_path.back() == to_tile)
+	assert(long_path.size() < 600)
 	metrics["navigation_cached_tiles"] = travel._grid._blocked.size()
 	metrics["static_memory_mb"] = Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0
 	var saved: Dictionary = world.get_save_data()
-	assert(saved["world_size_tiles"] == 1000 and saved["terrain_geography_size"] == 1000)
-	Config.TERRAIN_GEOGRAPHY_SIZE = 256
-	var legacy_terrain := TerrainGenerator.new(Config.DEFAULT_WORLD_SEED)
-	assert(legacy_terrain._geography_size == 256 and legacy_terrain.is_in_world(Vector2i(900, 900)))
-	Config.TERRAIN_GEOGRAPHY_SIZE = 1000
+	assert(saved["generator_version"] == TerrainGenerator.GENERATOR_VERSION)
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://output"))
 	var file := FileAccess.open("res://output/large_world_metrics.json", FileAccess.WRITE)
-	file.store_string(JSON.stringify(metrics, "\t"))
+	if file != null:
+		file.store_string(JSON.stringify(metrics, "\t"))
 	print("LARGE_WORLD_PASS: ", JSON.stringify(metrics))
 	get_tree().quit()

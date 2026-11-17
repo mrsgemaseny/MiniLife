@@ -8,7 +8,7 @@ const RADAR_RADIUS: int = 12
 const DISPLAY_RX: float = 60.0
 const DISPLAY_RY: float = 60.0
 
-var _center_tile: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
+var _center_tile: Vector2i = WorldLayout.start_tile()
 var _dirty: bool = true
 var _is_interior: bool = false
 var _interior_zone_id: String = ""

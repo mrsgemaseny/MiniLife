@@ -18,14 +18,5 @@ func collect() -> Dictionary:
 func _generate(seed_value: int, chunk: Vector2i) -> void:
 	# Pure data only. Noise and RNG instances are owned by this worker, never shared.
 	var terrain := TerrainGenerator.new(seed_value)
-	var origin: Vector2i = Config.chunk_origin(chunk)
-	var biomes: Dictionary = {}
-	var resources: Dictionary = {}
-	for x: int in range(Config.CHUNK_SIZE):
-		for y: int in range(Config.CHUNK_SIZE):
-			var tile: Vector2i = origin + Vector2i(x, y)
-			if not terrain.is_in_world(tile):
-				continue
-			biomes[tile] = terrain.get_biome_at(tile)
-			resources[tile] = terrain.get_resource_node_at(tile)
-	data = {"biomes": biomes, "resources": resources}
+	data = terrain.generate_chunk(chunk)
+	PoiGenerator.warm_cell_plans(seed_value, chunk)

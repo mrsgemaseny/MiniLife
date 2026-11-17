@@ -113,20 +113,7 @@ func _process(delta: float) -> void:
 		if job.complete():
 			job.collect()
 			_retired_jobs.erase(job)
-	var running_jobs: int = 0
-	for job: ChunkTerrainJob in _retired_jobs:
-		if job.task_id >= 0 and not job.complete():
-			running_jobs += 1
-	for job: ChunkTerrainJob in _terrain_jobs.values():
-		if job.task_id >= 0 and not job.complete():
-			running_jobs += 1
-	for chunk: Vector2i in _pending_chunks:
-		if running_jobs >= 2:
-			break
-		var job: ChunkTerrainJob = _terrain_jobs.get(chunk)
-		if job != null and job.task_id < 0:
-			job.start(_seed, chunk)
-			running_jobs += 1
+	_start_pending_jobs()
 	# SceneTree mutations stay on the main thread, with a bounded streaming budget.
 	var deadline: int = Time.get_ticks_usec() + 2500
 	var chunks_loaded_this_frame: int = 0
@@ -140,6 +127,8 @@ func _process(delta: float) -> void:
 			chunks_loaded_this_frame += 1
 			if chunks_loaded_this_frame >= 1:
 				break
+	# Refill worker slots freed this frame instead of leaving them idle until the next one.
+	_start_pending_jobs()
 	var target_col: Color = Color(1.0, 1.0, 1.0, 1.0)
 	if _interior_zone != null and _interior_zone.is_player_inside():
 		target_col = Color(0.12, 0.12, 0.15, 1.0)
@@ -154,8 +143,26 @@ func _process(delta: float) -> void:
 			_night_wolf_timer = randf_range(28.0, 48.0)
 			_spawn_night_wolf_pack()
 
+# At most two terrain jobs run at once; queued chunks start nearest first.
+func _start_pending_jobs() -> void:
+	var running_jobs: int = 0
+	for job: ChunkTerrainJob in _retired_jobs:
+		if job.task_id >= 0 and not job.complete():
+			running_jobs += 1
+	for job: ChunkTerrainJob in _terrain_jobs.values():
+		if job.task_id >= 0 and not job.complete():
+			running_jobs += 1
+	for chunk: Vector2i in _pending_chunks:
+		if running_jobs >= 2:
+			break
+		var job: ChunkTerrainJob = _terrain_jobs.get(chunk)
+		if job != null and job.task_id < 0:
+			job.start(_seed, chunk)
+			running_jobs += 1
+
+
 func _is_tile_in_bounds(tpos: Vector2i) -> bool:
-	return tpos.x >= 0 and tpos.y >= 0 and tpos.x < Config.WORLD_SIZE_TILES and tpos.y < Config.WORLD_SIZE_TILES
+	return WorldLayout.contains_tile(tpos)
 
 func _spawn_night_wolf_pack() -> void:
 	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
@@ -252,7 +259,7 @@ func _draw() -> void:
 				var surface: Color = Color("938e81") if paving == "stone_floor" else Color("96724d")
 				surface = surface.darkened(float(hash_val % 5) * 0.025)
 				var cell: PackedVector2Array = IsoMath.cell_polygon(center)
-				draw_colored_polygon(cell, surface)
+				IsoMath.draw_quad(self, cell, surface)
 				draw_polyline(cell, surface.darkened(0.24), 0.75, true)
 				continue
 			var col: Color = ProceduralTileset.BIOME_PALETTE.get(biome_id, Color(0.34, 0.56, 0.25))
@@ -260,7 +267,7 @@ func _draw() -> void:
 			col = col.lightened(variation) if variation > 0.0 else col.darkened(-variation)
 
 			var tile_tex_name: String = "tile_grass"
-			if biome_id == "desert":
+			if biome_id == "desert" or biome_id == "steppe":
 				tile_tex_name = "tile_sand"
 			elif biome_id == "swamp":
 				tile_tex_name = "tile_swamp"
@@ -278,11 +285,16 @@ func _draw() -> void:
 				var modulate_col: Color = Color.WHITE
 				if biome_id == "forest":
 					modulate_col = Color(0.72, 0.88, 0.68, 1.0)
+				elif biome_id == "steppe":
+					# Dry semi-desert ground: sand texture pulled toward ochre grass.
+					modulate_col = Color(0.86, 0.84, 0.62, 1.0)
+				elif biome_id == "hills":
+					modulate_col = Color(0.80, 0.80, 0.70, 1.0)
 				# Map the original diamond top surface onto the square cell.
 				var uv: PackedVector2Array = PackedVector2Array([Vector2(0.5,0.01),Vector2(0.99,16.0/37.0),Vector2(0.5,31.5/37.0),Vector2(0.01,16.0/37.0)])
-				draw_polygon(IsoMath.cell_polygon(center),PackedColorArray([modulate_col]),uv,tile_tex)
+				IsoMath.draw_textured_quad(self, IsoMath.cell_polygon(center), modulate_col, uv, tile_tex)
 			else:
-				draw_colored_polygon(IsoMath.cell_polygon(center), col)
+				IsoMath.draw_quad(self, IsoMath.cell_polygon(center), col)
 
 	for cpos in _chunk_pois:
 		var poi_info: Dictionary = _chunk_pois[cpos]
@@ -293,7 +305,7 @@ func _draw() -> void:
 			var p_center: Vector2 = Config.world_to_iso(p_tile)
 			var poi_def: Dictionary = DataRegistry.get_poi(str(poi_info.get("poi_id", "")))
 			var poi_col: Color = Color.from_string(str(poi_def.get("color", "#eab308")), Color.GOLD)
-			draw_colored_polygon(IsoMath.diamond_polygon(p_center, 22.0, 11.0), poi_col)
+			IsoMath.draw_quad(self, IsoMath.diamond_polygon(p_center, 22.0, 11.0), poi_col)
 			draw_polyline(IsoMath.diamond_polygon(p_center, 22.0, 11.0), poi_col.lightened(0.35), 1.5, true)
 
 func _visible_tile_bounds() -> Rect2i:
@@ -312,7 +324,7 @@ func get_tile(pos: Vector2i) -> TileState:
 	var state: TileState = TileState.new()
 	state.pos = pos
 	state.biome_id = get_biome_cached(pos)
-	state.passable = not _terrain.is_border_mountain(pos) and state.biome_id != "mountains" and state.biome_id != "water"
+	state.passable = not state.biome_id.is_empty() and state.biome_id != "mountains" and state.biome_id != "water"
 	var key: String = Config.vec2i_to_key(pos)
 	if _resource_nodes_by_tile.has(key):
 		var rnode: ResourceNode = _resource_nodes_by_tile[key] as ResourceNode
@@ -355,13 +367,14 @@ func _reserve_boss_site(id: String, preferred_tile: Vector2i) -> void:
 	if _boss_sites.has(id):
 		return
 	var preferred: Vector2i = Config.tile_to_chunk(preferred_tile)
-	for radius: int in range(Config.WORLD_SIZE_CHUNKS):
+	# Bounded ring search: boss sites belong near the start, not anywhere in 1.2M chunks.
+	for radius: int in range(64):
 		for x: int in range(-radius, radius + 1):
 			for y: int in range(-radius, radius + 1):
 				if maxi(absi(x), absi(y)) != radius:
 					continue
 				var chunk: Vector2i = preferred + Vector2i(x, y)
-				if not _is_tile_in_bounds(Config.chunk_origin(chunk)) or _loaded_chunks.has(chunk):
+				if not _is_tile_in_bounds(Config.chunk_origin(chunk) + Vector2i(8, 8)) or _loaded_chunks.has(chunk):
 					continue
 				var settlement: Dictionary = {}
 				SignalBus.alife_settlement_queried.emit(chunk, settlement)
@@ -477,7 +490,7 @@ func remove_structure(pos: Vector2i) -> bool:
 
 
 func is_passable(pos: Vector2i) -> bool:
-	if not _terrain.is_in_world(pos) or _terrain.is_border_mountain(pos):
+	if not _terrain.is_in_world(pos):
 		return false
 	var state: TileState = get_tile(pos)
 	return state.passable
@@ -582,9 +595,10 @@ func _stream_chunks_around(center_tile: Vector2i) -> void:
 	var needed: Dictionary = {}
 	for cx in range(center_chunk.x - Config.CHUNK_LOAD_RADIUS, center_chunk.x + Config.CHUNK_LOAD_RADIUS + 1):
 		for cy in range(center_chunk.y - Config.CHUNK_LOAD_RADIUS, center_chunk.y + Config.CHUNK_LOAD_RADIUS + 1):
-			if cx < 0 or cy < 0 or cx >= Config.WORLD_SIZE_CHUNKS or cy >= Config.WORLD_SIZE_CHUNKS:
-				continue
 			var cpos: Vector2i = Vector2i(cx, cy)
+			# Void cells have no chunks at all.
+			if not WorldLayout.contains_chunk(cpos):
+				continue
 			needed[cpos] = true
 			if not _loaded_chunks.has(cpos) and not _pending_chunks.has(cpos):
 				_pending_chunks.append(cpos)
@@ -608,6 +622,7 @@ func _stream_chunks_around(center_tile: Vector2i) -> void:
 			to_unload.append(existing)
 	for cpos in to_unload:
 		_unload_chunk(cpos)
+	_start_pending_jobs()
 
 
 func _load_chunk(cpos: Vector2i) -> void:
@@ -633,8 +648,7 @@ func _load_chunk(cpos: Vector2i) -> void:
 
 	var origin: Vector2i = Config.chunk_origin(cpos)
 	var center_biome: String = get_biome_cached(origin + Vector2i(8, 8))
-	var center: int = Config.WORLD_SIZE_TILES / 2
-	_reserve_boss_site("alpha_wolf_den", Vector2i(center - 48, center + 32))
+	_reserve_boss_site("alpha_wolf_den", WorldLayout.start_tile() + Vector2i(-48, 32))
 	var poi_data: Dictionary = PoiGenerator.get_chunk_poi(_seed, cpos, center_biome)
 	var settlement_info: Dictionary = {}
 	SignalBus.alife_settlement_queried.emit(cpos, settlement_info)
@@ -665,7 +679,7 @@ func _load_chunk(cpos: Vector2i) -> void:
 					var rnode_id: String = str(h_entry.get("resource_id", "oak_tree"))
 					_spawn_resource_node(chunk_node, rnode_id, tpos, stage)
 				continue
-			var rnode_id: String = str(prepared["resources"].get(tpos, "")) if prepared.has("resources") else _terrain.get_resource_node_at(tpos)
+			var rnode_id: String = str(prepared["resources"].get(tpos, "")) if prepared.has("resources") else _terrain.get_resource_node_for(tpos, get_biome_cached(tpos))
 			if rnode_id != "":
 				_spawn_resource_node(chunk_node, rnode_id, tpos, "full")
 
@@ -828,8 +842,8 @@ func _spawn_chunk_inhabitants(cpos: Vector2i, _biome_id: String, _delta: Diction
 	var spawned_list: Array[Node] = []
 	var killed: Array = _delta.get("killed", [])
 	var origin: Vector2i = Config.chunk_origin(cpos)
-	var center_chunk: Vector2i = Vector2i(Config.WORLD_SIZE_CHUNKS / 2, Config.WORLD_SIZE_CHUNKS / 2)
-	var world_center_tile: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
+	var center_chunk: Vector2i = Config.tile_to_chunk(WorldLayout.start_tile())
+	var world_center_tile: Vector2i = WorldLayout.start_tile()
 
 	# Wilderness fauna and predators
 	var is_center: bool = (cpos == center_chunk)
@@ -1074,8 +1088,7 @@ func get_save_data() -> Dictionary:
 		boss_sites[id] = Config.vec2i_to_key(_boss_sites[id])
 	return {
 		"world_seed": _seed,
-		"world_size_tiles": Config.WORLD_SIZE_TILES,
-		"terrain_geography_size": Config.TERRAIN_GEOGRAPHY_SIZE,
+		"generator_version": TerrainGenerator.GENERATOR_VERSION,
 		"fog": _fog.to_dict() if _fog != null else {},
 		"discovered_pois": _discovered_pois.duplicate(),
 		"boss_sites": boss_sites,
@@ -1088,7 +1101,6 @@ func load_save_data(w: Dictionary) -> void:
 	# A slot switch must discard departing entities without writing to the new slot.
 	_unload_all_chunks()
 	_resource_nodes_by_tile.clear()
-	Config.TERRAIN_GEOGRAPHY_SIZE = int(w.get("terrain_geography_size", 256))
 	if _ground_loot != null:
 		_ground_loot.restore(w.get("ground_loot", []))
 	_chunk_deltas.clear()
@@ -1115,8 +1127,7 @@ func load_save_data(w: Dictionary) -> void:
 
 	var story_events: Dictionary = w.get("story_events", {})
 	if bool(story_events.get("stronghold_unlocked", false)):
-		var center: int = Config.WORLD_SIZE_TILES / 2
-		_reserve_boss_site("dungeon", Vector2i(center + 24, center - 24))
+		_reserve_boss_site("dungeon", WorldLayout.start_tile() + Vector2i(24, -24))
 
 	var ptile: Vector2i = GameManager.get_player_tile()
 	if ptile.x > -9000:
@@ -1182,7 +1193,7 @@ func _is_structure_passable(structure_id: String) -> bool:
 
 
 func _find_spawn_tile() -> Vector2i:
-	var center: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
+	var center: Vector2i = WorldLayout.start_tile()
 	for radius in range(0, 32):
 		for dx in range(-radius, radius + 1):
 			for dy in range(-radius, radius + 1):

@@ -28,10 +28,12 @@ func _run() -> void:
 	var terrain: TerrainGenerator = TerrainGenerator.new(Config.DEFAULT_WORLD_SEED)
 	var mountain_tiles: int = 0
 	var resource_tiles: int = 0
-	for x in range(40,120):
-		for y in range(20,100):
-			var tile: Vector2i = Vector2i(x,y)
-			if terrain.get_biome_at(tile) == "mountains":
+	# Interior of the authored mountain cell (16,4): ridges and passable slopes together.
+	var origin: Vector2i = Vector2i(16, 4) * GlobalLandscapeMap.CELL_TILES + Vector2i(300, 300)
+	for x in range(0, 120):
+		for y in range(0, 120):
+			var tile: Vector2i = origin + Vector2i(x, y)
+			if terrain.get_biome_at(tile) in ["mountains", "hills", "snow"]:
 				mountain_tiles += 1
 				if not terrain.get_resource_node_at(tile).is_empty():
 					resource_tiles += 1

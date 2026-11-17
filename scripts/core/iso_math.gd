@@ -43,6 +43,16 @@ static func bresenham_line(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
 			y0 += sy
 	return points
 
+# World-space quads reach ~1e6 px on the 21000-tile map, where float32 triangulation in
+# draw_polygon fails ("triangulation failed"). draw_primitive draws a convex quad as-is.
+static func draw_quad(canvas: CanvasItem, points: PackedVector2Array, color: Color) -> void:
+	canvas.draw_primitive(points, PackedColorArray([color, color, color, color]), PackedVector2Array())
+
+
+static func draw_textured_quad(canvas: CanvasItem, points: PackedVector2Array, color: Color, uvs: PackedVector2Array, texture: Texture2D) -> void:
+	canvas.draw_primitive(points, PackedColorArray([color, color, color, color]), uvs, texture)
+
+
 static func cell_polygon(center: Vector2, half_w: float = float(Config.HALF_TILE.x), half_h: float = float(Config.HALF_TILE.y)) -> PackedVector2Array:
 	return PackedVector2Array([center+Vector2(-half_w,-half_h),center+Vector2(half_w,-half_h),center+Vector2(half_w,half_h),center+Vector2(-half_w,half_h)])
 

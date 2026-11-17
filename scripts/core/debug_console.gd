@@ -26,7 +26,11 @@ func _ready() -> void:
 
 func _render_world_map_to_disk() -> void:
 	await get_tree().process_frame
-	var w_size: int = Config.WORLD_SIZE_TILES # 256 tiles
+	# Renders the player's current 1000x1000 cell (the old world was exactly one cell).
+	var w_size: int = GlobalLandscapeMap.CELL_TILES
+	var origin: Vector2i = GlobalLandscapeMap.cell_for_tile(GameManager.get_player_tile()) * w_size
+	if not WorldLayout.contains_tile(origin):
+		origin = GlobalLandscapeMap.cell_for_tile(WorldLayout.start_tile()) * w_size
 	var terrain: TerrainGenerator = TerrainGenerator.new(GameManager.get_world_seed())
 	var img: Image = Image.create(w_size, w_size, false, Image.FORMAT_RGBA8)
 
@@ -37,12 +41,14 @@ func _render_world_map_to_disk() -> void:
 		"mountains": Color(0.48, 0.50, 0.54, 1.0),
 		"plains": Color(0.42, 0.70, 0.28, 1.0),
 		"forest": Color(0.18, 0.42, 0.16, 1.0),
-		"swamp": Color(0.28, 0.40, 0.26, 1.0)
+		"swamp": Color(0.28, 0.40, 0.26, 1.0),
+		"steppe": Color(0.72, 0.65, 0.42, 1.0),
+		"hills": Color(0.50, 0.52, 0.40, 1.0)
 	}
 
 	for y in range(w_size):
 		for x in range(w_size):
-			var b: String = terrain.get_biome_at(Vector2i(x, y))
+			var b: String = terrain.get_biome_at(origin + Vector2i(x, y))
 			var col: Color = colors.get(b, Color.BLACK)
 			img.set_pixel(x, y, col)
 

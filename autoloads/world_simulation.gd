@@ -125,7 +125,7 @@ func _on_game_started(seed_value: int, _slot: String, is_new: bool) -> void:
 		world = AlifeWorldContext.new()
 		world.seed_world(seed_value, float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour())
 		WorldSeedBuilder.populate(world)
-		_agent_save_delta.capture(world, Config.TERRAIN_GEOGRAPHY_SIZE)
+		_agent_save_delta.capture(world, TerrainGenerator.GENERATOR_VERSION)
 		agent_tick = AgentTick.new()
 	materializer.reset(world)
 	_encounter_views.clear()
@@ -172,7 +172,7 @@ func _on_save_loaded(bundle: Dictionary) -> void:
 		return
 	var data: Dictionary = saved_world["alife"]
 	var codec: AlifeAgentSaveDelta = preload("res://scripts/alife/agent_save_delta.gd").new()
-	var restored: AlifeWorldContext = codec.decode(data, int(saved_world.get("terrain_geography_size", 256)))
+	var restored: AlifeWorldContext = codec.decode(data, int(saved_world.get("generator_version", 0)))
 	if restored == null:
 		last_load_error = "Unsupported or invalid A-Life save; simulation is disabled and original data has been preserved."
 		SignalBus.notification_posted.emit(last_load_error)
@@ -211,12 +211,12 @@ func _index_settlements() -> void:
 			var connector: Vector2i = settlement.tile + direction
 			var dry_entrance: bool = true
 			while Config.tile_to_chunk(connector) == center:
-				if terrain.get_biome_at(connector) in ["water", "mountains"]:
+				if not terrain.is_dry_land(connector):
 					dry_entrance = false
 					break
 				if settlement.street_plan > 0:
 					var lane: Vector2i = Vector2i.LEFT if direction.y != 0 else Vector2i.UP
-					if terrain.get_biome_at(connector + lane) in ["water", "mountains"]:
+					if not terrain.is_dry_land(connector + lane):
 						dry_entrance = false
 						break
 				connector += direction
@@ -274,7 +274,7 @@ func _district_has_land(terrain: TerrainGenerator, chunk: Vector2i) -> bool:
 	for x: int in range(Config.CHUNK_SIZE):
 		for y: int in range(Config.CHUNK_SIZE):
 			var tile: Vector2i = origin + Vector2i(x, y)
-			if not terrain.is_in_world(tile) or terrain.get_biome_at(tile) in ["water", "mountains"]:
+			if not terrain.is_dry_land(tile):
 				return false
 	return true
 
@@ -298,10 +298,17 @@ func _assign_district_homes() -> void:
 		var along_street: Vector2i = Vector2i.RIGHT if direction.y != 0 else Vector2i.DOWN
 		for step: int in range(-3, 4):
 			homes[id].append(crossing + along_street * step)
+	# One pass groups residents (same order as by_settlement); a scan per settlement was quadratic.
+	var residents: Dictionary = {}
+	for record: GlobalAgent in world.agents.all():
+		if homes.has(record.settlement_id):
+			if not residents.has(record.settlement_id):
+				residents[record.settlement_id] = []
+			residents[record.settlement_id].append(record)
 	for id: String in homes:
 		var places: Array = homes[id]
 		var index: int = 0
-		for agent: GlobalAgent in world.agents.by_settlement(id):
+		for agent: GlobalAgent in residents.get(id, []):
 			if agent.unique or agent.role != "civilian":
 				continue
 			index += 1

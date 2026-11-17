@@ -26,10 +26,10 @@ func _run() -> void:
 		await get_tree().process_frame
 		frame_times.append(Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0)
 	frame_times.sort()
-	assert(world.get_save_data()["world_size_tiles"] == 1000)
+	assert(world.get_save_data()["generator_version"] == TerrainGenerator.GENERATOR_VERSION)
 	assert(WorldSimulation.materializer.entity_parent == world if "entity_parent" in WorldSimulation.materializer else true)
 	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
-	assert(player != null and Config.tile_distance(Config.iso_to_world(player.global_position), Vector2i(500, 500)) < 50)
+	assert(player != null and Config.tile_distance(Config.iso_to_world(player.global_position), WorldLayout.start_tile()) < 50)
 	var scene_data: Dictionary = {"startup_ms": startup_ms, "resident_chunks": world._loaded_chunks.size(), "physical_npcs": get_tree().get_nodes_in_group("npc").size(), "static_memory_mb": Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0, "frame_median_ms": frame_times[60], "frame_p95_ms": frame_times[114]}
 	if OS.get_cmdline_user_args().has("--preview-large-world"):
 		await RenderingServer.frame_post_draw

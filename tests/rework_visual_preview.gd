@@ -21,7 +21,7 @@ func _capture() -> void:
 	camera.reset_smoothing()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://output"))
 
-	var plan: Dictionary = PoiGenerator._build_bandit_plan(Config.DEFAULT_WORLD_SEED)
+	var plan: Dictionary = PoiGenerator._build_bandit_plan(Config.DEFAULT_WORLD_SEED, WorldLayout.START_CELL)
 	var camp: Dictionary = {}
 	for chunk: Vector2i in plan:
 		if str((plan[chunk] as Dictionary).get("poi_id", "")) == "bandit_chief_camp":

@@ -187,7 +187,6 @@ func _tick_autosave(delta: float) -> void:
 func start_new_game(new_seed: int, slot: String = "") -> void:
 	debug_god_mode = false
 	_god_code_buffer = ""
-	Config.TERRAIN_GEOGRAPHY_SIZE = Config.WORLD_SIZE_TILES
 	_world_seed = new_seed
 	_active_slot = slot if not slot.is_empty() else _create_unique_save_slot()
 	_game_id = _active_slot

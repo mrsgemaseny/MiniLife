@@ -108,7 +108,7 @@ func advance_day(new_day: int) -> void:
 func _draw() -> void:
 	for key: String in _tilled:
 		var soil: Vector2 = Config.world_to_iso(Config.key_to_vec2i(key))
-		draw_colored_polygon(IsoMath.cell_polygon(soil, Config.HALF_TILE.x * 0.75, Config.HALF_TILE.y * 0.75), Color(0.28, 0.18, 0.1))
+		IsoMath.draw_quad(self, IsoMath.cell_polygon(soil, Config.HALF_TILE.x * 0.75, Config.HALF_TILE.y * 0.75), Color(0.28, 0.18, 0.1))
 	for key in _crops:
 		var crop: Dictionary = _crops[key]
 		var tarr: Array = crop.get("tile_pos", [0, 0])
@@ -120,7 +120,7 @@ func _draw() -> void:
 		var hw: float = float(Config.HALF_TILE.x) * 0.75
 		var hh: float = float(Config.HALF_TILE.y) * 0.75
 		var soil_pts: PackedVector2Array = IsoMath.cell_polygon(world_pos, hw, hh)
-		draw_colored_polygon(soil_pts, Color(0.32, 0.22, 0.14, 0.75))
+		IsoMath.draw_quad(self, soil_pts, Color(0.32, 0.22, 0.14, 0.75))
 
 		# Crop sprout / wheat stalks
 		var stem_col: Color = Color(0.38, 0.65, 0.25) if stage < 3 else Color(0.92, 0.75, 0.22)

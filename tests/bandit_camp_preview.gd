@@ -11,7 +11,7 @@ func _run() -> void:
 	var seed_value: int = Config.DEFAULT_WORLD_SEED
 	GameManager.start_new_game(seed_value, "bandit_preview_readonly")
 	GameManager.set_day_and_hour(1, 12.0)
-	var plan: Dictionary = PoiGenerator._build_bandit_plan(seed_value)
+	var plan: Dictionary = PoiGenerator._build_bandit_plan(seed_value, WorldLayout.START_CELL)
 	var picked_chunk: Vector2i = Vector2i(-1, -1)
 	var picked: Dictionary = {}
 	for chunk: Vector2i in plan:

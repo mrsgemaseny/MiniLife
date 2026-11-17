@@ -2,11 +2,19 @@ class_name PoiGenerator
 extends RefCounted
 
 static var _anchor_cache: Dictionary = {}
+# Plans are built on the main thread or prewarmed by chunk jobs; Godot's Mutex is
+# recursive, so plan building may re-enter find_land_anchor under the same lock.
+static var _plan_mutex: Mutex = Mutex.new()
 static var _local_ruin_plans: Dictionary = {}
 static var _bandit_plans: Dictionary = {}
+static var _planner_terrain: TerrainGenerator = null
+const BLOCKED_GROUND: Array[String] = ["water", "mountains", ""]
 const BANDIT_IDS: Array[String] = ["bandit_hideout", "bandit_roadblock", "bandit_fort", "bandit_chief_camp"]
 const LOCAL_RUIN_MIN: int = 2
 const LOCAL_RUIN_MAX: int = 5
+const CANDIDATE_DRAWS: int = 400
+# No ruin or bandit camp within this many tiles of a settlement site.
+const SETTLEMENT_RESERVE: float = WorldGraph.SETTLEMENT_CLEARING + 40.0
 
 const RUIN_ANCHORS: Array[Vector2i] = [
 	Vector2i(4, 4),
@@ -22,33 +30,65 @@ const RUIN_IDS: Array[String] = [
 ]
 
 
-static func get_fixed_ruin_for_chunk(world_seed: int, chunk_pos: Vector2i) -> Dictionary:
-	# One quota for this local terrain map, never a counter shared across global regions.
-	var key: String = "%d:%d" % [world_seed, Config.TERRAIN_GEOGRAPHY_SIZE]
-	if not _local_ruin_plans.has(key):
-		_local_ruin_plans[key] = _build_local_ruin_plan(world_seed)
-	return _local_ruin_plans[key].get(chunk_pos, {}).duplicate(true)
+# Plans are per authored cell (one 1000x1000 local map): 2..5 ruins and 12 bandit camps each.
+static func _plan_key(world_seed: int, cell: Vector2i) -> String:
+	return "%d:%d:%d:%d" % [world_seed, TerrainGenerator.GENERATOR_VERSION, cell.x, cell.y]
 
-static func _build_local_ruin_plan(world_seed: int) -> Dictionary:
+static func _cell_of_chunk(chunk_pos: Vector2i) -> Vector2i:
+	return GlobalLandscapeMap.cell_for_tile(Config.chunk_origin(chunk_pos) + Vector2i(8, 8))
+
+# Exact early answer: _cell_candidates never accepts chunks this close to the settlement
+# site, so settlement district lookups need not build (and generate terrain for) the plan.
+static func _inside_settlement_reserve(world_seed: int, cell: Vector2i, chunk_pos: Vector2i) -> bool:
+	var site: Dictionary = WorldGraph.for_seed(world_seed).site_for_cell(cell)
+	return not site.is_empty() and Config.tile_distance(Config.chunk_origin(chunk_pos) + Vector2i(8, 8), site["tile"]) < SETTLEMENT_RESERVE
+
+# Deterministic uniform draws of interior chunks of a cell, minus the start area and the
+# settlement clearing. Planners stop after a few accepted chunks, so drawing lazily is
+# far cheaper than shuffling all ~3900 chunks of every cell a settlement index touches.
+static func _cell_candidates(world_seed: int, cell: Vector2i, margin: int, salt: int) -> Array[Vector2i]:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = world_seed ^ 0x5A827999
-	var wanted: int = rng.randi_range(LOCAL_RUIN_MIN, LOCAL_RUIN_MAX)
+	rng.seed = RngService.hash_coords(world_seed, cell.x, cell.y, salt)
+	var rect: Rect2i = WorldLayout.cell_chunk_rect(cell)
+	var site: Dictionary = WorldGraph.for_seed(world_seed).site_for_cell(cell)
+	var seen: Dictionary = {}
 	var candidates: Array[Vector2i] = []
-	for x: int in range(1, Config.WORLD_SIZE_CHUNKS - 1):
-		for y: int in range(1, Config.WORLD_SIZE_CHUNKS - 1):
-			candidates.append(Vector2i(x, y))
-	for i: int in range(candidates.size() - 1, 0, -1):
-		var j: int = rng.randi_range(0, i)
-		var temp: Vector2i = candidates[i]
-		candidates[i] = candidates[j]
-		candidates[j] = temp
+	for attempt: int in range(CANDIDATE_DRAWS):
+		var chunk := Vector2i(rng.randi_range(rect.position.x + margin, rect.end.x - 1 - margin),
+			rng.randi_range(rect.position.y + margin, rect.end.y - 1 - margin))
+		if seen.has(chunk):
+			continue
+		seen[chunk] = true
+		var center: Vector2i = Config.chunk_origin(chunk) + Vector2i(8, 8)
+		if _cell_of_chunk(chunk) != cell or Config.tile_distance(center, WorldLayout.start_tile()) < 64:
+			continue
+		if not site.is_empty() and Config.tile_distance(center, site["tile"]) < SETTLEMENT_RESERVE:
+			continue
+		candidates.append(chunk)
+	return candidates
+
+static func get_fixed_ruin_for_chunk(world_seed: int, chunk_pos: Vector2i) -> Dictionary:
+	# One quota per local map (cell), never a counter shared across cells.
+	var cell: Vector2i = _cell_of_chunk(chunk_pos)
+	if not WorldLayout.landscape().is_land(cell) or _inside_settlement_reserve(world_seed, cell, chunk_pos):
+		return {}
+	var key: String = _plan_key(world_seed, cell)
+	_plan_mutex.lock()
+	if not _local_ruin_plans.has(key):
+		_local_ruin_plans[key] = _build_local_ruin_plan(world_seed, cell)
+	var result: Dictionary = _local_ruin_plans[key].get(chunk_pos, {}).duplicate(true)
+	_plan_mutex.unlock()
+	return result
+
+static func _build_local_ruin_plan(world_seed: int, cell: Vector2i) -> Dictionary:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = RngService.hash_coords(world_seed, cell.x, cell.y, 0x5A827999)
+	var wanted: int = rng.randi_range(LOCAL_RUIN_MIN, LOCAL_RUIN_MAX)
+	var candidates: Array[Vector2i] = _cell_candidates(world_seed, cell, 1, 0x5A82)
 	var result: Dictionary = {}
-	var center := Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
 	for candidate: Vector2i in candidates:
 		if result.size() == wanted:
 			break
-		if Config.tile_distance(Config.chunk_origin(candidate) + Vector2i(8, 8), center) < 48:
-			continue
 		var spaced: bool = true
 		for existing: Vector2i in result:
 			if candidate.distance_to(existing) < 4.0:
@@ -65,8 +105,9 @@ static func _build_local_ruin_plan(world_seed: int) -> Dictionary:
 
 
 static func get_chunk_poi(world_seed: int, chunk_pos: Vector2i, biome_id: String) -> Dictionary:
-	var start: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2, Config.WORLD_SIZE_TILES / 2)
-	if Config.tile_distance(Config.chunk_origin(chunk_pos) + Vector2i(8,8), start) < 48:
+	if not WorldLayout.contains_chunk(chunk_pos):
+		return {}
+	if Config.tile_distance(Config.chunk_origin(chunk_pos) + Vector2i(8,8), WorldLayout.start_tile()) < 48:
 		return {}
 	# Pure wilderness start: no forced merchant outpost or artificial starter camp at center
 	# Check hand-crafted fixed ruins first
@@ -103,32 +144,33 @@ static func get_chunk_poi(world_seed: int, chunk_pos: Vector2i, biome_id: String
 	}
 
 static func get_bandit_camp_for_chunk(world_seed: int, chunk_pos: Vector2i) -> Dictionary:
-	var key: String = "%d:%d" % [world_seed, Config.TERRAIN_GEOGRAPHY_SIZE]
+	var cell: Vector2i = _cell_of_chunk(chunk_pos)
+	if not WorldLayout.landscape().is_land(cell) or _inside_settlement_reserve(world_seed, cell, chunk_pos):
+		return {}
+	var key: String = _plan_key(world_seed, cell)
+	_plan_mutex.lock()
 	if not _bandit_plans.has(key):
-		_bandit_plans[key] = _build_bandit_plan(world_seed)
-	return _bandit_plans[key].get(chunk_pos, {}).duplicate(true)
+		_bandit_plans[key] = _build_bandit_plan(world_seed, cell)
+	var result: Dictionary = _bandit_plans[key].get(chunk_pos, {}).duplicate(true)
+	_plan_mutex.unlock()
+	return result
 
-static func _build_bandit_plan(world_seed: int) -> Dictionary:
+static func _build_bandit_plan(world_seed: int, cell: Vector2i) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = world_seed ^ 0x42616E64
-	var candidates: Array[Vector2i] = []
-	for x: int in range(2, Config.WORLD_SIZE_CHUNKS - 2):
-		for y: int in range(2, Config.WORLD_SIZE_CHUNKS - 2):
-			candidates.append(Vector2i(x, y))
-	for i: int in range(candidates.size() - 1, 0, -1):
-		var j: int = rng.randi_range(0, i)
-		var temp: Vector2i = candidates[i]
-		candidates[i] = candidates[j]
-		candidates[j] = temp
+	rng.seed = RngService.hash_coords(world_seed, cell.x, cell.y, 0x42616E64)
+	var candidates: Array[Vector2i] = _cell_candidates(world_seed, cell, 2, 0x4261)
 	var result: Dictionary = {}
-	var ruins: Dictionary = _local_ruin_plans.get("%d:%d" % [world_seed, Config.TERRAIN_GEOGRAPHY_SIZE], {})
-	if ruins.is_empty():
-		ruins = _build_local_ruin_plan(world_seed)
+	var key: String = _plan_key(world_seed, cell)
+	_plan_mutex.lock()
+	if not _local_ruin_plans.has(key):
+		_local_ruin_plans[key] = _build_local_ruin_plan(world_seed, cell)
+	var ruins: Dictionary = _local_ruin_plans[key]
+	_plan_mutex.unlock()
 	var wanted: int = 12
 	for candidate: Vector2i in candidates:
 		if result.size() >= wanted:
 			break
-		if candidate.distance_to(Vector2(Config.WORLD_SIZE_CHUNKS / 2, Config.WORLD_SIZE_CHUNKS / 2)) < 4.0 or ruins.has(candidate):
+		if ruins.has(candidate):
 			continue
 		var spaced: bool = true
 		for existing: Vector2i in result:
@@ -146,24 +188,59 @@ static func _build_bandit_plan(world_seed: int) -> Dictionary:
 		result[candidate] = {"poi_id": id, "tile_pos": anchor, "is_ruin": false, "camp_variant": variant}
 	return result
 
+# One generator per seed for main-thread planners; worker threads get their own instance
+# (a TerrainGenerator keeps per-tile scratch state and is not thread-safe).
+static func _terrain_for(world_seed: int) -> TerrainGenerator:
+	if OS.get_thread_caller_id() != OS.get_main_thread_id():
+		return TerrainGenerator.new(world_seed)
+	if _planner_terrain == null or _planner_terrain.get_seed() != world_seed:
+		_planner_terrain = TerrainGenerator.new(world_seed)
+	return _planner_terrain
+
+
 static func find_land_anchor(world_seed: int, chunk_pos: Vector2i, size: Vector2i) -> Vector2i:
-	var cache_key: String = "%d:%d:%d:%d:%d:%d" % [world_seed, Config.TERRAIN_GEOGRAPHY_SIZE, chunk_pos.x, chunk_pos.y, size.x, size.y]
-	if _anchor_cache.has(cache_key):
-		return _anchor_cache[cache_key]
-	var terrain: TerrainGenerator = TerrainGenerator.new(world_seed)
+	var cache_key: String = "%d:%d:%d:%d:%d:%d" % [world_seed, TerrainGenerator.GENERATOR_VERSION, chunk_pos.x, chunk_pos.y, size.x, size.y]
+	_plan_mutex.lock()
+	var cached: Variant = _anchor_cache.get(cache_key)
+	_plan_mutex.unlock()
+	if cached != null:
+		return cached
 	var origin: Vector2i = Config.chunk_origin(chunk_pos)
-	# Entire footprint plus an entrance margin must fit on dry terrain in its owning chunk.
+	# The footprint plus its entrance margin lies inside the owning chunk by construction,
+	# so one batched chunk pass answers every tile; tiles outside the world are absent.
+	var biomes: Dictionary = _terrain_for(world_seed).generate_chunk(chunk_pos, false)["biomes"]
 	for x in range(2, Config.CHUNK_SIZE - size.x - 1):
 		for y in range(2, Config.CHUNK_SIZE - size.y - 1):
 			var anchor: Vector2i = origin + Vector2i(x, y)
 			var valid: bool = true
 			for dx in range(-1, size.x + 1):
 				for dy in range(-1, size.y + 1):
-					var tile: Vector2i = anchor + Vector2i(dx, dy)
-					if tile.x < 1 or tile.y < 1 or tile.x >= Config.WORLD_SIZE_TILES - 1 or tile.y >= Config.WORLD_SIZE_TILES - 1 or terrain.get_biome_at(tile) == "water":
+					if str(biomes.get(anchor + Vector2i(dx, dy), "")) in BLOCKED_GROUND:
 						valid = false
+						break
+				if not valid:
+					break
 			if valid:
+				_plan_mutex.lock()
 				_anchor_cache[cache_key] = anchor
+				_plan_mutex.unlock()
 				return anchor
-	_anchor_cache[cache_key] = Vector2i(-1,-1)
+	_plan_mutex.lock()
+	_anchor_cache[cache_key] = Vector2i(-1, -1)
+	_plan_mutex.unlock()
 	return Vector2i(-1, -1)
+
+
+# Called from chunk jobs: builds the cell's ruin and bandit plans off the main thread,
+# so walking into a new cell does not stall a frame on plan building.
+static func warm_cell_plans(world_seed: int, chunk_pos: Vector2i) -> void:
+	var cell: Vector2i = _cell_of_chunk(chunk_pos)
+	# Plans read DataRegistry; its lazy reload clears tables, so never trigger it off-thread.
+	if not DataRegistry._loaded or not WorldLayout.landscape().is_land(cell):
+		return
+	var key: String = _plan_key(world_seed, cell)
+	_plan_mutex.lock()
+	# The bandit plan builds the ruin plan first, so both are ready afterwards.
+	if not _bandit_plans.has(key):
+		_bandit_plans[key] = _build_bandit_plan(world_seed, cell)
+	_plan_mutex.unlock()

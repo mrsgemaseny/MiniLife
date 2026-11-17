@@ -2,7 +2,7 @@ extends Node
 
 func _ready() -> void:
 	var fog := FogOfWarSystem.new()
-	var center := Vector2i(500, 500)
+	var center := WorldLayout.start_tile()
 	var first: Array[Dictionary] = fog.update_around(center, 18)
 	var unchanged: Array[Dictionary] = fog.update_around(center, 18)
 	var moved: Array[Dictionary] = fog.update_around(center + Vector2i.RIGHT, 18)

@@ -4,6 +4,7 @@ extends RefCounted
 static func create_population(world: AlifeWorldContext, settlement: AlifeSettlement, rng: RandomNumberGenerator) -> void:
 	var given: Array = DataRegistry.get_entry("npc_name_pools", "given").get("values", [])
 	var family: Array = DataRegistry.get_entry("npc_name_pools", "family").get("values", [])
+	var guards: int = 0
 	for index: int in range(settlement.population):
 		var agent: GlobalAgent = GlobalAgent.new()
 		agent.agent_id = "%s/resident/%04d" % [settlement.settlement_id, index]
@@ -32,5 +33,7 @@ static func create_population(world: AlifeWorldContext, settlement: AlifeSettlem
 		agent.tile = settlement.tile + Vector2i(rng.randi_range(-half, half), rng.randi_range(-half, half))
 		agent.home_tile = agent.tile
 		agent.equipment_tier = 2 if agent.role == "guard" else 1
-		world.agents.register(agent)
-	settlement.garrison = world.agents.by_settlement(settlement.settlement_id).filter(func(agent: GlobalAgent) -> bool: return agent.role == "guard").size()
+		if world.agents.register(agent) and agent.role == "guard":
+			guards += 1
+	# Counted while creating: a registry scan per settlement made seeding quadratic.
+	settlement.garrison = guards

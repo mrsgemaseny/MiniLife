@@ -28,7 +28,7 @@ func update_around(center: Vector2i, radius: int) -> Array[Dictionary]:
 			if dx * dx + dy * dy > r_sq:
 				continue
 			var tpos: Vector2i = center + Vector2i(dx, dy)
-			if tpos.x < 0 or tpos.y < 0 or tpos.x >= Config.WORLD_SIZE_TILES or tpos.y >= Config.WORLD_SIZE_TILES:
+			if not WorldLayout.contains_tile(tpos):
 				continue
 			var key: String = Config.vec2i_to_key(tpos)
 			next_visible.append(tpos)
@@ -47,7 +47,8 @@ func update_around(center: Vector2i, radius: int) -> Array[Dictionary]:
 
 
 func compute_exploration_percent() -> int:
-	var total: int = Config.WORLD_SIZE_TILES * Config.WORLD_SIZE_TILES
+	# Only land exists: void cells are not part of the explorable world.
+	var total: int = WorldLayout.landscape().land_cell_count() * GlobalLandscapeMap.CELL_TILES * GlobalLandscapeMap.CELL_TILES
 	if total <= 0:
 		return 0
 	return int(floor((float(_fog_map.size()) / float(total)) * 100.0))

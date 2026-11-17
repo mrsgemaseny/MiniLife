@@ -11,11 +11,9 @@ func fixture() -> AlifeWorldContext:
 	var world: AlifeWorldContext = AlifeWorldContext.new()
 	world.seed_world(12345, 10.0)
 	var terrain: TerrainGenerator = TerrainGenerator.new(world.world_seed)
-	var anchor: Vector2i = Vector2i(-1, -1)
-	for cx: int in range(1, 15):
-		anchor = WorldSeedBuilder._find_anchor(terrain, Vector2i(cx, 5), 8)
-		if anchor.x >= 0:
-			break
+	# A settlement clearing is dry ground by construction (WorldGraph.SETTLEMENT_CLEARING).
+	var anchor: Vector2i = WorldGraph.for_seed(world.world_seed).settlement_sites[0]["tile"]
+	assert(terrain.is_dry_land(anchor) and terrain.is_dry_land(anchor + Vector2i(8, 8)))
 	for id: String in ["a", "b"]:
 		var settlement: AlifeSettlement = AlifeSettlement.new()
 		settlement.settlement_id = id

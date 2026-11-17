@@ -37,7 +37,7 @@ static func _connected_land(terrain: TerrainGenerator, cache: Dictionary, a: Vec
 	for step: int in range(Config.CHUNK_SIZE + 1):
 		var tile: Vector2i = center + direction * step
 		if not cache.has(tile):
-			cache[tile] = terrain.is_in_world(tile) and terrain.get_biome_at(tile) not in ["water", "mountains"]
+			cache[tile] = terrain.is_dry_land(tile)
 		if not bool(cache[tile]):
 			return false
 	return terrain.is_in_world(Config.chunk_origin(b))

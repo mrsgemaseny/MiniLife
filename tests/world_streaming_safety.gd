@@ -27,7 +27,9 @@ func run() -> void:
 	world._terrain.setup(Config.DEFAULT_WORLD_SEED)
 	var peak_chunks: int = 0
 	var max_request_ms: float = 0.0
-	for tile in [Vector2i(500,500), Vector2i(530,500), Vector2i(570,530), Vector2i(640,520), Vector2i(450,500), Vector2i(500,500)]:
+	# Same walk as on the old 1000x1000 map, shifted into the start cell.
+	var shift: Vector2i = WorldLayout.start_tile() - Vector2i(500, 500)
+	for tile in [Vector2i(500,500) + shift, Vector2i(530,500) + shift, Vector2i(570,530) + shift, Vector2i(640,520) + shift, Vector2i(450,500) + shift, Vector2i(500,500) + shift]:
 		actor.position = Config.world_to_iso(tile)
 		var started: int = Time.get_ticks_usec()
 		SignalBus.player_tile_changed.emit(tile)
@@ -39,7 +41,7 @@ func run() -> void:
 		for chunk in world._spawned_entities_by_chunk:
 			for raw in world._spawned_entities_by_chunk[chunk]:
 				check(is_instance_valid(raw), "Freed entity retained by loaded chunk")
-	var tile: Vector2i = Vector2i(500,500)
+	var tile: Vector2i = WorldLayout.start_tile()
 	check(world.place_structure(tile, "wood_wall"), "Could not record center structure")
 	SignalBus.loot_bag_spawned.emit(actor.position, [{"item_id": "iron_sword", "count": 1, "durability": 12}], 0)
 	var saved: Dictionary = JSON.parse_string(JSON.stringify(world.get_save_data())) as Dictionary

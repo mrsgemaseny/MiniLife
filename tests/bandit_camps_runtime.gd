@@ -5,7 +5,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	var seed_value: int = Config.DEFAULT_WORLD_SEED
-	var plan: Dictionary = PoiGenerator._build_bandit_plan(seed_value)
+	var plan: Dictionary = PoiGenerator._build_bandit_plan(seed_value, WorldLayout.START_CELL)
 	assert(plan.size() == 12)
 	var kinds: Dictionary = {}
 	for chunk: Vector2i in plan:

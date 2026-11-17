@@ -173,7 +173,7 @@ func _execute_event_effects(def: Dictionary) -> void:
 func _on_boss_defeated(boss_id: String, _world_pos: Vector2) -> void:
 	var res: Dictionary = _endgame.register_boss_kill(boss_id)
 	if bool(res.get("unlocked_stronghold", false)):
-		var stronghold_tile: Vector2i = Vector2i(Config.WORLD_SIZE_TILES / 2 + 24, Config.WORLD_SIZE_TILES / 2 - 24)
+		var stronghold_tile: Vector2i = WorldLayout.start_tile() + Vector2i(24, -24)
 		SignalBus.endgame_stronghold_revealed.emit(stronghold_tile)
 	if bool(res.get("victory", false)):
 		SignalBus.endgame_victory_achieved.emit()

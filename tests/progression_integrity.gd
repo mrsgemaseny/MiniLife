@@ -31,9 +31,11 @@ func run() -> void:
 	for seed_value in [12345, 1401, 90001]:
 		var terrain: TerrainGenerator = TerrainGenerator.new(seed_value)
 		var found: int = 0
+		# Clay must be reachable in the player's starting local map (cell 9,14).
+		var cell_origin: Vector2i = WorldLayout.START_CELL * GlobalLandscapeMap.CELL_TILES
 		for x in range(8, 992, 4):
 			for y in range(8, 992, 4):
-				var tile: Vector2i = Vector2i(x, y)
+				var tile: Vector2i = cell_origin + Vector2i(x, y)
 				if terrain.get_resource_node_at(tile) == "clay_bank":
 					check(terrain.get_biome_at(tile) != "water", "Clay spawned in water")
 					check(terrain.get_resource_node_at(tile) == "clay_bank", "Clay placement is not deterministic")

@@ -14,7 +14,7 @@ static func draw_ghost_preview(canvas: CanvasItem, tile_pos: Vector2i, valid: bo
 	var fill: Color = Color(0.22, 0.92, 0.48, alpha_pulse) if valid else Color(0.95, 0.25, 0.25, alpha_pulse)
 	var wire_col: Color = fill.lightened(0.32)
 	wire_col.a = 0.90
-	canvas.draw_colored_polygon(poly, fill)
+	IsoMath.draw_quad(canvas, poly, fill)
 	canvas.draw_polyline(poly, wire_col, 2.0, true)
 
 	# 3D Isometric Blueprint Box Wireframe
@@ -24,7 +24,7 @@ static func draw_ghost_preview(canvas: CanvasItem, tile_pos: Vector2i, valid: bo
 		var top_poly: PackedVector2Array = IsoMath.cell_polygon(center + Vector2(0.0, -h_px), hw, hh)
 		var top_fill: Color = fill
 		top_fill.a *= 0.65
-		canvas.draw_colored_polygon(top_poly, top_fill)
+		IsoMath.draw_quad(canvas, top_poly, top_fill)
 		canvas.draw_polyline(top_poly, wire_col, 1.6, true)
 		for i in range(4):
 			canvas.draw_line(poly[i], top_poly[i], wire_col, 1.4)

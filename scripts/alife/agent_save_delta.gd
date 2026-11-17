@@ -5,28 +5,26 @@ const SCHEMA_VERSION: int = 2
 const GENERATOR_REVISION: int = 1
 
 var _seed: int
-var _geography_size: int
+# Agents are regenerated from the world generator, so a delta is valid only for one version.
+var _generator_version: int
 var _rows: Dictionary = {}
 var _fingerprint: String = ""
 
-func capture(world: AlifeWorldContext, geography_size: int) -> void:
+func capture(world: AlifeWorldContext, generator_version: int) -> void:
 	_seed = world.world_seed
-	_geography_size = geography_size
+	_generator_version = generator_version
 	_rows.clear()
 	for row: Dictionary in world.agents.to_array():
 		_rows[row["agent_id"]] = row
 	_fingerprint = JSON.stringify(_rows, "", true, true).sha256_text()
 
-func regenerate(seed_value: int, geography_size: int) -> bool:
-	if geography_size < Config.CHUNK_SIZE or geography_size > Config.WORLD_SIZE_TILES:
+func regenerate(seed_value: int, generator_version: int) -> bool:
+	if generator_version != TerrainGenerator.GENERATOR_VERSION:
 		return false
-	var previous_size: int = Config.TERRAIN_GEOGRAPHY_SIZE
-	Config.TERRAIN_GEOGRAPHY_SIZE = geography_size
 	var baseline: AlifeWorldContext = AlifeWorldContext.new()
 	baseline.seed_world(seed_value, 0.0)
 	WorldSeedBuilder.populate(baseline)
-	Config.TERRAIN_GEOGRAPHY_SIZE = previous_size
-	capture(baseline, geography_size)
+	capture(baseline, generator_version)
 	return true
 
 func encode(world: AlifeWorldContext) -> Dictionary:
@@ -53,7 +51,7 @@ func encode(world: AlifeWorldContext) -> Dictionary:
 	snapshot["schema_version"] = SCHEMA_VERSION
 	snapshot["agent_delta"] = {
 		"revision": GENERATOR_REVISION,
-		"geography_size": _geography_size,
+		"generator_version": _generator_version,
 		"fingerprint": _fingerprint,
 		"changed": changed,
 		"added": added,
@@ -61,19 +59,19 @@ func encode(world: AlifeWorldContext) -> Dictionary:
 	}
 	return snapshot
 
-func decode(snapshot: Dictionary, legacy_geography_size: int) -> AlifeWorldContext:
+func decode(snapshot: Dictionary, world_generator_version: int) -> AlifeWorldContext:
 	var version: int = int(snapshot.get("schema_version", 0))
 	if version == 1:
 		var legacy: AlifeWorldContext = AlifeWorldContext.from_dict(snapshot)
-		if legacy != null:
-			regenerate(legacy.world_seed, legacy_geography_size)
+		if legacy != null and not regenerate(legacy.world_seed, world_generator_version):
+			return null
 		return legacy
 	if version != SCHEMA_VERSION or not snapshot.get("agent_delta") is Dictionary:
 		return null
 	var delta: Dictionary = snapshot["agent_delta"]
 	if int(delta.get("revision", 0)) != GENERATOR_REVISION:
 		return null
-	if not regenerate(int(snapshot.get("world_seed", 0)), int(delta.get("geography_size", 0))):
+	if not regenerate(int(snapshot.get("world_seed", 0)), int(delta.get("generator_version", 0))):
 		return null
 	if delta.get("fingerprint") != _fingerprint:
 		return null

@@ -31,8 +31,9 @@ func _run() -> void:
 	add_child(world)
 	var decoration: Node = null
 	var chosen := Vector2i.ZERO
-	for x: int in range(1, Config.WORLD_SIZE_CHUNKS - 1):
-		for y: int in range(1, Config.WORLD_SIZE_CHUNKS - 1):
+	var rect: Rect2i = WorldLayout.cell_chunk_rect(WorldLayout.START_CELL)
+	for x: int in range(rect.position.x + 1, rect.end.x - 1):
+		for y: int in range(rect.position.y + 1, rect.end.y - 1):
 			var cpos := Vector2i(x, y)
 			var biome: String = world.get_biome_cached(Config.chunk_origin(cpos) + Vector2i(8, 8))
 			var candidate: Dictionary = PoiGenerator.get_chunk_poi(Config.DEFAULT_WORLD_SEED, cpos, biome)
