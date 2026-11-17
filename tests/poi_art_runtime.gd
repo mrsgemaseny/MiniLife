@@ -9,14 +9,15 @@ func _run() -> void:
 	var info := {"poi_id": "merchant_outpost", "tile_pos": Vector2i(12, 12)}
 	first.populate(123, info, func(_t: Vector2i): return true, func(_t: Vector2i): return 0)
 	assert(first.get_child_count() > 0)
+	# Full local view (e2afa1a): the local map is not hidden by fog, so props are visible
+	# even on unexplored tiles and fog updates neither hide nor darken them.
 	for prop: Sprite2D in first.get_children():
-		assert(not prop.visible and prop.texture != null)
+		assert(prop.visible and prop.texture != null)
 		assert(prop.texture.get_width() * prop.scale.x <= 38.1)
 	var tile: Vector2i = first._props.keys()[0]
-	SignalBus.fog_updated.emit(tile, 2)
-	assert(first._props[tile].visible)
+	SignalBus.fog_updated.emit(tile, 0)
 	SignalBus.fog_batch_updated.emit([{"pos": tile, "state": 1}])
-	assert(first._props[tile].modulate.r < 1.0)
+	assert(first._props[tile].visible and first._props[tile].modulate == Color.WHITE)
 	var second := PoiDecoration.new()
 	add_child(second)
 	second.populate(123, info, func(_t: Vector2i): return true, func(_t: Vector2i): return 2)
@@ -64,5 +65,5 @@ func _run() -> void:
 	world._unload_chunk(chosen)
 	await get_tree().process_frame
 	assert(weak.get_ref() == null)
-	print("POI_ART_PASS: live world spawn/unload, deterministic layout, fog, blocked terrain, aspect ratio")
+	print("POI_ART_PASS: live world spawn/unload, deterministic layout, full local view, blocked terrain, aspect ratio")
 	get_tree().quit()

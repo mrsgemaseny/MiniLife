@@ -282,14 +282,16 @@ func _audit_progression_and_levels(report: Dictionary) -> void:
 	if prog.current_level != 2:
 		report["errors"].append("Progression: L1 did not advance to L2 on reaching 30 raw resources")
 
-	# Check L2 to L3 qualification (stone axe, pickaxe, coal, furnace)
+	# Check L2 to L3 qualification (PROGRESSION_SYSTEM.md: stone axe and pickaxe, coal,
+	# furnace built and lit)
 	prog.crafted_stone_axe = true
 	prog.crafted_stone_pickaxe = true
 	prog.obtained_coal = true
 	prog.built_furnace = true
+	prog.furnace_lit = true
 	prog._check_l2_gate()
 	if prog.current_level != 3:
-		report["errors"].append("Progression: L2 did not advance to L3 after completing all tools + furnace")
+		report["errors"].append("Progression: L2 did not advance to L3 after tools, coal and a lit furnace")
 
 	prog.queue_free()
 	report["checks_passed"] += 1
@@ -442,6 +444,11 @@ func _audit_exit_autosave_and_bronze_craft(report: Dictionary) -> void:
 	bench.structure_id = "workbench"
 	(Engine.get_main_loop() as SceneTree).root.add_child(bench)
 	bench.global_position = dummy_player.global_position
+	# Bronze tools are cast with smelter heat (ProductionRequirements): workbench + ore_smelter.
+	var smelter: StructureEntity = StructureEntity.new()
+	smelter.structure_id = "ore_smelter"
+	(Engine.get_main_loop() as SceneTree).root.add_child(smelter)
+	smelter.global_position = dummy_player.global_position + Vector2(float(Config.TILE_SIZE.x), 0.0)
 
 	var cs: CraftSystem = CraftSystem.instance
 	if cs == null:
@@ -450,13 +457,14 @@ func _audit_exit_autosave_and_bronze_craft(report: Dictionary) -> void:
 
 	var can_check: Dictionary = cs.can_craft("forge_bronze_pickaxe", dummy_player, "workbench")
 	if not bool(can_check.get("ok", false)):
-		report["errors"].append("Craft Audit: Bronze pickaxe craft blocked at workbench with bronze_tools researched: %s" % str(can_check.get("reason")))
+		report["errors"].append("Craft Audit: Bronze pickaxe craft blocked at workbench + ore smelter with bronze_tools researched: %s" % str(can_check.get("reason")))
 	else:
 		var craft_ok: bool = cs.craft("forge_bronze_pickaxe", dummy_player, "workbench")
 		if not craft_ok or not inv.has_item("bronze_pickaxe", 1):
 			report["errors"].append("Craft Audit: Bronze pickaxe craft did not produce bronze_pickaxe in inventory")
 
 	bench.free()
+	smelter.free()
 	dummy_player.queue_free()
 
 	# 2. Verify Exit Autosave Functionality

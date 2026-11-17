@@ -3,6 +3,11 @@ extends RefCounted
 
 # Dense prefix of a long route, in tiles.
 const LEAD_DISTANCE: float = 200.0
+const PATH_CACHE_LIMIT: int = 1024
+# Off-screen agents walk at the pace of a materialized NPC (NPCBase: 0.42 x BASE_MOVE_SPEED),
+# converted to tiles per game hour, so an agent keeps its speed when it enters or leaves the
+# player's bubble. About 94 tiles per game hour.
+const WALK_TILES_PER_HOUR: float = Config.BASE_MOVE_SPEED * 0.42 / float(Config.TILE_SIZE.x) * Config.SECONDS_PER_GAME_HOUR
 
 var _grid: AlifeRouteGrid
 var _seed: int = 0
@@ -14,6 +19,8 @@ var _task_key: String = ""
 var _task_result: Array[Vector2i] = []
 var _requests: Dictionary = {}
 var _completed: Dictionary = {}
+# Vector4i(from, to) -> Array[Vector2i]; cleared when the seed changes.
+var _path_cache: Dictionary = {}
 
 func request_path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
 	if not background_enabled:
@@ -63,11 +70,25 @@ func _prepare(seed_value: int) -> void:
 		return
 	_seed = seed_value
 	_agent_routes.clear()
+	_path_cache.clear()
 	_grid = AlifeRouteGrid.new()
 	_grid.setup(seed_value)
 
+# Routes depend only on terrain, which is a pure function of the seed, so solved paths are
+# reused. Caravans re-request the same city-to-city route on every dispatch attempt.
 func path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
 	_prepare(seed_value)
+	var key := Vector4i(from_tile.x, from_tile.y, to_tile.x, to_tile.y)
+	if _path_cache.has(key):
+		return (_path_cache[key] as Array[Vector2i]).duplicate()
+	var result: Array[Vector2i] = _solve(from_tile, to_tile)
+	if _path_cache.size() >= PATH_CACHE_LIMIT:
+		_path_cache.erase(_path_cache.keys()[0])
+	_path_cache[key] = result.duplicate()
+	return result
+
+
+func _solve(from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
 	if _grid.blocked(from_tile) or _grid.blocked(to_tile):
 		return []
 	if not _grid.prepare_window(from_tile, to_tile):
@@ -134,7 +155,7 @@ func _local_path(from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
 	result.append_array(last)
 	return result
 
-func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = 8.0) -> bool:
+func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = WALK_TILES_PER_HOUR) -> bool:
 	if agent.tile == agent.destination_tile:
 		return true
 	_prepare(seed_value)

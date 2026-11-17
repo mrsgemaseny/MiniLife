@@ -78,10 +78,13 @@ func _process(delta: float) -> void:
 	var closest_hit_node: Node2D = null
 	var closest_dist: float = 99999.0
 
+	# The shooter can die or be unloaded with its chunk while the arrow is in flight;
+	# type checks on a freed instance raise, so resolve it once.
+	var shooter_enemy: EnemyBase = shooter as EnemyBase if is_instance_valid(shooter) and shooter is EnemyBase else null
 	for node in get_tree().get_nodes_in_group("combatant"):
 		if node == shooter or not (node is Node2D):
 			continue
-		if shooter is EnemyBase and node is EnemyBase and (shooter as EnemyBase).faction_id == (node as EnemyBase).faction_id:
+		if shooter_enemy != null and node is EnemyBase and shooter_enemy.faction_id == (node as EnemyBase).faction_id:
 			continue
 		var n2d: Node2D = node as Node2D
 		if not n2d.is_visible_in_tree():

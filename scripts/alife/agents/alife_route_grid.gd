@@ -51,15 +51,24 @@ func macro_path(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
 	return result
 
 
-# Dry point on the shared border of two 4-neighbour cells, searched outward from its middle.
+# Dry point on the shared border of two 4-neighbour cells, on the side of cell b,
+# searched outward from the border's middle. The cache keeps both sides of the found
+# passage, so the answer does not depend on which direction was asked first.
 func crossing(a: Vector2i, b: Vector2i) -> Vector2i:
 	var key: String = "%s|%s" % [a if a < b else b, b if a < b else a]
-	if _crossings.has(key):
-		return _crossings[key]
-	var found := Vector2i(-1, -1)
+	if not _crossings.has(key):
+		_crossings[key] = _find_passage(a, b)
+	var passage: Array = _crossings[key]
+	if passage.is_empty():
+		return Vector2i(-1, -1)
+	# passage = [point on the lower-coordinate side, point on the higher side]
+	return passage[1] if b.x > a.x or b.y > a.y else passage[0]
+
+
+func _find_passage(a: Vector2i, b: Vector2i) -> Array:
 	for step: int in range(0, 9):
-		for sign: int in [1, -1]:
-			var along: int = CELL / 2 + sign * step * 50
+		for direction: int in [1, -1]:
+			var along: int = CELL / 2 + direction * step * 50
 			var inside: Vector2i
 			var outside: Vector2i
 			if a.x != b.x:
@@ -71,12 +80,8 @@ func crossing(a: Vector2i, b: Vector2i) -> Vector2i:
 				inside = Vector2i(a.x * CELL + along, border_y - 2)
 				outside = Vector2i(a.x * CELL + along, border_y + 1)
 			if not blocked(inside) and not blocked(outside):
-				found = outside if b.x > a.x or b.y > a.y else inside
-				break
-		if found.x >= 0:
-			break
-	_crossings[key] = found
-	return found
+				return [inside, outside]
+	return []
 
 
 # Builds (or reuses) the local window covering both tiles. False when they are too far apart.
@@ -88,7 +93,10 @@ func prepare_window(from_tile: Vector2i, to_tile: Vector2i) -> bool:
 	var wanted := Rect2i(Vector2i(floori(low.x / float(STRIDE)), floori(low.y / float(STRIDE))),
 		Vector2i.ZERO)
 	wanted.end = Vector2i(ceili(high.x / float(STRIDE)), ceili(high.y / float(STRIDE))) + Vector2i.ONE
-	if _graph_ready and region.encloses(wanted):
+	# The window must be a pure function of the endpoints: point ids are window-relative,
+	# and A* breaks ties by id, so reusing a larger enclosing window made a route depend on
+	# earlier requests (a reloaded world diverged from an uninterrupted one).
+	if _graph_ready and region == wanted:
 		return true
 	clear()
 	region = wanted

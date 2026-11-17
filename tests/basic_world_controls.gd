@@ -194,6 +194,10 @@ func run() -> void:
 	world.add_child(enemy)
 	enemy.position = player.position + Vector2(24, 0)
 	var health_before: float = enemy.stats.health
+	# Combat rolls hit/dodge from CombatSystem's own RNG (randomized at start), so a single
+	# swing could miss and made this check flaky. A fixed seed keeps the control check strict.
+	var combat_system: CombatSystem = main.get_node("Systems/CombatSystem") as CombatSystem
+	combat_system._combat_rng.seed = 0x5EED
 	await mouse(enemy.get_global_transform_with_canvas().origin + Vector2(0,-16), true)
 	await wait_action(0.9)
 	check(enemy.stats.health < health_before, "Clicking an enemy did not produce a melee hit")

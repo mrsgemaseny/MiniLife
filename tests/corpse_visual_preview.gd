@@ -28,6 +28,12 @@ func _ready() -> void:
 	call_deferred("capture")
 
 func capture() -> void:
+	# Headless runs have no frame to draw: the scene setup is exercised, the capture skipped.
+	if DisplayServer.get_name() == "headless":
+		await get_tree().process_frame
+		print("CORPSE_PREVIEW_RESULT: skipped (headless)")
+		get_tree().quit(0)
+		return
 	await RenderingServer.frame_post_draw
 	await RenderingServer.frame_post_draw
 	var result: Error = get_viewport().get_texture().get_image().save_png("res://output/corpse_visual_2026-11-06.png")

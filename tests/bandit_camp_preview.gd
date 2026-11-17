@@ -46,11 +46,16 @@ func _run() -> void:
 	camera.reset_smoothing()
 	for frame: int in range(8):
 		await get_tree().process_frame
-	await RenderingServer.frame_post_draw
+	# Headless runs (CI) have no frame to draw: logic checks run, the capture is skipped.
+	var can_render: bool = DisplayServer.get_name() != "headless"
+	if can_render:
+		await RenderingServer.frame_post_draw
 	for entity: Node in world._spawned_entities_by_chunk.get(picked_chunk, []):
 		if entity is EnemyBase and entity.faction_id == "bandits":
 			print("CAMP_VISIBLE: ", entity.enemy_id, " visible=", entity.visible, " fog=", world.get_fog_state(Config.iso_to_world(entity.global_position)))
 	var screenshot: String = "res://output/bandit_chief_camp_preview.png"
-	var saved: Error = get_viewport().get_texture().get_image().save_png(screenshot)
+	var saved: Error = get_viewport().get_texture().get_image().save_png(screenshot) if can_render else OK
+	if not can_render:
+		screenshot = "skipped (headless)"
 	print("BANDIT_CAMP_PREVIEW: chunk=", picked_chunk, " anchor=", picked["tile_pos"], " bandits=", bandits, " screenshot=", screenshot, " result=", saved)
 	get_tree().quit(0 if saved == OK else 1)

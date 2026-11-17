@@ -17,9 +17,11 @@ func _ready() -> void:
 		if city == null or count > district_count or (count == district_count and settlement.population > city.population):
 			city = settlement
 			district_count = count
-	if city == null or DisplayServer.get_name() == "headless":
+	if city == null:
 		get_tree().quit(1)
 		return
+	# Headless runs have no frame to draw: the city is still loaded and checked, capture skipped.
+	var can_render: bool = DisplayServer.get_name() != "headless"
 	world._vision_radius = 43 if center_view else 80
 	SignalBus.player_teleport_requested.emit(Config.world_to_iso(city.tile))
 	SignalBus.ui_close_all_requested.emit()
@@ -38,13 +40,14 @@ func _ready() -> void:
 	main.get_node("UILayer").hide()
 	for frame: int in range(3):
 		await get_tree().process_frame
-		await RenderingServer.frame_post_draw
+		if can_render:
+			await RenderingServer.frame_post_draw
 	var active: int = 0
 	for agent: GlobalAgent in WorldSimulation.world.agents.by_settlement(city.settlement_id):
 		if is_instance_valid(WorldSimulation.world.agents.materialized.get(agent.agent_id)):
 			active += 1
 	var screenshot: String = "city_materials_%s_%s.png" % ["center" if center_view else "streets", "night" if night else "day"]
-	var result: Error = get_viewport().get_texture().get_image().save_png("user://" + screenshot)
+	var result: Error = get_viewport().get_texture().get_image().save_png("user://" + screenshot) if can_render else OK
 	print("CITY_PREVIEW: ", city.settlement_id, " chunks=", district_count, " population=", city.population, " active=", active, " screenshot=", result)
 	GameManager._state = GameManager.State.BOOT
 	main.queue_free()

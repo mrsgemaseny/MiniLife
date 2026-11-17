@@ -211,7 +211,11 @@ func _test_phase_4_character_anatomy_and_needs(player: Player) -> void:
 func _test_phase_5_skills_and_perks(player: Player) -> void:
 	print("[E2E Phase 5] 18 Skills & Milestone Perks System...")
 	_check(player.skills != null, "SkillsComponent missing")
-	_check(SkillsComponent.ALL_SKILLS.size() == 18, "Must have exactly 18 skills")
+	# 18 base skills plus the four combat skills of the combat overhaul (COMBAT_SYSTEM.md).
+	var base_skills: int = SkillsComponent.ALL_SKILLS.size() - SkillsComponent.COMBAT_SKILLS.size()
+	_check(base_skills == 18, "Must have exactly 18 base skills (found %d)" % base_skills)
+	for combat_skill: String in SkillsComponent.COMBAT_SKILLS:
+		_check(SkillsComponent.ALL_SKILLS.has(combat_skill), "Combat skill missing from ALL_SKILLS: " + combat_skill)
 	for s in SkillsComponent.ALL_SKILLS:
 		_check(player.skills.skills.has(s), "Skill dictionary missing: " + s)
 
@@ -237,15 +241,26 @@ func _test_phase_6_combat_aiming_and_ballistics(player: Player) -> void:
 	test_dummy.global_position = Vector2(100.0, 100.0)
 
 	# Attacker in front of dummy (y = 150.0): to_attacker is Vector2.DOWN, facing is Vector2.DOWN -> blocked!
+	# A frontal block is a 35% roll (MeleeResolver), so one swing proves nothing: with a fixed
+	# seed, 200 frontal swings must block at about that rate and rear swings never.
 	var front_attacker_pos: Vector2 = Vector2(100.0, 150.0)
-	var front_res: Dictionary = MeleeResolver.check_directional_shield_block(front_attacker_pos, test_dummy)
-	_check(bool(front_res.get("blocked", false)) == true, "Frontal attack against shield must be blocked")
-
-	# Attacker behind dummy (y = 50.0): to_attacker is Vector2.UP, facing is Vector2.DOWN -> bypassed flank!
 	var rear_attacker_pos: Vector2 = Vector2(100.0, 50.0)
-	var rear_res: Dictionary = MeleeResolver.check_directional_shield_block(rear_attacker_pos, test_dummy)
-	_check(bool(rear_res.get("blocked", false)) == false, "Rear attack against shield must NOT be blocked")
-	_check(bool(rear_res.get("flanking", false)) == true, "Rear attack must be flagged as flanking")
+	seed(0x5E1D)
+	var front_blocks: int = 0
+	var rear_blocks: int = 0
+	var rear_flanks: int = 0
+	for swing: int in range(200):
+		if bool(MeleeResolver.check_directional_shield_block(front_attacker_pos, test_dummy).get("blocked", false)):
+			front_blocks += 1
+		var rear_res: Dictionary = MeleeResolver.check_directional_shield_block(rear_attacker_pos, test_dummy)
+		if bool(rear_res.get("blocked", false)):
+			rear_blocks += 1
+		if bool(rear_res.get("flanking", false)):
+			rear_flanks += 1
+	randomize()
+	_check(front_blocks >= 45 and front_blocks <= 95, "Frontal attacks against shield must block at ~35%% (blocked %d of 200)" % front_blocks)
+	_check(rear_blocks == 0, "Rear attack against shield must NOT be blocked")
+	_check(rear_flanks == 200, "Rear attack must be flagged as flanking")
 
 	# 2. Armor Penetration Test
 	var full_mitigated: float = MeleeResolver.compute_mitigated_damage(30.0, "physical", test_dummy, 0.0)
@@ -394,6 +409,11 @@ func _test_phase_8_crafting_furnace_smelting(player: Player) -> void:
 		craft_ui.close_panel()
 	else:
 		SignalBus.craft_requested.emit("craft_plank", player, "")
+	# Crafting is a timed action (CraftSystem.start_batch); drive it to completion instead
+	# of reading the inventory before the unit has finished.
+	var craft_action: ItemActionComponent = player.get_node_or_null("ItemAction") as ItemActionComponent
+	if craft_action != null and craft_action.remaining > 0.0:
+		craft_action.advance(craft_action.remaining + 0.01)
 
 	var after_wood: int = player.inventory.get_item_count("wood")
 	var after_planks: int = player.inventory.get_item_count("plank")
@@ -685,9 +705,10 @@ func _test_phase_13_master_contracts(player: Player) -> void:
 	var iron_count: int = 0
 	var silver_count: int = 0
 	var tin_count: int = 0
-	# Sample 400 mountain tiles
+	# Sample 400 tiles inside the authored mountain cell (16,4)
+	var mountain_origin: Vector2i = Vector2i(16, 4) * GlobalLandscapeMap.CELL_TILES + Vector2i(400, 400)
 	for sample_i in range(400):
-		var test_tile: Vector2i = Vector2i(80 + (sample_i % 20), 50 + (sample_i / 20))
+		var test_tile: Vector2i = mountain_origin + Vector2i(sample_i % 20, sample_i / 20)
 		var ore_node: String = terrain_gen.get_resource_node_at(test_tile)
 		if ore_node == "iron_vein":
 			iron_count += 1

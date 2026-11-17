@@ -33,9 +33,18 @@ func _run() -> void:
 	world._on_player_tile_changed(origin)
 	metrics["initial_chunk_ms"] = (Time.get_ticks_usec() - start) / 1000.0
 	assert(world._loaded_chunks.size() == 1)
-	for frame: int in range(35):
+	# Headless frames are not paced, so a frame budget measured CPU contention rather than
+	# streaming. Wait for the queue to drain and bound it by wall time instead (~0.2 s here).
+	var drain_started: int = Time.get_ticks_usec()
+	var drain_frames: int = 0
+	while not world._pending_chunks.is_empty() and drain_frames < 300:
 		await get_tree().process_frame
+		drain_frames += 1
+	var drain_ms: float = (Time.get_ticks_usec() - drain_started) / 1000.0
+	metrics["initial_drain_frames"] = drain_frames
+	metrics["initial_drain_ms"] = drain_ms
 	assert(world._loaded_chunks.size() <= 25 and world._pending_chunks.is_empty())
+	assert(drain_ms < 1500.0)
 	metrics["resident_chunks"] = world._loaded_chunks.size()
 	var longest: int = 0
 	var teleport_ms: float = 0.0

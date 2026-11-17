@@ -22,3 +22,15 @@ func _ready() -> void:
 	add_child(help)
 	if "--inspect" in OS.get_cmdline_user_args():
 		preload("res://scripts/ui/enemy_inspect.gd").show_target(player, enemy)
+	# Interactive sandbox with a display; a headless run (CI) does a smoke check and exits.
+	if DisplayServer.get_name() == "headless":
+		_headless_smoke(player, enemy, combat)
+
+
+func _headless_smoke(player: Player, enemy: EnemyBase, combat: CombatSystem) -> void:
+	for frame: int in range(10):
+		await get_tree().process_frame
+	var ok: bool = is_instance_valid(player) and is_instance_valid(enemy) and is_instance_valid(combat) \
+		and enemy.is_in_group("enemies") and player.is_alive()
+	print("COMBAT_VISUAL_SMOKE: ", "PASS" if ok else "FAIL")
+	get_tree().quit(0 if ok else 1)

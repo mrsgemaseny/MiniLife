@@ -48,13 +48,17 @@ func run() -> void:
 		var dead: int = world.agents.matching("alive", false).size()
 		check(dead >= previous_dead, "Dead agents never resurrect during campaign")
 		previous_dead = dead
+		# One pass over agents per step (same rule as by_settlement per settlement, which made
+		# this check quadratic: 102 settlements x 16k agents every tick).
+		var living_guards: Dictionary = {}
+		for agent: GlobalAgent in world.agents.all():
+			if agent.alive and agent.role in ["guard", "soldier"]:
+				var guard_key: String = agent.settlement_id + "|" + agent.faction_id
+				living_guards[guard_key] = int(living_guards.get(guard_key, 0)) + 1
 		var population: int = 0
 		for settlement: AlifeSettlement in world.settlements.all():
 			population += settlement.population
-			var expected: int = 0
-			for agent: GlobalAgent in world.agents.by_settlement(settlement.settlement_id):
-				if agent.alive and agent.role in ["guard", "soldier"] and agent.faction_id == settlement.owner_faction:
-					expected += 1
+			var expected: int = int(living_guards.get(settlement.settlement_id + "|" + settlement.owner_faction, 0))
 			check(settlement.garrison == expected, "Garrison agrees with living guard identities")
 		var displaced: int = 0
 		for id: String in world.narrative.get("refugee_travelers", {}):

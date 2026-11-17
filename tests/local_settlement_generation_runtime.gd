@@ -36,7 +36,21 @@ func run() -> void:
 	check(hud._minimap._cached_pois.any(func(poi: Dictionary) -> bool: return poi.get("id") == "merchant_outpost"),
 		"Minimap keeps the settlement marker")
 	check(world_system._loaded_chunks.has(chunk), "Settlement chunk loads")
-	check(not WorldSimulation.materializer.loaded_chunks.has(chunk), "Settlement residents are not spawned on the local map")
+	# Residents are hidden by the materializer's agent filter (18c130c), not by excluding the
+	# chunk: the settlement chunk is loaded like any other. Force a refresh (it runs every
+	# 0.5 s) and require that no ordinary resident of this settlement has a body.
+	WorldSimulation.materializer.update(1.0)
+	for frame: int in range(5):
+		await get_tree().process_frame
+	var resident_bodies: int = 0
+	for id: String in WorldSimulation.world.agents.materialized:
+		var agent: GlobalAgent = WorldSimulation.world.agents.find(id) as GlobalAgent
+		# Independent of the filter under test: a resident with no caravan, army or ambush role.
+		if agent != null and agent.settlement_id == settlement.settlement_id and agent.caravan_id.is_empty() \
+				and agent.deployment_id.is_empty() and agent.ambush_route_id.is_empty():
+			resident_bodies += 1
+	check(WorldSimulation.materializer.loaded_chunks.has(chunk), "Settlement chunk is tracked as loaded terrain")
+	check(resident_bodies == 0, "Settlement residents are not spawned on the local map")
 	var chunk_node: Node = world_system._loaded_chunks.get(chunk)
 	check(chunk_node.get_node_or_null("SettlementRoofs") == null and chunk_node.get_node_or_null("SettlementStreets") == null, "Local settlement buildings and streets are absent")
 	get_tree().quit(0 if failures == 0 else 1)
