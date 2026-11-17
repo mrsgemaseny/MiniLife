@@ -291,7 +291,7 @@ func _draw() -> void:
 				elif biome_id == "hills":
 					modulate_col = Color(0.80, 0.80, 0.70, 1.0)
 				# Map the original diamond top surface onto the square cell.
-				var uv: PackedVector2Array = PackedVector2Array([Vector2(0.5,0.01),Vector2(0.99,16.0/37.0),Vector2(0.5,31.5/37.0),Vector2(0.01,16.0/37.0)])
+				var uv: PackedVector2Array = PackedVector2Array([Vector2(0.5, 0.10), Vector2(0.92, 16.0 / 37.0), Vector2(0.5, 0.75), Vector2(0.08, 16.0 / 37.0)])
 				IsoMath.draw_textured_quad(self, IsoMath.cell_polygon(center), modulate_col, uv, tile_tex)
 			else:
 				IsoMath.draw_quad(self, IsoMath.cell_polygon(center), col)

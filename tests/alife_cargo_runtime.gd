@@ -35,6 +35,7 @@ func run() -> void:
 	WorldSimulation.pack_materializer.update({chunk: true}, merchant.tile)
 	var pack: CaravanPackAnimal = WorldSimulation.pack_materializer.get_entity(route.route_id)
 	check(pack != null and pack.has_pack and pack.leader == merchant_scene, "Physical saddled donkey follows the actual merchant scene")
+	check(pack.move_speed <= 60.0, "Caravan donkey moves at an animal walking pace")
 	var player: Player = load("res://scenes/entities/player.tscn").instantiate() as Player
 	add_child(player)
 	player.set_physics_process(false)
@@ -84,6 +85,20 @@ func run() -> void:
 	check(not route.active and route.cargo.is_empty() and route.wrecks.size() == 1, "Pack death transfers remaining manifest to one persistent wreck")
 	var wreck_id: String = str(route.wrecks[0]["id"])
 	check(WorldSimulation.pack_materializer.get_entity(wreck_id) == pack and pack.is_permanently_dead, "The fallen body remains interactable as the same wreck")
+	check(is_zero_approx(pack.rotation), "Fallen donkey stays aligned with the ground")
+	var camera: Camera2D = Camera2D.new()
+	layer.add_child(camera)
+	camera.global_position = pack.global_position
+	camera.zoom = Vector2.ONE * 5.0
+	camera.make_current()
+	if DisplayServer.get_name() != "headless":
+		player.global_position += Vector2(800.0, 0.0)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		await get_tree().create_timer(0.25).timeout
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png("res://output/caravan_donkey_wreck.png")
+		player.global_position = pack.global_position
 	var remaining: int = int((route.wrecks[0]["cargo"] as Dictionary).get("food", 0))
 	check(remaining == initial_food - taken, "Wreck holds only cargo not previously stolen")
 	player.inventory.max_weight = 100000.0

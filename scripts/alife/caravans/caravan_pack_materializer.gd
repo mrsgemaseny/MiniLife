@@ -43,7 +43,7 @@ func update(loaded_chunks: Dictionary, player_tile: Vector2i) -> void:
 				var pack: CaravanPackAnimal = _spawn(id, route.route_id, Config.world_to_iso(tile), wreck.get("state", {}))
 				pack.is_permanently_dead = true
 				pack.stats.health = 0.0
-				pack.rotation = -PI * 0.5
+				pack.rotation = 0.0
 				pack.display_name = "Abandoned Caravan Supplies"
 				pack.remove_from_group("combatant")
 			get_entity(id).visible = true
