@@ -12,7 +12,7 @@ func _ready() -> void:
 	SignalBus.dialogue_ended.connect(_on_dialogue_ended)
 	SignalBus.ui_close_all_requested.connect(_on_close_all)
 
-func _on_dialogue_node_shown(speaker: String, text: String, choices: Array) -> void:
+func _on_dialogue_node_shown(speaker: String, text: String, choices: Array, can_trade: bool) -> void:
 	visible = true
 	SignalBus.ui_panel_toggled.emit("dialogue", true, true)
 	if speaker_label != null:
@@ -38,10 +38,11 @@ func _on_dialogue_node_shown(speaker: String, text: String, choices: Array) -> v
 		)
 		choices_box.add_child(btn)
 
-	var trade_btn: Button = Button.new()
-	trade_btn.text = "Торговля"
-	trade_btn.pressed.connect(func() -> void: SignalBus.dialogue_trade_requested.emit())
-	choices_box.add_child(trade_btn)
+	if can_trade:
+		var trade_btn: Button = Button.new()
+		trade_btn.text = "Торговля"
+		trade_btn.pressed.connect(func() -> void: SignalBus.dialogue_trade_requested.emit())
+		choices_box.add_child(trade_btn)
 
 	if not has_leave:
 		var leave_btn: Button = Button.new()

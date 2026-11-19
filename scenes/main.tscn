@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3]
+[gd_scene load_steps=33 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/world.tscn" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/entities/player.tscn" id="2_player"]
@@ -31,6 +31,7 @@
 [ext_resource type="Script" path="res://scripts/ui/world_map_ui.gd" id="29_map_ui"]
 [ext_resource type="Script" path="res://scripts/ui/main_menu_ui.gd" id="30_main_menu_ui"]
 [ext_resource type="Script" path="res://scripts/ui/global_map_ui.gd" id="31_global_map_ui"]
+[ext_resource type="Script" path="res://scripts/systems/narrative/frontier_introduction.gd" id="32_frontier_intro"]
 
 [sub_resource type="GDScript" id="GDScript_main"]
 script/source = "extends Node2D
@@ -179,6 +180,10 @@ script = ExtResource("5_building")
 
 [node name="Player" parent="World" instance=ExtResource("2_player")]
 process_mode = 1
+
+[node name="FrontierIntroduction" type="Node2D" parent="World"]
+y_sort_enabled = true
+script = ExtResource("32_frontier_intro")
 
 [node name="Systems" type="Node" parent="."]
 process_mode = 1

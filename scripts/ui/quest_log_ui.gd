@@ -323,7 +323,10 @@ func refresh() -> void:
 
 				var title_str: String = _format_quest_title(str(qid), qdef)
 				var qtype: String = str(q.get("type", qdef.get("type", "КОНТРАКТ"))).to_upper()
-				btn.text = " [ПОСТАВКА]  %s" % title_str if qtype == "DELIVERY" else " [%s]  %s  (%d/%d)" % [qtype, title_str, cur, req]
+				if qtype == "VISIT":
+					btn.text = " [СЮЖЕТ]  %s" % title_str
+				else:
+					btn.text = " [ПОСТАВКА]  %s" % title_str if qtype == "DELIVERY" else " [%s]  %s  (%d/%d)" % [qtype, title_str, cur, req]
 				btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 				btn.add_theme_font_size_override("font_size", 11)
 				btn.add_theme_color_override("font_color", Color(0.92, 0.90, 0.86, 1.0) if is_sel else Color(0.78, 0.80, 0.84, 1.0))
@@ -384,24 +387,31 @@ func _update_quest_details() -> void:
 	var title_str: String = _format_quest_title(str(_selected_quest_id), qdef)
 	var qtype: String = str(q.get("type", qdef.get("type", "КОНТРАКТ"))).to_upper()
 	var is_delivery: bool = qtype == "DELIVERY"
+	var is_visit: bool = qtype == "VISIT"
 	var rew: Dictionary = qdef.get("reward", {})
 	var rew_gold: int = int(rew.get("gold", 75))
 	var rew_rep: int = int(rew.get("rep_delta", 15))
 
 	if _detail_type_badge != null:
-		_detail_type_badge.text = "[ КАТЕГОРИЯ: %s ]" % ("ПОСТАВКА" if is_delivery else qtype)
+		_detail_type_badge.text = "[ КАТЕГОРИЯ: %s ]" % ("СЮЖЕТ" if is_visit else ("ПОСТАВКА" if is_delivery else qtype))
 	if _detail_title != null:
 		_detail_title.text = title_str
 	if _detail_desc != null:
 		_detail_desc.text = str(qdef.get("description", "Официальное поручение старосты поселения. Выполните поставленные цели и вернитесь за получением награды."))
 	if _detail_objective != null:
-		_detail_objective.text = "Сдайте всю партию в разговоре со старостой." if is_delivery else "Цель поручения: Выполнено %d из %d требуемых действий" % [cur, req]
+		if is_visit:
+			_detail_objective.text = ""
+		else:
+			_detail_objective.text = "Сдайте всю партию в разговоре со старостой." if is_delivery else "Цель поручения: Выполнено %d из %d требуемых действий" % [cur, req]
 	if _detail_progress_bar != null:
-		_detail_progress_bar.visible = not is_delivery
+		_detail_progress_bar.visible = not is_delivery and not is_visit
 		_detail_progress_bar.max_value = float(req)
 		_detail_progress_bar.value = float(cur)
 	if _detail_reward != null:
-		_detail_reward.text = "Награда: %d серебра" % int(rew.get("silver", 0)) if is_delivery else "Вознаграждение за выполнение:  %d монет  |  +%d репутации у фракции" % [rew_gold, rew_rep]
+		if is_visit:
+			_detail_reward.text = ""
+		else:
+			_detail_reward.text = "Награда: %d серебра" % int(rew.get("silver", 0)) if is_delivery else "Вознаграждение за выполнение:  %d монет  |  +%d репутации у фракции" % [rew_gold, rew_rep]
 
 
 func _on_panel_requested(panel_id: String) -> void:

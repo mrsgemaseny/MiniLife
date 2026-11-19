@@ -39,6 +39,13 @@
 		]
 	},
 	{
+		"id": "frontier_unmarked_soldier",
+		"name": "Солдат",
+		"faction": "",
+		"role": "soldier",
+		"dialogue_tree_id": "frontier_summons"
+	},
+	{
 		"id": "border_guard",
 		"name": "Warden Patrolman",
 		"faction": "guards",

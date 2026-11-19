@@ -64,6 +64,11 @@ func _show_node(dlg: Dictionary, node_id: String) -> void:
 		return
 	var speaker: String = str(node_data.get("speaker", dlg.get("speaker", _active_npc_id.capitalize())))
 	var text: String = str(node_data.get("text", "..."))
+	if dlg.has("intro_pending_text"):
+		var introduction: Dictionary = {}
+		SignalBus.frontier_introduction_queried.emit(introduction)
+		if not introduction.get("village_open", true):
+			text = str(dlg["intro_pending_text"])
 	_current_choices.clear()
 	var raw_choices: Variant = node_data.get("choices", [])
 	if raw_choices is Array:
@@ -73,7 +78,7 @@ func _show_node(dlg: Dictionary, node_id: String) -> void:
 				var cond: Dictionary = cdict.get("condition", cdict.get("conditions", {})) if (cdict.get("condition", cdict.get("conditions", {})) is Dictionary) else {}
 				if _evaluate_conditions(cond):
 					_current_choices.append(cdict)
-	SignalBus.dialogue_node_shown.emit(speaker, text, _current_choices)
+	SignalBus.dialogue_node_shown.emit(speaker, text, _current_choices, bool(dlg.get("trade_enabled", true)))
 
 func _on_choice_selected(choice_index: int) -> void:
 	if choice_index < 0 or choice_index >= _current_choices.size():
@@ -149,6 +154,8 @@ func _evaluate_conditions(conds: Dictionary) -> bool:
 	return true
 
 func _open_trade() -> void:
+	if _active_dialogue_id.is_empty() or not DataRegistry.get_dialogue(_active_dialogue_id).get("trade_enabled", true):
+		return
 	var speaker: Node2D = _active_speaker
 	_end_dialogue()
 	if is_instance_valid(speaker) and not speaker.is_queued_for_deletion():

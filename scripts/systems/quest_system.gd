@@ -1,6 +1,8 @@
 class_name QuestSystem
 extends Node
 
+const FRONTIER_QUEST: String = "frontier_visit_valden"
+
 var _quests_defs: Dictionary = {}
 var _active_quests: Dictionary = {} # quest_id -> Dictionary state
 var _completed_quests: Dictionary = {}
@@ -22,6 +24,10 @@ func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
 	_emit_snapshot()
 
 func _start_initial_quest() -> void:
+	var introduction: Dictionary = {}
+	SignalBus.frontier_introduction_queried.emit(introduction)
+	if introduction.get("enabled", false):
+		return
 	if _active_quests.is_empty() and _completed_quests.is_empty():
 		var first_id: String = "cull_wolves_01" if _quests_defs.has("cull_wolves_01") else ""
 		if first_id.is_empty() and not _quests_defs.is_empty():
@@ -33,6 +39,8 @@ func _connect_signals() -> void:
 	SignalBus.quest_start_requested.connect(start_quest)
 	SignalBus.quest_turn_in_requested.connect(complete_quest)
 	SignalBus.quest_state_queried.connect(_on_quest_state_queried)
+	SignalBus.frontier_summons_issued.connect(func() -> void: _start_quest(FRONTIER_QUEST))
+	SignalBus.frontier_elder_reached.connect(func() -> void: advance_quest(FRONTIER_QUEST))
 	SignalBus.settlement_delivery_quest_requested.connect(_on_settlement_delivery_quest_requested)
 	SignalBus.hour_passed.connect(_on_hour_passed)
 	SignalBus.npc_killed.connect(_on_npc_killed)
@@ -44,7 +52,7 @@ func _connect_signals() -> void:
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
 
 func start_quest(quest_id: String, _giver_id: String = "") -> bool:
-	if _quests_defs.get(quest_id, {}).get("type", "") == "delivery":
+	if quest_id == FRONTIER_QUEST or _quests_defs.get(quest_id, {}).get("type", "") == "delivery":
 		return false
 	return _start_quest(quest_id)
 
@@ -79,6 +87,8 @@ func advance_quest(quest_id: String, delta_count: int = 1) -> void:
 	if not _active_quests.has(quest_id):
 		return
 	var state: Dictionary = _active_quests[quest_id]
+	if state.get("type", "") == "delivery":
+		return
 	var prog: Dictionary = state.get("progress", {"current": 0, "required": 1})
 	var cur: int = clampi(int(prog.get("current", 0)) + delta_count, 0, int(prog.get("required", 1)))
 	prog["current"] = cur
@@ -87,10 +97,10 @@ func advance_quest(quest_id: String, delta_count: int = 1) -> void:
 	SignalBus.quest_objective_updated.emit(quest_id, prog)
 	_emit_snapshot()
 	if cur >= int(prog.get("required", 1)):
-		complete_quest(quest_id)
+		_complete_quest(quest_id)
 
 func complete_quest(quest_id: String) -> void:
-	if _quests_defs.get(quest_id, {}).get("type", "") == "delivery":
+	if quest_id == FRONTIER_QUEST or _quests_defs.get(quest_id, {}).get("type", "") == "delivery":
 		return
 	_complete_quest(quest_id)
 
@@ -144,11 +154,15 @@ func _complete_quest(quest_id: String) -> void:
 	var title: String = str(state.get("title", quest_id))
 	if state.get("type") == "delivery":
 		SignalBus.notification_posted.emit("Поставка принята: %s" % title)
+	elif quest_id == FRONTIER_QUEST:
+		SignalBus.notification_posted.emit("Вы явились к старосте Вальдена.")
 	else:
 		SignalBus.notification_posted.emit("Quest Completed: %s" % title)
 
 
 func _on_quest_state_queried(quest_id: String, result: Dictionary) -> void:
+	if _quests_defs.get(quest_id, {}).get("type", "") == "delivery" and not _village_open():
+		return
 	if _active_quests.has(quest_id):
 		result["state"] = "active"
 	elif _completed_quests.has(quest_id):
@@ -162,7 +176,7 @@ func _on_quest_state_queried(quest_id: String, result: Dictionary) -> void:
 func _on_settlement_delivery_quest_requested(quest_id: String, elder: Node2D, turn_in: bool, result: Dictionary) -> void:
 	var definition: Dictionary = _quests_defs.get(quest_id, {})
 	var settlement_id: String = str(definition.get("settlement_id", ""))
-	if definition.get("type", "") != "delivery" or settlement_id.is_empty() \
+	if definition.get("type", "") != "delivery" or settlement_id.is_empty() or not _village_open() \
 			or GameManager.get_world_generator_version() < int(definition.get("min_generator_version", 0)) \
 			or not is_instance_valid(elder) or not elder is NPCBase or elder.is_queued_for_deletion() or not elder.is_alive() \
 			or elder.npc_id != definition.get("giver_id") or elder.get_meta("settlement_id", "") != settlement_id:
@@ -185,6 +199,12 @@ func _on_settlement_delivery_quest_requested(quest_id: String, elder: Node2D, tu
 		progress["current"] = progress["required"]
 		_complete_quest(quest_id)
 	_delivery_in_progress = false
+
+
+func _village_open() -> bool:
+	var introduction: Dictionary = {}
+	SignalBus.frontier_introduction_queried.emit(introduction)
+	return bool(introduction.get("village_open", true))
 
 
 func fail_quest(quest_id: String, reason: String = "timeout") -> void:

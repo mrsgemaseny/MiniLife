@@ -75,6 +75,7 @@
 	{
 		"id": "elder_default_settlement_07_14",
 		"min_generator_version": 4,
+		"intro_pending_text": "Сейчас поручений для тебя нет.",
 		"nodes": [
 			{
 				"id": "root",
@@ -136,6 +137,20 @@
 						"next_node": "",
 						"action": "end"
 					}
+				]
+			}
+		]
+	},
+	{
+		"id": "frontier_summons",
+		"trade_enabled": false,
+		"nodes": [
+			{
+				"id": "root",
+				"speaker": "Солдат",
+				"text": "Приказ. Явись к старосте деревни Вальдена. Деревня в двух клетках к западу от места, где ты начал путь. На карте это (7, 14).",
+				"choices": [
+					{ "text": "Понял.", "action": "end" }
 				]
 			}
 		]

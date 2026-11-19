@@ -15,7 +15,9 @@ func _ready() -> void:
 	var player: Player = main.get_node("World/Player")
 	var victories: Array[bool] = []
 	SignalBus.endgame_victory_achieved.connect(func() -> void: victories.append(true))
-	var passed: bool = first_save.get("world", {}).get("quests", {}).get("active", {}).has("cull_wolves_01")
+	var saved_world: Dictionary = first_save.get("world", {})
+	var passed: bool = saved_world.get("quests", {}).get("active", {}).is_empty() \
+		and saved_world.get("frontier_introduction", {}).get("stage") == FrontierIntroduction.Stage.SURVIVAL
 	passed = await _check_campaign(world, player, victories) and passed
 	print("ENDGAME_WORLD_RESULT: ", "PASS" if passed else "FAIL")
 	GameManager._state = GameManager.State.BOOT

@@ -129,7 +129,7 @@ signal caravan_trip_completed(settlement_id: String, trip_count: int, is_roi_ach
 
 # Dialogue
 signal dialogue_started(npc_id: String, dialogue_id: String, speaker: Node2D)
-signal dialogue_node_shown(speaker: String, text: String, choices: Array)
+signal dialogue_node_shown(speaker: String, text: String, choices: Array, can_trade: bool)
 signal dialogue_choice_selected(choice_index: int)
 signal dialogue_end_requested()
 signal dialogue_trade_requested()
@@ -147,6 +147,9 @@ signal chronicle_snapshot_loaded(entries: Array)
 signal quest_start_requested(quest_id: String, giver_id: String)
 signal quest_turn_in_requested(quest_id: String)
 signal quest_state_queried(quest_id: String, result: Dictionary)
+signal frontier_introduction_queried(result: Dictionary)
+signal frontier_summons_issued()
+signal frontier_elder_reached()
 signal settlement_delivery_quest_requested(quest_id: String, elder: Node2D, turn_in: bool, result: Dictionary)
 signal settlement_supply_delivery_requested(settlement_id: String, player: Node, item_id: String, count: int, result: Dictionary)
 signal quest_started(quest_id: String)

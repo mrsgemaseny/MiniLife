@@ -60,6 +60,14 @@
 		"next_quest_id": ""
 	},
 	{
+		"id": "frontier_visit_valden",
+		"title": "Явиться к старосте Вальдена",
+		"description": "Откройте глобальную карту клавишей G. Найдите деревню Вальдена в клетке (7, 14) и поговорите со старостой.",
+		"type": "visit",
+		"objective": { "count": 1 },
+		"reward": {}
+	},
+	{
 		"id": "valden_timber",
 		"type": "delivery",
 		"title": "Дерево для деревни",

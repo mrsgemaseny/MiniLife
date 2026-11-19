@@ -20,7 +20,12 @@ func _run() -> void:
 	var slot: String = "__valden_supplies_" + Crypto.new().generate_random_bytes(16).hex_encode()
 	GameManager.start_new_game(12345, slot)
 	scene.get_node("UILayer/MainMenu").close_menu()
-	await _check_deliveries(scene, save_system, slot)
+	# A slot from before the introduction was added can still access its established village.
+	var world_path: String = SaveSystem._slot_dir(slot) + "world.json"
+	var saved_world: Dictionary = SaveSystem._read_json(world_path)
+	var had_introduction: bool = saved_world.erase("frontier_introduction")
+	if _check(had_introduction and SaveSystem._write_json(world_path, saved_world) and save_system.load_slot(slot), "The prior save fixture could not be loaded"):
+		await _check_deliveries(scene, save_system, slot)
 	save_system.delete_slot(slot)
 	if failures == 0:
 		print("VALDEN_SUPPLY_QUESTS_OK")
