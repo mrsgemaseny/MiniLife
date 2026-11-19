@@ -59,12 +59,16 @@ func _ready() -> void:
 	WorldSimulation._on_game_started(12345, "alife_test", true)
 	WorldSimulation.world.settlements.register(settlement)
 	WorldSimulation._run_global_tick(0.5, true)
-	var bundle: Dictionary = {"world": {"existing_field": 42}}
+	var bundle: Dictionary = {"world": {
+		"existing_field": 42,
+		"generator_version": GameManager.get_world_generator_version(),
+	}}
 	WorldSimulation._on_save_requested(bundle)
 	check(bundle.world.existing_field == 42, "Save preserves other systems' world data")
 	var saved_ticks: int = WorldSimulation.world.tick_count
 	WorldSimulation._on_save_loaded(JSON.parse_string(JSON.stringify(bundle)))
 	WorldSimulation._on_game_started(12345, "alife_test", false)
+	check(WorldSimulation._initialized and WorldSimulation.last_load_error.is_empty(), "A supported snapshot restores the simulation")
 	check(WorldSimulation.world.tick_count == saved_ticks, "Loaded start preserves restored simulation")
 	check(WorldSimulation.world.settlements.find("test_village") != null, "Loaded start preserves settlements")
 	WorldSimulation._on_save_loaded({"world": {}})

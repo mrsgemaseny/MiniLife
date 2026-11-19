@@ -1,6 +1,7 @@
 extends Node
 
 const GLOBAL_TICK_INTERVAL: float = 5.0
+const VALDEN_ECONOMY_STEP_HOURS: float = 1.0
 const MAX_CATCHUP_DAYS: int = 7
 var world: AlifeWorldContext = AlifeWorldContext.new()
 var economy_tick: EconomyTick = EconomyTick.new()
@@ -17,9 +18,7 @@ var _encounter_views: Dictionary = {}
 var _escort_reward_check: bool = false
 var _settlement_chunks: Dictionary = {}
 var _squads_by_chunk: Dictionary = {}
-# A-Life is off for now: settlements are static squads, nothing travels or ticks.
-# Bandit camps and animals are local spawns and keep living. Tests of the A-Life layer
-# switch it back on explicitly.
+# The authored Valden economy runs separately from the full A-Life simulation.
 var alife_enabled: bool = false
 var _territorial_claims: Dictionary = {}
 var _last_published_event: int = 0
@@ -29,6 +28,7 @@ var _restored: bool = false
 var last_load_error: String = ""
 var _unreadable_save: Variant = null
 var _trading: bool = false
+var _valden_economy_enabled: bool = false
 
 func _ready() -> void:
 	SignalBus.game_started.connect(_on_game_started)
@@ -69,9 +69,12 @@ var _refugee_camp_views: Dictionary = {}
 func _process(_delta: float) -> void:
 	if not _initialized or GameManager.is_paused() or GameManager.is_dead():
 		return
+	var target: float = float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour()
 	if not alife_enabled:
-		# Keep the clock aligned so switching A-Life on later does not replay the gap.
-		world.simulated_hour = float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour()
+		if _valden_economy_enabled:
+			_run_valden_economy(target)
+		else:
+			world.simulated_hour = target
 		return
 	world.travel.background_enabled = true
 	world.travel.poll()
@@ -84,12 +87,10 @@ func _process(_delta: float) -> void:
 	_materialize_encounters()
 	pack_materializer.update(materializer.loaded_chunks, materializer.player_tile)
 	_sync_caravan_hostile_visibility()
-	var clock_hour: float = float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour()
-	EscortContracts.observe(world, materializer.player_tile, clock_hour)
+	EscortContracts.observe(world, materializer.player_tile, target)
 	if _escort_reward_check:
 		_claim_escort_rewards()
 	_publish_events()
-	var target: float = float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour()
 	var step: float = GLOBAL_TICK_INTERVAL / Config.SECONDS_PER_GAME_HOUR
 	# Limit work per frame; preserve pending game time rather than dropping ticks.
 	var count: int = 0
@@ -97,11 +98,21 @@ func _process(_delta: float) -> void:
 		_run_global_tick(step)
 		count += 1
 
+func _run_valden_economy(target: float) -> void:
+	var steps: int = clampi(int(floor((target - world.simulated_hour) / VALDEN_ECONOMY_STEP_HOURS)), 0, 8)
+	if steps == 0:
+		return
+	for index: int in range(steps):
+		world.simulated_hour += VALDEN_ECONOMY_STEP_HOURS
+		economy_tick.tick_valden(world, VALDEN_ECONOMY_STEP_HOURS)
+	_publish_events()
+	_publish_markets()
+
 const LocalWarrants = preload("res://scripts/alife/factions/local_warrants.gd")
 
 func _run_global_tick(hours: float, silent: bool = false) -> void:
 	world.simulated_hour += hours
-	economy_tick.tick(world, hours)
+	economy_tick.tick(world, hours, _valden_economy_enabled)
 	faction_tick.tick(world, hours)
 	agent_tick.tick(world, hours)
 	conflict_tick.tick(world, hours)
@@ -148,6 +159,8 @@ func _on_game_started(seed_value: int, _slot: String, is_new: bool) -> void:
 	_index_settlements()
 	if is_new:
 		_assign_district_homes()
+	var valden_base: SettlementBase = WorldData.settlement_bases().get(EconomyTick.VALDEN_VILLAGE_CELL)
+	_valden_economy_enabled = valden_base != null and GameManager.get_world_generator_version() >= valden_base.first_generator_version
 	_last_published_event = world.next_event_id - 1
 	_last_published_rumor = world.next_event_id - 1
 	_initialized = true
