@@ -46,6 +46,12 @@
 		"dialogue_tree_id": "frontier_summons"
 	},
 	{
+		"id": "hired_mercenary",
+		"name": "Наёмник",
+		"faction": "",
+		"role": "player_mercenary"
+	},
+	{
 		"id": "imperial_column_member",
 		"name": "Имперский солдат",
 		"faction": "",

@@ -7,6 +7,13 @@ static func validate(world: AlifeWorldContext) -> String:
 	var column_error: String = _validate_imperial_columns(world)
 	if not column_error.is_empty():
 		return column_error
+	var hire: Variant = world.narrative.get(TavernRecruitment.SAVE_KEY, "")
+	if not hire is String:
+		return "Invalid tavern hire reference."
+	if not hire.is_empty():
+		var mercenary: GlobalAgent = world.agents.find(hire) as GlobalAgent
+		if mercenary == null or mercenary.role != TavernRecruitment.ROLE:
+			return "Unknown tavern hire."
 	var travelers: Variant = world.narrative.get("refugee_travelers", {})
 	if not travelers is Dictionary:
 		return "Invalid refugee travel data."
@@ -43,6 +50,8 @@ static func validate(world: AlifeWorldContext) -> String:
 		if not error.is_empty():
 			return error
 	for agent: GlobalAgent in world.agents.all():
+		if agent.role == TavernRecruitment.ROLE and agent.alive and agent.agent_id != hire:
+			return "Unlinked living tavern hire."
 		if not agent.settlement_id.is_empty() and world.settlements.find(agent.settlement_id) == null:
 			return "Unknown home settlement for %s." % agent.agent_id
 		if not agent.faction_id.is_empty() and world.factions.find(agent.faction_id) == null:

@@ -17,6 +17,8 @@ var materializer: AgentMaterializer = AgentMaterializer.new()
 var imperial_armies: ImperialArmySystem = ImperialArmySystem.new()
 var pack_materializer: CaravanPackMaterializer = CaravanPackMaterializer.new()
 var cargo_ui: CaravanCargoUI
+var recruitment: TavernRecruitment = TavernRecruitment.new()
+var tavern_ui: TavernHireUI
 var _cargo_busy: bool = false
 var _encounter_views: Dictionary = {}
 var _escort_reward_check: bool = false
@@ -66,8 +68,12 @@ func _ready() -> void:
 	SignalBus.agent_materialized.connect(_on_agent_materialized)
 	SignalBus.alife_resident_spoken_to.connect(_on_resident_spoken_to)
 	SignalBus.alife_escort_accept_requested.connect(_on_escort_accept_requested)
+	SignalBus.tavern_interacted.connect(_on_tavern_interacted)
+	SignalBus.tavern_hire_requested.connect(_on_tavern_hire_requested)
 	cargo_ui = CaravanCargoUI.new()
 	add_child(cargo_ui)
+	tavern_ui = TavernHireUI.new()
+	add_child(tavern_ui)
 
 func _exit_tree() -> void:
 	imperial_armies.shutdown()
@@ -86,6 +92,7 @@ func _process(_delta: float) -> void:
 	var target: float = float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour()
 	imperial_armies.update(world, materializer.player_tile, target)
 	world.travel.imperial_zones = imperial_armies.avoidance_zones(world)
+	recruitment.follow(world, materializer)
 	if not alife_enabled:
 		if _valden_economy_enabled:
 			_run_valden_economy(target)
@@ -232,6 +239,8 @@ func _on_game_started(seed_value: int, _slot: String, is_new: bool) -> void:
 	pack_materializer.reset(world)
 	if cargo_ui != null:
 		cargo_ui.close_panel()
+	if tavern_ui != null:
+		tavern_ui.close_panel()
 	_index_settlements()
 	if is_new:
 		_assign_district_homes()
@@ -917,6 +926,9 @@ func _on_combat_target_queried(agent_id: String, result: Dictionary) -> void:
 	if not is_instance_valid(source) or not source.is_alive():
 		return
 	var agent: GlobalAgent = world.agents.find(agent_id) as GlobalAgent
+	if agent != null and agent.role == TavernRecruitment.ROLE:
+		_mercenary_target(source, result)
+		return
 	if agent != null and agent.role in ["guard", "soldier", "caravan_guard"]:
 		var jurisdiction: AlifeSettlement = world.settlements.find(agent.settlement_id) as AlifeSettlement
 		var player_tile: Vector2i = GameManager.get_player_tile()
@@ -968,6 +980,36 @@ func _on_combat_target_queried(agent_id: String, result: Dictionary) -> void:
 			if distance < best:
 				best = distance
 				result["target"] = target
+
+func _mercenary_target(source: NPCBase, result: Dictionary) -> void:
+	var player: Player = get_tree().get_first_node_in_group("player") as Player
+	if not is_instance_valid(player) or not player.is_alive():
+		return
+	var player_tile: Vector2i = Config.iso_to_world(player.global_position)
+	var source_tile: Vector2i = Config.iso_to_world(source.global_position)
+	var best: int = 9
+	for node: Node in get_tree().get_nodes_in_group("enemies"):
+		if not node is Node2D or node.is_queued_for_deletion() or (node.has_method("is_alive") and not bool(node.call("is_alive"))):
+			continue
+		var tile: Vector2i = Config.iso_to_world((node as Node2D).global_position)
+		var distance: int = Config.tile_distance(source_tile, tile)
+		if distance < best and Config.tile_distance(player_tile, tile) <= 4:
+			best = distance
+			result["target"] = node
+
+
+func _on_tavern_interacted(tavern: Node, actor: Node) -> void:
+	if not _initialized:
+		return
+	var settlement: AlifeSettlement = TavernRecruitment.settlement_for(world, tavern, actor)
+	if settlement != null and settlement.status == AlifeSettlement.Status.NORMAL:
+		tavern_ui.open_quote(tavern, actor, TavernRecruitment.PRICE, TavernRecruitment.active_agent(world) == null)
+
+
+func _on_tavern_hire_requested(tavern: Node, actor: Node, result: Dictionary) -> void:
+	if _initialized:
+		recruitment.hire(world, materializer, tavern, actor, result)
+
 
 func _publish_markets() -> void:
 	var markets: Dictionary = {}
@@ -1133,6 +1175,10 @@ func _mark_caravan_raid(route: CaravanRoute, location: Vector2i) -> void:
 
 func _on_agent_materialized(id: String, entity: Node) -> void:
 	var agent: GlobalAgent = world.agents.find(id) as GlobalAgent
+	if agent != null and agent.role == TavernRecruitment.ROLE:
+		entity.add_to_group("player_allies")
+		entity.remove_from_group("interactable")
+		return
 	if agent != null and not agent.ambush_route_id.is_empty():
 		entity.add_to_group("enemies")
 		entity.remove_from_group("interactable")

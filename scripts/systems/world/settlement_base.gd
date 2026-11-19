@@ -3,7 +3,7 @@ extends RefCounted
 
 const FORMAT: String = "pixel_architect_v1"
 const SURFACES: Array[String] = ["grass", "dirt", "water"]
-const SERVICE_KINDS: Array[String] = ["storage", "forge"]
+const SERVICE_KINDS: Array[String] = ["storage", "forge", "tavern"]
 const STRUCTURES: Dictionary[String, String] = {
 	"wood_floor": "floor",
 	"stone_floor": "stone_floor",

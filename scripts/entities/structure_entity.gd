@@ -556,6 +556,8 @@ func interact(actor: Node) -> void:
 			SignalBus.research_table_opened.emit()
 		"storage":
 			SignalBus.storage_container_opened.emit("chest_" + Config.vec2i_to_key(tile_pos), tile_pos)
+		"tavern":
+			SignalBus.tavern_interacted.emit(self, actor)
 		"bed":
 			if actor != null:
 				var stats: StatsComponent = actor.get("stats") as StatsComponent

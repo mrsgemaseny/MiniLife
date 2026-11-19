@@ -203,6 +203,15 @@
 		"min_level": 2
 	},
 	{
+		"id": "tavern",
+		"name": "Tavern Counter",
+		"hp": 150,
+		"color": "#7f5539",
+		"height_px": 16.0,
+		"passable": false,
+		"interactable": true
+	},
+	{
 		"id": "storage",
 		"name": "Storage Chest",
 		"hp": 150,

@@ -36,6 +36,8 @@ signal structure_removal_requested(tile_pos: Vector2i, refund_to: Node)
 signal structure_destroyed(structure_id: String, tile_pos: Vector2i)
 signal structure_interacted(structure_id: String, tile_pos: Vector2i, actor: Node)
 signal storage_container_opened(container_uid: String, tile_pos: Vector2i)
+signal tavern_interacted(tavern: Node, actor: Node)
+signal tavern_hire_requested(tavern: Node, actor: Node, result: Dictionary)
 signal chest_opened(container_uid: String, tile_pos: Vector2i)
 signal trap_triggered(trap_id: String, tile_pos: Vector2i, target: Node)
 

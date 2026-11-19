@@ -6,7 +6,8 @@
   "total_blocks": 25073,
   "facilities": {
     "552,483": {"kind": "storage", "door": [550, 484]},
-    "578,521": {"kind": "forge", "door": [576, 522]}
+    "578,521": {"kind": "forge", "door": [576, 522]},
+    "559,523": {"kind": "tavern", "door": [557, 524]}
   },
   "blocks": {
     "488,338": "water",

@@ -124,6 +124,10 @@ func _tick_ai(delta: float) -> void:
 				_alife_move_toward(current + Vector2i((away * 4.0).round()), delta)
 			return
 		var goal: String = str(get_meta("alife_goal", "idle"))
+		if goal == "follow_player":
+			_set_routine_pose("", 0.0)
+			_follow_routine(get_meta("alife_destination", Config.iso_to_world(global_position)), delta, 2.5)
+			return
 		if goal in ["caravan_rest", "caravan_hold", "defend_caravan", "ambush_caravan", "refugee_camp"]:
 			_set_routine_pose("", 0.0)
 			velocity = Vector2.ZERO
@@ -307,14 +311,16 @@ func _imperial_march_blocks(tile: Vector2i) -> bool:
 	return false
 
 func _routine_tile_is_passable(info: Dictionary) -> bool:
+	var structure_id: String = str(info.get("structure_id", ""))
 	return _owns_routine_door(info) or (bool(info.get("passable", false)) and (
-		not bool(info.get("occupied", false)) or str(info.get("structure_id", "")) in ["floor", "stone_floor"]))
+		not bool(info.get("occupied", false)) or structure_id in ["floor", "stone_floor"] \
+		or (structure_id == "door" and get_meta("alife_role", "") == TavernRecruitment.ROLE)))
 
 func _owns_routine_door(info: Dictionary) -> bool:
 	var owner: String = str(info.get("settlement_door", ""))
 	return not owner.is_empty() and owner == str(get_meta("settlement_id", ""))
 
-func _follow_routine(target: Vector2i, delta: float) -> void:
+func _follow_routine(target: Vector2i, delta: float, speed_multiplier: float = 1.0) -> void:
 	var tile: Vector2i = Config.iso_to_world(global_position)
 	_routine_retry -= delta
 	if _routine_target != target:
@@ -341,7 +347,7 @@ func _follow_routine(target: Vector2i, delta: float) -> void:
 		_routine_path.pop_front()
 		velocity = Vector2.ZERO
 		return
-	var speed: float = Config.BASE_MOVE_SPEED * 0.42
+	var speed: float = Config.BASE_MOVE_SPEED * 0.42 * speed_multiplier
 	velocity = movement.normalized() * minf(speed, movement.length() / maxf(delta, 0.001))
 	if sim_tier == SimulationBubble.Tier.FULL:
 		move_and_slide()

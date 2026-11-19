@@ -31,7 +31,8 @@ func _check_editor_export() -> void:
 	if not _check(base != null and base.anchor == Vector2i(503, 506), "The PixelBuilder export did not supply its own entrance"):
 		return
 	_check(base.facility_at(Vector2i(501, 501)) == {"kind": "storage", "door": Vector2i(503, 505)}
-		and base.facility_at(Vector2i(512, 501)) == {"kind": "forge", "door": Vector2i(513, 505)}, "The editor export lost a service or its door")
+		and base.facility_at(Vector2i(512, 501)) == {"kind": "forge", "door": Vector2i(513, 505)}
+		and base.facility_at(Vector2i(523, 501)) == {"kind": "tavern", "door": Vector2i(525, 506)}, "The editor export lost a service or its door")
 	var rotated: SettlementBase = base.rotated(1)
 	_check(rotated.facility_at(Vector2i(508, 504)) == {"kind": "storage", "door": Vector2i(504, 506)}
 		and rotated.block_at(Vector2i(504, 506)) == "door", "Rotating a base separated a fixture from its door")

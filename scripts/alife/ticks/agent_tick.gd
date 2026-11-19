@@ -12,7 +12,7 @@ func tick(world: AlifeWorldContext, hours: float) -> void:
 	_elapsed = 0.0
 	preload("res://scripts/alife/settlements/refugee_migration.gd").tick(world, step)
 	for agent: GlobalAgent in world.agents.get_all_global():
-		if ImperialArmySystem.is_member(agent):
+		if ImperialArmySystem.is_member(agent) or agent.role == TavernRecruitment.ROLE:
 			continue
 		var goal: String = AgentGoalEvaluator.evaluate(agent, world)
 		if goal != agent.current_goal:

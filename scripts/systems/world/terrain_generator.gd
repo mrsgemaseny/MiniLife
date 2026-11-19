@@ -8,7 +8,8 @@ extends RefCounted
 # Biome ids: plains, forest, swamp, hills, mountains (impassable ridge), snow,
 # desert (dunes, sand bars), steppe (dry semi-desert ground), water.
 
-const GENERATOR_VERSION: int = 8
+const GENERATOR_VERSION: int = 9
+const TAVERN_GENERATOR_VERSION: int = 9
 const SETTLEMENT_FACILITIES_GENERATOR_VERSION: int = 8
 const EXPANDED_SETTLEMENT_BASES_VERSION: int = 7
 const AUTHORED_POLITICS_GENERATOR_VERSION: int = 6
@@ -148,7 +149,7 @@ func get_version() -> int:
 static func supports_version(version: int) -> bool:
 	return version in [LEGACY_GENERATOR_VERSION, SEAM_GENERATOR_VERSION, SETTLEMENT_BASE_GENERATOR_VERSION,
 		AUTHORED_RIVER_GENERATOR_VERSION, AUTHORED_POLITICS_GENERATOR_VERSION, EXPANDED_SETTLEMENT_BASES_VERSION,
-		SETTLEMENT_FACILITIES_GENERATOR_VERSION]
+		SETTLEMENT_FACILITIES_GENERATOR_VERSION, TAVERN_GENERATOR_VERSION]
 
 
 func get_graph() -> WorldGraph:
@@ -194,7 +195,8 @@ func get_settlement_facility(tile: Vector2i) -> String:
 	var cell: Vector2i = GlobalLandscapeMap.cell_for_tile(tile)
 	if not _base_bounds.has(cell) or not _base_bounds[cell].has_point(tile):
 		return ""
-	return str(_settlement_bases[cell].facility_at(tile - _base_origins[cell]).get("kind", ""))
+	var kind: String = str(_settlement_bases[cell].facility_at(tile - _base_origins[cell]).get("kind", ""))
+	return "" if kind == "tavern" and _version < TAVERN_GENERATOR_VERSION else kind
 
 
 func has_settlement_base_in_chunk(chunk: Vector2i) -> bool:

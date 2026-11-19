@@ -32,12 +32,15 @@ func _live_entity(id: String) -> NPCBase:
 func update(delta: float, selected_route: CaravanRoute = null, limited: bool = false) -> void:
 	if world == null or not is_instance_valid(parent) or not parent.is_inside_tree():
 		return
+	var mercenary: GlobalAgent = TavernRecruitment.active_agent(world)
 	_refresh_elapsed += delta
 	if _refresh_elapsed >= 0.5:
 		_refresh_elapsed = 0.0
 		_candidates.clear()
 		_facilities_by_settlement.clear()
 		var selected_ids: Array = imperial_ids.duplicate()
+		if mercenary != null:
+			selected_ids.append(mercenary.agent_id)
 		if selected_route != null:
 			selected_ids.append(selected_route.merchant_id)
 			selected_ids.append_array(selected_route.guards + selected_route.ambushers)
@@ -73,9 +76,13 @@ func update(delta: float, selected_route: CaravanRoute = null, limited: bool = f
 		for agent: GlobalAgent in candidates:
 			if not world.agents.materialized.has(agent.agent_id) and _should_auto_materialize(agent) \
 					and loaded_chunks.has(Config.tile_to_chunk(agent.tile)) and Config.tile_distance(player_tile, agent.tile) <= MATERIALIZE_RADIUS:
-				_candidates.append(agent.agent_id)
+				if agent == mercenary:
+					_candidates.push_front(agent.agent_id)
+				else:
+					_candidates.append(agent.agent_id)
 	var created: int = 0
-	while not _candidates.is_empty() and created < CREATIONS_PER_FRAME and world.agents.materialized.size() < MAX_ACTIVE_RESIDENTS:
+	var budget: int = MAX_ACTIVE_RESIDENTS + int(mercenary != null)
+	while not _candidates.is_empty() and created < CREATIONS_PER_FRAME and world.agents.materialized.size() < budget:
 		var id: String = str(_candidates.pop_front())
 		var agent: GlobalAgent = world.agents.find(id) as GlobalAgent
 		if agent != null and agent.alive and loaded_chunks.has(Config.tile_to_chunk(agent.tile)):
@@ -83,6 +90,8 @@ func update(delta: float, selected_route: CaravanRoute = null, limited: bool = f
 			created += 1
 
 func _should_auto_materialize(agent: GlobalAgent) -> bool:
+	if agent.role == TavernRecruitment.ROLE:
+		return agent == TavernRecruitment.active_agent(world)
 	if ImperialArmySystem.is_member(agent):
 		return agent.agent_id in imperial_ids
 	if agent.settlement_id.is_empty():
@@ -123,6 +132,8 @@ func materialize(agent: GlobalAgent) -> NPCBase:
 	entity.set_meta("alife_morale", agent.morale)
 	entity.set_meta("alife_equipment_tier", agent.equipment_tier)
 	entity.set_meta("alife_role", agent.role)
+	if agent.role == TavernRecruitment.ROLE:
+		entity.set_meta("npc_model", "merc_sword")
 	entity.position = parent.to_local(Config.world_to_iso(agent.tile))
 	if agent.world_position.size() == 2:
 		entity.position = parent.to_local(Vector2(float(agent.world_position[0]), float(agent.world_position[1])))
