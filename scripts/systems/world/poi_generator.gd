@@ -10,6 +10,7 @@ static var _bandit_plans: Dictionary = {}
 static var _planner_terrain: TerrainGenerator = null
 const BLOCKED_GROUND: Array[String] = ["water", "mountains", ""]
 const BANDIT_IDS: Array[String] = ["bandit_hideout", "bandit_roadblock", "bandit_fort", "bandit_chief_camp"]
+const BANDIT_FOOTPRINT: Vector2i = Vector2i(7, 7)
 const LOCAL_RUIN_MIN: int = 2
 const LOCAL_RUIN_MAX: int = 5
 const CANDIDATE_DRAWS: int = 400
@@ -179,7 +180,7 @@ static func _build_bandit_plan(world_seed: int, cell: Vector2i, version: int) ->
 				break
 		if not spaced:
 			continue
-		var anchor: Vector2i = find_land_anchor(world_seed, candidate, Vector2i(7, 7), version)
+		var anchor: Vector2i = find_land_anchor(world_seed, candidate, BANDIT_FOOTPRINT, version)
 		if anchor.x < 0:
 			continue
 		var index: int = result.size()

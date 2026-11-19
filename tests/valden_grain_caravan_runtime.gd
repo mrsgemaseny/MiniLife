@@ -15,6 +15,10 @@ func _run() -> void:
 		_check_seed_paths()
 		get_tree().quit(0 if failures == 0 else 1)
 		return
+	if "--camp-detour" in OS.get_cmdline_user_args():
+		_check_camp_detour()
+		get_tree().quit(0 if failures == 0 else 1)
+		return
 	var scene: Node = load("res://scenes/main.tscn").instantiate()
 	add_child(scene)
 	var save_system: SaveSystem = scene.get_node("Systems/SaveSystem")
@@ -38,8 +42,43 @@ func _check_seed_paths() -> void:
 		var reverse: Array[Vector2i] = travel.path(seed_value, castle, village, true)
 		reverse.reverse()
 		_check(not forward.is_empty() and forward == reverse, "No reversible connected route for seed %d" % seed_value)
+		_check(forward.all(func(tile: Vector2i) -> bool: return not travel._grid.bandit_camp_area(tile).has_point(tile)),
+			"Valden's settlement route crossed a camp on seed %d" % seed_value)
 	if failures == 0:
 		print("VALDEN_GRAIN_CARAVAN_ROUTE_SEEDS_OK")
+
+func _check_camp_detour() -> void:
+	var seed_value: int = Config.DEFAULT_WORLD_SEED
+	var travel: AlifeTravel = AlifeTravel.new()
+	var cell: Rect2i = WorldLayout.cell_chunk_rect(Vector2i(7, 13))
+	for x: int in range(cell.position.x, cell.end.x):
+		for y: int in range(cell.position.y, cell.end.y):
+			var camp: Dictionary = PoiGenerator.get_bandit_camp_for_chunk(seed_value, Vector2i(x, y))
+			if camp.is_empty():
+				continue
+			var anchor: Vector2i = camp["tile_pos"]
+			var footprint: Rect2i = Rect2i(anchor, PoiGenerator.BANDIT_FOOTPRINT)
+			var start: Vector2i = anchor + Vector2i(-3, 3)
+			var end: Vector2i = anchor + Vector2i(9, 3)
+			var old_path: Array[Vector2i] = travel.path(seed_value, start, end)
+			if not old_path.any(func(tile: Vector2i) -> bool: return footprint.has_point(tile)):
+				continue
+			var agent: GlobalAgent = GlobalAgent.new()
+			agent.agent_id = "old_convoy_merchant"
+			agent.tile = start
+			agent.destination_tile = end
+			travel.assign_path(seed_value, agent, old_path)
+			travel.discard_saved_trade_paths_through_camps([agent.agent_id])
+			_check(not travel.saved_routes().has(agent.agent_id), "Legacy route still points through the camp")
+			var detour: Array[Vector2i] = travel.path(seed_value, start, end, true)
+			var clearance: Rect2i = footprint.grow(AlifeRouteGrid.CAMP_CLEARANCE)
+			_check(not detour.is_empty() and detour.front() == start and detour.back() == end
+				and detour.all(func(tile: Vector2i) -> bool: return not clearance.has_point(tile)),
+				"The caravan detour must keep both endpoints and avoid the entire camp")
+			if failures == 0:
+				print("VALDEN_CARAVAN_CAMP_DETOUR_OK")
+			return
+	_check(false, "No real camp could be reached by a direct test path")
 
 func _check_convoy(save_system: SaveSystem, slot: String) -> void:
 	var start_tile: Vector2i = GameManager.get_player_tile()

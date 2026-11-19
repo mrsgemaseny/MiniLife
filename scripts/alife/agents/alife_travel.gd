@@ -84,8 +84,7 @@ func _prepare(seed_value: int) -> void:
 	_grid = AlifeRouteGrid.new()
 	_grid.setup(seed_value, _generator_version)
 
-# Routes depend only on terrain, which is a pure function of the seed, so solved paths are
-# reused. Caravans re-request the same city-to-city route on every dispatch attempt.
+# Terrain and camp placement are deterministic, so the same settlement route can be reused.
 func path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool = false) -> Array[Vector2i]:
 	_prepare(seed_value)
 	var reverse: bool = connected and to_tile < from_tile
@@ -104,6 +103,7 @@ func path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bo
 
 
 func _solve(from_tile: Vector2i, to_tile: Vector2i, connected: bool) -> Array[Vector2i]:
+	_grid.avoid_bandit_camps = connected
 	if _grid.blocked(from_tile) or _grid.blocked(to_tile):
 		return []
 	if not _grid.prepare_window(from_tile, to_tile, CONNECTED_WINDOW if connected else AlifeRouteGrid.MAX_WINDOW):
@@ -174,10 +174,14 @@ func assign_path(seed_value: int, agent: GlobalAgent, route: Array[Vector2i]) ->
 	_prepare(seed_value)
 	_agent_routes[agent.agent_id] = {"destination": agent.destination_tile, "position": agent.tile, "route": route}
 
-func steering_target(agent: GlobalAgent) -> Vector2i:
+func steering_target(seed_value: int, agent: GlobalAgent) -> Vector2i:
 	var cached: Dictionary = _agent_routes.get(agent.agent_id, {})
-	if cached.get("destination") != agent.destination_tile:
-		return agent.destination_tile
+	if cached.get("destination") != agent.destination_tile or ((cached["route"] as Array).size() <= 1 and agent.tile != agent.destination_tile):
+		var replacement: Array[Vector2i] = request_path(seed_value, agent.tile, agent.destination_tile, true)
+		if replacement.is_empty():
+			return agent.tile
+		assign_path(seed_value, agent, replacement)
+		cached = _agent_routes[agent.agent_id]
 	var route: Array[Vector2i] = cached["route"]
 	if route.size() <= 1:
 		return agent.destination_tile
@@ -195,6 +199,31 @@ func steering_target(agent: GlobalAgent) -> Vector2i:
 		assign_path(_seed, agent, remaining)
 	return route[target_index]
 
+func discard_saved_trade_paths_through_camps(ids: Array) -> void:
+	if _grid == null:
+		return
+	for id: String in ids:
+		var cached: Dictionary = _agent_routes.get(id, {})
+		var route: Array = cached.get("route", [])
+		if route.is_empty():
+			continue
+		var departure_area: Rect2i = _grid.bandit_camp_area(route[0])
+		var first_exit: int = -1
+		for index: int in range(route.size()):
+			var point: Vector2i = route[index]
+			if departure_area.has_point(point):
+				continue
+			if departure_area.has_area():
+				first_exit = index
+			departure_area = Rect2i()
+			if _grid.bandit_camp_area(point).has_point(point):
+				# Finish leaving the camp if this convoy was already inside it at save time.
+				if first_exit > 0:
+					cached["route"] = route.slice(0, first_exit + 1)
+				else:
+					_agent_routes.erase(id)
+				break
+
 func remaining_steps(agent: GlobalAgent) -> int:
 	var cached: Dictionary = _agent_routes.get(agent.agent_id, {})
 	if cached.get("destination") != agent.destination_tile:
@@ -208,7 +237,8 @@ func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = W
 	var key: String = agent.agent_id
 	var cached: Dictionary = _agent_routes.get(key, {})
 	var route: Array[Vector2i] = []
-	if cached.get("destination") == agent.destination_tile and cached.get("position") == agent.tile:
+	if cached.get("destination") == agent.destination_tile and cached.get("position") == agent.tile \
+			and (cached["route"] as Array).size() > 1:
 		route.assign(cached.get("route", []))
 	else:
 		route = request_path(seed_value, agent.tile, agent.destination_tile, connected)

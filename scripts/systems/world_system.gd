@@ -1364,7 +1364,7 @@ func _spawn_minor_location(info: Dictionary) -> void:
 	var id: String = str(info["poi_id"])
 	var definition: Dictionary = DataRegistry.get_poi(id)
 	var tier: int = int(definition.get("camp_tier", 0))
-	var footprint: int = 7 if tier > 0 else 5
+	var footprint: int = PoiGenerator.BANDIT_FOOTPRINT.x if tier > 0 else 5
 	for x in range(footprint):
 		for y in range(footprint):
 			_remove_resource_node_at(anchor + Vector2i(x, y))

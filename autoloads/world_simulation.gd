@@ -212,6 +212,9 @@ func _on_game_started(seed_value: int, _slot: String, is_new: bool) -> void:
 		_assign_district_homes()
 	var valden_base: SettlementBase = WorldData.settlement_bases().get(EconomyTick.VALDEN_VILLAGE_CELL)
 	_valden_economy_enabled = valden_base != null and GameManager.get_world_generator_version() >= valden_base.first_generator_version
+	var route: CaravanRoute = world.routes.find(VALDEN_GRAIN_ROUTE_ID) as CaravanRoute
+	if _valden_economy_enabled and route != null and route.active:
+		world.travel.discard_saved_trade_paths_through_camps([route.merchant_id] + route.guards)
 	_last_published_event = world.next_event_id - 1
 	_last_published_rumor = world.next_event_id - 1
 	_initialized = true

@@ -10,9 +10,12 @@ const STRIDE: int = 4
 const WINDOW_MARGIN: int = 64
 const MAX_WINDOW: int = 640
 const CELL: int = GlobalLandscapeMap.CELL_TILES
+const CAMP_CLEARANCE: int = 2
 
 var terrain: TerrainGenerator
+var avoid_bandit_camps: bool = false
 var _blocked: Dictionary = {}
+var _camp_areas: Dictionary[Vector2i, Rect2i] = {}
 var region: Rect2i = Rect2i()
 var _graph_ready: bool = false
 var _macro: AStar2D = AStar2D.new()
@@ -149,7 +152,19 @@ func tile_for(cell: Vector2i) -> Vector2i:
 func blocked(tile: Vector2i) -> bool:
 	if not _blocked.has(tile):
 		_blocked[tile] = not terrain.is_dry_land(tile)
-	return bool(_blocked[tile])
+	return bool(_blocked[tile]) or (avoid_bandit_camps and bandit_camp_area(tile).has_point(tile))
+
+
+func bandit_camp_area(tile: Vector2i) -> Rect2i:
+	# POI placement leaves two tiles at the edge, so the padded footprint stays in its chunk.
+	var chunk: Vector2i = Config.tile_to_chunk(tile)
+	if not _camp_areas.has(chunk):
+		var camp: Dictionary = PoiGenerator.get_bandit_camp_for_chunk(terrain.get_seed(), chunk, terrain.get_version())
+		var area := Rect2i()
+		if not camp.is_empty():
+			area = Rect2i(camp["tile_pos"], PoiGenerator.BANDIT_FOOTPRINT).grow(CAMP_CLEARANCE)
+		_camp_areas[chunk] = area
+	return _camp_areas[chunk]
 
 
 func line(from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
