@@ -2,6 +2,8 @@ class_name AgentGoalEvaluator
 extends RefCounted
 
 static func evaluate(agent: GlobalAgent, world: AlifeWorldContext) -> String:
+	if ImperialArmySystem.is_member(agent):
+		return "imperial_march"
 	if world.narrative.get("refugee_travelers", {}).has(agent.agent_id):
 		if agent.settlement_id.is_empty() and agent.tile == agent.destination_tile:
 			return "refugee_camp"

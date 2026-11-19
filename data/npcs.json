@@ -46,6 +46,13 @@
 		"dialogue_tree_id": "frontier_summons"
 	},
 	{
+		"id": "imperial_column_member",
+		"name": "Имперский солдат",
+		"faction": "",
+		"role": "soldier",
+		"dialogue_tree_id": "imperial_column_passage"
+	},
+	{
 		"id": "road_bandit",
 		"name": "Разбойник",
 		"faction": "bandits",

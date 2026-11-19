@@ -65,6 +65,8 @@ const ROLE_MODELS: Dictionary = {
 	"guard": ["guard_hooded_spear", "town_guard", "guard_helmet"],
 	"soldier": ["soldier_sword", "soldier_spear", "soldier_mace", "militia_spear"],
 	"caravan_guard": ["merc_sword", "merc_spear", "merc_axe"],
+	"imperial_commander": ["sergeant"],
+	"imperial_soldier": ["soldier_sword", "soldier_spear", "soldier_guardsman"],
 	"bandit": ["bandit_club", "bandit_knife", "brigand_axe"],
 	"deserter": ["militia_sword", "militia_spear"],
 	"trader": ["guild_merchant"],

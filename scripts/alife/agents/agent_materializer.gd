@@ -13,6 +13,7 @@ var player_tile: Vector2i = Vector2i(-10000, -10000)
 var _refresh_elapsed: float = 0.0
 var _candidates: Array = []
 var _facilities_by_settlement: Dictionary = {}
+var imperial_ids: Array[String] = []
 
 func reset(context: AlifeWorldContext) -> void:
 	if world != null:
@@ -28,7 +29,7 @@ func _live_entity(id: String) -> NPCBase:
 	var reference: Variant = world.agents.materialized.get(id)
 	return reference as NPCBase if is_instance_valid(reference) else null
 
-func update(delta: float, selected_route: CaravanRoute = null) -> void:
+func update(delta: float, selected_route: CaravanRoute = null, limited: bool = false) -> void:
 	if world == null or not is_instance_valid(parent) or not parent.is_inside_tree():
 		return
 	_refresh_elapsed += delta
@@ -36,9 +37,11 @@ func update(delta: float, selected_route: CaravanRoute = null) -> void:
 		_refresh_elapsed = 0.0
 		_candidates.clear()
 		_facilities_by_settlement.clear()
-		var selected_ids: Array = []
+		var selected_ids: Array = imperial_ids.duplicate()
 		if selected_route != null:
-			selected_ids = [selected_route.merchant_id] + selected_route.guards + selected_route.ambushers
+			selected_ids.append(selected_route.merchant_id)
+			selected_ids.append_array(selected_route.guards + selected_route.ambushers)
+		var selected_only: bool = limited or selected_route != null
 		for id: String in world.agents.materialized.keys():
 			var entity: NPCBase = _live_entity(id)
 			var agent: GlobalAgent = world.agents.find(id) as GlobalAgent
@@ -46,7 +49,7 @@ func update(delta: float, selected_route: CaravanRoute = null) -> void:
 				world.agents.materialized.erase(id)
 				continue
 			var tile: Vector2i = Config.iso_to_world(entity.global_position)
-			if agent == null or not agent.alive or not _should_auto_materialize(agent) or (selected_route != null and id not in selected_ids) \
+			if agent == null or not agent.alive or not _should_auto_materialize(agent) or (selected_only and id not in selected_ids) \
 					or not loaded_chunks.has(Config.tile_to_chunk(tile)) or Config.tile_distance(player_tile, tile) > DEMATERIALIZE_RADIUS:
 				dematerialize(id)
 				continue
@@ -66,7 +69,7 @@ func update(delta: float, selected_route: CaravanRoute = null) -> void:
 			var tile_info: Dictionary = {}
 			SignalBus.world_tile_queried.emit(tile, tile_info)
 			entity.visible = true
-		var candidates: Array = world.agents.get_all_global() if selected_route == null else AgentLifecycle.living(world, selected_ids, true)
+		var candidates: Array = AgentLifecycle.living(world, selected_ids, true) if selected_only else world.agents.get_all_global()
 		for agent: GlobalAgent in candidates:
 			if not world.agents.materialized.has(agent.agent_id) and _should_auto_materialize(agent) \
 					and loaded_chunks.has(Config.tile_to_chunk(agent.tile)) and Config.tile_distance(player_tile, agent.tile) <= MATERIALIZE_RADIUS:
@@ -80,6 +83,8 @@ func update(delta: float, selected_route: CaravanRoute = null) -> void:
 			created += 1
 
 func _should_auto_materialize(agent: GlobalAgent) -> bool:
+	if ImperialArmySystem.is_member(agent):
+		return agent.agent_id in imperial_ids
 	if agent.settlement_id.is_empty():
 		return true
 	return not agent.caravan_id.is_empty() or not agent.deployment_id.is_empty() or not agent.ambush_route_id.is_empty() or world.narrative.get("refugee_travelers", {}).has(agent.agent_id)
@@ -143,6 +148,16 @@ func _publish_routine(entity: NPCBase, agent: GlobalAgent) -> void:
 
 func _publish_travel_target(entity: NPCBase, agent: GlobalAgent) -> void:
 	var destination: Vector2i = agent.destination_tile
+	if agent.role in ["soldier", "guard"]:
+		entity.set_meta("alife_imperial_areas", world.travel.imperial_zones)
+		if agent.current_goal in ["march_to_frontline", "assault_settlement", "return_home"]:
+			var probe: Vector2i = Vector2i(Vector2(agent.tile).move_toward(Vector2(destination), 18.0).round())
+			var bypass: Array[Vector2i] = world.travel.regular_bypass(world.world_seed, agent.tile, probe, destination)
+			if not bypass.is_empty():
+				destination = bypass[mini(bypass.size() - 1, 3)]
+	if agent.current_goal == "imperial_march":
+		destination = world.travel.steering_target(world.world_seed, agent) if world.travel.has_march_path(agent) else agent.tile
+		entity.set_meta("alife_march_speed", ImperialArmySystem.unit_speed(world, agent))
 	if agent.current_goal == "caravan_travel":
 		var route: CaravanRoute = world.routes.find(agent.caravan_id) as CaravanRoute
 		if route != null:

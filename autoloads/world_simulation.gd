@@ -14,6 +14,7 @@ var conflict_tick: ConflictTick = ConflictTick.new()
 var caravan_tick: CaravanTick = CaravanTick.new()
 var trade_roads: TradeRoadLayer = TradeRoadLayer.new()
 var materializer: AgentMaterializer = AgentMaterializer.new()
+var imperial_armies: ImperialArmySystem = ImperialArmySystem.new()
 var pack_materializer: CaravanPackMaterializer = CaravanPackMaterializer.new()
 var cargo_ui: CaravanCargoUI
 var _cargo_busy: bool = false
@@ -41,6 +42,10 @@ func _ready() -> void:
 	SignalBus.alife_settlement_queried.connect(_on_settlement_queried)
 	SignalBus.settlement_squads_queried.connect(_on_squads_queried)
 	SignalBus.alife_political_map_queried.connect(_on_political_map_queried)
+	SignalBus.alife_imperial_zones_queried.connect(func(result: Array[Rect2i]) -> void:
+		if _initialized:
+			result.append_array(world.travel.imperial_zones)
+	)
 	SignalBus.fog_batch_updated.connect(_on_political_visibility_changed)
 	SignalBus.chunk_loaded.connect(func(chunk: Vector2i) -> void:
 		materializer.loaded_chunks[chunk] = true
@@ -65,9 +70,11 @@ func _ready() -> void:
 	add_child(cargo_ui)
 
 func _exit_tree() -> void:
+	imperial_armies.shutdown()
 	world.travel.shutdown()
 
 var _body_scan_elapsed: float = 0.0
+var _imperial_observation_elapsed: float = 0.0
 var _refugee_camp_views: Dictionary = {}
 
 func _process(_delta: float) -> void:
@@ -77,14 +84,23 @@ func _process(_delta: float) -> void:
 	world.travel.poll()
 	trade_roads.update(world)
 	var target: float = float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour()
+	imperial_armies.update(world, materializer.player_tile, target)
+	world.travel.imperial_zones = imperial_armies.avoidance_zones(world)
 	if not alife_enabled:
 		if _valden_economy_enabled:
 			_run_valden_economy(target)
 			var route: CaravanRoute = world.routes.find(VALDEN_GRAIN_ROUTE_ID) as CaravanRoute
 			if route != null:
 				_update_caravan_views(_delta, target, route)
+			else:
+				materializer.update(_delta, null, true)
 		else:
 			world.simulated_hour = target
+			materializer.update(_delta, null, true)
+		_imperial_observation_elapsed += _delta
+		if _imperial_observation_elapsed >= 0.5:
+			_imperial_observation_elapsed = 0.0
+			_sample_observed_armies()
 		return
 	_update_caravan_views(_delta, target)
 	_body_scan_elapsed += _delta
@@ -192,6 +208,7 @@ func _on_game_started(seed_value: int, _slot: String, is_new: bool) -> void:
 	for body: Node in get_tree().get_nodes_in_group("corpses"):
 		if body is CorpseEntity and not body.resident_id.is_empty():
 			body.queue_free()
+	imperial_armies.shutdown()
 	world.travel.shutdown()
 	if not is_new and not last_load_error.is_empty():
 		return
@@ -206,6 +223,10 @@ func _on_game_started(seed_value: int, _slot: String, is_new: bool) -> void:
 		_agent_save_delta.capture(world, version)
 		agent_tick = AgentTick.new()
 	materializer.reset(world)
+	imperial_armies = ImperialArmySystem.new()
+	imperial_armies.initialize(world, float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour())
+	world.travel.imperial_zones = imperial_armies.avoidance_zones(world)
+	materializer.imperial_ids = imperial_armies.active_unit_ids(world)
 	_encounter_views.clear()
 	_escort_reward_check = true
 	pack_materializer.reset(world)
@@ -489,30 +510,45 @@ func _sample_observed_armies() -> void:
 		var id: String = conflict.conflict_id
 		observed[id] = true
 		var faction: AlifeFaction = world.factions.find(conflict.attacker_id) as AlifeFaction
-		var track: Dictionary = tracks.get(id, {"points": [], "continuous": false})
-		var points: Array = track["points"]
-		var coords: Array = [visible_tile.x, visible_tile.y]
-		var same_agent: bool = witness_id == str(track.get("witness_id", ""))
-		if points.is_empty() or not bool(track["continuous"]) or not same_agent or points.back()["tile"] != coords:
-			var joined: bool = false
-			if not points.is_empty() and bool(track["continuous"]) and same_agent:
-				var previous: Array = points.back()["tile"]
-				joined = Config.tile_distance(Vector2i(previous[0], previous[1]), visible_tile) == 1
-			points.append({"tile": coords, "joined": joined})
-			if points.size() > 32:
-				points.pop_front()
-		track["faction"] = faction.name if faction != null else conflict.attacker_id
-		track["color"] = faction.color.to_html() if faction != null else Color.GRAY.to_html()
-		track["observed_hour"] = world.simulated_hour
-		track["continuous"] = true
-		track["witness_id"] = witness_id
-		tracks[id] = track
+		_record_army_observation(tracks, id, witness_id, visible_tile,
+			faction.name if faction != null else conflict.attacker_id, faction.color if faction != null else Color.GRAY)
+	for id: String in imperial_armies.active_army_ids():
+		for unit: GlobalAgent in ImperialArmySystem.living_units(world, id):
+			if not world.agents.materialized.has(unit.agent_id) or Config.tile_distance(unit.tile, player_tile) > 60:
+				continue
+			var info: Dictionary = {}
+			SignalBus.world_tile_queried.emit(unit.tile, info)
+			if int(info.get("fog_state", 0)) == WorldSystem.FogState.VISIBLE:
+				observed[id] = true
+				_record_army_observation(tracks, id, unit.agent_id, unit.tile, "Имперская армия", Color.GOLDENROD)
+				break
 	for id: String in tracks.keys():
 		if world.simulated_hour - float(tracks[id]["observed_hour"]) > 48.0:
 			tracks.erase(id)
 		elif not observed.has(id):
 			tracks[id]["continuous"] = false
 	world.narrative["political_armies"] = tracks
+
+func _record_army_observation(tracks: Dictionary, id: String, witness_id: String,
+		tile: Vector2i, faction_name: String, color: Color) -> void:
+	var track: Dictionary = tracks.get(id, {"points": [], "continuous": false})
+	var points: Array = track["points"]
+	var coords: Array = [tile.x, tile.y]
+	var same_agent: bool = witness_id == str(track.get("witness_id", ""))
+	if points.is_empty() or not bool(track["continuous"]) or not same_agent or points.back()["tile"] != coords:
+		var joined: bool = false
+		if not points.is_empty() and bool(track["continuous"]) and same_agent:
+			var previous: Array = points.back()["tile"]
+			joined = Config.tile_distance(Vector2i(previous[0], previous[1]), tile) == 1
+		points.append({"tile": coords, "joined": joined})
+		if points.size() > 32:
+			points.pop_front()
+	track["faction"] = faction_name
+	track["color"] = color.to_html()
+	track["observed_hour"] = world.simulated_hour
+	track["continuous"] = true
+	track["witness_id"] = witness_id
+	tracks[id] = track
 
 func _observe_political_settlement(settlement: AlifeSettlement, known: Dictionary) -> void:
 	var faction: AlifeFaction = world.factions.find(settlement.owner_faction) as AlifeFaction

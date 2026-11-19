@@ -120,9 +120,11 @@ func _clock_hours() -> float:
 
 
 func _try_spawn_patrol(tile: Vector2i) -> void:
+	var imperial_zones: Array[Rect2i] = []
+	SignalBus.alife_imperial_zones_queried.emit(imperial_zones)
 	for direction: Vector2i in DIRECTIONS:
 		var side := Vector2i(-direction.y, direction.x)
-		if not _formation_is_clear(tile, direction, side):
+		if not _formation_is_clear(tile, direction, side, imperial_zones):
 			continue
 		_patrol_origin = tile
 		for index: int in range(MODELS.size()):
@@ -140,10 +142,13 @@ func _try_spawn_patrol(tile: Vector2i) -> void:
 		return
 
 
-func _formation_is_clear(tile: Vector2i, direction: Vector2i, side: Vector2i) -> bool:
+func _formation_is_clear(tile: Vector2i, direction: Vector2i, side: Vector2i, imperial_zones: Array[Rect2i]) -> bool:
 	for forward: int in range(1, PATROL_EXIT + 1):
 		for lane: int in [-1, 0, 1]:
 			var candidate: Vector2i = tile + direction * forward + side * lane
+			for zone: Rect2i in imperial_zones:
+				if zone.has_point(candidate):
+					return false
 			var info: Dictionary = {}
 			SignalBus.world_tile_queried.emit(candidate, info)
 			if not info.get("passable", false) or not str(info.get("structure_id", "")).is_empty():

@@ -23,6 +23,7 @@ var _requests: Dictionary = {}
 var _completed: Dictionary = {}
 # Cleared when the seed changes. Connected paths use a canonical direction.
 var _path_cache: Dictionary = {}
+var imperial_zones: Array[Rect2i] = []
 
 
 func _init(generator_version: int = TerrainGenerator.GENERATOR_VERSION) -> void:
@@ -115,6 +116,104 @@ func _solve(from_tile: Vector2i, to_tile: Vector2i, connected: bool, corridor: A
 	if not corridor.is_empty():
 		return _trade_path(from_tile, to_tile, corridor)
 	return _solve_leg(from_tile, to_tile, connected)
+
+
+func march_anchors(seed_value: int, cell: Vector2i, count: int) -> Array[Vector2i]:
+	var anchors: Array[Vector2i] = []
+	if not WorldLayout.landscape().is_land(cell):
+		return anchors
+	_prepare(seed_value)
+	_grid.restrict_to([cell])
+	_grid.avoid_bandit_camps = true
+	var center: Vector2i = GlobalLandscapeMap.cell_bounds(cell).get_center() + Vector2i(32, 32)
+	for radius: int in range(0, 459, 6):
+		for side: int in range(-radius, radius + 1, 6):
+			for offset: Vector2i in [Vector2i(side, -radius), Vector2i(side, radius), Vector2i(-radius, side), Vector2i(radius, side)]:
+				var first: Vector2i = center + offset
+				var line: Array[Vector2i] = _grid.line(first, first + Vector2i((count - 1) * 2, 0))
+				if not line.is_empty() and line.all(func(tile: Vector2i) -> bool: return _grid.terrain.get_resource_node_at(tile).is_empty()):
+					for index: int in range(count):
+						anchors.append(first + Vector2i(index * 2, 0))
+					_grid.restrict_to([])
+					return anchors
+	_grid.restrict_to([])
+	return anchors
+
+
+func march_corridor(seed_value: int, from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
+	var start: Vector2i = GlobalLandscapeMap.cell_for_tile(from_tile)
+	var finish: Vector2i = GlobalLandscapeMap.cell_for_tile(to_tile)
+	if start == finish:
+		return [start]
+	if absi(start.x - finish.x) + absi(start.y - finish.y) == 1:
+		return [start, finish]
+	_prepare(seed_value)
+	return _grid.macro_path(start, finish)
+
+
+func regular_bypass(seed_value: int, start: Vector2i, probe: Vector2i, goal: Vector2i) -> Array[Vector2i]:
+	var bypass: Array[Vector2i] = []
+	if imperial_zones.is_empty() or start == goal:
+		return bypass
+	var low: Vector2i = start.min(probe)
+	var bounds: Rect2i = Rect2i(low, start.max(probe) - low + Vector2i.ONE)
+	var intersected: bool = false
+	var already_inside: bool = false
+	for area: Rect2i in imperial_zones:
+		if not area.intersects(bounds) or not _crosses_area(start, probe, area):
+			continue
+		intersected = true
+		already_inside = already_inside or area.has_point(start)
+	if not intersected:
+		return bypass
+	_prepare(seed_value)
+	_grid.restrict_to([])
+	_grid.avoid_bandit_camps = false
+	var direction: Vector2 = Vector2(goal - start).normalized()
+	var across: Vector2 = direction.orthogonal()
+	var reach: float = minf(44.0, Vector2(goal - start).length())
+	# When the column moves onto these troops, give them a way to walk out before
+	# treating its footprint as impassable again.
+	if already_inside:
+		for distance: int in range(1, 25):
+			for offset: Vector2i in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
+				var exit: Vector2i = start + offset * distance
+				if not near_imperials(exit):
+					bypass = _grid.line(start, exit)
+					if not bypass.is_empty():
+						return bypass
+		return [start]
+	if near_imperials(goal):
+		return [start]
+	_grid.excluded_areas = imperial_zones
+	for shift: float in [0.0, 4.0, -4.0, 8.0, -8.0, 16.0, -16.0]:
+		var rejoin: Vector2i = start + Vector2i((direction * reach + across * shift).round())
+		if rejoin == start:
+			continue
+		bypass = _solve_leg(start, rejoin, true)
+		if not bypass.is_empty():
+			break
+	_grid.excluded_areas = []
+	return [start] if bypass.is_empty() else bypass
+
+
+func near_imperials(tile: Vector2i) -> bool:
+	for area: Rect2i in imperial_zones:
+		if area.has_point(tile):
+			return true
+	return false
+
+
+static func _crosses_area(start: Vector2i, finish: Vector2i, area: Rect2i) -> bool:
+	if area.has_point(start) or area.has_point(finish):
+		return true
+	var first := Vector2(area.position)
+	var last := Vector2(area.end - Vector2i.ONE)
+	var corners: Array[Vector2] = [first, Vector2(last.x, first.y), last, Vector2(first.x, last.y)]
+	for index: int in range(corners.size()):
+		if Geometry2D.segment_intersects_segment(start, finish, corners[index], corners[(index + 1) % corners.size()]) != null:
+			return true
+	return false
 
 
 func _trade_path(from_tile: Vector2i, to_tile: Vector2i, corridor: Array[Vector2i]) -> Array[Vector2i]:
@@ -225,6 +324,11 @@ func assign_path(seed_value: int, agent: GlobalAgent, route: Array[Vector2i]) ->
 	_prepare(seed_value)
 	_agent_routes[agent.agent_id] = {"destination": agent.destination_tile, "position": agent.tile, "route": route}
 
+func has_march_path(agent: GlobalAgent, exact_start: bool = false) -> bool:
+	var cached: Dictionary = _agent_routes.get(agent.agent_id, {})
+	return cached.get("destination") == agent.destination_tile and (cached["route"] as Array).size() > 1 \
+		and (not exact_start or cached["position"] == agent.tile)
+
 func steering_target(seed_value: int, agent: GlobalAgent, corridor: Array[Vector2i] = []) -> Vector2i:
 	var cached: Dictionary = _agent_routes.get(agent.agent_id, {})
 	if cached.get("destination") != agent.destination_tile or ((cached["route"] as Array).size() <= 1 and agent.tile != agent.destination_tile):
@@ -289,7 +393,7 @@ func route_ahead(agent: GlobalAgent, limit: int) -> Array[Vector2i]:
 	return result
 
 func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = WALK_TILES_PER_HOUR, connected: bool = false,
-		corridor: Array[Vector2i] = []) -> bool:
+		corridor: Array[Vector2i] = [], avoid_imperials: bool = false) -> bool:
 	if agent.tile == agent.destination_tile:
 		return true
 	_prepare(seed_value)
@@ -312,6 +416,14 @@ func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = W
 		var next := Vector2(route[index + 1])
 		var length: float = position.distance_to(next)
 		var cost: float = 1.0 if length <= 1.5 else length
+		if avoid_imperials:
+			var probe: Vector2i = Vector2i(position.move_toward(next, maxf(budget, 1.5)).round())
+			var detour: Array[Vector2i] = regular_bypass(seed_value, Vector2i(position), probe, agent.destination_tile)
+			if not detour.is_empty():
+				agent.tile = detour[mini(floori(budget), detour.size() - 1)]
+				agent.world_position.clear()
+				_agent_routes.erase(key)
+				return agent.tile == agent.destination_tile
 		if cost <= budget:
 			budget -= cost
 			position = next

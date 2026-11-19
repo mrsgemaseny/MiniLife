@@ -132,6 +132,10 @@ func _tick_ai(delta: float) -> void:
 			_set_routine_pose("", 0.0)
 			_alife_move_toward(get_meta("alife_destination", Config.iso_to_world(global_position)), delta)
 			return
+		if goal == "imperial_march":
+			_set_routine_pose("", 0.0)
+			_alife_move_toward(get_meta("alife_destination", Config.iso_to_world(global_position)), delta, float(get_meta("alife_march_speed", 1.0)))
+			return
 		if goal == "refugee_travel":
 			_set_routine_pose("", 0.0)
 			_follow_routine(get_meta("alife_destination", Config.iso_to_world(global_position)), delta)
@@ -279,6 +283,8 @@ func _on_player_tile_changed(player_tile: Vector2i) -> void:
 	sim_tier = SimulationBubble.compute_lod_tier(player_tile, my_tile)
 
 func _alife_is_passable(tile: Vector2i) -> bool:
+	if _imperial_march_blocks(tile):
+		return false
 	var result: Dictionary = {}
 	SignalBus.world_tile_queried.emit(tile, result)
 	if not bool(result.get("passable", false)):
@@ -286,9 +292,20 @@ func _alife_is_passable(tile: Vector2i) -> bool:
 	return not bool(result.get("occupied", false)) or str(result.get("structure_id", "")) in ["floor", "stone_floor"]
 
 func _routine_can_enter(tile: Vector2i) -> bool:
+	if _imperial_march_blocks(tile):
+		return false
 	var info: Dictionary = {}
 	SignalBus.world_tile_queried.emit(tile, info)
 	return _routine_tile_is_passable(info)
+
+func _imperial_march_blocks(tile: Vector2i) -> bool:
+	if not has_meta("alife_imperial_areas"):
+		return false
+	var current: Vector2i = Config.iso_to_world(global_position)
+	for area: Rect2i in get_meta("alife_imperial_areas"):
+		if area.has_point(tile) and not area.has_point(current):
+			return true
+	return false
 
 func _routine_tile_is_passable(info: Dictionary) -> bool:
 	return _owns_routine_door(info) or (bool(info.get("passable", false)) and (
@@ -314,7 +331,7 @@ func _follow_routine(target: Vector2i, delta: float) -> void:
 	var next: Vector2i = _routine_path[0]
 	var step_info: Dictionary = {}
 	SignalBus.world_tile_queried.emit(next, step_info)
-	if Config.tile_distance(tile, next) > 1 or not _routine_tile_is_passable(step_info):
+	if Config.tile_distance(tile, next) > 1 or _imperial_march_blocks(next) or not _routine_tile_is_passable(step_info):
 		_routine_path.clear()
 		velocity = Vector2.ZERO
 		return
@@ -332,11 +349,11 @@ func _follow_routine(target: Vector2i, delta: float) -> void:
 	else:
 		global_position = global_position.move_toward(Config.world_to_iso(next), speed * delta)
 
-func _alife_move_toward(target: Vector2i, delta: float) -> void:
+func _alife_move_toward(target: Vector2i, delta: float, speed_multiplier: float = 1.0) -> void:
 	var current: Vector2i = Config.iso_to_world(global_position)
 	var next: Vector2i = PathfindingService.compute_next_step(current, target, _alife_is_passable)
 	var destination: Vector2 = Config.world_to_iso(next if current != target else target)
-	velocity = (destination - global_position).normalized() * Config.BASE_MOVE_SPEED * 0.42
+	velocity = (destination - global_position).normalized() * Config.BASE_MOVE_SPEED * 0.42 * speed_multiplier
 	if destination.distance_to(global_position) < 2.0:
 		velocity = Vector2.ZERO
 	elif sim_tier == SimulationBubble.Tier.FULL:
@@ -364,7 +381,7 @@ func restore_alife_state(data: Dictionary) -> void:
 		memory.personal_opinion_of_player = int(data.get("relation_to_player", 0))
 	if local.get("combat_equipment") is Dictionary:
 		equipment.from_dict(local.get("combat_equipment", {}))
-	elif str(data.get("role", "")) in ["guard", "soldier", "caravan_guard"]:
+	elif str(data.get("role", "")) in ["guard", "soldier", "caravan_guard", ImperialArmySystem.COMMANDER, ImperialArmySystem.SOLDIER]:
 		var armor_id: String = "iron_armor" if int(data.get("equipment_tier", 1)) >= 3 else "leather_armor"
 		equipment.equip(armor_id, -1, "chest")
 	current_state = clampi(int(local.get("state", State.IDLE)), State.IDLE, State.GIVE_QUEST) as State
@@ -382,7 +399,7 @@ func restore_alife_state(data: Dictionary) -> void:
 func _seed_combat_skills(role: String) -> void:
 	var levels: Array[int] = [1, 1, 1, 1]
 	match role:
-		"guard", "soldier", "caravan_guard":
+		"guard", "soldier", "caravan_guard", ImperialArmySystem.COMMANDER, ImperialArmySystem.SOLDIER:
 			levels = [8, 9, 6, 7]
 		"bandit", "raider":
 			levels = [6, 5, 5, 6]

@@ -156,6 +156,17 @@
 		]
 	},
 	{
+		"id": "imperial_column_passage",
+		"nodes": [
+			{
+				"id": "root",
+				"speaker": "Имперская колонна",
+				"text": "Дай колонне пройти.",
+				"choices": [{ "text": "Отойти.", "action": "end" }]
+			}
+		]
+	},
+	{
 		"id": "guard_default",
 		"nodes": [
 			{

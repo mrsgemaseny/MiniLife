@@ -17,6 +17,7 @@ var avoid_bandit_camps: bool = false
 var _blocked: Dictionary = {}
 var _camp_areas: Dictionary[Vector2i, Rect2i] = {}
 var _route_cells: Dictionary[Vector2i, bool] = {}
+var excluded_areas: Array[Rect2i] = []
 var region: Rect2i = Rect2i()
 var _graph_ready: bool = false
 var _macro: AStar2D = AStar2D.new()
@@ -151,6 +152,9 @@ func tile_for(cell: Vector2i) -> Vector2i:
 
 
 func blocked(tile: Vector2i) -> bool:
+	for area: Rect2i in excluded_areas:
+		if area.has_point(tile):
+			return true
 	if not _route_cells.is_empty() and not _route_cells.has(GlobalLandscapeMap.cell_for_tile(tile)):
 		return true
 	if not _blocked.has(tile):

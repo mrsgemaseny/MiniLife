@@ -4,6 +4,9 @@ static func validate(world: AlifeWorldContext) -> String:
 	var history_error: String = _validate_history(world)
 	if not history_error.is_empty():
 		return history_error
+	var column_error: String = _validate_imperial_columns(world)
+	if not column_error.is_empty():
+		return column_error
 	var travelers: Variant = world.narrative.get("refugee_travelers", {})
 	if not travelers is Dictionary:
 		return "Invalid refugee travel data."
@@ -66,6 +69,23 @@ static func validate(world: AlifeWorldContext) -> String:
 		var error: String = _validate_ids(conflict.attacker_agents + conflict.defender_agents, world.agents, conflict.conflict_id)
 		if not error.is_empty():
 			return error
+	return ""
+
+static func _validate_imperial_columns(world: AlifeWorldContext) -> String:
+	var columns: Variant = world.narrative.get(ImperialArmySystem.SAVE_KEY, {})
+	if not columns is Dictionary:
+		return "Invalid imperial army data."
+	for id: Variant in columns:
+		var row: Variant = columns[id]
+		if not id is String or id.is_empty() or not row is Dictionary or not _whole_number(row.get("waypoint")) \
+				or float(row["waypoint"]) < 0.0 or not _whole_number(row.get("direction")) \
+				or absi(int(row["direction"])) != 1 or not _finite_number(row.get("hour")):
+			return "Invalid imperial army route state."
+		for slot: int in range(ImperialArmySystem.COLUMN_SIZE):
+			var unit: GlobalAgent = world.agents.find(ImperialArmySystem.unit_id(id, slot)) as GlobalAgent
+			var role: String = ImperialArmySystem.COMMANDER if slot == 0 else ImperialArmySystem.SOLDIER
+			if unit == null or unit.role != role or unit.max_health <= 0.0 or not WorldLayout.contains_tile(unit.tile):
+				return "Invalid imperial column member."
 	return ""
 
 static func _validate_faction(world: AlifeWorldContext, faction: AlifeFaction) -> String:

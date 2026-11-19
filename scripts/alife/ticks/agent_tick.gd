@@ -12,6 +12,8 @@ func tick(world: AlifeWorldContext, hours: float) -> void:
 	_elapsed = 0.0
 	preload("res://scripts/alife/settlements/refugee_migration.gd").tick(world, step)
 	for agent: GlobalAgent in world.agents.get_all_global():
+		if ImperialArmySystem.is_member(agent):
+			continue
 		var goal: String = AgentGoalEvaluator.evaluate(agent, world)
 		if goal != agent.current_goal:
 			agent.current_goal = goal
@@ -22,4 +24,5 @@ func tick(world: AlifeWorldContext, hours: float) -> void:
 			var corridor: Array[Vector2i] = WorldData.trade_corridor(route.at_id, route.destination_id)
 			world.travel.advance(world.world_seed, agent, step, AlifeTravel.WALK_TILES_PER_HOUR, route.grain_relief, corridor)
 		elif agent.current_goal in ["march_to_frontline", "assault_settlement", "return_home", "refugee_travel"]:
-			world.travel.advance(world.world_seed, agent, step)
+			var regular: bool = agent.role in ["soldier", "guard"]
+			world.travel.advance(world.world_seed, agent, step, AlifeTravel.WALK_TILES_PER_HOUR, false, [], regular)
