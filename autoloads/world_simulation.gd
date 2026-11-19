@@ -4,6 +4,7 @@ const GLOBAL_TICK_INTERVAL: float = 5.0
 const VALDEN_ECONOMY_STEP_HOURS: float = Config.LOD_FAR_INTERVAL / Config.SECONDS_PER_GAME_HOUR
 const VALDEN_GRAIN_ROUTE_ID: String = EconomyTick.VALDEN_VILLAGE_ID + "->" + EconomyTick.VALDEN_CASTLE_ID + "/grain"
 const VALDEN_GRAIN_INVESTMENT: int = 600
+const AGENT_FRAME_BUDGET_USEC: int = 3000
 const MAX_CATCHUP_DAYS: int = 7
 var world: AlifeWorldContext = AlifeWorldContext.new()
 var economy_tick: EconomyTick = EconomyTick.new()
@@ -35,6 +36,7 @@ var last_load_error: String = ""
 var _unreadable_save: Variant = null
 var _trading: bool = false
 var _valden_economy_enabled: bool = false
+var _pending_tick_hours: float = 0.0
 
 func _ready() -> void:
 	SignalBus.game_started.connect(_on_game_started)
@@ -94,6 +96,9 @@ func _process(_delta: float) -> void:
 	world.travel.imperial_zones = imperial_armies.avoidance_zones(world)
 	recruitment.follow(world, materializer)
 	if not alife_enabled:
+		if _pending_tick_hours > 0.0:
+			_process_global_tick(target, GLOBAL_TICK_INTERVAL / Config.SECONDS_PER_GAME_HOUR)
+			return
 		if _valden_economy_enabled:
 			_run_valden_economy(target)
 			var route: CaravanRoute = world.routes.find(VALDEN_GRAIN_ROUTE_ID) as CaravanRoute
@@ -115,13 +120,21 @@ func _process(_delta: float) -> void:
 		_body_scan_elapsed = 0.0
 		_discover_resident_bodies()
 		_sync_refugee_camp_views()
-	_publish_events()
 	var step: float = GLOBAL_TICK_INTERVAL / Config.SECONDS_PER_GAME_HOUR
-	# Limit work per frame; preserve pending game time rather than dropping ticks.
-	var count: int = 0
-	while target - world.simulated_hour >= step and count < 8:
-		_run_global_tick(step)
-		count += 1
+	_process_global_tick(target, step)
+
+func _process_global_tick(target: float, step: float) -> void:
+	if _pending_tick_hours > 0.0:
+		if agent_tick.has_pending():
+			agent_tick.advance(world, Time.get_ticks_usec() + AGENT_FRAME_BUDGET_USEC)
+		else:
+			_complete_global_tick()
+		return
+	_publish_events()
+	if target - world.simulated_hour >= step:
+		_begin_global_tick(step)
+		if not agent_tick.has_pending():
+			_complete_global_tick()
 
 func _run_valden_economy(target: float) -> void:
 	var steps: int = clampi(int(floor((target - world.simulated_hour) / VALDEN_ECONOMY_STEP_HOURS)), 0, 8)
@@ -186,11 +199,21 @@ func _update_caravan_views(delta: float, clock_hour: float, route: CaravanRoute 
 
 const LocalWarrants = preload("res://scripts/alife/factions/local_warrants.gd")
 
-func _run_global_tick(hours: float, silent: bool = false) -> void:
+func _begin_global_tick(hours: float) -> void:
+	_pending_tick_hours = hours
 	world.simulated_hour += hours
 	economy_tick.tick(world, hours, _valden_economy_enabled)
 	faction_tick.tick(world, hours)
-	agent_tick.tick(world, hours)
+	agent_tick.begin(world, hours)
+
+func _flush_global_tick() -> void:
+	if _pending_tick_hours > 0.0:
+		agent_tick.advance(world)
+		_complete_global_tick()
+
+func _complete_global_tick() -> void:
+	var hours: float = _pending_tick_hours
+	_pending_tick_hours = 0.0
 	conflict_tick.tick(world, hours)
 	if _valden_economy_enabled:
 		_valden_grain_route()
@@ -199,11 +222,10 @@ func _run_global_tick(hours: float, silent: bool = false) -> void:
 	LocalWarrants.tick(world)
 	materializer.reconcile_dead()
 	world.tick_count += 1
-	if not silent:
-		_sample_observed_armies()
-		_publish_events()
-		SignalBus.world_tick_completed.emit()
-		_publish_markets()
+	_sample_observed_armies()
+	_publish_events()
+	SignalBus.world_tick_completed.emit()
+	_publish_markets()
 
 var _agent_save_delta: AlifeAgentSaveDelta = preload("res://scripts/alife/agent_save_delta.gd").new()
 
@@ -223,6 +245,7 @@ func _on_game_started(seed_value: int, _slot: String, is_new: bool) -> void:
 		last_load_error = ""
 		_unreadable_save = null
 	if is_new or not _restored:
+		_pending_tick_hours = 0.0
 		var version: int = GameManager.get_world_generator_version()
 		world = AlifeWorldContext.new(version)
 		world.seed_world(seed_value, float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour())
@@ -267,6 +290,7 @@ func _on_save_requested(bundle: Dictionary) -> void:
 		return
 	var saved_world: Dictionary = bundle.get("world", {})
 	materializer.sync_all()
+	_flush_global_tick()
 	pack_materializer.sync_all()
 	var snapshot: Dictionary = _agent_save_delta.encode(world)
 	snapshot["agent_tick_elapsed"] = agent_tick._elapsed
@@ -277,6 +301,8 @@ func _on_save_loaded(bundle: Dictionary) -> void:
 	var saved_world: Dictionary = bundle.get("world", {})
 	_restored = false
 	_initialized = false
+	_pending_tick_hours = 0.0
+	agent_tick = AgentTick.new()
 	last_load_error = ""
 	_unreadable_save = null
 	if not saved_world.has("alife"):
@@ -303,7 +329,6 @@ func _on_save_loaded(bundle: Dictionary) -> void:
 	world.travel.shutdown()
 	world = restored
 	_agent_save_delta = codec
-	agent_tick = AgentTick.new()
 	agent_tick._elapsed = float(data.get("agent_tick_elapsed", 0.0))
 	_restored = true
 
@@ -1174,6 +1199,7 @@ func _mark_caravan_raid(route: CaravanRoute, location: Vector2i) -> void:
 	world.record_event("caravan_attacked", location, [home.owner_faction] if home != null else [], {"route_id": route.route_id, "settlement_id": route.from_id})
 
 func _on_agent_materialized(id: String, entity: Node) -> void:
+	agent_tick.mark_local(id)
 	var agent: GlobalAgent = world.agents.find(id) as GlobalAgent
 	if agent != null and agent.role == TavernRecruitment.ROLE:
 		entity.add_to_group("player_allies")

@@ -43,8 +43,36 @@ func _check_agent_indices() -> void:
 	check(registry.by_settlement("home").is_empty() and registry.global_within(second.tile, 0).is_empty(),
 		"Clearing the registry clears both indices")
 
+func _check_local_handoffs_during_tick() -> void:
+	var context: AlifeWorldContext = AlifeWorldContext.new()
+	context.seed_world(42, 10.0)
+	for index: int in range(21):
+		var agent: GlobalAgent = GlobalAgent.from_dict({"agent_id": "resident_%02d" % index, "role": "farmer"})
+		context.agents.register(agent)
+	var old_local: GlobalAgent = context.agents.find("resident_16") as GlobalAgent
+	var new_local: GlobalAgent = context.agents.find("resident_17") as GlobalAgent
+	var removed: GlobalAgent = context.agents.find("resident_18") as GlobalAgent
+	var briefly_local: GlobalAgent = context.agents.find("resident_19") as GlobalAgent
+	var last: GlobalAgent = context.agents.find("resident_20") as GlobalAgent
+	context.agents.materialized[old_local.agent_id] = true
+	var tick: AgentTick = AgentTick.new()
+	tick.begin(context, 0.5)
+	tick.advance(context, Time.get_ticks_usec())
+	context.agents.materialized.erase(old_local.agent_id)
+	context.agents.materialized[new_local.agent_id] = true
+	tick.mark_local(briefly_local.agent_id)
+	context.agents.remove(removed.agent_id)
+	var replacement: GlobalAgent = GlobalAgent.from_dict({"agent_id": removed.agent_id, "role": "farmer"})
+	context.agents.register(replacement)
+	tick.advance(context)
+	check(old_local.goal_progress == 0.0 and new_local.goal_progress == 0.0 and briefly_local.goal_progress == 0.0,
+		"A resident using local simulation before its slice avoids an abstract update")
+	check(removed.goal_progress == 0.0 and replacement.goal_progress == 0.0 and last.goal_progress == 0.0625,
+		"An identity replacement waits until the next pass while remaining agents advance")
+
 func _ready() -> void:
 	_check_agent_indices()
+	_check_local_handoffs_during_tick()
 	var world: AlifeWorldContext = AlifeWorldContext.new()
 	world.seed_world(12345, 10.0)
 	check(world.factions.all().size() == DataRegistry.get_rows("factions").size(), "Faction seed count")
@@ -95,12 +123,24 @@ func _ready() -> void:
 	check(inventory.gold == 3 and inventory.silver == 40, "Rejected exchange leaves balance intact")
 	WorldSimulation._on_game_started(12345, "alife_test", true)
 	WorldSimulation.world.settlements.register(settlement)
-	WorldSimulation._run_global_tick(0.5, true)
+	var ticks_before: int = WorldSimulation.world.tick_count
+	var completed: Array[int] = []
+	var on_completed: Callable = func() -> void: completed.append(WorldSimulation.world.tick_count)
+	SignalBus.world_tick_completed.connect(on_completed)
+	WorldSimulation._begin_global_tick(0.5)
+	check(WorldSimulation.agent_tick.has_pending() and WorldSimulation.world.tick_count == ticks_before,
+		"Strategic step can pause before finishing the abstract agents")
+	WorldSimulation.agent_tick.advance(WorldSimulation.world, Time.get_ticks_usec())
+	check(WorldSimulation.agent_tick.has_pending(), "Agent batch yields with work still queued")
 	var bundle: Dictionary = {"world": {
 		"existing_field": 42,
 		"generator_version": GameManager.get_world_generator_version(),
 	}}
 	WorldSimulation._on_save_requested(bundle)
+	check(not WorldSimulation.agent_tick.has_pending() and WorldSimulation.world.tick_count == ticks_before + 1,
+		"Saving completes the pending strategic step exactly once")
+	check(completed == [ticks_before + 1], "The staged tick publishes only after completion")
+	SignalBus.world_tick_completed.disconnect(on_completed)
 	check(bundle.world.existing_field == 42, "Save preserves other systems' world data")
 	var saved_ticks: int = WorldSimulation.world.tick_count
 	WorldSimulation._on_save_loaded(JSON.parse_string(JSON.stringify(bundle)))
