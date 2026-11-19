@@ -20,7 +20,11 @@ var narrative: Dictionary = {}
 var reputation: Dictionary = {}
 var contracts: Dictionary = {}
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-var travel: AlifeTravel = AlifeTravel.new()
+var travel: AlifeTravel
+
+
+func _init(generator_version: int = TerrainGenerator.GENERATOR_VERSION) -> void:
+	travel = AlifeTravel.new(generator_version)
 
 func seed_world(seed_value: int, initial_hour: float) -> void:
 	world_seed = seed_value
@@ -77,7 +81,7 @@ func to_dict() -> Dictionary:
 		"travel_routes": travel.saved_routes()
 	}
 
-static func from_dict(data: Dictionary) -> AlifeWorldContext:
+static func from_dict(data: Dictionary, generator_version: int = TerrainGenerator.GENERATOR_VERSION) -> AlifeWorldContext:
 	if int(data.get("schema_version", 0)) != 1:
 		return null
 	for field: String in ["events", "rumors"]:
@@ -91,7 +95,7 @@ static func from_dict(data: Dictionary) -> AlifeWorldContext:
 			return null
 	if not AlifeTravel.valid_saved_routes(data.get("travel_routes", {})):
 		return null
-	var result: AlifeWorldContext = AlifeWorldContext.new()
+	var result := AlifeWorldContext.new(generator_version)
 	var registries: Dictionary = {
 		"factions": result.factions, "settlements": result.settlements,
 		"agents": result.agents, "routes": result.routes,

@@ -11,6 +11,7 @@ const WALK_TILES_PER_HOUR: float = Config.BASE_MOVE_SPEED * 0.42 / float(Config.
 
 var _grid: AlifeRouteGrid
 var _seed: int = 0
+var _generator_version: int
 var _agent_routes: Dictionary = {}
 var background_enabled: bool = false
 var _worker_solver: AlifeTravel
@@ -21,6 +22,11 @@ var _requests: Dictionary = {}
 var _completed: Dictionary = {}
 # Vector4i(from, to) -> Array[Vector2i]; cleared when the seed changes.
 var _path_cache: Dictionary = {}
+
+
+func _init(generator_version: int = TerrainGenerator.GENERATOR_VERSION) -> void:
+	_generator_version = generator_version
+
 
 func request_path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
 	if not background_enabled:
@@ -47,7 +53,7 @@ func poll() -> void:
 		var request: Dictionary = _requests[_task_key]
 		_requests.erase(_task_key)
 		if _worker_solver == null:
-			_worker_solver = AlifeTravel.new()
+			_worker_solver = AlifeTravel.new(_generator_version)
 		_task_id = WorkerThreadPool.add_task(func() -> void:
 			_task_result = _worker_solver.path(int(request["seed"]), request["from"], request["to"])
 		, false, "A-Life route")
@@ -72,7 +78,7 @@ func _prepare(seed_value: int) -> void:
 	_agent_routes.clear()
 	_path_cache.clear()
 	_grid = AlifeRouteGrid.new()
-	_grid.setup(seed_value)
+	_grid.setup(seed_value, _generator_version)
 
 # Routes depend only on terrain, which is a pure function of the seed, so solved paths are
 # reused. Caravans re-request the same city-to-city route on every dispatch attempt.

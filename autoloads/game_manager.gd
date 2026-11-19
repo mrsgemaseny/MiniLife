@@ -4,6 +4,7 @@ enum State { BOOT, PLAYING, PAUSED, DEAD }
 
 var _state: State = State.BOOT
 var _world_seed: int = Config.DEFAULT_WORLD_SEED
+var _world_generator_version: int = TerrainGenerator.GENERATOR_VERSION
 var _active_slot: String = Config.DEFAULT_SAVE_SLOT
 var _game_id: String = Config.DEFAULT_SAVE_SLOT
 var _day: int = 1
@@ -188,6 +189,7 @@ func start_new_game(new_seed: int, slot: String = "") -> void:
 	debug_god_mode = false
 	_god_code_buffer = ""
 	_world_seed = new_seed
+	_world_generator_version = TerrainGenerator.GENERATOR_VERSION
 	_active_slot = slot if not slot.is_empty() else _create_unique_save_slot()
 	_game_id = _active_slot
 	_day = 1
@@ -237,6 +239,15 @@ func set_day_and_hour(day_val: int, hour_val: float) -> void:
 
 func get_world_seed() -> int:
 	return _world_seed
+
+
+func get_world_generator_version() -> int:
+	return _world_generator_version
+
+
+func set_loaded_world(seed_value: int, generator_version: int) -> void:
+	_world_seed = seed_value
+	_world_generator_version = generator_version
 
 
 func get_active_slot() -> String:

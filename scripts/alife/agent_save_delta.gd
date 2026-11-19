@@ -19,9 +19,9 @@ func capture(world: AlifeWorldContext, generator_version: int) -> void:
 	_fingerprint = JSON.stringify(_rows, "", true, true).sha256_text()
 
 func regenerate(seed_value: int, generator_version: int) -> bool:
-	if generator_version != TerrainGenerator.GENERATOR_VERSION:
+	if not TerrainGenerator.supports_version(generator_version):
 		return false
-	var baseline: AlifeWorldContext = AlifeWorldContext.new()
+	var baseline := AlifeWorldContext.new(generator_version)
 	baseline.seed_world(seed_value, 0.0)
 	WorldSeedBuilder.populate(baseline)
 	capture(baseline, generator_version)
@@ -62,7 +62,7 @@ func encode(world: AlifeWorldContext) -> Dictionary:
 func decode(snapshot: Dictionary, world_generator_version: int) -> AlifeWorldContext:
 	var version: int = int(snapshot.get("schema_version", 0))
 	if version == 1:
-		var legacy: AlifeWorldContext = AlifeWorldContext.from_dict(snapshot)
+		var legacy: AlifeWorldContext = AlifeWorldContext.from_dict(snapshot, world_generator_version)
 		if legacy != null and not regenerate(legacy.world_seed, world_generator_version):
 			return null
 		return legacy
@@ -71,7 +71,8 @@ func decode(snapshot: Dictionary, world_generator_version: int) -> AlifeWorldCon
 	var delta: Dictionary = snapshot["agent_delta"]
 	if int(delta.get("revision", 0)) != GENERATOR_REVISION:
 		return null
-	if not regenerate(int(snapshot.get("world_seed", 0)), int(delta.get("generator_version", 0))):
+	if int(delta.get("generator_version", 0)) != world_generator_version \
+			or not regenerate(int(snapshot.get("world_seed", 0)), world_generator_version):
 		return null
 	if delta.get("fingerprint") != _fingerprint:
 		return null
@@ -101,7 +102,7 @@ func decode(snapshot: Dictionary, world_generator_version: int) -> AlifeWorldCon
 	var restored: Dictionary = snapshot.duplicate()
 	restored["schema_version"] = 1
 	restored["agents"] = restored_rows.values()
-	return AlifeWorldContext.from_dict(restored)
+	return AlifeWorldContext.from_dict(restored, world_generator_version)
 
 func _valid_field(baseline: Variant, value: Variant) -> bool:
 	if baseline is float or baseline is int:

@@ -5,6 +5,7 @@ extends Node
 
 const SEEDS: Array[int] = [42819, 98765]
 const FIELD_EPS: float = 0.05
+const DIAGONAL_FIELD_EPS: float = 0.07
 
 var failures: int = 0
 var report: Dictionary = {}
@@ -21,6 +22,17 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	_blend_width()
+	if "--seam-sweep" in OS.get_cmdline_user_args():
+		var seeds: Array[int] = SEEDS.duplicate()
+		for index: int in range(48):
+			seeds.append(7319 + index * 7919)
+		for seed_value: int in seeds:
+			_seams(seed_value, TerrainGenerator.new(seed_value))
+			print("WORLDGEN_SEAM_SEED ", seed_value, " ", JSON.stringify(report["seam_%d" % seed_value]))
+		_finish()
+		return
+
 	for seed_value: int in SEEDS:
 		var terrain := TerrainGenerator.new(seed_value)
 		_determinism(seed_value, terrain)
@@ -29,10 +41,29 @@ func _run() -> void:
 		_rivers(seed_value, terrain)
 		_settlements(seed_value, terrain)
 	_quota(TerrainGenerator.new(SEEDS[0]))
+	_finish()
+
+
+func _finish() -> void:
 	print("WORLDGEN_REPORT ", JSON.stringify(report))
 	if failures == 0:
 		print("WORLDGEN_INVARIANTS_OK")
 	get_tree().quit(0 if failures == 0 else 1)
+
+
+func _blend_width() -> void:
+	var terrain := TerrainGenerator.new(SEEDS[0])
+	var legacy := TerrainGenerator.new(SEEDS[0], TerrainGenerator.LEGACY_GENERATOR_VERSION)
+	for generator: TerrainGenerator in [terrain, legacy]:
+		var half_width: float = 32.0 if generator == terrain else 200.0
+		var cell_tiles: float = GlobalLandscapeMap.CELL_TILES
+		for side: float in [-1.0, 1.0]:
+			var inside: Vector3 = generator._axis(10.0 + side * (half_width - 0.5) / cell_tiles)
+			var outside: Vector3 = generator._axis(10.0 + side * (half_width + 0.5) / cell_tiles)
+			check(inside.y > 0.0 and inside.z > 0.0 and outside.z == 0.0,
+				"Generator %d blend has the wrong width" % generator.get_version())
+		var center: Vector3 = generator._axis(10.0)
+		check(center.y == 0.5 and center.z == 0.5, "Blend is not symmetric at the border")
 
 
 # Same seed, fresh instance and fresh graph build: identical world; batch == per tile.
@@ -67,7 +98,7 @@ func _seams(seed_value: int, terrain: TerrainGenerator) -> void:
 			var next: Vector2i = cell + offset
 			if not land.is_land(next):
 				continue
-			for along: int in range(20, 1000, 60):
+			for along: int in range(5, 1000, 10):
 				var edge: Vector2i
 				var across: Vector2i
 				if offset.x != 0:
@@ -81,8 +112,7 @@ func _seams(seed_value: int, terrain: TerrainGenerator) -> void:
 					max_jump = maxf(max_jump, absf(_field(terrain, edge, field) - _field(terrain, a, field)))
 				if terrain.get_biome_at(edge) != terrain.get_biome_at(a):
 					border_flips += 1
-				# Control line inside the same blend band: a seam is a jump on the border line
-				# itself, not the extra variety of a zone where two landscapes mix.
+				# Use the unblended interior as a control for visible lines of biome changes.
 				var inner: Vector2i = edge - across * 100
 				if terrain.get_biome_at(inner) != terrain.get_biome_at(inner + across):
 					inner_flips += 1
@@ -91,7 +121,26 @@ func _seams(seed_value: int, terrain: TerrainGenerator) -> void:
 	# Border may differ from the interior by sampling noise, not by a systematic seam.
 	var allowed: int = inner_flips * 2 + maxi(4, samples / 100)
 	check(border_flips <= allowed, "Tile type flips on borders %d vs interior %d of %d, seed %d" % [border_flips, inner_flips, samples, seed_value])
-	report["seam_%d" % seed_value] = {"pairs_sampled": samples, "max_field_jump": snappedf(max_jump, 0.0001), "border_flips": border_flips, "inner_flips": inner_flips}
+	var diagonal_jump: float = _diagonal_seams(terrain)
+	check(diagonal_jump < DIAGONAL_FIELD_EPS, "Field jump %.3f across a cell corner, seed %d" % [diagonal_jump, seed_value])
+	report["seam_%d" % seed_value] = {"pairs_sampled": samples, "max_field_jump": snappedf(max_jump, 0.0001),
+		"max_corner_jump": snappedf(diagonal_jump, 0.0001), "border_flips": border_flips, "inner_flips": inner_flips}
+
+
+func _diagonal_seams(terrain: TerrainGenerator) -> float:
+	var land: GlobalLandscapeMap = WorldLayout.landscape()
+	var max_jump: float = 0.0
+	var cell_tiles: int = GlobalLandscapeMap.CELL_TILES
+	for cell: Vector2i in land.land_cells():
+		for x: int in [-1, 1]:
+			if not land.is_land(cell + Vector2i(x, 1)):
+				continue
+			var corner: Vector2i = (cell + Vector2i(maxi(x, 0), 1)) * cell_tiles
+			var first: Vector2i = corner + Vector2i(-1 if x > 0 else 0, -1)
+			var second: Vector2i = first + Vector2i(x, 1)
+			for field: int in range(3):
+				max_jump = maxf(max_jump, absf(_field(terrain, first, field) - _field(terrain, second, field)))
+	return max_jump
 
 
 func _field(terrain: TerrainGenerator, tile: Vector2i, field: int) -> float:

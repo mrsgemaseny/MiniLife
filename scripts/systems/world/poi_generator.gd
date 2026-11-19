@@ -31,8 +31,8 @@ const RUIN_IDS: Array[String] = [
 
 
 # Plans are per authored cell (one 1000x1000 local map): 2..5 ruins and 12 bandit camps each.
-static func _plan_key(world_seed: int, cell: Vector2i) -> String:
-	return "%d:%d:%d:%d" % [world_seed, TerrainGenerator.GENERATOR_VERSION, cell.x, cell.y]
+static func _plan_key(world_seed: int, cell: Vector2i, version: int) -> String:
+	return "%d:%d:%d:%d" % [world_seed, version, cell.x, cell.y]
 
 static func _cell_of_chunk(chunk_pos: Vector2i) -> Vector2i:
 	return GlobalLandscapeMap.cell_for_tile(Config.chunk_origin(chunk_pos) + Vector2i(8, 8))
@@ -67,20 +67,20 @@ static func _cell_candidates(world_seed: int, cell: Vector2i, margin: int, salt:
 		candidates.append(chunk)
 	return candidates
 
-static func get_fixed_ruin_for_chunk(world_seed: int, chunk_pos: Vector2i) -> Dictionary:
+static func get_fixed_ruin_for_chunk(world_seed: int, chunk_pos: Vector2i, version: int = TerrainGenerator.GENERATOR_VERSION) -> Dictionary:
 	# One quota per local map (cell), never a counter shared across cells.
 	var cell: Vector2i = _cell_of_chunk(chunk_pos)
 	if not WorldLayout.landscape().is_land(cell) or _inside_settlement_reserve(world_seed, cell, chunk_pos):
 		return {}
-	var key: String = _plan_key(world_seed, cell)
+	var key: String = _plan_key(world_seed, cell, version)
 	_plan_mutex.lock()
 	if not _local_ruin_plans.has(key):
-		_local_ruin_plans[key] = _build_local_ruin_plan(world_seed, cell)
+		_local_ruin_plans[key] = _build_local_ruin_plan(world_seed, cell, version)
 	var result: Dictionary = _local_ruin_plans[key].get(chunk_pos, {}).duplicate(true)
 	_plan_mutex.unlock()
 	return result
 
-static func _build_local_ruin_plan(world_seed: int, cell: Vector2i) -> Dictionary:
+static func _build_local_ruin_plan(world_seed: int, cell: Vector2i, version: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = RngService.hash_coords(world_seed, cell.x, cell.y, 0x5A827999)
 	var wanted: int = rng.randi_range(LOCAL_RUIN_MIN, LOCAL_RUIN_MAX)
@@ -98,23 +98,23 @@ static func _build_local_ruin_plan(world_seed: int, cell: Vector2i) -> Dictionar
 		var id: String = RUIN_IDS[result.size() % RUIN_IDS.size()]
 		var definition: Dictionary = DataRegistry.get_ruin(id)
 		var dims: Array = definition.get("size", [5, 5])
-		var anchor: Vector2i = find_land_anchor(world_seed, candidate, Vector2i(int(dims[0]), int(dims[1])))
+		var anchor: Vector2i = find_land_anchor(world_seed, candidate, Vector2i(int(dims[0]), int(dims[1])), version)
 		if anchor.x >= 0:
 			result[candidate] = {"poi_id": id, "tile_pos": anchor, "is_ruin": true, "ruin_data": definition}
 	return result
 
 
-static func get_chunk_poi(world_seed: int, chunk_pos: Vector2i, biome_id: String) -> Dictionary:
+static func get_chunk_poi(world_seed: int, chunk_pos: Vector2i, biome_id: String, version: int = TerrainGenerator.GENERATOR_VERSION) -> Dictionary:
 	if not WorldLayout.contains_chunk(chunk_pos):
 		return {}
 	if Config.tile_distance(Config.chunk_origin(chunk_pos) + Vector2i(8,8), WorldLayout.start_tile()) < 48:
 		return {}
 	# Pure wilderness start: no forced merchant outpost or artificial starter camp at center
 	# Check hand-crafted fixed ruins first
-	var ruin_info: Dictionary = get_fixed_ruin_for_chunk(world_seed, chunk_pos)
+	var ruin_info: Dictionary = get_fixed_ruin_for_chunk(world_seed, chunk_pos, version)
 	if not ruin_info.is_empty():
 		return ruin_info
-	var bandit_info: Dictionary = get_bandit_camp_for_chunk(world_seed, chunk_pos)
+	var bandit_info: Dictionary = get_bandit_camp_for_chunk(world_seed, chunk_pos, version)
 	if not bandit_info.is_empty():
 		return bandit_info
 
@@ -132,7 +132,7 @@ static func get_chunk_poi(world_seed: int, chunk_pos: Vector2i, biome_id: String
 		return {}
 
 	var picked_id: String = str(pool[rng.randi() % pool.size()])
-	var safe_anchor: Vector2i = find_land_anchor(world_seed, chunk_pos, Vector2i(7, 7) if picked_id == "abandoned_camp" else Vector2i(5, 5))
+	var safe_anchor: Vector2i = find_land_anchor(world_seed, chunk_pos, Vector2i(7, 7) if picked_id == "abandoned_camp" else Vector2i(5, 5), version)
 	if safe_anchor.x < 0:
 		return {}
 	var offset: Vector2i = Vector2i(rng.randi_range(5, Config.CHUNK_SIZE - 6), rng.randi_range(5, Config.CHUNK_SIZE - 6))
@@ -143,27 +143,27 @@ static func get_chunk_poi(world_seed: int, chunk_pos: Vector2i, biome_id: String
 		"camp_variant": rng.randi_range(0, 3)
 	}
 
-static func get_bandit_camp_for_chunk(world_seed: int, chunk_pos: Vector2i) -> Dictionary:
+static func get_bandit_camp_for_chunk(world_seed: int, chunk_pos: Vector2i, version: int = TerrainGenerator.GENERATOR_VERSION) -> Dictionary:
 	var cell: Vector2i = _cell_of_chunk(chunk_pos)
 	if not WorldLayout.landscape().is_land(cell) or _inside_settlement_reserve(world_seed, cell, chunk_pos):
 		return {}
-	var key: String = _plan_key(world_seed, cell)
+	var key: String = _plan_key(world_seed, cell, version)
 	_plan_mutex.lock()
 	if not _bandit_plans.has(key):
-		_bandit_plans[key] = _build_bandit_plan(world_seed, cell)
+		_bandit_plans[key] = _build_bandit_plan(world_seed, cell, version)
 	var result: Dictionary = _bandit_plans[key].get(chunk_pos, {}).duplicate(true)
 	_plan_mutex.unlock()
 	return result
 
-static func _build_bandit_plan(world_seed: int, cell: Vector2i) -> Dictionary:
+static func _build_bandit_plan(world_seed: int, cell: Vector2i, version: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = RngService.hash_coords(world_seed, cell.x, cell.y, 0x42616E64)
 	var candidates: Array[Vector2i] = _cell_candidates(world_seed, cell, 2, 0x4261)
 	var result: Dictionary = {}
-	var key: String = _plan_key(world_seed, cell)
+	var key: String = _plan_key(world_seed, cell, version)
 	_plan_mutex.lock()
 	if not _local_ruin_plans.has(key):
-		_local_ruin_plans[key] = _build_local_ruin_plan(world_seed, cell)
+		_local_ruin_plans[key] = _build_local_ruin_plan(world_seed, cell, version)
 	var ruins: Dictionary = _local_ruin_plans[key]
 	_plan_mutex.unlock()
 	var wanted: int = 12
@@ -179,7 +179,7 @@ static func _build_bandit_plan(world_seed: int, cell: Vector2i) -> Dictionary:
 				break
 		if not spaced:
 			continue
-		var anchor: Vector2i = find_land_anchor(world_seed, candidate, Vector2i(7, 7))
+		var anchor: Vector2i = find_land_anchor(world_seed, candidate, Vector2i(7, 7), version)
 		if anchor.x < 0:
 			continue
 		var index: int = result.size()
@@ -188,18 +188,18 @@ static func _build_bandit_plan(world_seed: int, cell: Vector2i) -> Dictionary:
 		result[candidate] = {"poi_id": id, "tile_pos": anchor, "is_ruin": false, "camp_variant": variant}
 	return result
 
-# One generator per seed for main-thread planners; worker threads get their own instance
+# Main-thread planners reuse their generator when seed and version match. Workers own theirs
 # (a TerrainGenerator keeps per-tile scratch state and is not thread-safe).
-static func _terrain_for(world_seed: int) -> TerrainGenerator:
+static func _terrain_for(world_seed: int, version: int) -> TerrainGenerator:
 	if OS.get_thread_caller_id() != OS.get_main_thread_id():
-		return TerrainGenerator.new(world_seed)
-	if _planner_terrain == null or _planner_terrain.get_seed() != world_seed:
-		_planner_terrain = TerrainGenerator.new(world_seed)
+		return TerrainGenerator.new(world_seed, version)
+	if _planner_terrain == null or _planner_terrain.get_seed() != world_seed or _planner_terrain.get_version() != version:
+		_planner_terrain = TerrainGenerator.new(world_seed, version)
 	return _planner_terrain
 
 
-static func find_land_anchor(world_seed: int, chunk_pos: Vector2i, size: Vector2i) -> Vector2i:
-	var cache_key: String = "%d:%d:%d:%d:%d:%d" % [world_seed, TerrainGenerator.GENERATOR_VERSION, chunk_pos.x, chunk_pos.y, size.x, size.y]
+static func find_land_anchor(world_seed: int, chunk_pos: Vector2i, size: Vector2i, version: int = TerrainGenerator.GENERATOR_VERSION) -> Vector2i:
+	var cache_key: String = "%d:%d:%d:%d:%d:%d" % [world_seed, version, chunk_pos.x, chunk_pos.y, size.x, size.y]
 	_plan_mutex.lock()
 	var cached: Variant = _anchor_cache.get(cache_key)
 	_plan_mutex.unlock()
@@ -208,7 +208,7 @@ static func find_land_anchor(world_seed: int, chunk_pos: Vector2i, size: Vector2
 	var origin: Vector2i = Config.chunk_origin(chunk_pos)
 	# The footprint plus its entrance margin lies inside the owning chunk by construction,
 	# so one batched chunk pass answers every tile; tiles outside the world are absent.
-	var biomes: Dictionary = _terrain_for(world_seed).generate_chunk(chunk_pos, false)["biomes"]
+	var biomes: Dictionary = _terrain_for(world_seed, version).generate_chunk(chunk_pos, false)["biomes"]
 	for x in range(2, Config.CHUNK_SIZE - size.x - 1):
 		for y in range(2, Config.CHUNK_SIZE - size.y - 1):
 			var anchor: Vector2i = origin + Vector2i(x, y)
@@ -233,14 +233,14 @@ static func find_land_anchor(world_seed: int, chunk_pos: Vector2i, size: Vector2
 
 # Called from chunk jobs: builds the cell's ruin and bandit plans off the main thread,
 # so walking into a new cell does not stall a frame on plan building.
-static func warm_cell_plans(world_seed: int, chunk_pos: Vector2i) -> void:
+static func warm_cell_plans(world_seed: int, chunk_pos: Vector2i, version: int) -> void:
 	var cell: Vector2i = _cell_of_chunk(chunk_pos)
 	# Plans read DataRegistry; its lazy reload clears tables, so never trigger it off-thread.
 	if not DataRegistry._loaded or not WorldLayout.landscape().is_land(cell):
 		return
-	var key: String = _plan_key(world_seed, cell)
+	var key: String = _plan_key(world_seed, cell, version)
 	_plan_mutex.lock()
 	# The bandit plan builds the ruin plan first, so both are ready afterwards.
 	if not _bandit_plans.has(key):
-		_bandit_plans[key] = _build_bandit_plan(world_seed, cell)
+		_bandit_plans[key] = _build_bandit_plan(world_seed, cell, version)
 	_plan_mutex.unlock()

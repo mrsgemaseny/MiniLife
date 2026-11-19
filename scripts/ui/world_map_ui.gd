@@ -191,7 +191,7 @@ func _rebuild_world_map_texture() -> void:
 		_map_origin = GlobalLandscapeMap.cell_for_tile(GameManager.get_player_tile()) * GlobalLandscapeMap.CELL_TILES
 		_map_row = 0
 		_map_column = 0
-		_map_terrain = TerrainGenerator.new(seed_value)
+		_map_terrain = TerrainGenerator.new(seed_value, GameManager.get_world_generator_version())
 		_map_image.fill(Color.TRANSPARENT)
 
 func _process(_delta: float) -> void:

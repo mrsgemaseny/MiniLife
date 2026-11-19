@@ -21,8 +21,8 @@ var _macro_cells: Array[Vector2i] = []
 var _crossings: Dictionary = {}
 
 
-func setup(seed_value: int) -> void:
-	terrain = TerrainGenerator.new(seed_value)
+func setup(seed_value: int, version: int = TerrainGenerator.GENERATOR_VERSION) -> void:
+	terrain = TerrainGenerator.new(seed_value, version)
 	neighbor_filter_enabled = true
 	_build_macro()
 

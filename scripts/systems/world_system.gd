@@ -157,7 +157,7 @@ func _start_pending_jobs() -> void:
 			break
 		var job: ChunkTerrainJob = _terrain_jobs.get(chunk)
 		if job != null and job.task_id < 0:
-			job.start(_seed, chunk)
+			job.start(_seed, chunk, _terrain.get_version())
 			running_jobs += 1
 
 
@@ -387,10 +387,11 @@ func _reserve_boss_site(id: String, preferred_tile: Vector2i) -> void:
 						break
 				if occupied:
 					continue
-				var anchor: Vector2i = PoiGenerator.find_land_anchor(_seed, chunk, Vector2i(5, 5))
+				var anchor: Vector2i = PoiGenerator.find_land_anchor(_seed, chunk, Vector2i(5, 5), _terrain.get_version())
 				if anchor.x < 0:
 					continue
-				if not PoiGenerator.get_chunk_poi(_seed, chunk, get_biome_cached(Config.chunk_origin(chunk) + Vector2i(8, 8))).is_empty():
+				var biome: String = get_biome_cached(Config.chunk_origin(chunk) + Vector2i(8, 8))
+				if not PoiGenerator.get_chunk_poi(_seed, chunk, biome, _terrain.get_version()).is_empty():
 					continue
 				var chunk_key: String = Config.vec2i_to_key(chunk)
 				if not _chunk_deltas.has(chunk_key):
@@ -649,7 +650,7 @@ func _load_chunk(cpos: Vector2i) -> void:
 	var origin: Vector2i = Config.chunk_origin(cpos)
 	var center_biome: String = get_biome_cached(origin + Vector2i(8, 8))
 	_reserve_boss_site("alpha_wolf_den", WorldLayout.start_tile() + Vector2i(-48, 32))
-	var poi_data: Dictionary = PoiGenerator.get_chunk_poi(_seed, cpos, center_biome)
+	var poi_data: Dictionary = PoiGenerator.get_chunk_poi(_seed, cpos, center_biome, _terrain.get_version())
 	var settlement_info: Dictionary = {}
 	SignalBus.alife_settlement_queried.emit(cpos, settlement_info)
 	# Keep the minimap marker without generating a settlement in local terrain.
@@ -1089,7 +1090,7 @@ func get_save_data() -> Dictionary:
 		boss_sites[id] = Config.vec2i_to_key(_boss_sites[id])
 	return {
 		"world_seed": _seed,
-		"generator_version": TerrainGenerator.GENERATOR_VERSION,
+		"generator_version": _terrain.get_version(),
 		"fog": _fog.to_dict() if _fog != null else {},
 		"discovered_pois": _discovered_pois.duplicate(),
 		"boss_sites": boss_sites,
@@ -1106,7 +1107,7 @@ func load_save_data(w: Dictionary) -> void:
 		_ground_loot.restore(w.get("ground_loot", []))
 	_chunk_deltas.clear()
 	_seed = int(w.get("world_seed", Config.DEFAULT_WORLD_SEED))
-	_terrain.setup(_seed)
+	_terrain.setup(_seed, int(w.get("generator_version", TerrainGenerator.GENERATOR_VERSION)))
 	_biome_cache.clear()
 	if _fog != null:
 		_fog.from_dict(w.get("fog", {}))

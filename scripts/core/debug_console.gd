@@ -31,7 +31,7 @@ func _render_world_map_to_disk() -> void:
 	var origin: Vector2i = GlobalLandscapeMap.cell_for_tile(GameManager.get_player_tile()) * w_size
 	if not WorldLayout.contains_tile(origin):
 		origin = GlobalLandscapeMap.cell_for_tile(WorldLayout.start_tile()) * w_size
-	var terrain: TerrainGenerator = TerrainGenerator.new(GameManager.get_world_seed())
+	var terrain := TerrainGenerator.new(GameManager.get_world_seed(), GameManager.get_world_generator_version())
 	var img: Image = Image.create(w_size, w_size, false, Image.FORMAT_RGBA8)
 
 	var colors: Dictionary = {

@@ -132,10 +132,11 @@ func _on_game_started(seed_value: int, _slot: String, is_new: bool) -> void:
 		last_load_error = ""
 		_unreadable_save = null
 	if is_new or not _restored:
-		world = AlifeWorldContext.new()
+		var version: int = GameManager.get_world_generator_version()
+		world = AlifeWorldContext.new(version)
 		world.seed_world(seed_value, float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour())
 		WorldSeedBuilder.populate(world)
-		_agent_save_delta.capture(world, TerrainGenerator.GENERATOR_VERSION)
+		_agent_save_delta.capture(world, version)
 		agent_tick = AgentTick.new()
 	materializer.reset(world)
 	_encounter_views.clear()
@@ -209,7 +210,8 @@ func _index_settlements() -> void:
 	_settlement_chunks.clear()
 	for settlement: AlifeSettlement in world.settlements.all():
 		_settlement_chunks[Config.tile_to_chunk(settlement.tile)] = settlement.settlement_id
-	var terrain: TerrainGenerator = TerrainGenerator.new(world.world_seed)
+	var version: int = GameManager.get_world_generator_version()
+	var terrain := TerrainGenerator.new(world.world_seed, version)
 	for settlement: AlifeSettlement in world.settlements.all():
 		if settlement.settlement_type not in ["city", "fortress"]:
 			continue
@@ -232,7 +234,7 @@ func _index_settlements() -> void:
 				connector += direction
 			if not dry_entrance:
 				continue
-			if not PoiGenerator.get_fixed_ruin_for_chunk(world.world_seed, chunk).is_empty():
+			if not PoiGenerator.get_fixed_ruin_for_chunk(world.world_seed, chunk, version).is_empty():
 				continue
 			_settlement_chunks[chunk] = settlement.settlement_id
 		for offset: Vector2i in [Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(1, 1)]:
@@ -243,7 +245,7 @@ func _index_settlements() -> void:
 				continue
 			if _settlement_chunks.get(center + Vector2i(0, offset.y)) != settlement.settlement_id:
 				continue
-			if not _district_has_land(terrain, chunk) or not PoiGenerator.get_fixed_ruin_for_chunk(world.world_seed, chunk).is_empty():
+			if not _district_has_land(terrain, chunk) or not PoiGenerator.get_fixed_ruin_for_chunk(world.world_seed, chunk, version).is_empty():
 				continue
 			_settlement_chunks[chunk] = settlement.settlement_id
 
@@ -270,7 +272,7 @@ func _index_settlements() -> void:
 					continue
 				if _settlement_chunks.has(chunk) or not _district_has_land(terrain, chunk):
 					continue
-				if not PoiGenerator.get_fixed_ruin_for_chunk(world.world_seed, chunk).is_empty():
+				if not PoiGenerator.get_fixed_ruin_for_chunk(world.world_seed, chunk, version).is_empty():
 					continue
 				_settlement_chunks[chunk] = settlement.settlement_id
 				frontier.append(chunk)
