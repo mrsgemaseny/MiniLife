@@ -3,6 +3,7 @@ extends RefCounted
 
 const FORMAT: String = "pixel_architect_v1"
 const SURFACES: Array[String] = ["grass", "dirt", "water"]
+const SERVICE_KINDS: Array[String] = ["storage", "forge"]
 const STRUCTURES: Dictionary[String, String] = {
 	"wood_floor": "floor",
 	"stone_floor": "stone_floor",
@@ -17,6 +18,7 @@ var anchor: Vector2i
 var bounds: Rect2i
 var first_generator_version: int
 var _blocks: Dictionary[Vector2i, String] = {}
+var _facilities: Dictionary[Vector2i, Dictionary] = {}
 var _quarter_turns: int = 0
 
 
@@ -36,7 +38,7 @@ static func load_from(path: String, entry: Vector2i, version: int) -> Settlement
 	if raw_blocks.is_empty() or doc.get("total_blocks") != raw_blocks.size():
 		return null
 	var layout := SettlementBase.new()
-	layout.anchor = entry
+	layout.anchor = _coordinate(doc.get("anchor"), size) if entry == Vector2i(-1, -1) else entry
 	layout.first_generator_version = version
 	var area := Rect2i(0, 0, size, size)
 	var lower := Vector2i(size, size)
@@ -54,16 +56,57 @@ static func load_from(path: String, entry: Vector2i, version: int) -> Settlement
 		lower = lower.min(tile)
 		upper = upper.max(tile)
 	layout.bounds = Rect2i(lower, upper - lower + Vector2i.ONE)
-	var entry_block: String = layout.block_at(entry)
+	var entry_block: String = layout.block_at(layout.anchor)
 	if entry_block.is_empty() or not is_walkable(entry_block):
 		return null
+	var facilities: Variant = doc.get("facilities", {})
+	if not facilities is Dictionary:
+		return null
+	for key: String in facilities:
+		var parts: PackedStringArray = key.split(",")
+		if parts.size() != 2 or not parts[0].is_valid_int() or not parts[1].is_valid_int():
+			return null
+		var tile: Vector2i = Vector2i(int(parts[0]), int(parts[1]))
+		var row: Variant = facilities[key]
+		if not area.has_point(tile) or tile == layout.anchor or layout._facilities.has(tile) \
+				or layout.block_at(tile) not in ["wood_floor", "stone_floor"] or not row is Dictionary or row.get("kind") not in SERVICE_KINDS:
+			return null
+		var door: Vector2i = _coordinate(row.get("door"), size)
+		if layout.block_at(door) != "door" or Config.tile_distance(door, tile) > 42:
+			return null
+		var fixture: Dictionary = {"kind": row["kind"], "door": door}
+		fixture.make_read_only()
+		layout._facilities[tile] = fixture
+	layout._facilities.make_read_only()
 	layout._blocks.make_read_only()
 	return layout
 
 
+static func _coordinate(raw: Variant, size: int) -> Vector2i:
+	if not raw is Array or raw.size() != 2:
+		return Vector2i(-1, -1)
+	for axis: Variant in raw:
+		if not (axis is int or axis is float) or axis < 0 or axis >= size or not is_finite(float(axis)) or floorf(axis) != axis:
+			return Vector2i(-1, -1)
+	return Vector2i(int(raw[0]), int(raw[1]))
+
+
 func block_at(local_tile: Vector2i) -> String:
-	var source_tile: Vector2i = local_tile if _quarter_turns == 0 else anchor + _turn(local_tile - anchor, 4 - _quarter_turns)
-	return _blocks.get(source_tile, "")
+	return _blocks.get(_source_tile(local_tile), "")
+
+
+func facility_at(local_tile: Vector2i) -> Dictionary:
+	if _facilities.is_empty():
+		return {}
+	var fixture: Dictionary = _facilities.get(_source_tile(local_tile), {})
+	if fixture.is_empty() or _quarter_turns == 0:
+		return fixture
+	var door: Vector2i = fixture["door"]
+	return {"kind": fixture["kind"], "door": anchor + _turn(door - anchor, _quarter_turns)}
+
+
+func _source_tile(local_tile: Vector2i) -> Vector2i:
+	return local_tile if _quarter_turns == 0 else anchor + _turn(local_tile - anchor, 4 - _quarter_turns)
 
 
 func rotated(quarter_turns: int) -> SettlementBase:
@@ -74,6 +117,7 @@ func rotated(quarter_turns: int) -> SettlementBase:
 	layout.anchor = anchor
 	layout.first_generator_version = first_generator_version
 	layout._blocks = _blocks
+	layout._facilities = _facilities
 	layout._quarter_turns = posmod(_quarter_turns + turns, 4)
 	var first: Vector2i = bounds.position - anchor
 	var last: Vector2i = bounds.end - Vector2i.ONE - anchor

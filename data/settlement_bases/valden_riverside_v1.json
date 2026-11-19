@@ -1,8 +1,13 @@
 {
   "format": "pixel_architect_v1",
   "map_size": [1000, 1000],
+  "anchor": [527, 512],
   "created_at": "2026-11-09T09:32:40.472249+00:00",
   "total_blocks": 25073,
+  "facilities": {
+    "552,483": {"kind": "storage", "door": [550, 484]},
+    "578,521": {"kind": "forge", "door": [576, 522]}
+  },
   "blocks": {
     "488,338": "water",
     "489,338": "water",

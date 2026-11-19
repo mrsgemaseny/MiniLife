@@ -21,6 +21,7 @@ var _slot_buttons: Dictionary = {}
 
 # Dual-Pane UI Elements
 var _station_label: Label = null
+var _repair_button: Button = null
 var _recipe_list_box: HFlowContainer = null
 var _scroll_container: ScrollContainer = null
 
@@ -121,6 +122,12 @@ func _setup_styled_craft_menu() -> void:
 		sub_lbl.add_theme_font_size_override("font_size", 10)
 		sub_lbl.modulate = Color(0.55, 0.58, 0.64, 1.0)
 		title_vbox.add_child(sub_lbl)
+		_repair_button = Button.new()
+		_repair_button.text = "Починить оружие в руках"
+		_repair_button.pressed.connect(func() -> void:
+			SignalBus.weapon_repair_requested.emit(get_tree().get_first_node_in_group("player")))
+		_repair_button.hide()
+		hdr_hbox.add_child(_repair_button)
 
 		var close_btn: Button = Button.new()
 		close_btn.text = " ✕ ЗАКРЫТЬ [ESC] "
@@ -926,6 +933,8 @@ func refresh() -> void:
 	if _station_label != null:
 		var st_title: String = _active_station.capitalize() if _active_station != "" else "Ручной крафт"
 		_station_label.text = "МАСТЕРСКАЯ И КУЗНИЦА  —  [ %s ]" % st_title
+	if _repair_button != null:
+		_repair_button.visible = _active_station == "forge"
 
 	if _recipe_list_box == null:
 		return

@@ -343,6 +343,10 @@ func get_tile(pos: Vector2i) -> TileState:
 	if not authored_block.is_empty():
 		state.structure_id = SettlementBase.structure_for(authored_block)
 		state.passable = SettlementBase.is_walkable(authored_block)
+		var facility: String = _terrain.get_settlement_facility(pos)
+		if not facility.is_empty():
+			state.structure_id = facility
+			state.passable = _is_structure_passable(facility)
 	var key: String = Config.vec2i_to_key(pos)
 	if _resource_nodes_by_tile.has(key):
 		var rnode: ResourceNode = _resource_nodes_by_tile[key] as ResourceNode
@@ -735,8 +739,10 @@ func _load_chunk(cpos: Vector2i) -> void:
 
 
 func _spawn_settlement_base_structure(chunk_node: Node2D, tile: Vector2i, block: String) -> void:
-	var structure_id: String = SettlementBase.structure_for(block)
-	if structure_id not in ["wood_wall", "wall", "door"]:
+	var structure_id: String = _terrain.get_settlement_facility(tile)
+	if structure_id.is_empty():
+		structure_id = SettlementBase.structure_for(block)
+	if structure_id not in ["wood_wall", "wall", "door"] and structure_id not in SettlementBase.SERVICE_KINDS:
 		return
 	var structure := StructureEntity.new()
 	structure.structure_id = structure_id

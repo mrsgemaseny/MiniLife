@@ -7,6 +7,7 @@ static var instance: CraftSystem = null
 func _ready() -> void:
 	instance = self
 	SignalBus.craft_requested.connect(_on_craft_requested)
+	SignalBus.weapon_repair_requested.connect(_on_weapon_repair_requested)
 	SignalBus.craft_batch_requested.connect(start_batch)
 	SignalBus.craft_materials_queried.connect(func(recipe: Dictionary, crafter: Node, result: Dictionary) -> void:
 		result.merge(_plan_materials(recipe, crafter), true))
@@ -148,3 +149,14 @@ func start_batch(recipe_id: String, crafter: Node, station: String, count: int =
 
 func _is_near_station(crafter: Node, station_id: String) -> bool:
 	return ProductionRequirements.missing({"station": station_id}, ProductionRequirements.nearby(get_tree(), crafter)).is_empty()
+
+
+func _on_weapon_repair_requested(crafter: Node) -> void:
+	var player: Player = crafter as Player if is_instance_valid(crafter) else null
+	if player == null or not player.is_alive() or not _is_near_station(player, "forge"):
+		SignalBus.notification_posted.emit("Для ремонта подойдите к кузнице.")
+		return
+	if not RepairSalvageSystem.repair_equipped_weapon(player):
+		SignalBus.notification_posted.emit("Нужно повреждённое оружие в руках и материал для ремонта.")
+		return
+	SignalBus.notification_posted.emit("Оружие отремонтировано.")

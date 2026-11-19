@@ -8,7 +8,8 @@ extends RefCounted
 # Biome ids: plains, forest, swamp, hills, mountains (impassable ridge), snow,
 # desert (dunes, sand bars), steppe (dry semi-desert ground), water.
 
-const GENERATOR_VERSION: int = 7
+const GENERATOR_VERSION: int = 8
+const SETTLEMENT_FACILITIES_GENERATOR_VERSION: int = 8
 const EXPANDED_SETTLEMENT_BASES_VERSION: int = 7
 const AUTHORED_POLITICS_GENERATOR_VERSION: int = 6
 const AUTHORED_RIVER_GENERATOR_VERSION: int = 5
@@ -146,7 +147,8 @@ func get_version() -> int:
 
 static func supports_version(version: int) -> bool:
 	return version in [LEGACY_GENERATOR_VERSION, SEAM_GENERATOR_VERSION, SETTLEMENT_BASE_GENERATOR_VERSION,
-		AUTHORED_RIVER_GENERATOR_VERSION, AUTHORED_POLITICS_GENERATOR_VERSION, EXPANDED_SETTLEMENT_BASES_VERSION]
+		AUTHORED_RIVER_GENERATOR_VERSION, AUTHORED_POLITICS_GENERATOR_VERSION, EXPANDED_SETTLEMENT_BASES_VERSION,
+		SETTLEMENT_FACILITIES_GENERATOR_VERSION]
 
 
 func get_graph() -> WorldGraph:
@@ -186,6 +188,15 @@ func get_settlement_block(tile: Vector2i) -> String:
 	return _settlement_bases[cell].block_at(tile - _base_origins[cell])
 
 
+func get_settlement_facility(tile: Vector2i) -> String:
+	if _version < SETTLEMENT_FACILITIES_GENERATOR_VERSION or _base_origins.is_empty():
+		return ""
+	var cell: Vector2i = GlobalLandscapeMap.cell_for_tile(tile)
+	if not _base_bounds.has(cell) or not _base_bounds[cell].has_point(tile):
+		return ""
+	return str(_settlement_bases[cell].facility_at(tile - _base_origins[cell]).get("kind", ""))
+
+
 func has_settlement_base_in_chunk(chunk: Vector2i) -> bool:
 	if _base_bounds.is_empty():
 		return false
@@ -211,7 +222,7 @@ func is_dry_land(pos: Vector2i) -> bool:
 		return false
 	var block: String = get_settlement_block(pos)
 	if not block.is_empty():
-		return SettlementBase.is_walkable(block)
+		return SettlementBase.is_walkable(block) and get_settlement_facility(pos).is_empty()
 	if _graph.is_cleared(Vector2(pos) + Vector2(0.5, 0.5)):
 		return true
 	return get_biome_at(pos) not in ["water", "mountains"]

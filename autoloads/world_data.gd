@@ -189,13 +189,17 @@ static func _read_base_entry(entry: Variant) -> SettlementBase:
 	var anchor: Variant = entry.get("anchor")
 	var path: Variant = entry.get("path")
 	var version: Variant = entry.get("first_generator_version")
-	var size: int = GlobalLandscapeMap.CELL_TILES
-	if not anchor is Array or anchor.size() != 2 or not _is_cell_axis(anchor[0], size) \
-			or not _is_cell_axis(anchor[1], size) or not path is String or path.simplify_path() != path \
+	if not path is String or path.simplify_path() != path \
 			or path.get_base_dir() != "res://data/settlement_bases" or path.get_extension() != "json" \
 			or not _is_cell_axis(version, 1000) or version < TerrainGenerator.SETTLEMENT_BASE_GENERATOR_VERSION:
 		return null
-	return SettlementBase.load_from(path, Vector2i(int(anchor[0]), int(anchor[1])), int(version))
+	var tile: Vector2i = Vector2i(-1, -1)
+	if entry.has("anchor"):
+		var size: int = GlobalLandscapeMap.CELL_TILES
+		if not anchor is Array or anchor.size() != 2 or not _is_cell_axis(anchor[0], size) or not _is_cell_axis(anchor[1], size):
+			return null
+		tile = Vector2i(int(anchor[0]), int(anchor[1]))
+	return SettlementBase.load_from(path, tile, int(version))
 
 
 static func read_from(path: String) -> ReadResult:

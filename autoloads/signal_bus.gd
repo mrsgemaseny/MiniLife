@@ -41,6 +41,7 @@ signal trap_triggered(trap_id: String, tile_pos: Vector2i, target: Node)
 
 # Crafting, Smelting, Cooking & Repair
 signal craft_station_opened(station_id: String)
+signal weapon_repair_requested(crafter: Node)
 signal craft_requested(recipe_id: String, crafter: Node, station_id: String)
 signal craft_batch_requested(recipe_id: String, crafter: Node, station_id: String, count: int)
 signal crafting_sources_queried(origin: Vector2i, result: Dictionary)

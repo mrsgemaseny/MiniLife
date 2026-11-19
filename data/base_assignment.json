@@ -58,7 +58,6 @@
   "placements": {
     "obj.village_48": {
       "path": "res://data/settlement_bases/valden_riverside_v1.json",
-      "anchor": [527, 512],
       "first_generator_version": 4
     }
   },
