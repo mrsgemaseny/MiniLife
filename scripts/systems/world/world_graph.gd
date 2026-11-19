@@ -3,7 +3,7 @@ extends RefCounted
 
 # Macro layer, built once per seed from the authored maps: river network (sources, gates
 # on cell borders, branches, confluences, terminal lakes), mines, settlement sites.
-# A pure function of (seed, nature.json, political_map.json): both sides of a cell
+# A pure function of (seed, world.json, political_map.json): both sides of a cell
 # border compute the same gate, so rivers join without exchanging data.
 
 const CELL: int = GlobalLandscapeMap.CELL_TILES

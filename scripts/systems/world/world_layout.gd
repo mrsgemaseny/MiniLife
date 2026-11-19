@@ -2,10 +2,9 @@ class_name WorldLayout
 extends RefCounted
 
 # Single source of truth for world shape: 21x15 authored cells, each a 1000x1000 tile map.
-# Cells absent from nature.json are void: no tiles, no chunks, no simulation.
-# Chunk jobs run on worker threads, so the lazy loads are guarded by a mutex.
+# Cells without a landscape in world.json are void: no tiles, no chunks, no simulation.
+# Chunk jobs run on worker threads, so the lazy settlement load is guarded by a mutex.
 
-const LANDSCAPE_PATH: String = "res://data/nature.json"
 const POLITICAL_PATH: String = "res://data/political_map.json"
 # Authored start cell (south edge, plains), marked by the author on the global map.
 const START_CELL: Vector2i = Vector2i(9, 14)
@@ -20,19 +19,13 @@ const SETTLEMENT_TEMPLATES: Dictionary = {
 	"settlement_fortress": "fortress",
 }
 
-static var _map: GlobalLandscapeMap = null
 static var _political: Dictionary = {}
 static var _political_loaded: bool = false
 static var _mutex: Mutex = Mutex.new()
 
 
 static func landscape() -> GlobalLandscapeMap:
-	_mutex.lock()
-	if _map == null:
-		_map = GlobalLandscapeMap.load_from(LANDSCAPE_PATH)
-	var result: GlobalLandscapeMap = _map
-	_mutex.unlock()
-	return result
+	return WorldData.landscape()
 
 
 # cell -> {"template": String, "token": String, "realm": String}; only cells with a settlement.

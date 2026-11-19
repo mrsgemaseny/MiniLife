@@ -1,6 +1,6 @@
 extends Node
 
-# Verifies the authored 21x15 map loads exactly as drawn and WorldLayout geometry is consistent.
+# Verifies the bundled WorldStudio document and its runtime landscape.
 
 func _ready() -> void:
 	call_deferred("_run")
@@ -12,9 +12,13 @@ func _fail(message: String) -> void:
 
 
 func _run() -> void:
-	var map: GlobalLandscapeMap = GlobalLandscapeMap.load_from(WorldLayout.LANDSCAPE_PATH)
+	var world: Dictionary = WorldData.snapshot()
+	if world.is_empty() or not _check_world_data(world):
+		_fail("bundled world.json failed its schema checks")
+		return
+	var map: GlobalLandscapeMap = WorldLayout.landscape()
 	if map == null:
-		_fail("load returned null")
+		_fail("world data returned no landscape")
 		return
 	if map.width != 21 or map.height != 15:
 		_fail("size %dx%d" % [map.width, map.height])
@@ -31,7 +35,7 @@ func _run() -> void:
 		_fail("kind counts %s" % str(counts))
 		return
 	if map.kind_at(Vector2i(14, 9)) != "mountains":
-		_fail("stone_wall cell 14,9 is not mountains")
+		_fail("authored cell 14,9 is not mountains")
 		return
 	# Void is void: top-left corner and the cell east of the start are not land.
 	if map.is_land(Vector2i(0, 0)) or map.is_land(Vector2i(10, 14)):
@@ -52,3 +56,50 @@ func _run() -> void:
 		return
 	print("GLOBAL_LANDSCAPE_MAP_OK: 21x15, 184 land cells, kinds, void cells, start tile, tile and chunk containment")
 	get_tree().quit(0)
+
+
+func _check_world_data(world: Dictionary) -> bool:
+	if world["schema_version"] != 1 or world["entities"]["states"].size() != 8 \
+			or world["entities"]["states"][0]["name"] != "Рейнгард" \
+			or world["entities"]["armies"].size() != 5 or world["objects"].size() != 145 \
+			or world["relations"]["matrix"].size() != 8:
+		return false
+	for version: Variant in [0, 2, 1.5, "1", null, true]:
+		world["schema_version"] = version
+		if not _rejects(world, "schema_version"):
+			return false
+	world.erase("schema_version")
+	if not _rejects(world, "schema_version"):
+		return false
+	world["schema_version"] = 1
+	world["grid"]["chunk_tiles"] = 32
+	if not _rejects(world, "grid"):
+		return false
+	world["grid"]["chunk_tiles"] = 16
+	var cells: Array = world["cells"]
+	cells.append(cells[0].duplicate())
+	if not _rejects(world, "duplicate cell"):
+		return false
+	cells.pop_back()
+	var first: Dictionary = cells[0]
+	var original_x: Variant = first["x"]
+	for x: Variant in [-1, 21, 0.5, "9"]:
+		first["x"] = x
+		if not _rejects(world, "integer coordinates"):
+			return false
+	first["x"] = original_x
+	first["landscape"] = "unknown"
+	if not _rejects(world, "unsupported landscape"):
+		return false
+	first["landscape"] = null
+	var pos := Vector2i(int(first["x"]), int(first["y"]))
+	var changed: WorldDataLoader.ReadResult = WorldDataLoader.parse(JSON.stringify(world))
+	return changed.error.is_empty() and not changed.landscape.is_land(pos) \
+		and WorldLayout.landscape().is_land(pos) \
+		and WorldDataLoader.parse("{").error.begins_with("Invalid JSON") \
+		and WorldDataLoader.read_from("res://data/nonexistent_world.json").error.begins_with("Cannot open")
+
+
+func _rejects(world: Dictionary, reason: String) -> bool:
+	var rejected: WorldDataLoader.ReadResult = WorldDataLoader.parse(JSON.stringify(world))
+	return rejected.landscape == null and rejected.error.contains(reason)

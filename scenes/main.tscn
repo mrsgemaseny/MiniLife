@@ -36,6 +36,8 @@
 script/source = "extends Node2D
 
 func _ready() -> void:
+	if not WorldData.is_loaded():
+		return
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_dynamic_systems()
 	var args: PackedStringArray = OS.get_cmdline_user_args()

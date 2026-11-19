@@ -108,7 +108,7 @@ func _build_ui() -> void:
 	_enter_button.pressed.connect(_enter_selected_chunk)
 	footer.add_child(_enter_button)
 
-# Same palette as the author's nature.json, so the in-game map matches the source.
+# Same palette as the WorldStudio landscape legend.
 func _region_color(kind: String) -> Color:
 	match kind:
 		"desert": return Color("cc751e")
