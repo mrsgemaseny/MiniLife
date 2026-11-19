@@ -22,6 +22,9 @@ func _run() -> void:
 	if not _check_river_schema(WorldData.snapshot()):
 		_fail("river data failed to validate")
 		return
+	if not _check_army_schema(WorldData.snapshot()):
+		_fail("army data lost its state or authored route")
+		return
 	var map: GlobalLandscapeMap = WorldLayout.landscape()
 	if map == null:
 		_fail("world data returned no landscape")
@@ -109,6 +112,32 @@ func _check_world_data(world: Dictionary) -> bool:
 func _rejects(world: Dictionary, reason: String) -> bool:
 	var rejected: WorldDataLoader.ReadResult = WorldDataLoader.parse(JSON.stringify(world))
 	return rejected.landscape == null and rejected.error.contains(reason)
+
+
+func _check_army_schema(world: Dictionary) -> bool:
+	var armies: Dictionary[String, Dictionary] = WorldData.imperial_armies()
+	var west: Dictionary = armies.get("army.west_1", {})
+	var destroyed: Dictionary = armies.get("army.girdenburg", {})
+	if armies.size() != 5 or west.get("status") != "roaming" or west.get("origin") != Vector2i(13, 2) \
+			or west.get("position") != Vector2i(4, 6) or west.get("route", []).size() != 12 \
+			or west["route"].front() != Vector2i(12, 2) or west["route"].back() != Vector2i(4, 5) \
+			or destroyed.get("status") != "destroyed" or destroyed.get("position") != Vector2i(-1, -1):
+		return false
+	var rows: Array = world["entities"]["armies"]
+	rows.append(rows[0].duplicate(true))
+	if not _rejects(world, "duplicate army id"):
+		return false
+	rows.pop_back()
+	rows[0]["route"].append({"x": 21, "y": 0})
+	if not _rejects(world, "invalid army route cell"):
+		return false
+	rows[0]["route"].pop_back()
+	rows[0]["status"] = "missing"
+	if not _rejects(world, "unknown army status"):
+		return false
+	world["entities"].erase("armies")
+	var legacy: WorldDataLoader.ReadResult = WorldDataLoader.parse(JSON.stringify(world))
+	return legacy.error.is_empty() and legacy.armies.is_empty()
 
 
 func _check_trade_routes(world: Dictionary) -> bool:

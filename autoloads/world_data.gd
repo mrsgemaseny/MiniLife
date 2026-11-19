@@ -24,6 +24,7 @@ class ReadResult:
 	var landscape: GlobalLandscapeMap
 	var trade_corridors: Dictionary[String, Array] = {}
 	var rivers: Array[Dictionary] = []
+	var armies: Dictionary[String, Dictionary] = {}
 
 	func _init(message: String = "") -> void:
 		error = message
@@ -84,6 +85,10 @@ func has_trade_layer() -> bool:
 
 func rivers() -> Array[Dictionary]:
 	return _world.rivers
+
+
+func imperial_armies() -> Dictionary[String, Dictionary]:
+	return _world.armies
 
 
 func _load_settlement_bases() -> String:
@@ -185,6 +190,9 @@ static func parse(source: String) -> ReadResult:
 	var river_error: String = _read_rivers(doc, kinds, result.rivers)
 	if not river_error.is_empty():
 		return ReadResult.new(river_error)
+	var army_error: String = _read_armies(doc, result.armies)
+	if not army_error.is_empty():
+		return ReadResult.new(army_error)
 	result.document = doc
 	result.landscape = GlobalLandscapeMap.new(SIZE_CELLS, kinds)
 	return result
@@ -203,7 +211,7 @@ static func _read_trade_corridors(doc: Dictionary, land: Dictionary, corridors: 
 	for obj: Variant in objects:
 		if not obj is Dictionary or not obj.get("id") is String or obj.get("type") not in TRADE_SETTLEMENT_TYPES:
 			continue
-		var cell: Vector2i = _trade_cell(obj.get("cell"))
+		var cell: Vector2i = _map_cell(obj.get("cell"))
 		if cell.x < 0:
 			continue
 		if settlements.has(obj["id"]):
@@ -219,12 +227,12 @@ static func _read_trade_corridors(doc: Dictionary, land: Dictionary, corridors: 
 		var start: Vector2i = settlements[row["from"]]
 		var finish: Vector2i = settlements[row["to"]]
 		var points: Array = row["cells"]
-		if start == finish or points.size() < 2 or _trade_cell(points.front()) != start or _trade_cell(points.back()) != finish:
+		if start == finish or points.size() < 2 or _map_cell(points.front()) != start or _map_cell(points.back()) != finish:
 			return label + ": cells must start and end at two distinct settlements"
 		var path: Array[Vector2i] = []
 		var visited: Dictionary[Vector2i, bool] = {}
 		for point: Variant in points:
-			var tile: Vector2i = _trade_cell(point)
+			var tile: Vector2i = _map_cell(point)
 			if not land.has(tile) or visited.has(tile):
 				return label + ": road cells must be unique land cells"
 			if not path.is_empty():
@@ -247,10 +255,47 @@ static func _read_trade_corridors(doc: Dictionary, land: Dictionary, corridors: 
 	return ""
 
 
-static func _trade_cell(point: Variant) -> Vector2i:
+static func _map_cell(point: Variant) -> Vector2i:
 	if not point is Dictionary or not _is_cell_axis(point.get("x"), SIZE_CELLS.x) or not _is_cell_axis(point.get("y"), SIZE_CELLS.y):
 		return Vector2i(-1, -1)
 	return Vector2i(int(point["x"]), int(point["y"]))
+
+
+static func _read_armies(doc: Dictionary, armies: Dictionary[String, Dictionary]) -> String:
+	var entities: Variant = doc.get("entities", {})
+	if not entities is Dictionary or not entities.get("armies", []) is Array:
+		return "Expected an entities.armies array"
+	var rows: Array = entities.get("armies", [])
+	for index: int in range(rows.size()):
+		var row: Variant = rows[index]
+		var label: String = "entities.armies[%d]" % index
+		if not row is Dictionary or not row.get("id") is String or row["id"].is_empty():
+			return label + ": expected an army id"
+		var id: String = row["id"]
+		if armies.has(id):
+			return label + ": duplicate army id " + id
+		var status: Variant = row.get("status")
+		if status not in ["roaming", "destroyed"]:
+			return label + ": unknown army status"
+		var origin: Vector2i = _map_cell(row.get("origin"))
+		var position: Vector2i = _map_cell(row.get("position"))
+		if (row.get("origin") != null and origin.x < 0) or (row.get("position") != null and position.x < 0):
+			return label + ": invalid army origin or position"
+		var points: Variant = row.get("route", [])
+		if not points is Array:
+			return label + ": expected an army route array"
+		var route: Array[Vector2i] = []
+		for raw: Variant in points:
+			var cell: Vector2i = _map_cell(raw)
+			if cell.x < 0:
+				return label + ": invalid army route cell"
+			route.append(cell)
+		route.make_read_only()
+		var army: Dictionary = {"status": status, "origin": origin, "position": position, "route": route}
+		army.make_read_only()
+		armies[id] = army
+	armies.make_read_only()
+	return ""
 
 
 static func _read_rivers(doc: Dictionary, land: Dictionary, rivers_out: Array[Dictionary]) -> String:
