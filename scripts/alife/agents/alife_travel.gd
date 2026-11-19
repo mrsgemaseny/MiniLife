@@ -281,6 +281,13 @@ func remaining_steps(agent: GlobalAgent) -> int:
 		return -1
 	return maxi(0, (cached["route"] as Array).size() - 1)
 
+func route_ahead(agent: GlobalAgent, limit: int) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	var cached: Dictionary = _agent_routes.get(agent.agent_id, {})
+	if cached.get("destination") == agent.destination_tile and cached.get("position") == agent.tile:
+		result.assign((cached["route"] as Array).slice(0, limit))
+	return result
+
 func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = WALK_TILES_PER_HOUR, connected: bool = false,
 		corridor: Array[Vector2i] = []) -> bool:
 	if agent.tile == agent.destination_tile:

@@ -30,13 +30,18 @@ func _run() -> void:
 	GameManager.start_new_game(12345, slot)
 	scene.get_node("UILayer/MainMenu").close_menu()
 	var world_system: WorldSystem = scene.get_node("World")
+	var ambush_loss: bool = "--ambush-loss" in OS.get_cmdline_user_args()
+	var exercise_ambush: bool = ambush_loss or "--ambush" in OS.get_cmdline_user_args()
 	if "--road-surface" in OS.get_cmdline_user_args():
 		await _check_road_surface(world_system, save_system, slot)
 	else:
-		await _check_convoy(world_system, save_system, slot)
+		await _check_convoy(world_system, save_system, slot, exercise_ambush)
 	save_system.delete_slot(slot)
 	if failures == 0:
-		print("VALDEN_TRADE_ROAD_SURFACE_OK" if "--road-surface" in OS.get_cmdline_user_args() else "VALDEN_GRAIN_CARAVAN_OK")
+		if exercise_ambush:
+			print("VALDEN_ROAD_AMBUSH_LOSS_OK" if ambush_loss else "VALDEN_ROAD_AMBUSH_OK")
+		else:
+			print("VALDEN_TRADE_ROAD_SURFACE_OK" if "--road-surface" in OS.get_cmdline_user_args() else "VALDEN_GRAIN_CARAVAN_OK")
 	get_tree().quit(0 if failures == 0 else 1)
 
 func _check_seed_paths() -> void:
@@ -155,7 +160,7 @@ func _wait_for_road(world_system: WorldSystem, tile: Vector2i) -> bool:
 		await get_tree().process_frame
 	return world_system._trade_road_tiles.has(tile)
 
-func _check_convoy(world_system: WorldSystem, save_system: SaveSystem, slot: String) -> void:
+func _check_convoy(world_system: WorldSystem, save_system: SaveSystem, slot: String, exercise_ambush: bool) -> void:
 	var start_tile: Vector2i = GameManager.get_player_tile()
 	var departures: Array[Dictionary] = []
 	var arrivals: Array[Dictionary] = []
@@ -214,6 +219,10 @@ func _check_convoy(world_system: WorldSystem, save_system: SaveSystem, slot: Str
 	for id: String in guard_ids:
 		_check(is_instance_valid(WorldSimulation.world.agents.materialized.get(id)), "A recruited guard did not appear with the convoy")
 
+	if exercise_ambush:
+		await _check_road_ambush(world_system, save_system, slot)
+		return
+
 	SignalBus.player_teleport_requested.emit(Config.world_to_iso(start_tile))
 	await _advance_to(2, 11.0)
 	_check(not WorldSimulation.world.agents.materialized.has(crew_id) and WorldSimulation.pack_materializer.get_entity(ROUTE_ID) == null
@@ -251,6 +260,133 @@ func _check_convoy(world_system: WorldSystem, save_system: SaveSystem, slot: Str
 		await _advance_hours(1.0)
 	_check(not route.active and route.at_id == VILLAGE_ID and route.successful_trips == 1
 		and departures.size() == 1 and arrivals.size() == 1 and castle.market_funds == funds_after_delivery, "The empty return booked a sale or did not reach the village")
+
+func _check_road_ambush(world_system: WorldSystem, save_system: SaveSystem, slot: String) -> void:
+	var route: CaravanRoute = _route()
+	var initial_cargo: Dictionary = route.cargo.duplicate()
+	# Follow the ordinary trip to its midpoint, then make the risk roll reproducible.
+	route.risk_checked = true
+	SignalBus.player_teleport_requested.emit(Config.world_to_iso(WorldLayout.start_tile()))
+	for hour: int in range(15):
+		if route.progress >= 0.5:
+			break
+		await _advance_hours(0.5)
+	if not _check(route.active and route.progress >= 0.5, "The convoy never reached the road encounter"):
+		return
+	var merchant: GlobalAgent = _merchant(route)
+	SignalBus.player_teleport_requested.emit(Config.world_to_iso(merchant.tile))
+	if not _check(await _wait_for_road(world_system, merchant.tile) and await _wait_for_units([route.merchant_id] + route.guards),
+			"The convoy did not materialize on the trade road"):
+		return
+	var roll := RandomNumberGenerator.new()
+	roll.seed = 42
+	var state: int = roll.state
+	while roll.randf() <= CaravanSuccessCalc.calc(WorldSimulation.world, route):
+		state = roll.state
+	WorldSimulation.world.rng.state = state
+	route.risk_checked = false
+	for step: int in range(4):
+		if route.ambush_phase == "active":
+			break
+		await _advance_hours(0.5)
+	if not _check(route.ambush_phase == "active" and route.ambushers.size() == CaravanAmbush.PARTY_SIZE,
+			"The risk roll did not start a real ambush in a normal game"):
+		return
+	var bandits: Array = route.ambushers.duplicate()
+	for id: String in bandits:
+		var bandit: GlobalAgent = WorldSimulation.world.agents.find(id) as GlobalAgent
+		var entry: Vector2i = bandit.home_tile
+		var area: Rect2i = WorldSimulation.world.travel._grid.bandit_camp_area(entry)
+		_check(await _wait_for_road(world_system, entry) and not area.has_point(entry),
+			"Ambusher entry point %s was outside the trade road or inside a camp" % str(entry))
+	if not _check(await _wait_for_units(bandits), "The road encounter never appeared as NPCs"):
+		return
+	var player: Player = get_tree().get_first_node_in_group("player") as Player
+	var factions: FactionSystem = get_tree().get_first_node_in_group("faction_system") as FactionSystem
+	var before_rep: int = factions.get_reputation("merchants")
+	var killed_id: String = str(bandits[0])
+	var guard_id: String = str(route.guards[0])
+	var raider: NPCBase = WorldSimulation.world.agents.materialized.get(killed_id) as NPCBase
+	var guard: NPCBase = WorldSimulation.world.agents.materialized.get(guard_id) as NPCBase
+	var combat_target: Dictionary = {}
+	SignalBus.alife_combat_target_queried.emit(guard_id, combat_target)
+	_check(combat_target.get("target") is NPCBase and raider.is_in_group("enemies") and not raider.is_in_group("interactable"),
+		"Combat participants were not connected or the bandit offered a civilian interaction")
+	SignalBus.damage_requested.emit(guard, 25.0, "true", raider, true)
+	var wounded_health: float = guard.stats.health
+	SignalBus.damage_requested.emit(raider, 1000.0, "true", player, true)
+	var earned_rep: int = factions.get_reputation("merchants")
+	if not _check(wounded_health < guard.stats.max_health and not (WorldSimulation.world.agents.find(killed_id) as GlobalAgent).alive and earned_rep > before_rep,
+			"Combat did not record a wound, a death and player reputation"):
+		return
+	SignalBus.player_teleport_requested.emit(Config.world_to_iso(WorldLayout.start_tile()))
+	for frame: int in range(16):
+		await get_tree().process_frame
+	_check(not WorldSimulation.world.agents.materialized.has(guard_id), "The guard did not unload with the encounter")
+	if not _check(save_system.save_slot(slot) and save_system.load_slot(slot) and WorldSimulation.last_load_error.is_empty(),
+			"Save with an active road encounter failed to load"):
+		return
+	route = _route()
+	if not _check(route != null and route.active and route.ambush_phase == "active" and route.ambushers == bandits
+			and route.cargo == initial_cargo and factions.get_reputation("merchants") == earned_rep,
+			"Save lost encounter participants, cargo or reputation"):
+		return
+	var wounded: GlobalAgent = WorldSimulation.world.agents.find(guard_id) as GlobalAgent
+	_check(is_equal_approx(wounded.health, wounded_health) and not (WorldSimulation.world.agents.find(killed_id) as GlobalAgent).alive,
+		"Save lost the combat wound or restored the dead bandit")
+	SignalBus.player_teleport_requested.emit(Config.world_to_iso(_merchant(route).tile))
+	if not _check(await _wait_for_units(bandits.slice(1)), "The surviving bandits did not rematerialize"):
+		return
+	if "--ambush-loss" in OS.get_cmdline_user_args():
+		await _check_ambush_loss(route, bandits, save_system, slot, initial_cargo)
+		return
+	for id: String in bandits.slice(1):
+		var enemy: NPCBase = WorldSimulation.world.agents.materialized.get(id) as NPCBase
+		SignalBus.damage_requested.emit(enemy, 1000.0, "true", player, true)
+	await _advance_hours(0.5)
+	if not _check(route.ambush_phase == "repelled" and route.active and route.cargo == initial_cargo,
+			"Repelling the bandits did not release the same caravan with its cargo"):
+		return
+	SignalBus.player_teleport_requested.emit(Config.world_to_iso(WorldLayout.start_tile()))
+	for hour: int in range(15):
+		if not route.active:
+			break
+		await _advance_hours(1.0)
+	_check(not route.active and route.successful_trips == 1 and route.at_id == CASTLE_ID and route.wrecks.is_empty(),
+		"The defended caravan did not deliver the shipment")
+
+
+func _check_ambush_loss(route: CaravanRoute, bandits: Array, save_system: SaveSystem, slot: String, cargo: Dictionary) -> void:
+	var route_guards: Array = route.guards.duplicate()
+	if not _check(await _wait_for_units(route_guards), "The surviving guards did not rematerialize"):
+		return
+	var bandit: NPCBase = WorldSimulation.world.agents.materialized.get(bandits[1]) as NPCBase
+	for id: String in route_guards:
+		var guard: NPCBase = WorldSimulation.world.agents.materialized.get(id) as NPCBase
+		SignalBus.damage_requested.emit(guard, 1000.0, "true", bandit, true)
+	await _advance_hours(0.5)
+	if not _check(not route.active and route.cargo.is_empty() and route.wrecks.size() == 1,
+			"Defeated guards did not leave the shipment in a single wreck"):
+		return
+	var wreck_id: String = str(route.wrecks[0]["id"])
+	if not _check(save_system.save_slot(slot) and save_system.load_slot(slot) and WorldSimulation.last_load_error.is_empty(),
+			"A defeated caravan could not be restored"):
+		return
+	var remaining_cargo: Dictionary = CaravanCargo.endpoint(WorldSimulation.world, wreck_id).get("cargo", {})
+	_check(remaining_cargo.size() == cargo.size() and int(remaining_cargo.get("wheat", 0)) == int(cargo["wheat"]) and _route().cargo.is_empty(),
+		"Destroyed caravan duplicated or lost the available wreck cargo")
+	for id: String in route_guards:
+		var guard: GlobalAgent = WorldSimulation.world.agents.find(id) as GlobalAgent
+		_check(not guard.alive, "Save revived a guard killed in the ambush")
+
+
+func _wait_for_units(ids: Array) -> bool:
+	var deadline: int = Time.get_ticks_msec() + 10000
+	while Time.get_ticks_msec() < deadline:
+		if ids.all(func(id: String) -> bool: return is_instance_valid(WorldSimulation.world.agents.materialized.get(id))):
+			return true
+		await get_tree().process_frame
+	return false
 
 
 func _is_contiguous(tiles: Array) -> bool:

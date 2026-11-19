@@ -861,6 +861,8 @@ func _publish_events() -> void:
 			SignalBus.caravan_event.emit(str(event.data.get("route_id", "")), event.event_type, event.location)
 			if event.event_type == "caravan_arrived":
 				SignalBus.caravan_trip_completed.emit(str(event.data.get("home_id", "")), int(event.data.get("trips", 0)), bool(event.data.get("roi", false)))
+			elif event.event_type == "caravan_ambush_started" and Config.tile_distance(event.location, materializer.player_tile) < Config.LOD_NEAR_TILES:
+				SignalBus.notification_posted.emit("Разбойники напали на караван.")
 		if event.event_type == "escort_completed":
 			_escort_reward_check = true
 	for row: Dictionary in world.rumors:
@@ -1097,6 +1099,7 @@ func _on_agent_materialized(id: String, entity: Node) -> void:
 	var agent: GlobalAgent = world.agents.find(id) as GlobalAgent
 	if agent != null and not agent.ambush_route_id.is_empty():
 		entity.add_to_group("enemies")
+		entity.remove_from_group("interactable")
 		entity.set_meta("alife_caravan_hostile", true)
 		return
 	if agent == null or not agent.role in ["guard", "soldier", "caravan_guard"]:

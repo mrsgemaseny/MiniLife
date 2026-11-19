@@ -46,6 +46,12 @@
 		"dialogue_tree_id": "frontier_summons"
 	},
 	{
+		"id": "road_bandit",
+		"name": "Разбойник",
+		"faction": "bandits",
+		"role": "bandit"
+	},
+	{
 		"id": "border_guard",
 		"name": "Warden Patrolman",
 		"faction": "guards",
