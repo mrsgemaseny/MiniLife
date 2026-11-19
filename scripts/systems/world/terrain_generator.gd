@@ -8,7 +8,8 @@ extends RefCounted
 # Biome ids: plains, forest, swamp, hills, mountains (impassable ridge), snow,
 # desert (dunes, sand bars), steppe (dry semi-desert ground), water.
 
-const GENERATOR_VERSION: int = 5
+const GENERATOR_VERSION: int = 6
+const AUTHORED_POLITICS_GENERATOR_VERSION: int = 6
 const AUTHORED_RIVER_GENERATOR_VERSION: int = 5
 const SETTLEMENT_BASE_GENERATOR_VERSION: int = 4
 const SEAM_GENERATOR_VERSION: int = 3
@@ -143,7 +144,8 @@ func get_version() -> int:
 
 
 static func supports_version(version: int) -> bool:
-	return version in [LEGACY_GENERATOR_VERSION, SEAM_GENERATOR_VERSION, SETTLEMENT_BASE_GENERATOR_VERSION, GENERATOR_VERSION]
+	return version in [LEGACY_GENERATOR_VERSION, SEAM_GENERATOR_VERSION, SETTLEMENT_BASE_GENERATOR_VERSION,
+		AUTHORED_RIVER_GENERATOR_VERSION, AUTHORED_POLITICS_GENERATOR_VERSION]
 
 
 func get_graph() -> WorldGraph:

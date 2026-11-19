@@ -111,10 +111,11 @@ func refresh() -> void:
 	if fac_sys == null:
 		return
 	var joined: String = fac_sys.get_joined_faction()
-	if _status_label != null:
-		_status_label.text = "Current Allegiance: " + (joined.capitalize() if not joined.is_empty() else "Independent")
-
 	var all_factions: Dictionary = fac_sys.get_all_factions()
+	if _status_label != null:
+		var name: String = str(all_factions.get(joined, {}).get("name", joined))
+		_status_label.text = "Current Allegiance: " + (name if not joined.is_empty() else "Independent")
+
 	for fid_v in all_factions.keys():
 		var fid: String = str(fid_v)
 		var def: Dictionary = all_factions[fid]

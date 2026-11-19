@@ -2,8 +2,10 @@ class_name WorldSeedBuilder
 extends RefCounted
 
 static func populate(world: AlifeWorldContext) -> void:
-	# Settlements come from the authored political map: one per marked cell, at the site
-	# WorldGraph reserved (dry clearing, away from rivers and lakes).
+	var authored_politics: bool = world.generator_version >= TerrainGenerator.AUTHORED_POLITICS_GENERATOR_VERSION
+	if authored_politics:
+		_register_authored_states(world)
+	# One settlement per marked cell, at the dry site reserved by WorldGraph.
 	var graph: WorldGraph = WorldGraph.for_seed(world.world_seed, world.generator_version)
 	var land: GlobalLandscapeMap = WorldLayout.landscape()
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -11,17 +13,12 @@ static func populate(world: AlifeWorldContext) -> void:
 	var templates: Dictionary = {}
 	for row: Dictionary in DataRegistry.get_rows("settlement_templates"):
 		templates[str(row["id"])] = row
-	var faction_ids: Array = []
-	for faction: AlifeFaction in world.factions.all():
-		faction_ids.append(faction.faction_id)
-	if templates.is_empty() or faction_ids.is_empty():
+	if templates.is_empty():
 		return
-	# One faction per realm colour, so a realm is never split between owners.
-	var realms: Array = []
-	for site: Dictionary in graph.settlement_sites:
-		if not realms.has(site["realm"]):
-			realms.append(site["realm"])
-	realms.sort()
+	var legacy_owners: Dictionary = {} if authored_politics else _legacy_owners(graph, world.factions)
+	if not authored_politics and legacy_owners.is_empty():
+		return
+	var capital_candidates: Dictionary[String, bool] = {}
 	for site: Dictionary in graph.settlement_sites:
 		var cell: Vector2i = site["cell"]
 		var template: Dictionary = templates.get(str(site["template"]), templates.values()[0])
@@ -30,7 +27,12 @@ static func populate(world: AlifeWorldContext) -> void:
 		settlement.tile = site["tile"]
 		settlement.footprint = int(template.get("footprint", 8))
 		settlement.settlement_type = str(template["id"])
-		settlement.owner_faction = str(faction_ids[realms.find(site["realm"]) % faction_ids.size()])
+		var realm: String = site["realm"]
+		# Wildland groups identify territory on the author map. They have no state or lord.
+		settlement.owner_faction = (realm if WorldData.political_states().has(realm) else "") \
+			if authored_politics else str(legacy_owners[realm])
+		if authored_politics and site["token"] == "settlement_castle":
+			capital_candidates[settlement.settlement_id] = true
 		settlement.population = int(template["population"])
 		settlement.prosperity = float(template["prosperity"])
 		settlement.treasury = int(template["treasury"])
@@ -46,18 +48,55 @@ static func populate(world: AlifeWorldContext) -> void:
 		settlement.biome = land.kind_at(cell)
 		settlement.name = "%s %s %d-%d" % [settlement.biome.capitalize(), settlement.settlement_type.capitalize(), cell.x, cell.y]
 		world.settlements.register(settlement)
-		var faction: AlifeFaction = world.factions.find(settlement.owner_faction) as AlifeFaction
-		if faction.capital_id.is_empty():
-			faction.capital_id = settlement.settlement_id
 		AgentFactory.create_population(world, settlement, rng)
 	_connect_network(world.settlements)
-	_assign_leaders(world)
+	_assign_leaders(world, capital_candidates)
 	CaravanRouteManager.seed_routes(world)
 
-static func _assign_leaders(world: AlifeWorldContext) -> void:
+static func _register_authored_states(world: AlifeWorldContext) -> void:
+	var states: Dictionary[String, Dictionary] = WorldData.political_states()
+	var relations: Dictionary[String, Dictionary] = WorldData.political_relations()
+	for id: String in states:
+		var state: Dictionary = states[id]
+		var faction: AlifeFaction = AlifeFaction.new()
+		faction.faction_id = id
+		faction.name = state["name"]
+		faction.color = state["color"]
+		faction.ideology = ""
+		faction.treasury = 1500
+		faction.military_strength = 0.4
+		faction.last_decision_hour = world.simulated_hour
+		var scores: Dictionary = relations.get(id, {})
+		for target: String in scores:
+			faction.relations[target] = scores[target]
+		world.factions.register(faction)
+
+static func _legacy_owners(graph: WorldGraph, factions: FactionRegistry) -> Dictionary:
+	var ids: Array[String] = []
+	for faction: AlifeFaction in factions.all():
+		ids.append(faction.faction_id)
+	var owners: Dictionary = {}
+	if ids.is_empty():
+		return owners
+	var realms: Array = []
+	for site: Dictionary in graph.settlement_sites:
+		if not realms.has(site["realm"]):
+			realms.append(site["realm"])
+	realms.sort()
+	for index: int in range(realms.size()):
+		owners[realms[index]] = ids[index % ids.size()]
+	return owners
+
+static func _assign_leaders(world: AlifeWorldContext, capital_candidates: Dictionary[String, bool]) -> void:
 	for faction: AlifeFaction in world.factions.all():
 		var holdings: Array = world.settlements.matching("owner_faction", faction.faction_id)
-		holdings.sort_custom(func(a: AlifeSettlement, b: AlifeSettlement) -> bool: return a.fort_level * 1000 + a.population > b.fort_level * 1000 + b.population)
+		holdings.sort_custom(func(a: AlifeSettlement, b: AlifeSettlement) -> bool:
+			var castle_a: bool = capital_candidates.has(a.settlement_id)
+			var castle_b: bool = capital_candidates.has(b.settlement_id)
+			if castle_a != castle_b:
+				return castle_a
+			return a.fort_level * 1000 + a.population > b.fort_level * 1000 + b.population
+		)
 		if holdings.is_empty():
 			continue
 		faction.capital_id = (holdings[0] as AlifeSettlement).settlement_id

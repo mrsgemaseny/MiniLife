@@ -27,17 +27,30 @@ func _process(delta: float) -> void:
 			SignalBus.rumor_spread.emit(target, "Rumor spread from " + source, rep_delta)
 
 func _load_definitions() -> void:
-	_factions_defs = DataRegistry.get_table("factions")
-	for fid in _factions_defs.keys():
+	_factions_defs = DataRegistry.get_table("factions").duplicate()
+	if GameManager.get_world_generator_version() >= TerrainGenerator.AUTHORED_POLITICS_GENERATOR_VERSION:
+		var states: Dictionary[String, Dictionary] = WorldData.political_states()
+		for id: String in states:
+			_factions_defs[id] = {"id": id, "name": states[id]["name"]}
+	_reputation.clear()
+	_joined_faction = ""
+	_rumor_network = RumorNetwork.new()
+	for fid: String in _factions_defs:
 		var d: Dictionary = _factions_defs[fid]
 		_reputation[str(fid)] = int(d.get("starting_rep", d.get("default_reputation", 0)))
 
 func _connect_signals() -> void:
+	SignalBus.game_started.connect(_on_game_started)
 	SignalBus.faction_rep_change_requested.connect(change_reputation)
 	SignalBus.faction_join_requested.connect(join_faction)
 	SignalBus.npc_killed.connect(_on_npc_killed)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
+
+func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
+	if is_new:
+		_load_definitions()
+		SignalBus.faction_rep_snapshot.emit(_reputation.duplicate())
 
 func get_reputation(faction_id: String) -> int:
 	return int(_reputation.get(faction_id, 0))
@@ -109,6 +122,7 @@ func _on_save_data_requested(bundle: Dictionary) -> void:
 	bundle["world"] = w
 
 func _on_save_data_loaded(bundle: Dictionary) -> void:
+	_load_definitions()
 	var w: Dictionary = bundle.get("world", {})
 	var fdata: Dictionary = w.get("factions", {})
 	var rep: Dictionary = fdata.get("reputation", {})

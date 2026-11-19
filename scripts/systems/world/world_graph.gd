@@ -3,7 +3,7 @@ extends RefCounted
 
 # Macro layer, built once per seed from the authored maps: river network (sources, gates
 # on cell borders, branches, confluences, terminal lakes), mines, settlement sites.
-# A pure function of (seed, generator version, world.json, political_map.json): both sides of a cell
+# A pure function of seed, generator version and the matching authored map: both sides of a cell
 # border compute the same gate, so rivers join without exchanging data.
 
 const CELL: int = GlobalLandscapeMap.CELL_TILES
@@ -52,7 +52,8 @@ static var _mutex: Mutex = Mutex.new()
 
 
 static func for_seed(world_seed: int, version: int = TerrainGenerator.GENERATOR_VERSION) -> WorldGraph:
-	var key: Array = [world_seed, version >= TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION]
+	var key: Array = [world_seed, version >= TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION,
+		version >= TerrainGenerator.AUTHORED_POLITICS_GENERATOR_VERSION]
 	_mutex.lock()
 	var graph: WorldGraph = _cache.get(key)
 	if graph == null:
@@ -112,7 +113,7 @@ func _build(world_seed: int, version: int = TerrainGenerator.GENERATOR_VERSION) 
 	_authored_first_segment = _seg_a.size()
 	if version >= TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION:
 		_add_authored_rivers(land)
-	_place_settlements()
+	_place_settlements(version)
 	var start: Vector2i = WorldLayout.start_tile()
 	_add_clearing(GlobalLandscapeMap.cell_for_tile(start), Vector2(start), START_CLEARING)
 
@@ -271,8 +272,8 @@ func _add_clearing(cell: Vector2i, point: Vector2, radius: float) -> void:
 	_clearings[cell] = list
 
 
-func _place_settlements() -> void:
-	var authored: Dictionary = WorldLayout.settlements()
+func _place_settlements(version: int) -> void:
+	var authored: Dictionary = WorldLayout.settlements(version)
 	var cells: Array = authored.keys()
 	cells.sort()
 	for cell: Vector2i in cells:
@@ -287,8 +288,11 @@ func _place_settlements() -> void:
 				site = candidate
 				break
 		var tile := Vector2i(site.round())
-		settlement_sites.append({"cell": cell, "tile": tile, "template": str(info["template"]),
-			"token": str(info["token"]), "realm": str(info["realm"])})
+		var placed: Dictionary = {"cell": cell, "tile": tile, "template": str(info["template"]),
+			"token": str(info["token"]), "realm": str(info["realm"])}
+		if info.has("object_id"):
+			placed["object_id"] = info["object_id"]
+		settlement_sites.append(placed)
 		_add_clearing(cell, Vector2(tile), SETTLEMENT_CLEARING)
 
 

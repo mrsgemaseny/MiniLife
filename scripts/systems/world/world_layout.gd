@@ -5,11 +5,11 @@ extends RefCounted
 # Cells without a landscape in world.json are void: no tiles, no chunks, no simulation.
 # Chunk jobs run on worker threads, so the lazy settlement load is guarded by a mutex.
 
-const POLITICAL_PATH: String = "res://data/political_map.json"
+const LEGACY_POLITICAL_PATH: String = "res://data/political_map.json"
 # Authored start cell (south edge, plains), marked by the author on the global map.
 const START_CELL: Vector2i = Vector2i(9, 14)
 
-# Pixel Architect settlement tokens -> settlement_templates.json ids.
+# Version 2 to 5 settlements use the original Pixel Architect tokens.
 const SETTLEMENT_TEMPLATES: Dictionary = {
 	"settlement_village": "village",
 	"settlement_village_2": "village",
@@ -17,6 +17,16 @@ const SETTLEMENT_TEMPLATES: Dictionary = {
 	"settlement_city": "city",
 	"settlement_castle": "fortress",
 	"settlement_fortress": "fortress",
+}
+
+const AUTHORED_SETTLEMENT_TEMPLATES: Dictionary[String, String] = {
+	"castle": "fortress",
+	"city": "city",
+	"fortress": "fortress",
+	"village": "village",
+	"village_2": "village",
+	"village_3": "village",
+	"village_mark": "village",
 }
 
 static var _political: Dictionary = {}
@@ -29,11 +39,20 @@ static func landscape() -> GlobalLandscapeMap:
 
 
 # cell -> {"template": String, "token": String, "realm": String}; only cells with a settlement.
-static func settlements() -> Dictionary:
+static func settlements(version: int = TerrainGenerator.GENERATOR_VERSION) -> Dictionary:
+	if version >= TerrainGenerator.AUTHORED_POLITICS_GENERATOR_VERSION:
+		var authored: Dictionary[Vector2i, Dictionary] = WorldData.political_settlements()
+		var sites: Dictionary = {}
+		for cell: Vector2i in authored:
+			var site: Dictionary = authored[cell]
+			var type: String = site["type"]
+			sites[cell] = {"template": AUTHORED_SETTLEMENT_TEMPLATES[type], "token": "settlement_" + type,
+				"realm": site["owner"], "object_id": site["id"]}
+		return sites
 	_mutex.lock()
 	if not _political_loaded:
 		_political_loaded = true
-		_political = _load_political(POLITICAL_PATH)
+		_political = _load_political(LEGACY_POLITICAL_PATH)
 	var result: Dictionary = _political
 	_mutex.unlock()
 	return result

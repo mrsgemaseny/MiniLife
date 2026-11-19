@@ -4,6 +4,9 @@ const SEED: int = 42819
 const SEAM_TILE: Vector2i = Vector2i(16000, 4995)
 # Biomes and resources from the version 2 generator at commit b8dcb05.
 const LEGACY_CHUNK_HASH: String = "591e757861433a9669d164f4d11b72f7e641588f0d8bbc950c58ed478d8478df"
+# Version 5 fixtures measured on 72d49ac before activating the WorldStudio settlement layout.
+const V5_CHUNK_HASH: String = "410ce958206734e4c85484d9503c8e45a3d40641950a72515101dddcd15c0ce6"
+const V4_V5_AGENT_HASH: String = "37bdb4bcf55c13061a8732616b6418d2d97f1856d86a579ec4a870894ce10c1b"
 
 var failures: int = 0
 
@@ -19,8 +22,11 @@ func _run() -> void:
 	var world: WorldSystem = scene.get_node("World")
 	var current_slot: String = "__terrain_current_" + Crypto.new().generate_random_bytes(16).hex_encode()
 	var legacy_slot: String = "__terrain_legacy_" + Crypto.new().generate_random_bytes(16).hex_encode()
-	var version: int = TerrainGenerator.SETTLEMENT_BASE_GENERATOR_VERSION if "--v4" in OS.get_cmdline_user_args() \
-		else TerrainGenerator.LEGACY_GENERATOR_VERSION
+	var version: int = TerrainGenerator.LEGACY_GENERATOR_VERSION
+	if "--v4" in OS.get_cmdline_user_args():
+		version = TerrainGenerator.SETTLEMENT_BASE_GENERATOR_VERSION
+	elif "--v5" in OS.get_cmdline_user_args():
+		version = TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION
 	_check(_test_slot_switch(scene, save_system, world, current_slot, legacy_slot, version), "Legacy slot did not load")
 	save_system.delete_slot(current_slot)
 	save_system.delete_slot(legacy_slot)
@@ -50,15 +56,17 @@ func _test_slot_switch(scene: Node, save_system: SaveSystem, world: WorldSystem,
 	var codec: AlifeAgentSaveDelta = AlifeAgentSaveDelta.new()
 	codec.capture(legacy_context, version)
 	save_data["alife"] = codec.encode(legacy_context)
-	if version == TerrainGenerator.SETTLEMENT_BASE_GENERATOR_VERSION:
-		_check(codec._fingerprint == "37bdb4bcf55c13061a8732616b6418d2d97f1856d86a579ec4a870894ce10c1b",
-			"Version 4 A-Life population changed compared with the released generator")
+	if version in [TerrainGenerator.SETTLEMENT_BASE_GENERATOR_VERSION, TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION]:
+		_check(codec._fingerprint == V4_V5_AGENT_HASH and legacy_context.settlements.all().size() == 102,
+			"Legacy A-Life population changed compared with the released generator")
 	var expected_hash: String = LEGACY_CHUNK_HASH
 	if version != TerrainGenerator.LEGACY_GENERATOR_VERSION:
 		var legacy_terrain: TerrainGenerator = TerrainGenerator.new(SEED, version)
 		expected_hash = JSON.stringify(legacy_terrain.generate_chunk(chunk)).sha256_text()
-		_check(legacy_terrain.get_graph().river_sample(Vector2(18000.5, 5379.5)).w == 0.0,
-			"Version 4 terrain loaded the authored river")
+		_check((legacy_terrain.get_graph().river_sample(Vector2(18000.5, 5379.5)).w > 0.0) \
+			== (version >= TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION), "Incorrect authored river visibility for legacy version")
+		if version == TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION:
+			_check(expected_hash == V5_CHUNK_HASH, "Version 5 chunk differs from the released generator")
 	var position: Vector2 = Config.world_to_iso(SEAM_TILE)
 	player["position"] = [position.x, position.y]
 	DirAccess.make_dir_recursive_absolute(legacy_path)
@@ -75,6 +83,9 @@ func _test_slot_switch(scene: Node, save_system: SaveSystem, world: WorldSystem,
 		"Legacy terrain differs after loading, or reused the current world's quota cache")
 	_check(world.get_tile(SEAM_TILE).structure_id == "wood_wall", "Legacy chunk delta did not apply")
 	_check(WorldSimulation.last_load_error.is_empty(), "Legacy A-Life state failed to load")
+	var factions: FactionSystem = scene.get_node("Systems/FactionSystem")
+	_check(not factions.get_all_factions().has("state.valden") and WorldSimulation.world.factions.find("state.valden") == null,
+		"An authored state was introduced into a legacy world")
 
 	var map: WorldMapUI = scene.get_node("UILayer/WorldMapUI")
 	map.open_panel()
@@ -89,6 +100,8 @@ func _test_slot_switch(scene: Node, save_system: SaveSystem, world: WorldSystem,
 
 	_check(save_system.load_slot(current_slot), "Could not reload the current version slot")
 	_check(world.get_terrain().generate_chunk(chunk) == current_chunk, "Switching to version 2 changed version 3 terrain")
+	_check(factions.get_all_factions().has("state.valden") and WorldSimulation.world.factions.find("state.valden") != null,
+		"Returning from a legacy save did not restore the authored state")
 	return true
 
 
