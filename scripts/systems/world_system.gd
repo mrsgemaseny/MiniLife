@@ -1309,13 +1309,19 @@ func _snapshot_entities(cpos: Vector2i) -> void:
 				}
 		elif entity is NPCBase:
 			if entity.stats != null and entity.stats.health > 0.0:
-				npc_states[entity.spawn_uid] = {
-					"health": entity.stats.health,
-					"position": [entity.global_position.x, entity.global_position.y]
-				}
+				var seeded: Dictionary = entity.get_meta("squad_spawn_state", {})
+				var state: Dictionary = {}
+				if seeded.is_empty() or not is_equal_approx(entity.stats.health, float(seeded["health"])):
+					state["health"] = entity.stats.health
+				if seeded.is_empty() or not entity.global_position.is_equal_approx(seeded["position"]):
+					state["position"] = [entity.global_position.x, entity.global_position.y]
+				if not seeded.is_empty() and not is_equal_approx(entity.equipment.get_innate_armor(), float(seeded["armor"])):
+					state["armor"] = entity.equipment.get_innate_armor()
+				if not state.is_empty():
+					npc_states[entity.spawn_uid] = state
 
 	_spawned_entities_by_chunk[cpos] = live_entities
-	var delta: Dictionary = _get_or_create_delta(cpos)
+	var delta: Dictionary = _chunk_deltas.get(Config.vec2i_to_key(cpos), {})
 	var dirty: bool = false
 	if not animal_states.is_empty() or delta.has("animals"):
 		delta["animals"] = animal_states
@@ -1455,9 +1461,12 @@ func _spawn_settlement_squads(cpos: Vector2i, spawned: Array[Node], killed: Arra
 			npc.global_position = Config.world_to_iso(tile)
 			add_child(npc)
 			npc.apply_squad_member(str(member["name"]), squad.faction_id)
+			var armor: float = npc.equipment.get_innate_armor()
+			npc.set_meta("squad_spawn_state", {"position": npc.global_position, "health": npc.stats.health, "armor": armor})
 			if saved.has(uid):
 				var state: Dictionary = saved[uid]
 				npc.stats.health = clampf(float(state.get("health", npc.stats.health)), 1.0, npc.stats.max_health)
+				npc.equipment.apply_armor_damage({"innate": armor - clampf(float(state.get("armor", armor)), 0.0, armor)})
 				var at: Array = state.get("position", [])
 				if at.size() >= 2:
 					npc.global_position = Vector2(float(at[0]), float(at[1]))

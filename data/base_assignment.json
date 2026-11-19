@@ -62,6 +62,26 @@
       "first_generator_version": 4
     }
   },
+  "templates": {
+    "citadel": {"path": "res://data/settlement_bases/citadel_v1.json", "anchor": [496, 500], "first_generator_version": 7},
+    "fortress_city": {"path": "res://data/settlement_bases/fortress_city_v1.json", "anchor": [500, 500], "first_generator_version": 7},
+    "market_town": {"path": "res://data/settlement_bases/market_town_v1.json", "anchor": [500, 500], "first_generator_version": 7},
+    "organic_town": {"path": "res://data/settlement_bases/organic_town_v1.json", "anchor": [509, 500], "first_generator_version": 7},
+    "hill_fort": {"path": "res://data/settlement_bases/hill_fort_v1.json", "anchor": [500, 500], "first_generator_version": 7},
+    "frontier_outpost": {"path": "res://data/settlement_bases/frontier_outpost_v1.json", "anchor": [500, 503], "first_generator_version": 7},
+    "farmstead": {"path": "res://data/settlement_bases/farmstead_v1.json", "anchor": [500, 500], "first_generator_version": 7, "rotate": true},
+    "fishing_village": {"path": "res://data/settlement_bases/fishing_village_v1.json", "anchor": [496, 504], "first_generator_version": 7},
+    "mining_village": {"path": "res://data/settlement_bases/mining_village_v1.json", "anchor": [501, 501], "first_generator_version": 7, "landscapes": ["forest", "mountains"]}
+  },
+  "reusable_by_type": {
+    "castle": ["citadel", "fortress_city"],
+    "city": ["market_town", "organic_town"],
+    "fortress": ["hill_fort", "frontier_outpost"],
+    "village": ["farmstead", "mining_village"],
+    "village_2": ["farmstead"],
+    "village_3": ["fishing_village"],
+    "village_mark": ["farmstead", "mining_village"]
+  },
   "unassigned": {
     "blueprint_20261109_114504.json": "Тип плана не указан в файле и требует подтверждения.",
     "MiniLife_Abandoned_Village_Ruins_9.json": "Заброшенная деревня, подходит для руин."

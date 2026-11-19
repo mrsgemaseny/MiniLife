@@ -215,8 +215,12 @@ func _find_landing_tile(region: Vector2i) -> Vector2i:
 		return Vector2i(-1, -1)
 	# Land at the settlement gate when the cell has one: its clearing is dry by construction.
 	var center: Vector2i = bounds.position + bounds.size / 2
-	var site: Dictionary = world_system.get_terrain().get_graph().site_for_cell(region)
-	if not site.is_empty():
+	var terrain: TerrainGenerator = world_system.get_terrain()
+	var site: Dictionary = terrain.get_graph().site_for_cell(region)
+	var entry: Vector2i = terrain.settlement_base_entry(region)
+	if entry.x >= 0:
+		center = entry
+	elif not site.is_empty():
 		center = (site["tile"] as Vector2i) + Vector2i(0, 12)
 	for radius: int in range(0, 200):
 		for dx: int in range(-radius, radius + 1):

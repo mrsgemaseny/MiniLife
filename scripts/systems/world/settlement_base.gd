@@ -9,6 +9,7 @@ const STRUCTURES: Dictionary[String, String] = {
 	"wood_wall": "wood_wall",
 	"stone_wall": "wall",
 	"pillar": "wall",
+	"brick": "wall",
 	"door": "door",
 }
 
@@ -16,6 +17,7 @@ var anchor: Vector2i
 var bounds: Rect2i
 var first_generator_version: int
 var _blocks: Dictionary[Vector2i, String] = {}
+var _quarter_turns: int = 0
 
 
 static func load_from(path: String, entry: Vector2i, version: int) -> SettlementBase:
@@ -60,7 +62,37 @@ static func load_from(path: String, entry: Vector2i, version: int) -> Settlement
 
 
 func block_at(local_tile: Vector2i) -> String:
-	return _blocks.get(local_tile, "")
+	var source_tile: Vector2i = local_tile if _quarter_turns == 0 else anchor + _turn(local_tile - anchor, 4 - _quarter_turns)
+	return _blocks.get(source_tile, "")
+
+
+func rotated(quarter_turns: int) -> SettlementBase:
+	var turns: int = posmod(quarter_turns, 4)
+	if turns == 0:
+		return self
+	var layout := SettlementBase.new()
+	layout.anchor = anchor
+	layout.first_generator_version = first_generator_version
+	layout._blocks = _blocks
+	layout._quarter_turns = posmod(_quarter_turns + turns, 4)
+	var first: Vector2i = bounds.position - anchor
+	var last: Vector2i = bounds.end - Vector2i.ONE - anchor
+	var lower: Vector2i = _turn(first, turns)
+	var upper: Vector2i = lower
+	for corner: Vector2i in [Vector2i(first.x, last.y), Vector2i(last.x, first.y), last]:
+		var result: Vector2i = _turn(corner, turns)
+		lower = lower.min(result)
+		upper = upper.max(result)
+	layout.bounds = Rect2i(anchor + lower, upper - lower + Vector2i.ONE)
+	return layout
+
+
+static func _turn(offset: Vector2i, turns: int) -> Vector2i:
+	match turns:
+		1: return Vector2i(-offset.y, offset.x)
+		2: return -offset
+		3: return Vector2i(offset.y, -offset.x)
+		_: return offset
 
 
 static func structure_for(block: String) -> String:
@@ -72,4 +104,4 @@ static func biome_for(block: String) -> String:
 
 
 static func is_walkable(block: String) -> bool:
-	return block not in ["water", "wood_wall", "stone_wall", "pillar"]
+	return block != "water" and structure_for(block) not in ["wall", "wood_wall"]

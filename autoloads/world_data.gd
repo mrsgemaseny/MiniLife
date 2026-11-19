@@ -118,38 +118,84 @@ func _load_settlement_bases() -> String:
 	var catalog: Variant = JSON.parse_string(file.get_as_text())
 	if not catalog is Dictionary or catalog.get("schema_version") != 1 or not catalog.get("placements") is Dictionary:
 		return "Invalid settlement base catalog: " + BASE_ASSIGNMENTS_PATH
-	var objects_by_id: Dictionary = {}
-	for row: Variant in _world.document.get("objects", []):
-		if row is Dictionary and row.get("id") is String:
-			objects_by_id[row["id"]] = row
+	var cells_by_id: Dictionary[String, Vector2i] = {}
+	for cell: Vector2i in _world.settlements:
+		cells_by_id[_world.settlements[cell]["id"]] = cell
 	var assignments: Dictionary = catalog["placements"]
 	for id: String in assignments:
-		var row: Dictionary = objects_by_id.get(id, {})
-		var coordinate: Variant = row.get("cell")
-		var entry: Variant = assignments[id]
-		if not coordinate is Dictionary or not entry is Dictionary:
+		if not cells_by_id.has(id):
 			return "Invalid settlement base assignment: " + id
-		var x: Variant = coordinate.get("x")
-		var y: Variant = coordinate.get("y")
-		if not _is_cell_axis(x, SIZE_CELLS.x) or not _is_cell_axis(y, SIZE_CELLS.y):
-			return "Invalid cell in settlement base assignment: " + id
-		var cell := Vector2i(int(x), int(y))
-		if not _world.landscape.is_land(cell) or _settlement_bases.has(cell):
-			return "Expected one settlement base on land in cell %s" % str(cell)
-		var anchor: Variant = entry.get("anchor")
-		var path: Variant = entry.get("path")
-		var version: Variant = entry.get("first_generator_version")
-		var size: int = GlobalLandscapeMap.CELL_TILES
-		if not anchor is Array or anchor.size() != 2 or not _is_cell_axis(anchor[0], size) \
-				or not _is_cell_axis(anchor[1], size) or not path is String \
-				or not path.begins_with("res://data/settlement_bases/") \
-				or not _is_cell_axis(version, 1000) or version < 4:
-			return "Invalid settlement base settings: " + id
-		var base: SettlementBase = SettlementBase.load_from(path, Vector2i(int(anchor[0]), int(anchor[1])), int(version))
+		var base: SettlementBase = _read_base_entry(assignments[id])
 		if base == null:
-			return "Invalid settlement base map: " + path
-		_settlement_bases[cell] = base
+			return "Invalid settlement base settings or map: " + id
+		_settlement_bases[cells_by_id[id]] = base
+	return _load_reusable_bases(catalog.get("templates", {}), catalog.get("reusable_by_type", {}))
+
+
+func _load_reusable_bases(entries: Variant, rules: Variant) -> String:
+	if not entries is Dictionary or not rules is Dictionary:
+		return "Invalid reusable settlement base catalog"
+	var templates: Dictionary[String, Array] = {}
+	var climates: Dictionary[String, Array] = {}
+	# A generated site is in the middle half of a cell. Its entire reusable layout must fit.
+	var margin: int = GlobalLandscapeMap.CELL_TILES / 4
+	var safe_offsets: Rect2i = Rect2i(-margin, -margin, margin * 2, margin * 2)
+	for id: String in entries:
+		var base: SettlementBase = _read_base_entry(entries[id])
+		if base == null or base.first_generator_version != TerrainGenerator.EXPANDED_SETTLEMENT_BASES_VERSION \
+				or base.block_at(base.anchor) == "door" or not safe_offsets.encloses(Rect2i(base.bounds.position - base.anchor, base.bounds.size)):
+			return "Invalid reusable settlement base or entry: " + id
+		var landscapes: Variant = entries[id].get("landscapes", [])
+		if not landscapes is Array or not landscapes.all(func(kind: Variant) -> bool: return kind in LANDSCAPE_KINDS.values()):
+			return "Unknown landscape in settlement template: " + id
+		var rotate: Variant = entries[id].get("rotate", false)
+		if not rotate is bool:
+			return "Invalid rotation setting for settlement template: " + id
+		var orientations: Array[SettlementBase] = [base]
+		if rotate:
+			for turns: int in range(1, 4):
+				var oriented: SettlementBase = base.rotated(turns)
+				if not safe_offsets.encloses(Rect2i(oriented.bounds.position - oriented.anchor, oriented.bounds.size)):
+					return "Rotated settlement base can extend outside a cell: " + id
+				orientations.append(oriented)
+		templates[id] = orientations
+		climates[id] = landscapes
+	for type: String in rules:
+		var options: Variant = rules[type]
+		if type not in TRADE_SETTLEMENT_TYPES or not options is Array or options.is_empty() \
+				or not options.all(func(id: Variant) -> bool: return id is String and templates.has(id)):
+			return "Invalid reusable settlement base rule: " + type
+	for cell: Vector2i in _world.settlements:
+		if _settlement_bases.has(cell):
+			continue
+		var site: Dictionary = _world.settlements[cell]
+		var landscape: String = _world.landscape.kind_at(cell)
+		var candidates: Array = (rules.get(site["type"], []) as Array).filter(
+			func(id: String) -> bool: return climates[id].is_empty() or landscape in climates[id])
+		if candidates.is_empty():
+			return "No suitable reusable settlement base for " + str(site["id"])
+		# The authored object id keeps the same layout across seeds, threads, and slot loads.
+		var choice: int = str(site["id"]).hash()
+		var orientations: Array = templates[candidates[posmod(choice, candidates.size())]]
+		@warning_ignore("integer_division")
+		var turn: int = posmod(choice / candidates.size(), orientations.size())
+		_settlement_bases[cell] = orientations[turn]
 	return ""
+
+
+static func _read_base_entry(entry: Variant) -> SettlementBase:
+	if not entry is Dictionary:
+		return null
+	var anchor: Variant = entry.get("anchor")
+	var path: Variant = entry.get("path")
+	var version: Variant = entry.get("first_generator_version")
+	var size: int = GlobalLandscapeMap.CELL_TILES
+	if not anchor is Array or anchor.size() != 2 or not _is_cell_axis(anchor[0], size) \
+			or not _is_cell_axis(anchor[1], size) or not path is String or path.simplify_path() != path \
+			or path.get_base_dir() != "res://data/settlement_bases" or path.get_extension() != "json" \
+			or not _is_cell_axis(version, 1000) or version < TerrainGenerator.SETTLEMENT_BASE_GENERATOR_VERSION:
+		return null
+	return SettlementBase.load_from(path, Vector2i(int(anchor[0]), int(anchor[1])), int(version))
 
 
 static func read_from(path: String) -> ReadResult:

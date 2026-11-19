@@ -23,7 +23,7 @@ func _run() -> void:
 	var states: Dictionary[String, Dictionary] = WorldData.political_states()
 	var matrix: Dictionary[String, Dictionary] = WorldData.political_relations()
 	var graph: WorldGraph = WorldGraph.for_seed(world.world_seed, world.generator_version)
-	_check(world.generator_version == TerrainGenerator.AUTHORED_POLITICS_GENERATOR_VERSION, "New slot used the wrong generator version")
+	_check(world.generator_version == TerrainGenerator.GENERATOR_VERSION, "New slot used the wrong generator version")
 	_check(world.settlements.all().size() == map.size() and graph.settlement_sites.size() == map.size(),
 		"The game did not seed every WorldStudio settlement")
 	for cell: Vector2i in map:

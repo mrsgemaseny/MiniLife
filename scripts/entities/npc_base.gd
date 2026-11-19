@@ -212,8 +212,7 @@ func model_id() -> String:
 
 func apply_squad_member(member_name: String, squad_faction: String) -> void:
 	display_name = member_name
-	if not squad_faction.is_empty():
-		faction_id = squad_faction
+	faction_id = squad_faction
 	apply_unit_stats(str(get_meta("npc_model", "")))
 
 # Combat profile of a drawn unit (data/unit_stats.json): health, skills, body armor, shield.

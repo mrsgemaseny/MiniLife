@@ -8,7 +8,8 @@ extends RefCounted
 # Biome ids: plains, forest, swamp, hills, mountains (impassable ridge), snow,
 # desert (dunes, sand bars), steppe (dry semi-desert ground), water.
 
-const GENERATOR_VERSION: int = 6
+const GENERATOR_VERSION: int = 7
+const EXPANDED_SETTLEMENT_BASES_VERSION: int = 7
 const AUTHORED_POLITICS_GENERATOR_VERSION: int = 6
 const AUTHORED_RIVER_GENERATOR_VERSION: int = 5
 const SETTLEMENT_BASE_GENERATOR_VERSION: int = 4
@@ -145,7 +146,7 @@ func get_version() -> int:
 
 static func supports_version(version: int) -> bool:
 	return version in [LEGACY_GENERATOR_VERSION, SEAM_GENERATOR_VERSION, SETTLEMENT_BASE_GENERATOR_VERSION,
-		AUTHORED_RIVER_GENERATOR_VERSION, AUTHORED_POLITICS_GENERATOR_VERSION]
+		AUTHORED_RIVER_GENERATOR_VERSION, AUTHORED_POLITICS_GENERATOR_VERSION, EXPANDED_SETTLEMENT_BASES_VERSION]
 
 
 func get_graph() -> WorldGraph:
@@ -156,12 +157,10 @@ func _place_settlement_bases() -> void:
 	_base_origins.clear()
 	_base_bounds.clear()
 	_settlement_bases = WorldData.settlement_bases()
-	for cell: Vector2i in _settlement_bases:
-		var base: SettlementBase = _settlement_bases[cell]
-		if _version < base.first_generator_version:
-			continue
-		var site: Dictionary = _graph.site_for_cell(cell)
-		if site.is_empty():
+	for site: Dictionary in _graph.settlement_sites:
+		var cell: Vector2i = site["cell"]
+		var base: SettlementBase = _settlement_bases.get(cell)
+		if base == null or _version < base.first_generator_version:
 			continue
 		var origin: Vector2i = (site["tile"] as Vector2i) - base.anchor
 		var bounds := Rect2i(origin + base.bounds.position, base.bounds.size)
@@ -170,6 +169,12 @@ func _place_settlement_bases() -> void:
 			continue
 		_base_origins[cell] = origin
 		_base_bounds[cell] = bounds
+
+
+func settlement_base_entry(cell: Vector2i) -> Vector2i:
+	if not _base_origins.has(cell) or _settlement_bases[cell].first_generator_version < EXPANDED_SETTLEMENT_BASES_VERSION:
+		return Vector2i(-1, -1)
+	return _base_origins[cell] + _settlement_bases[cell].anchor
 
 
 func get_settlement_block(tile: Vector2i) -> String:

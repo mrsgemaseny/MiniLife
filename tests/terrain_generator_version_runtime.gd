@@ -7,6 +7,9 @@ const LEGACY_CHUNK_HASH: String = "591e757861433a9669d164f4d11b72f7e641588f0d8bb
 # Version 5 fixtures measured on 72d49ac before activating the WorldStudio settlement layout.
 const V5_CHUNK_HASH: String = "410ce958206734e4c85484d9503c8e45a3d40641950a72515101dddcd15c0ce6"
 const V4_V5_AGENT_HASH: String = "37bdb4bcf55c13061a8732616b6418d2d97f1856d86a579ec4a870894ce10c1b"
+# Version 6 fixtures measured on a6c57bc before adding the reusable PixelBuilder layouts.
+const V6_CASTLE_CHUNK_HASH: String = "ccf03e7e18fbcb003dd0ccfde84f76d8a70ab0804211713cf3931f8ffed3cff3"
+const V6_AGENT_HASH: String = "7c3e78579c4eb23548b87cd994345fbce4fd27441ff18017b6ff577b47bf66a8"
 
 var failures: int = 0
 
@@ -27,6 +30,8 @@ func _run() -> void:
 		version = TerrainGenerator.SETTLEMENT_BASE_GENERATOR_VERSION
 	elif "--v5" in OS.get_cmdline_user_args():
 		version = TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION
+	elif "--v6" in OS.get_cmdline_user_args():
+		version = TerrainGenerator.AUTHORED_POLITICS_GENERATOR_VERSION
 	_check(_test_slot_switch(scene, save_system, world, current_slot, legacy_slot, version), "Legacy slot did not load")
 	save_system.delete_slot(current_slot)
 	save_system.delete_slot(legacy_slot)
@@ -59,6 +64,9 @@ func _test_slot_switch(scene: Node, save_system: SaveSystem, world: WorldSystem,
 	if version in [TerrainGenerator.SETTLEMENT_BASE_GENERATOR_VERSION, TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION]:
 		_check(codec._fingerprint == V4_V5_AGENT_HASH and legacy_context.settlements.all().size() == 102,
 			"Legacy A-Life population changed compared with the released generator")
+	elif version == TerrainGenerator.AUTHORED_POLITICS_GENERATOR_VERSION:
+		_check(codec._fingerprint == V6_AGENT_HASH and legacy_context.settlements.all().size() == 141,
+			"Version 6 A-Life population changed compared with the released generator")
 	var expected_hash: String = LEGACY_CHUNK_HASH
 	if version != TerrainGenerator.LEGACY_GENERATOR_VERSION:
 		var legacy_terrain: TerrainGenerator = TerrainGenerator.new(SEED, version)
@@ -67,6 +75,12 @@ func _test_slot_switch(scene: Node, save_system: SaveSystem, world: WorldSystem,
 			== (version >= TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION), "Incorrect authored river visibility for legacy version")
 		if version == TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION:
 			_check(expected_hash == V5_CHUNK_HASH, "Version 5 chunk differs from the released generator")
+		if version == TerrainGenerator.AUTHORED_POLITICS_GENERATOR_VERSION:
+			var castle_site: Vector2i = legacy_terrain.get_graph().site_for_cell(Vector2i(7, 13))["tile"]
+			var castle_chunk: Vector2i = Config.tile_to_chunk(castle_site)
+			_check(JSON.stringify(legacy_terrain.generate_chunk(castle_chunk)).sha256_text() == V6_CASTLE_CHUNK_HASH
+				and legacy_terrain.get_settlement_block(castle_site).is_empty(), "Version 6 gained a new castle base")
+			_check(not world.get_terrain().get_settlement_block(castle_site).is_empty(), "The new castle base is missing")
 	var position: Vector2 = Config.world_to_iso(SEAM_TILE)
 	player["position"] = [position.x, position.y]
 	DirAccess.make_dir_recursive_absolute(legacy_path)
@@ -84,7 +98,8 @@ func _test_slot_switch(scene: Node, save_system: SaveSystem, world: WorldSystem,
 	_check(world.get_tile(SEAM_TILE).structure_id == "wood_wall", "Legacy chunk delta did not apply")
 	_check(WorldSimulation.last_load_error.is_empty(), "Legacy A-Life state failed to load")
 	var factions: FactionSystem = scene.get_node("Systems/FactionSystem")
-	_check(not factions.get_all_factions().has("state.valden") and WorldSimulation.world.factions.find("state.valden") == null,
+	var has_states: bool = version >= TerrainGenerator.AUTHORED_POLITICS_GENERATOR_VERSION
+	_check(factions.get_all_factions().has("state.valden") == has_states and (WorldSimulation.world.factions.find("state.valden") != null) == has_states,
 		"An authored state was introduced into a legacy world")
 
 	var map: WorldMapUI = scene.get_node("UILayer/WorldMapUI")

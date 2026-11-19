@@ -104,6 +104,8 @@ func run() -> void:
 	var armor_before: float = bodies[0].equipment.get_innate_armor()
 	bodies[0].equipment.apply_armor_damage({"innate": 30.0})
 	check(is_equal_approx(bodies[0].equipment.get_innate_armor(), maxf(0.0, armor_before - 30.0)), "Armor wear reduces unit armor")
+	var armored_uid: String = bodies[0].spawn_uid
+	var worn_armor: float = bodies[0].equipment.get_innate_armor()
 	var wounded_uid: String = bodies[1].spawn_uid
 	var dead_uid: String = bodies[2].spawn_uid
 	bodies[1].take_damage(bodies[1].stats.max_health * 0.5)
@@ -128,6 +130,8 @@ func run() -> void:
 	check(not returned.any(func(n: NPCBase) -> bool: return n.spawn_uid == dead_uid), "The dead stay dead")
 	var wounded: Array[NPCBase] = returned.filter(func(n: NPCBase) -> bool: return n.spawn_uid == wounded_uid)
 	check(wounded.size() == 1 and is_equal_approx(wounded[0].stats.health, wounded_health), "Wounds persist across the reload")
+	var armored: Array[NPCBase] = returned.filter(func(n: NPCBase) -> bool: return n.spawn_uid == armored_uid)
+	check(armored.size() == 1 and is_equal_approx(armored[0].equipment.get_innate_armor(), worn_armor), "Armor wear persists across the reload")
 	check(WorldSimulation.world.tick_count == ticks_before, "No A-Life ticks run while it is off")
 	check(WorldSimulation.world.simulated_hour >= hour_before, "A-Life clock follows game time while off")
 	get_tree().quit(0 if failures == 0 else 1)
