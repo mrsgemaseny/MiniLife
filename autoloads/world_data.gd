@@ -25,6 +25,10 @@ class ReadResult:
 	var trade_corridors: Dictionary[String, Array] = {}
 	var rivers: Array[Dictionary] = []
 	var armies: Dictionary[String, Dictionary] = {}
+	var states: Dictionary[String, Dictionary] = {}
+	var wildlands: Dictionary[String, Dictionary] = {}
+	var settlements: Dictionary[Vector2i, Dictionary] = {}
+	var relations: Dictionary[String, Dictionary] = {}
 
 	func _init(message: String = "") -> void:
 		error = message
@@ -89,6 +93,22 @@ func rivers() -> Array[Dictionary]:
 
 func imperial_armies() -> Dictionary[String, Dictionary]:
 	return _world.armies
+
+
+func political_states() -> Dictionary[String, Dictionary]:
+	return _world.states
+
+
+func political_wildlands() -> Dictionary[String, Dictionary]:
+	return _world.wildlands
+
+
+func political_settlements() -> Dictionary[Vector2i, Dictionary]:
+	return _world.settlements
+
+
+func political_relations() -> Dictionary[String, Dictionary]:
+	return _world.relations
 
 
 func _load_settlement_bases() -> String:
@@ -193,9 +213,99 @@ static func parse(source: String) -> ReadResult:
 	var army_error: String = _read_armies(doc, result.armies)
 	if not army_error.is_empty():
 		return ReadResult.new(army_error)
+	var politics_error: String = _read_politics(doc, kinds, result)
+	if not politics_error.is_empty():
+		return ReadResult.new(politics_error)
 	result.document = doc
 	result.landscape = GlobalLandscapeMap.new(SIZE_CELLS, kinds)
 	return result
+
+
+static func _read_politics(doc: Dictionary, land: Dictionary, result: ReadResult) -> String:
+	var entities: Dictionary = doc.get("entities", {})
+	var realm_error: String = _read_realms(entities.get("states", []), "state.", result.states)
+	if not realm_error.is_empty():
+		return realm_error
+	realm_error = _read_realms(entities.get("wildlands", []), "wild.", result.wildlands)
+	if not realm_error.is_empty():
+		return realm_error
+	var relation_error: String = _read_relations(doc.get("relations"), result.states, result.relations)
+	if not relation_error.is_empty():
+		return relation_error
+	result.relations.make_read_only()
+	var objects: Variant = doc.get("objects", [])
+	if not objects is Array:
+		return "Expected an objects array"
+	var ids: Dictionary[String, bool] = {}
+	for object: Variant in objects:
+		if not object is Dictionary or not object.get("type") is String:
+			return "Expected a typed world object"
+		if object["type"] not in TRADE_SETTLEMENT_TYPES:
+			continue
+		var id: Variant = object.get("id")
+		var cell: Vector2i = _map_cell(object.get("cell"))
+		if not id is String or not id.begins_with("obj.") or id.length() <= 4 \
+				or ids.has(id) or result.settlements.has(cell) or not land.has(cell):
+			return "Invalid or duplicate settlement id or land cell: %s" % str(id)
+		var owner: Variant = object.get("owner")
+		if owner != null and (not owner is String or not (result.states.has(owner) or result.wildlands.has(owner))):
+			return "Unknown owner for settlement: " + id
+		var site: Dictionary = {"id": id, "type": object["type"], "owner": owner if owner != null else ""}
+		site.make_read_only()
+		result.settlements[cell] = site
+		ids[id] = true
+	result.settlements.make_read_only()
+	return ""
+
+
+static func _read_realms(rows: Variant, prefix: String, result: Dictionary[String, Dictionary]) -> String:
+	if not rows is Array:
+		return "Expected a realm array for " + prefix
+	for row: Variant in rows:
+		if not row is Dictionary or not row.get("id") is String or not row["id"].begins_with(prefix) \
+				or row["id"].length() <= prefix.length() or result.has(row["id"]):
+			return "Invalid or duplicate realm id for " + prefix
+		var hex: Variant = row.get("color")
+		if not hex is String or hex.length() != 6 or not Color.html_is_valid(hex):
+			return "Expected an RRGGBB color for " + row["id"]
+		var name: Variant = row.get("name", row["id"] if prefix == "wild." else null)
+		if not name is String or name.strip_edges().is_empty():
+			return "Expected a name for " + row["id"]
+		var kind: Variant = row.get("kind") if prefix == "state." else "wildland"
+		if kind not in ["kingdom", "duchy", "county", "wildland"] or (kind == "wildland" and prefix == "state."):
+			return "Unknown state kind for " + row["id"]
+		var realm: Dictionary = {"name": name, "color": Color.html(hex), "kind": kind}
+		realm.make_read_only()
+		result[row["id"]] = realm
+	result.make_read_only()
+	return ""
+
+
+static func _read_relations(data: Variant, states: Dictionary[String, Dictionary], result: Dictionary[String, Dictionary]) -> String:
+	if data == null and states.is_empty():
+		return ""
+	if not data is Dictionary or not data.get("order") is Array or not data.get("matrix") is Array:
+		return "Expected a relations order and matrix"
+	var order: Array = data["order"]
+	var matrix: Array = data["matrix"]
+	if order != states.keys() or matrix.size() != order.size():
+		return "Relations order or matrix size differs from the state registry"
+	for i: int in range(order.size()):
+		var row: Variant = matrix[i]
+		if not row is Array or row.size() != order.size():
+			return "Unexpected relations row size for " + str(order[i])
+		var directed: Dictionary[String, int] = {}
+		for j: int in range(row.size()):
+			var score: Variant = row[j]
+			if score == null:
+				continue
+			if i == j or not (score is int or score is float) or not is_finite(float(score)) \
+					or score < -100 or score > 100 or floorf(score) != score:
+				return "Invalid relations score %s -> %s" % [order[i], order[j]]
+			directed[order[j]] = int(score)
+		directed.make_read_only()
+		result[order[i]] = directed
+	return ""
 
 
 static func _read_trade_corridors(doc: Dictionary, land: Dictionary, corridors: Dictionary[String, Array]) -> String:

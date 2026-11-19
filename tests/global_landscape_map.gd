@@ -25,6 +25,9 @@ func _run() -> void:
 	if not _check_army_schema(WorldData.snapshot()):
 		_fail("army data lost its state or authored route")
 		return
+	if not _check_political_schema(WorldData.snapshot()):
+		_fail("settlement ownership or directional relations lost their authored values")
+		return
 	var map: GlobalLandscapeMap = WorldLayout.landscape()
 	if map == null:
 		_fail("world data returned no landscape")
@@ -112,6 +115,45 @@ func _check_world_data(world: Dictionary) -> bool:
 func _rejects(world: Dictionary, reason: String) -> bool:
 	var rejected: WorldDataLoader.ReadResult = WorldDataLoader.parse(JSON.stringify(world))
 	return rejected.landscape == null and rejected.error.contains(reason)
+
+
+func _check_political_schema(world: Dictionary) -> bool:
+	var states: Dictionary[String, Dictionary] = WorldData.political_states()
+	var settlements: Dictionary[Vector2i, Dictionary] = WorldData.political_settlements()
+	var relations: Dictionary[String, Dictionary] = WorldData.political_relations()
+	if states.size() != 8 or WorldData.political_wildlands().size() != 3 or settlements.size() != 141 \
+			or states["state.valden"]["name"] != "Вальден" or states["state.valden"]["kind"] != "county" \
+			or states["state.valden"]["color"] != Color.html("CCCC1E") \
+			or settlements.get(Vector2i(7, 14)) != {"id": "obj.village_48", "type": "village", "owner": "state.valden"} \
+			or relations["state.ortenverg"].get("state.rosenwald") != 40 \
+			or relations["state.rosenwald"].get("state.ortenverg") != 55 or relations["state.valden"].has("state.valden"):
+		return false
+	var matrix: Array = world["relations"]["matrix"]
+	matrix[0][0] = 0
+	if not _rejects(world, "Invalid relations score"):
+		return false
+	matrix[0][0] = null
+	matrix[0][1] = -101
+	if not _rejects(world, "Invalid relations score"):
+		return false
+	matrix[0][1] = null
+	var incomplete: WorldDataLoader.ReadResult = WorldDataLoader.parse(JSON.stringify(world))
+	if not incomplete.error.is_empty() or incomplete.relations["state.reinhard"].has("state.ortenverg"):
+		return false
+	world["relations"]["order"][1] = "state.missing"
+	if not _rejects(world, "Relations order"):
+		return false
+	world["relations"]["order"][1] = "state.ortenverg"
+	var objects: Array = world["objects"]
+	var site: Dictionary = objects.filter(func(row: Dictionary) -> bool: return row["id"] == "obj.village_48")[0]
+	site["owner"] = "state.missing"
+	if not _rejects(world, "Unknown owner for settlement"):
+		return false
+	site["owner"] = "state.valden"
+	var duplicate: Dictionary = site.duplicate(true)
+	duplicate["id"] = "obj.village_duplicate"
+	objects.append(duplicate)
+	return _rejects(world, "Invalid or duplicate settlement")
 
 
 func _check_army_schema(world: Dictionary) -> bool:
