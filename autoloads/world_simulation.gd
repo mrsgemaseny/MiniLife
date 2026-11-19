@@ -1,7 +1,9 @@
 extends Node
 
 const GLOBAL_TICK_INTERVAL: float = 5.0
-const VALDEN_ECONOMY_STEP_HOURS: float = 1.0
+const VALDEN_ECONOMY_STEP_HOURS: float = Config.LOD_FAR_INTERVAL / Config.SECONDS_PER_GAME_HOUR
+const VALDEN_GRAIN_ROUTE_ID: String = EconomyTick.VALDEN_VILLAGE_ID + "->" + EconomyTick.VALDEN_CASTLE_ID + "/grain"
+const VALDEN_GRAIN_INVESTMENT: int = 600
 const MAX_CATCHUP_DAYS: int = 7
 var world: AlifeWorldContext = AlifeWorldContext.new()
 var economy_tick: EconomyTick = EconomyTick.new()
@@ -73,23 +75,20 @@ func _process(_delta: float) -> void:
 	if not alife_enabled:
 		if _valden_economy_enabled:
 			_run_valden_economy(target)
+			var route: CaravanRoute = world.routes.find(VALDEN_GRAIN_ROUTE_ID) as CaravanRoute
+			if route != null:
+				_update_caravan_views(_delta, target, route)
 		else:
 			world.simulated_hour = target
 		return
 	world.travel.background_enabled = true
 	world.travel.poll()
-	materializer.update(_delta)
+	_update_caravan_views(_delta, target)
 	_body_scan_elapsed += _delta
 	if _body_scan_elapsed >= 1.0:
 		_body_scan_elapsed = 0.0
 		_discover_resident_bodies()
 		_sync_refugee_camp_views()
-	_materialize_encounters()
-	pack_materializer.update(materializer.loaded_chunks, materializer.player_tile)
-	_sync_caravan_hostile_visibility()
-	EscortContracts.observe(world, materializer.player_tile, target)
-	if _escort_reward_check:
-		_claim_escort_rewards()
 	_publish_events()
 	var step: float = GLOBAL_TICK_INTERVAL / Config.SECONDS_PER_GAME_HOUR
 	# Limit work per frame; preserve pending game time rather than dropping ticks.
@@ -99,14 +98,64 @@ func _process(_delta: float) -> void:
 		count += 1
 
 func _run_valden_economy(target: float) -> void:
+	world.travel.background_enabled = true
+	world.travel.poll()
 	var steps: int = clampi(int(floor((target - world.simulated_hour) / VALDEN_ECONOMY_STEP_HOURS)), 0, 8)
 	if steps == 0:
 		return
 	for index: int in range(steps):
 		world.simulated_hour += VALDEN_ECONOMY_STEP_HOURS
 		economy_tick.tick_valden(world, VALDEN_ECONOMY_STEP_HOURS)
+		var route: CaravanRoute = _valden_grain_route()
+		if route != null:
+			_advance_valden_crew(route, VALDEN_ECONOMY_STEP_HOURS)
+			caravan_tick.tick_route(world, route)
 	_publish_events()
 	_publish_markets()
+
+func _valden_grain_route() -> CaravanRoute:
+	var route: CaravanRoute = world.routes.find(VALDEN_GRAIN_ROUTE_ID) as CaravanRoute
+	if route != null:
+		return route
+	var buyer: AlifeSettlement = world.settlements.find(EconomyTick.VALDEN_CASTLE_ID) as AlifeSettlement
+	if buyer == null or not buyer.famine or world.settlements.find(EconomyTick.VALDEN_VILLAGE_ID) == null:
+		return null
+	var introduction: Dictionary = {}
+	SignalBus.frontier_introduction_queried.emit(introduction)
+	if not bool(introduction.get("village_open", false)):
+		return null
+	route = CaravanRoute.new()
+	route.route_id = VALDEN_GRAIN_ROUTE_ID
+	route.from_id = EconomyTick.VALDEN_VILLAGE_ID
+	route.to_id = buyer.settlement_id
+	route.at_id = route.from_id
+	route.grain_relief = true
+	route.investment = VALDEN_GRAIN_INVESTMENT
+	world.routes.register(route)
+	return route
+
+func _advance_valden_crew(route: CaravanRoute, hours: float) -> void:
+	if route.active:
+		for agent: GlobalAgent in AgentLifecycle.living(world, [route.merchant_id] + route.guards):
+			if not world.agents.materialized.has(agent.agent_id) and AgentGoalEvaluator.evaluate(agent, world) == "caravan_travel":
+				world.travel.advance(world.world_seed, agent, hours, AlifeTravel.WALK_TILES_PER_HOUR, true)
+		return
+	var home: AlifeSettlement = world.settlements.find(route.from_id) as AlifeSettlement
+	if home == null:
+		return
+	for agent: GlobalAgent in world.agents.by_settlement(route.from_id):
+		if agent.alive and agent.caravan_id.is_empty() and agent.current_goal == "return_home" and agent.destination_tile == home.tile:
+			if world.travel.advance(world.world_seed, agent, hours, AlifeTravel.WALK_TILES_PER_HOUR, true):
+				agent.current_goal = "idle"
+
+func _update_caravan_views(delta: float, clock_hour: float, route: CaravanRoute = null) -> void:
+	materializer.update(delta, route)
+	_materialize_encounters(route)
+	pack_materializer.update(materializer.loaded_chunks, materializer.player_tile, route)
+	_sync_caravan_hostile_visibility()
+	EscortContracts.observe(world, materializer.player_tile, clock_hour)
+	if _escort_reward_check:
+		_claim_escort_rewards()
 
 const LocalWarrants = preload("res://scripts/alife/factions/local_warrants.gd")
 
@@ -116,6 +165,8 @@ func _run_global_tick(hours: float, silent: bool = false) -> void:
 	faction_tick.tick(world, hours)
 	agent_tick.tick(world, hours)
 	conflict_tick.tick(world, hours)
+	if _valden_economy_enabled:
+		_valden_grain_route()
 	caravan_tick.tick(world)
 	rumor_tick.tick(world)
 	LocalWarrants.tick(world)
@@ -1056,9 +1107,10 @@ func _sync_caravan_hostile_visibility() -> void:
 			SignalBus.world_tile_queried.emit(Config.iso_to_world(entity.global_position), info)
 			entity.visible = true
 
-func _materialize_encounters() -> void:
+func _materialize_encounters(selected_route: CaravanRoute = null) -> void:
 	var needed: Dictionary = {}
-	for route: CaravanRoute in world.routes.all():
+	var routes: Array = world.routes.all() if selected_route == null else [selected_route]
+	for route: CaravanRoute in routes:
 		if not route.active or route.ambush_phase != "active":
 			continue
 		for id: String in route.ambushers + route.guards + [route.merchant_id]:

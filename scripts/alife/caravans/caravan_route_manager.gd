@@ -1,8 +1,10 @@
 class_name CaravanRouteManager
 extends RefCounted
 
-const CARGO_VALUES: Dictionary = {"food": 1, "iron_ore": 3, "stone": 1, "plank": 2, "wool": 2, "cloth": 5, "iron_ingot": 10}
+const CARGO_VALUES: Dictionary = {"food": 1, "wheat": 3, "iron_ore": 3, "stone": 1, "plank": 2, "wool": 2, "cloth": 5, "iron_ingot": 10}
 const TRIP_MARGIN: int = 300
+const MARKET_APPROACH: Vector2i = Vector2i(2, 2)
+const CONVOY_SPACING: int = 2
 
 static func seed_routes(world: AlifeWorldContext) -> void:
 	for source: AlifeSettlement in world.settlements.all():
@@ -36,24 +38,29 @@ static func dispatch(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 		return false
 	if FactionDiplomacy.at_war(world, source.owner_faction, destination.owner_faction):
 		return false
-	var cargo: Dictionary = _select_cargo(source, destination)
+	var returning: bool = route.grain_relief and destination_id == route.from_id
+	var cargo: Dictionary = {}
+	if route.grain_relief:
+		if not returning and not destination.famine:
+			return false
+	else:
+		cargo = _select_cargo(source, destination)
 	var cost: int = cargo_value(cargo)
-	if cost <= 0 or destination.market_funds < cost + TRIP_MARGIN:
+	if not route.grain_relief and (cost <= 0 or destination.market_funds < cost + TRIP_MARGIN):
 		return false
-	var destination_tile: Vector2i = destination.tile + Vector2i(2, 2)
-	var path: Array[Vector2i] = world.travel.request_path(world.world_seed, source.tile, destination_tile)
-	if path.is_empty():
-		return false
+	var source_tile: Vector2i = source.tile + MARKET_APPROACH if returning else source.tile
+	var destination_tile: Vector2i = destination.tile if returning else destination.tile + MARKET_APPROACH
 	var merchant: GlobalAgent = world.agents.find(route.merchant_id) as GlobalAgent
-	if merchant == null or not merchant.alive:
+	if merchant == null or not merchant.alive or (route.grain_relief and not _merchant_available(merchant, route, source_tile)):
 		merchant = null
+		if returning:
+			return false
 		for candidate: GlobalAgent in world.agents.by_settlement(home.settlement_id):
-			if candidate.alive and candidate.role == "trader" and candidate.caravan_id.is_empty():
+			if candidate.alive and candidate.role == "trader" and candidate.caravan_id.is_empty() \
+					and (not route.grain_relief or _merchant_available(candidate, route, source_tile)):
 				merchant = candidate
 				break
-	if merchant == null:
-		return false
-	if Config.tile_distance(merchant.tile, source.tile) > 8.0:
+	if merchant == null or Config.tile_distance(merchant.tile, source_tile) > 8.0:
 		return false
 	var guard_ids: Array = route.guards.duplicate()
 	guard_ids = guard_ids.filter(func(id: String) -> bool:
@@ -62,20 +69,31 @@ static func dispatch(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 	if not route.paid_investment:
 		guard_ids.clear()
 	var recruits: Array = []
-	if guard_ids.size() < 4:
+	if guard_ids.size() < 4 and not returning:
 		for guard: GlobalAgent in world.agents.by_settlement(source.settlement_id):
 			if guard.alive and guard.role == "guard" and guard.caravan_id.is_empty() and guard.deployment_id.is_empty() and guard.faction_id == source.owner_faction:
+				if route.grain_relief and Config.tile_distance(guard.tile, source_tile) > 8.0:
+					continue
 				guard_ids.append(guard.agent_id)
 				recruits.append(guard.agent_id)
 				if guard_ids.size() >= 4:
 					break
-	if guard_ids.size() < 4:
+	if guard_ids.is_empty() or (not returning and guard_ids.size() < 4):
 		return false
 	var recruitment_cost: int = recruits.size() * 50 if route.paid_investment else 0
-	var required: int = cost + recruitment_cost + (0 if route.paid_investment else route.investment)
+	var overhead: int = recruitment_cost + (0 if route.paid_investment else route.investment)
 	var faction: AlifeFaction = world.factions.find(home.owner_faction) as AlifeFaction
-	var credit: int = maxi(0, required - home.treasury)
+	if route.grain_relief and not returning:
+		var funding: int = home.treasury + (faction.treasury if faction != null else 0) - overhead
+		cargo = _select_relief_grain(source, destination, mini(funding, destination.market_funds - TRIP_MARGIN))
+		cost = cargo_value(cargo)
+		if cost <= 0:
+			return false
+	var credit: int = maxi(0, cost + overhead - home.treasury)
 	if credit > 0 and (faction == null or faction.treasury < credit):
+		return false
+	var path: Array[Vector2i] = world.travel.request_path(world.world_seed, source_tile, destination_tile, route.grain_relief)
+	if path.is_empty():
 		return false
 	if credit > 0:
 		faction.treasury -= credit
@@ -108,20 +126,47 @@ static func dispatch(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 	route.destination_id = destination_id
 	route.active = true
 	route.progress = 0.0
-	route.risk_checked = false
+	route.risk_checked = returning
 	route.ambush_phase = "none"
 	route.attacked_by_player = false
 	route.departure_hour = world.simulated_hour
-	route.trip_id += 1
+	if not returning:
+		route.trip_id += 1
 	route.outbound_distance = maxf(1.0, float(path.size() - 1))
-	for id: String in [merchant.agent_id] + guard_ids:
+	var crew: Array = [merchant.agent_id] + guard_ids
+	for index: int in range(crew.size()):
+		var id: String = crew[index]
 		var agent: GlobalAgent = world.agents.find(id) as GlobalAgent
 		agent.caravan_id = route.route_id
 		agent.current_goal = "caravan_travel"
 		agent.destination_tile = destination_tile
-		agent.local_state.clear()
-	world.record_event("caravan_departed", source.tile, [home.owner_faction], {"route_id": route.route_id, "settlement_id": source.settlement_id, "destination_id": destination_id, "cargo": cargo.duplicate()})
+		if route.grain_relief:
+			var start_index: int = 0
+			if not world.agents.materialized.has(id):
+				start_index = mini((crew.size() - 1 - index) * CONVOY_SPACING, path.size() - 1)
+				agent.tile = path[start_index]
+				agent.world_position.clear()
+			world.travel.assign_path(world.world_seed, agent, path.slice(start_index))
+		else:
+			agent.local_state.clear()
+	if not returning:
+		world.record_event("caravan_departed", source.tile, [home.owner_faction], {"route_id": route.route_id, "settlement_id": source.settlement_id, "destination_id": destination_id, "cargo": cargo.duplicate()})
 	return true
+
+static func _merchant_available(merchant: GlobalAgent, route: CaravanRoute, source_tile: Vector2i) -> bool:
+	return (merchant.caravan_id.is_empty() or merchant.caravan_id == route.route_id) \
+		and merchant.deployment_id.is_empty() and Config.tile_distance(merchant.tile, source_tile) <= 8.0
+
+static func _select_relief_grain(source: AlifeSettlement, destination: AlifeSettlement, available_funds: int) -> Dictionary:
+	if destination.population <= 0 or available_funds <= 0:
+		return {}
+	var reserve_per_person: float = SettlementEconomy.FOOD_PER_PERSON_HOUR * SettlementEconomy.WHEAT_PER_PROVISION * SettlementEconomy.PROVISION_RESERVE_HOURS
+	var reserve: int = ceili(float(source.population) * reserve_per_person)
+	var surplus: int = int(source.stockpile.get("wheat", 0.0)) - reserve
+	var amount: int = mini(surplus, ceili(float(destination.population) * reserve_per_person))
+	amount = mini(amount, floori(float(available_funds) / float(CARGO_VALUES["wheat"])))
+	var minimum: int = ceili(float(destination.population) * SettlementEconomy.FOOD_PER_PERSON_HOUR * SettlementEconomy.WHEAT_PER_PROVISION * 2.0)
+	return {"wheat": amount} if amount >= minimum else {}
 
 static func arrive(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 	if not route.active:
@@ -133,6 +178,9 @@ static func arrive(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 	var home: AlifeSettlement = world.settlements.find(route.from_id) as AlifeSettlement
 	if destination == null or home == null or destination.status != AlifeSettlement.Status.NORMAL or is_blockaded(world, destination.settlement_id):
 		return false
+	if route.is_returning():
+		_finish_leg(world, route, 1.0)
+		return true
 	var delivered_value: int = cargo_value(route.cargo)
 	if delivered_value <= 0:
 		return false
@@ -160,17 +208,20 @@ static func arrive(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 	route.success_history.append({"success": delivered_value >= route.cargo_cost, "hour": world.simulated_hour, "profit": profit})
 	if route.success_history.size() > 30:
 		route.success_history.pop_front()
+	_finish_leg(world, route, 1.0 if route.grain_relief else 24.0)
+	world.record_event("caravan_arrived", destination.tile, [home.owner_faction], {"route_id": route.route_id, "settlement_id": destination.settlement_id, "home_id": home.settlement_id, "trips": route.successful_trips, "roi": route.recovered_investment >= route.investment})
+	return true
+
+static func _finish_leg(world: AlifeWorldContext, route: CaravanRoute, rest_hours: float) -> void:
 	route.cargo.clear()
 	route.active = false
 	route.progress = 1.0
 	route.at_id = route.destination_id
-	route.next_departure_hour = world.simulated_hour + 24.0
+	route.next_departure_hour = world.simulated_hour + rest_hours
 	for id: String in [route.merchant_id] + route.guards:
 		var agent: GlobalAgent = world.agents.find(id) as GlobalAgent
 		if agent != null and agent.alive:
 			agent.current_goal = "caravan_rest"
-	world.record_event("caravan_arrived", destination.tile, [home.owner_faction], {"route_id": route.route_id, "settlement_id": destination.settlement_id, "home_id": home.settlement_id, "trips": route.successful_trips, "roi": route.recovered_investment >= route.investment})
-	return true
 
 static func cargo_value(cargo: Dictionary) -> int:
 	var result: int = 0

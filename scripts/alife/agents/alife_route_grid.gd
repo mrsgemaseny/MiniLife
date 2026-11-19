@@ -85,10 +85,10 @@ func _find_passage(a: Vector2i, b: Vector2i) -> Array:
 
 
 # Builds (or reuses) the local window covering both tiles. False when they are too far apart.
-func prepare_window(from_tile: Vector2i, to_tile: Vector2i) -> bool:
+func prepare_window(from_tile: Vector2i, to_tile: Vector2i, max_window: int = MAX_WINDOW) -> bool:
 	var low: Vector2i = Vector2i(mini(from_tile.x, to_tile.x), mini(from_tile.y, to_tile.y)) - Vector2i.ONE * WINDOW_MARGIN
 	var high: Vector2i = Vector2i(maxi(from_tile.x, to_tile.x), maxi(from_tile.y, to_tile.y)) + Vector2i.ONE * WINDOW_MARGIN
-	if high.x - low.x > MAX_WINDOW or high.y - low.y > MAX_WINDOW:
+	if high.x - low.x > max_window or high.y - low.y > max_window:
 		return false
 	var wanted := Rect2i(Vector2i(floori(low.x / float(STRIDE)), floori(low.y / float(STRIDE))),
 		Vector2i.ZERO)

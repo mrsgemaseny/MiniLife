@@ -28,7 +28,7 @@ func _live_entity(id: String) -> NPCBase:
 	var reference: Variant = world.agents.materialized.get(id)
 	return reference as NPCBase if is_instance_valid(reference) else null
 
-func update(delta: float) -> void:
+func update(delta: float, selected_route: CaravanRoute = null) -> void:
 	if world == null or not is_instance_valid(parent) or not parent.is_inside_tree():
 		return
 	_refresh_elapsed += delta
@@ -36,6 +36,9 @@ func update(delta: float) -> void:
 		_refresh_elapsed = 0.0
 		_candidates.clear()
 		_facilities_by_settlement.clear()
+		var selected_ids: Array = []
+		if selected_route != null:
+			selected_ids = [selected_route.merchant_id] + selected_route.guards + selected_route.ambushers
 		for id: String in world.agents.materialized.keys():
 			var entity: NPCBase = _live_entity(id)
 			var agent: GlobalAgent = world.agents.find(id) as GlobalAgent
@@ -43,7 +46,8 @@ func update(delta: float) -> void:
 				world.agents.materialized.erase(id)
 				continue
 			var tile: Vector2i = Config.iso_to_world(entity.global_position)
-			if agent == null or not agent.alive or not _should_auto_materialize(agent) or not loaded_chunks.has(Config.tile_to_chunk(tile)) or Config.tile_distance(player_tile, tile) > DEMATERIALIZE_RADIUS:
+			if agent == null or not agent.alive or not _should_auto_materialize(agent) or (selected_route != null and id not in selected_ids) \
+					or not loaded_chunks.has(Config.tile_to_chunk(tile)) or Config.tile_distance(player_tile, tile) > DEMATERIALIZE_RADIUS:
 				dematerialize(id)
 				continue
 			agent.tile = tile
@@ -51,7 +55,7 @@ func update(delta: float) -> void:
 			agent.max_health = entity.stats.max_health
 			agent.current_goal = AgentGoalEvaluator.evaluate(agent, world)
 			entity.set_meta("alife_goal", agent.current_goal)
-			entity.set_meta("alife_destination", agent.destination_tile)
+			_publish_travel_target(entity, agent)
 			_publish_routine(entity, agent)
 			entity.faction_id = agent.faction_id
 			entity.set_meta("settlement_id", agent.settlement_id)
@@ -62,8 +66,10 @@ func update(delta: float) -> void:
 			var tile_info: Dictionary = {}
 			SignalBus.world_tile_queried.emit(tile, tile_info)
 			entity.visible = true
-		for agent: GlobalAgent in world.agents.get_all_global():
-			if _should_auto_materialize(agent) and loaded_chunks.has(Config.tile_to_chunk(agent.tile)) and Config.tile_distance(player_tile, agent.tile) <= MATERIALIZE_RADIUS:
+		var candidates: Array = world.agents.get_all_global() if selected_route == null else AgentLifecycle.living(world, selected_ids, true)
+		for agent: GlobalAgent in candidates:
+			if not world.agents.materialized.has(agent.agent_id) and _should_auto_materialize(agent) \
+					and loaded_chunks.has(Config.tile_to_chunk(agent.tile)) and Config.tile_distance(player_tile, agent.tile) <= MATERIALIZE_RADIUS:
 				_candidates.append(agent.agent_id)
 	var created: int = 0
 	while not _candidates.is_empty() and created < CREATIONS_PER_FRAME and world.agents.materialized.size() < MAX_ACTIVE_RESIDENTS:
@@ -107,7 +113,7 @@ func materialize(agent: GlobalAgent) -> NPCBase:
 	agent.current_goal = AgentGoalEvaluator.evaluate(agent, world)
 	entity.set_meta("alife_state", agent.to_dict())
 	entity.set_meta("alife_goal", agent.current_goal)
-	entity.set_meta("alife_destination", agent.destination_tile)
+	_publish_travel_target(entity, agent)
 	_publish_routine(entity, agent)
 	entity.set_meta("alife_morale", agent.morale)
 	entity.set_meta("alife_equipment_tier", agent.equipment_tier)
@@ -134,6 +140,14 @@ func _publish_routine(entity: NPCBase, agent: GlobalAgent) -> void:
 	var activity: Dictionary = {}
 	entity.set_meta("alife_routine_destination", _routine_destination(agent, activity))
 	entity.set_meta("alife_routine_activity", activity)
+
+func _publish_travel_target(entity: NPCBase, agent: GlobalAgent) -> void:
+	var destination: Vector2i = agent.destination_tile
+	if agent.current_goal == "caravan_travel":
+		var route: CaravanRoute = world.routes.find(agent.caravan_id) as CaravanRoute
+		if route != null and route.grain_relief:
+			destination = world.travel.steering_target(agent)
+	entity.set_meta("alife_destination", destination)
 
 func _routine_destination(agent: GlobalAgent, activity: Dictionary = {}) -> Vector2i:
 	var fallback: Vector2i = AgentGoalEvaluator.routine_destination(agent, world)
@@ -240,6 +254,7 @@ func _sync(id: String, entity: NPCBase) -> void:
 		state["health"] = 0.0
 	# The global identity and permanent death flag are never replaced by a stale scene.
 	agent.restore(state)
+	_publish_travel_target(entity, agent)
 	if agent.health <= 0.0:
 		agent.alive = false
 

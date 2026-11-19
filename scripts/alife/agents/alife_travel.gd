@@ -4,6 +4,7 @@ extends RefCounted
 # Dense prefix of a long route, in tiles.
 const LEAD_DISTANCE: float = 200.0
 const PATH_CACHE_LIMIT: int = 1024
+const CONNECTED_WINDOW: int = 1600
 # Off-screen agents walk at the pace of a materialized NPC (NPCBase: 0.42 x BASE_MOVE_SPEED),
 # converted to tiles per game hour, so an agent keeps its speed when it enters or leaves the
 # player's bubble. About 94 tiles per game hour.
@@ -20,7 +21,7 @@ var _task_key: String = ""
 var _task_result: Array[Vector2i] = []
 var _requests: Dictionary = {}
 var _completed: Dictionary = {}
-# Vector4i(from, to) -> Array[Vector2i]; cleared when the seed changes.
+# Cleared when the seed changes. Connected paths use a canonical direction.
 var _path_cache: Dictionary = {}
 
 
@@ -28,15 +29,15 @@ func _init(generator_version: int = TerrainGenerator.GENERATOR_VERSION) -> void:
 	_generator_version = generator_version
 
 
-func request_path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
+func request_path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool = false) -> Array[Vector2i]:
 	if not background_enabled:
-		return path(seed_value, from_tile, to_tile)
+		return path(seed_value, from_tile, to_tile, connected)
 	poll()
-	var key: String = "%d:%s:%s" % [seed_value, from_tile, to_tile]
+	var key: String = _request_key(seed_value, from_tile, to_tile, connected)
 	if _completed.has(key):
 		return _completed[key].duplicate()
 	if key != _task_key:
-		_requests[key] = {"seed": seed_value, "from": from_tile, "to": to_tile}
+		_requests[key] = {"seed": seed_value, "from": from_tile, "to": to_tile, "connected": connected}
 	poll()
 	return []
 
@@ -55,12 +56,15 @@ func poll() -> void:
 		if _worker_solver == null:
 			_worker_solver = AlifeTravel.new(_generator_version)
 		_task_id = WorkerThreadPool.add_task(func() -> void:
-			_task_result = _worker_solver.path(int(request["seed"]), request["from"], request["to"])
+			_task_result = _worker_solver.path(int(request["seed"]), request["from"], request["to"], request["connected"])
 		, false, "A-Life route")
 
-func is_path_pending(seed_value: int, from_tile: Vector2i, to_tile: Vector2i) -> bool:
-	var key: String = "%d:%s:%s" % [seed_value, from_tile, to_tile]
+func is_path_pending(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool = false) -> bool:
+	var key: String = _request_key(seed_value, from_tile, to_tile, connected)
 	return key == _task_key or _requests.has(key)
+
+func _request_key(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool) -> String:
+	return "%d:%s:%s:%d" % [seed_value, from_tile, to_tile, int(connected)]
 
 func shutdown() -> void:
 	if _task_id >= 0:
@@ -82,23 +86,28 @@ func _prepare(seed_value: int) -> void:
 
 # Routes depend only on terrain, which is a pure function of the seed, so solved paths are
 # reused. Caravans re-request the same city-to-city route on every dispatch attempt.
-func path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
+func path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool = false) -> Array[Vector2i]:
 	_prepare(seed_value)
-	var key := Vector4i(from_tile.x, from_tile.y, to_tile.x, to_tile.y)
-	if _path_cache.has(key):
-		return (_path_cache[key] as Array[Vector2i]).duplicate()
-	var result: Array[Vector2i] = _solve(from_tile, to_tile)
-	if _path_cache.size() >= PATH_CACHE_LIMIT:
-		_path_cache.erase(_path_cache.keys()[0])
-	_path_cache[key] = result.duplicate()
+	var reverse: bool = connected and to_tile < from_tile
+	var start: Vector2i = to_tile if reverse else from_tile
+	var finish: Vector2i = from_tile if reverse else to_tile
+	var endpoints := Vector4i(start.x, start.y, finish.x, finish.y)
+	var key: Variant = [endpoints] if connected else endpoints
+	if not _path_cache.has(key):
+		if _path_cache.size() >= PATH_CACHE_LIMIT:
+			_path_cache.erase(_path_cache.keys()[0])
+		_path_cache[key] = _solve(start, finish, connected)
+	var result: Array[Vector2i] = (_path_cache[key] as Array[Vector2i]).duplicate()
+	if reverse:
+		result.reverse()
 	return result
 
 
-func _solve(from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
+func _solve(from_tile: Vector2i, to_tile: Vector2i, connected: bool) -> Array[Vector2i]:
 	if _grid.blocked(from_tile) or _grid.blocked(to_tile):
 		return []
-	if not _grid.prepare_window(from_tile, to_tile):
-		return _long_path(from_tile, to_tile)
+	if not _grid.prepare_window(from_tile, to_tile, CONNECTED_WINDOW if connected else AlifeRouteGrid.MAX_WINDOW):
+		return [] if connected else _long_path(from_tile, to_tile)
 	var direct: Array[Vector2i] = _grid.line(from_tile, to_tile)
 	if not direct.is_empty():
 		return direct
@@ -161,7 +170,38 @@ func _local_path(from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
 	result.append_array(last)
 	return result
 
-func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = WALK_TILES_PER_HOUR) -> bool:
+func assign_path(seed_value: int, agent: GlobalAgent, route: Array[Vector2i]) -> void:
+	_prepare(seed_value)
+	_agent_routes[agent.agent_id] = {"destination": agent.destination_tile, "position": agent.tile, "route": route}
+
+func steering_target(agent: GlobalAgent) -> Vector2i:
+	var cached: Dictionary = _agent_routes.get(agent.agent_id, {})
+	if cached.get("destination") != agent.destination_tile:
+		return agent.destination_tile
+	var route: Array[Vector2i] = cached["route"]
+	if route.size() <= 1:
+		return agent.destination_tile
+	var closest: int = 0
+	var distance: float = INF
+	for index: int in range(mini(12, route.size())):
+		var candidate: float = Vector2(agent.tile).distance_squared_to(Vector2(route[index]))
+		if candidate < distance:
+			distance = candidate
+			closest = index
+	var target_index: int = mini(closest + 3, route.size() - 1)
+	if cached["position"] != agent.tile:
+		var remaining: Array[Vector2i] = [agent.tile]
+		remaining.append_array(route.slice(closest + int(distance == 0.0)))
+		assign_path(_seed, agent, remaining)
+	return route[target_index]
+
+func remaining_steps(agent: GlobalAgent) -> int:
+	var cached: Dictionary = _agent_routes.get(agent.agent_id, {})
+	if cached.get("destination") != agent.destination_tile:
+		return -1
+	return maxi(0, (cached["route"] as Array).size() - 1)
+
+func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = WALK_TILES_PER_HOUR, connected: bool = false) -> bool:
 	if agent.tile == agent.destination_tile:
 		return true
 	_prepare(seed_value)
@@ -171,7 +211,7 @@ func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = W
 	if cached.get("destination") == agent.destination_tile and cached.get("position") == agent.tile:
 		route.assign(cached.get("route", []))
 	else:
-		route = request_path(seed_value, agent.tile, agent.destination_tile)
+		route = request_path(seed_value, agent.tile, agent.destination_tile, connected)
 	if route.is_empty():
 		return false
 	# Walk the polyline by distance. Adjacent entries cost one step (as on the dense grid),

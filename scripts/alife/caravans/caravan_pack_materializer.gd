@@ -18,11 +18,12 @@ func get_entity(id: String) -> CaravanPackAnimal:
 	var value: Variant = entities.get(id)
 	return value as CaravanPackAnimal if is_instance_valid(value) else null
 
-func update(loaded_chunks: Dictionary, player_tile: Vector2i) -> void:
+func update(loaded_chunks: Dictionary, player_tile: Vector2i, selected_route: CaravanRoute = null) -> void:
 	if world == null or not is_instance_valid(parent):
 		return
 	var wanted: Dictionary = {}
-	for route: CaravanRoute in world.routes.all():
+	var routes: Array = world.routes.all() if selected_route == null else [selected_route]
+	for route: CaravanRoute in routes:
 		var value: Variant = world.agents.materialized.get(route.merchant_id)
 		var merchant: NPCBase = value as NPCBase if is_instance_valid(value) else null
 		if route.active and merchant != null:

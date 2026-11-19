@@ -31,9 +31,13 @@ var ambush_phase: String = "none"
 var ambush_started_hour: float = 0.0
 var ambush_origin: Vector2i = Vector2i.ZERO
 var trip_id: int = 0
+var grain_relief: bool = false
+
+func is_returning() -> bool:
+	return grain_relief and active and destination_id == from_id
 
 func _fields() -> Array[String]:
-	return ["route_id", "from_id", "to_id", "cargo", "base_success_chance", "success_history", "progress", "active", "next_departure_hour", "investment", "successful_trips", "guards", "merchant_id", "at_id", "destination_id", "paid_investment", "invested_total", "recovered_investment", "cargo_cost", "departure_hour", "risk_checked", "outbound_distance", "attacked_by_player", "pack_state", "wrecks", "ambushers", "ambush_phase", "ambush_started_hour", "ambush_origin", "trip_id"]
+	return ["route_id", "from_id", "to_id", "cargo", "base_success_chance", "success_history", "progress", "active", "next_departure_hour", "investment", "successful_trips", "guards", "merchant_id", "at_id", "destination_id", "paid_investment", "invested_total", "recovered_investment", "cargo_cost", "departure_hour", "risk_checked", "outbound_distance", "attacked_by_player", "pack_state", "wrecks", "ambushers", "ambush_phase", "ambush_started_hour", "ambush_origin", "trip_id", "grain_relief"]
 
 static func from_dict(data: Dictionary) -> CaravanRoute:
 	var result: CaravanRoute = CaravanRoute.new()

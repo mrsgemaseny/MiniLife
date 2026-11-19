@@ -20,7 +20,7 @@ static func fail(world: AlifeWorldContext, route: CaravanRoute, reason: String) 
 		agent.caravan_id = ""
 		if agent.alive:
 			agent.current_goal = "return_home"
-			agent.destination_tile = agent.home_tile
+			agent.destination_tile = home.tile if route.grain_relief and home != null else agent.home_tile
 			if agent.role == "caravan_guard":
 				var guard_home: AlifeSettlement = world.settlements.find(agent.settlement_id) as AlifeSettlement
 				if guard_home != null and guard_home.owner_faction == agent.faction_id:

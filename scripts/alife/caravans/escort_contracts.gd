@@ -25,7 +25,7 @@ static func accept(world: AlifeWorldContext, route: CaravanRoute, hour: float) -
 static func can_offer(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 	var id: String = id_for(route)
 	var home: AlifeSettlement = world.settlements.find(route.from_id) as AlifeSettlement
-	if not route.active or route.attacked_by_player or route.progress >= 0.8 or world.contracts.has(id) or home == null or home.treasury < REWARD:
+	if not route.active or route.is_returning() or route.attacked_by_player or route.progress >= 0.8 or world.contracts.has(id) or home == null or home.treasury < REWARD:
 		return false
 	if bool((world.reputation.get("outlaw_regions", {}) as Dictionary).get(home.settlement_id, false)) \
 			or preload("res://scripts/alife/factions/local_warrants.gd").is_active(world, home):
