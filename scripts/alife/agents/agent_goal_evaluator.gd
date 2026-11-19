@@ -1,12 +1,26 @@
 class_name AgentGoalEvaluator
 extends RefCounted
 
-static func evaluate(agent: GlobalAgent, world: AlifeWorldContext) -> String:
+class Snapshot extends RefCounted:
+	var refugees: Dictionary
+	var sieges: Dictionary[String, bool] = {}
+	var hour: float
+
+	func _init(world: AlifeWorldContext) -> void:
+		refugees = world.narrative.get("refugee_travelers", {})
+		hour = fposmod(world.simulated_hour, 24.0)
+		for conflict: AlifeConflict in world.conflicts.all():
+			if not conflict.resolved and conflict.phase == "siege":
+				sieges[conflict.target_settlement] = true
+
+static func evaluate(agent: GlobalAgent, world: AlifeWorldContext, snapshot: Snapshot = null) -> String:
 	if agent.role == TavernRecruitment.ROLE:
 		return "follow_player"
 	if ImperialArmySystem.is_member(agent):
 		return "imperial_march"
-	if world.narrative.get("refugee_travelers", {}).has(agent.agent_id):
+	if snapshot == null:
+		snapshot = Snapshot.new(world)
+	if snapshot.refugees.has(agent.agent_id):
 		if agent.settlement_id.is_empty() and agent.tile == agent.destination_tile:
 			return "refugee_camp"
 		return "refugee_travel"
@@ -26,16 +40,14 @@ static func evaluate(agent: GlobalAgent, world: AlifeWorldContext) -> String:
 			return "assault_settlement" if deployment.phase == "siege" else "march_to_frontline"
 	if agent.current_goal == "return_home" and agent.tile != agent.home_tile:
 		return "return_home"
-	for conflict: AlifeConflict in world.conflicts.all():
-		if not conflict.resolved and conflict.phase == "siege" and conflict.target_settlement == agent.settlement_id:
-			return "defend_settlement" if agent.role in ["guard", "soldier"] else "flee_settlement"
-	var faction: AlifeFaction = world.factions.find(agent.faction_id) as AlifeFaction
-	if faction != null and faction.state == AlifeFaction.State.AT_WAR:
-		if agent.role in ["guard", "soldier"]:
-			return "reinforce_frontline"
-		if agent.role == "noble":
-			return "manage_war_resources"
-	var hour: float = fposmod(world.simulated_hour, 24.0)
+	var military: bool = agent.role == "guard" or agent.role == "soldier"
+	if snapshot.sieges.has(agent.settlement_id):
+		return "defend_settlement" if military else "flee_settlement"
+	if military or agent.role == "noble":
+		var faction: AlifeFaction = world.factions.find(agent.faction_id) as AlifeFaction
+		if faction != null and faction.state == AlifeFaction.State.AT_WAR:
+			return "reinforce_frontline" if military else "manage_war_resources"
+	var hour: float = snapshot.hour
 	if (hour < 8.0 or hour >= 20.0) and agent.role not in ["guard", "bandit", "innkeeper"]:
 		return "sleep"
 	match agent.role:

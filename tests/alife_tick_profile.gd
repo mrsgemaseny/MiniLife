@@ -3,6 +3,7 @@ extends Node
 const TICKS: int = 144
 const SEED_VALUE: int = 12345
 const STEP_HOURS: float = WorldSimulation.GLOBAL_TICK_INTERVAL / Config.SECONDS_PER_GAME_HOUR
+const WORKER_WINDOW_SECONDS: float = 0.15
 const LocalWarrants = preload("res://scripts/alife/factions/local_warrants.gd")
 
 
@@ -16,6 +17,8 @@ func _run() -> void:
 	WorldSeedBuilder.populate(context)
 	context.authored_trade_only = WorldData.has_trade_layer()
 	CaravanRouteManager.register_authored_routes(context)
+	var background_routes: bool = "--background-routes" in OS.get_cmdline_user_args()
+	context.travel.background_enabled = background_routes
 	var economy: EconomyTick = EconomyTick.new()
 	var factions: FactionTick = FactionTick.new()
 	var agents: AgentTick = AgentTick.new()
@@ -45,6 +48,8 @@ func _run() -> void:
 		context.tick_count += 1
 		if (index + 1) % 48 == 0:
 			print("ALIFE_TICK_PROFILE_PROGRESS %d/%d" % [index + 1, TICKS])
+		if background_routes:
+			await _poll_routes(context.travel)
 	var report: Dictionary = {}
 	for key: String in phases:
 		report[key] = _summary(phases[key])
@@ -52,10 +57,19 @@ func _run() -> void:
 	var snapshot: String = JSON.stringify(context.to_dict(), "", true, true)
 	var save_ms: float = float(Time.get_ticks_usec() - saved_at) / 1000.0
 	print("ALIFE_TICK_PROFILE ", JSON.stringify({"ticks": TICKS, "agents": context.agents.all().size(),
+		"background_routes": background_routes,
 		"sites": context.settlements.all().size(), "active_conflicts": context.conflicts.all().size(),
 		"events": context.events.size(), "state_sha256": snapshot.sha256_text(), "snapshot_ms": save_ms, "phases_ms": report}))
 	context.travel.shutdown()
 	get_tree().quit()
+
+
+func _poll_routes(travel: AlifeTravel) -> void:
+	# Give the route worker time to run between the synthetic strategic steps.
+	var interval: SceneTreeTimer = get_tree().create_timer(WORKER_WINDOW_SECONDS)
+	while interval.time_left > 0.0:
+		travel.poll()
+		await get_tree().process_frame
 
 
 func _sample(samples: Array, start: int) -> int:

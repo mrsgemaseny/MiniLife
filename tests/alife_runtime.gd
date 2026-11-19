@@ -7,7 +7,44 @@ func check(condition: bool, message: String) -> void:
 		failures += 1
 		push_error(message)
 
+func _check_agent_indices() -> void:
+	var registry: AgentRegistry = AgentRegistry.new()
+	var first: GlobalAgent = GlobalAgent.from_dict({"agent_id": "a", "settlement_id": "home", "tile": [15, 15]})
+	var second: GlobalAgent = GlobalAgent.from_dict({"agent_id": "b", "settlement_id": "home", "tile": [16, 16]})
+	registry.register(second)
+	registry.register(first)
+	check(registry.by_settlement("home") == [first, second], "Indexed settlement lookup preserves ID order")
+	check(registry.global_within(first.tile, 1) == [first, second], "Spatial query includes diagonal chunk boundary")
+	registry.materialized[first.agent_id] = true
+	second.alive = false
+	check(registry.global_within(first.tile, 1).is_empty(), "Spatial query excludes materialized and dead agents")
+	registry.materialized.clear()
+	second.alive = true
+	first.restore({"settlement_id": "new_home", "tile": [-1, -1]})
+	check(registry.by_settlement("home") == [second] and registry.by_settlement("new_home") == [first],
+		"Changing residence updates both settlement groups")
+	check(registry.global_within(Vector2i.ZERO, 1) == [first] and registry.global_within(second.tile, 1) == [second],
+		"Changing tile updates both chunks, including signed coordinates")
+	var saved: Array = registry.to_array()
+	check(not registry.restore(saved + [saved[0]]) and registry.by_settlement("new_home") == [first],
+		"Rejected restore preserves the existing indices")
+	check(registry.restore(saved), "Registry restores indexed records")
+	var restored: GlobalAgent = registry.find(first.agent_id) as GlobalAgent
+	first.restore({"settlement_id": "stale", "tile": [32, 32]})
+	check(registry.by_settlement("new_home") == [restored] and registry.global_within(Vector2i.ZERO, 1) == [restored],
+		"Old objects cannot overwrite indices of restored records")
+	registry.remove(restored.agent_id)
+	restored.settlement_id = "stale"
+	restored.tile = Vector2i(32, 32)
+	check(registry.by_settlement("new_home").is_empty() and registry.by_settlement("stale").is_empty()
+		and registry.global_within(Vector2i.ZERO, 1).is_empty() and registry.global_within(restored.tile, 0).is_empty(),
+		"Removed objects cannot repopulate the indices")
+	registry.clear()
+	check(registry.by_settlement("home").is_empty() and registry.global_within(second.tile, 0).is_empty(),
+		"Clearing the registry clears both indices")
+
 func _ready() -> void:
+	_check_agent_indices()
 	var world: AlifeWorldContext = AlifeWorldContext.new()
 	world.seed_world(12345, 10.0)
 	check(world.factions.all().size() == DataRegistry.get_rows("factions").size(), "Faction seed count")

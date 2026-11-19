@@ -45,6 +45,7 @@ func update(delta: float, selected_route: CaravanRoute = null, limited: bool = f
 			selected_ids.append(selected_route.merchant_id)
 			selected_ids.append_array(selected_route.guards + selected_route.ambushers)
 		var selected_only: bool = limited or selected_route != null
+		var snapshot: AgentGoalEvaluator.Snapshot = AgentGoalEvaluator.Snapshot.new(world)
 		for id: String in world.agents.materialized.keys():
 			var entity: NPCBase = _live_entity(id)
 			var agent: GlobalAgent = world.agents.find(id) as GlobalAgent
@@ -59,7 +60,7 @@ func update(delta: float, selected_route: CaravanRoute = null, limited: bool = f
 			agent.tile = tile
 			agent.health = entity.stats.health
 			agent.max_health = entity.stats.max_health
-			agent.current_goal = AgentGoalEvaluator.evaluate(agent, world)
+			agent.current_goal = AgentGoalEvaluator.evaluate(agent, world, snapshot)
 			entity.set_meta("alife_goal", agent.current_goal)
 			_publish_travel_target(entity, agent)
 			_publish_routine(entity, agent)
@@ -72,7 +73,7 @@ func update(delta: float, selected_route: CaravanRoute = null, limited: bool = f
 			var tile_info: Dictionary = {}
 			SignalBus.world_tile_queried.emit(tile, tile_info)
 			entity.visible = true
-		var candidates: Array = AgentLifecycle.living(world, selected_ids, true) if selected_only else world.agents.get_all_global()
+		var candidates: Array = AgentLifecycle.living(world, selected_ids, true) if selected_only else world.agents.global_within(player_tile, MATERIALIZE_RADIUS)
 		for agent: GlobalAgent in candidates:
 			if not world.agents.materialized.has(agent.agent_id) and _should_auto_materialize(agent) \
 					and loaded_chunks.has(Config.tile_to_chunk(agent.tile)) and Config.tile_distance(player_tile, agent.tile) <= MATERIALIZE_RADIUS:
