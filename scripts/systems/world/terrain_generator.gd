@@ -17,7 +17,6 @@ const BLEND: float = 0.2
 const BORDER_AMP: float = 0.45
 # Lapse rate: anchor temperatures are the table values at the anchor elevation.
 const K_ALT: float = 0.35
-const DOMINANT_SHARE: float = 0.85
 const QUOTA_GRID: int = 32
 const SNOW_T: float = 0.19
 const DUNE_M: float = 0.16
@@ -25,13 +24,6 @@ const NO_QUOTA: float = 2.0
 const POND_LEVEL: float = 0.55
 # Clay bank ring around ponds (pond noise just below the water level).
 const POND_SHORE: float = 0.50
-
-const ANCHORS: Dictionary = {
-	"plains": {"e": 0.32, "t": 0.52, "m": 0.50, "amp": 0.08},
-	"forest": {"e": 0.40, "t": 0.45, "m": 0.70, "amp": 0.10},
-	"mountains": {"e": 0.80, "t": 0.22, "m": 0.28, "amp": 0.20},
-	"desert": {"e": 0.30, "t": 0.82, "m": 0.14, "amp": 0.07},
-}
 
 # Cumulative roll thresholds per biome (built once, not per tile).
 const RESOURCE_TABLES: Dictionary = {
@@ -96,13 +88,16 @@ func setup(world_seed: int) -> void:
 	_graph = WorldGraph.for_seed(world_seed)
 	_quota_local.clear()
 	_family_anchor.clear()
-	for kind: String in ANCHORS:
-		var a: Dictionary = ANCHORS[kind]
-		_family_anchor[kind] = Vector3(float(a["e"]), float(a["t"]), float(a["m"]))
 	_cell_anchor.clear()
+	var anchors: Dictionary[String, Vector4] = {}
 	for cell: Vector2i in _land.land_cells():
-		var anchor: Dictionary = ANCHORS[_land.kind_at(cell)]
-		_cell_anchor[cell] = Vector4(float(anchor["e"]), float(anchor["t"]) + K_ALT * float(anchor["e"]), float(anchor["m"]), float(anchor["amp"]))
+		var family: String = _land.kind_at(cell)
+		if not anchors.has(family):
+			var params: BiomeParams = BiomeParams.for_family(family)
+			_family_anchor[family] = Vector3(params.elevation, params.temperature, params.moisture)
+			var sea_level_temperature: float = params.temperature + K_ALT * params.elevation
+			anchors[family] = Vector4(params.elevation, sea_level_temperature, params.moisture, params.relief)
+		_cell_anchor[cell] = anchors[family]
 	_n_e = _make_noise(1, 1.0 / 220.0, 4, FastNoiseLite.FRACTAL_FBM)
 	_n_t = _make_noise(2, 1.0 / 700.0, 2, FastNoiseLite.FRACTAL_FBM)
 	_n_m = _make_noise(3, 1.0 / 260.0, 3, FastNoiseLite.FRACTAL_FBM)
@@ -272,7 +267,7 @@ func _quota_threshold_uncached(cell: Vector2i) -> float:
 	if total == 0 or values.is_empty():
 		return NO_QUOTA
 	var tongue_share: float = float(tongues) / float(total)
-	var wanted: float = clampf(((1.0 - DOMINANT_SHARE) - tongue_share) / maxf(1.0 - tongue_share, 0.001), 0.0, 1.0)
+	var wanted: float = clampf(((1.0 - BiomeParams.DOMINANT_SHARE) - tongue_share) / maxf(1.0 - tongue_share, 0.001), 0.0, 1.0)
 	if wanted <= 0.0:
 		return NO_QUOTA
 	values.sort()
