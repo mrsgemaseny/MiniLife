@@ -5,6 +5,9 @@ const SOURCE_PATH: String = "res://data/world.json"
 const BASE_ASSIGNMENTS_PATH: String = "res://data/base_assignment.json"
 const SCHEMA_VERSION: int = 1
 const SIZE_CELLS: Vector2i = Vector2i(21, 15)
+const RIVER_WIDTH_MIN: int = 3
+const RIVER_WIDTH_MAX: int = 64
+const RIVER_LAKE_MAX: int = 100
 const TRADE_SETTLEMENT_TYPES: Array[String] = ["castle", "city", "fortress", "village", "village_2", "village_3", "village_mark"]
 
 # WorldStudio landscape codes to the terrain families already used in saved worlds.
@@ -20,6 +23,7 @@ class ReadResult:
 	var document: Dictionary
 	var landscape: GlobalLandscapeMap
 	var trade_corridors: Dictionary[String, Array] = {}
+	var rivers: Array[Dictionary] = []
 
 	func _init(message: String = "") -> void:
 		error = message
@@ -76,6 +80,10 @@ func trade_route_keys() -> Array[String]:
 
 func has_trade_layer() -> bool:
 	return _world.document.has("trade_routes")
+
+
+func rivers() -> Array[Dictionary]:
+	return _world.rivers
 
 
 func _load_settlement_bases() -> String:
@@ -174,6 +182,9 @@ static func parse(source: String) -> ReadResult:
 	var route_error: String = _read_trade_corridors(doc, kinds, result.trade_corridors)
 	if not route_error.is_empty():
 		return ReadResult.new(route_error)
+	var river_error: String = _read_rivers(doc, kinds, result.rivers)
+	if not river_error.is_empty():
+		return ReadResult.new(river_error)
 	result.document = doc
 	result.landscape = GlobalLandscapeMap.new(SIZE_CELLS, kinds)
 	return result
@@ -240,6 +251,55 @@ static func _trade_cell(point: Variant) -> Vector2i:
 	if not point is Dictionary or not _is_cell_axis(point.get("x"), SIZE_CELLS.x) or not _is_cell_axis(point.get("y"), SIZE_CELLS.y):
 		return Vector2i(-1, -1)
 	return Vector2i(int(point["x"]), int(point["y"]))
+
+
+static func _read_rivers(doc: Dictionary, land: Dictionary, rivers_out: Array[Dictionary]) -> String:
+	var rows: Variant = doc.get("rivers", [])
+	if not rows is Array:
+		return "Expected a rivers array"
+	var bounds: Vector2i = SIZE_CELLS * GlobalLandscapeMap.CELL_TILES
+	for index: int in range(rows.size()):
+		var row: Variant = rows[index]
+		var label: String = "rivers[%d]" % index
+		if not row is Dictionary or not row.get("points") is Array or row["points"].size() < 2:
+			return label + ": expected at least two river points"
+		var width: Variant = row.get("width")
+		var lake: Variant = row.get("lake_radius", 0)
+		if not _is_cell_axis(width, RIVER_WIDTH_MAX + 1) or width < RIVER_WIDTH_MIN:
+			return label + ": width must be an integer from 3 to 64 tiles"
+		if not _is_cell_axis(lake, RIVER_LAKE_MAX + 1):
+			return label + ": lake_radius must be an integer from 0 to 100 tiles"
+		var points: Array[Vector2i] = []
+		for raw: Variant in row["points"]:
+			if not raw is Dictionary or not _is_cell_axis(raw.get("x"), bounds.x) or not _is_cell_axis(raw.get("y"), bounds.y):
+				return label + ": expected integer world tile coordinates"
+			var point := Vector2i(int(raw["x"]), int(raw["y"]))
+			if not land.has(GlobalLandscapeMap.cell_for_tile(point)):
+				return label + ": river points must lie on land"
+			if not points.is_empty():
+				var previous: Vector2i = points.back()
+				if previous == point or not _river_segment_on_land(previous, point, land):
+					return label + ": consecutive points must be distinct and connected across land"
+			points.append(point)
+		points.make_read_only()
+		var river: Dictionary = {"points": points, "width": int(width), "lake_radius": int(lake)}
+		river.make_read_only()
+		rivers_out.append(river)
+	rivers_out.make_read_only()
+	return ""
+
+
+static func _river_segment_on_land(start: Vector2i, finish: Vector2i, land: Dictionary) -> bool:
+	var previous: Vector2i = GlobalLandscapeMap.cell_for_tile(start)
+	for tile: Vector2i in IsoMath.bresenham_line(start, finish):
+		var cell: Vector2i = GlobalLandscapeMap.cell_for_tile(tile)
+		if not land.has(cell):
+			return false
+		if previous.x != cell.x and previous.y != cell.y:
+			if not land.has(Vector2i(previous.x, cell.y)) or not land.has(Vector2i(cell.x, previous.y)):
+				return false
+		previous = cell
+	return true
 
 
 static func _matches_integer(value: Variant, expected: int) -> bool:

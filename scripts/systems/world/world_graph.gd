@@ -3,7 +3,7 @@ extends RefCounted
 
 # Macro layer, built once per seed from the authored maps: river network (sources, gates
 # on cell borders, branches, confluences, terminal lakes), mines, settlement sites.
-# A pure function of (seed, world.json, political_map.json): both sides of a cell
+# A pure function of (seed, generator version, world.json, political_map.json): both sides of a cell
 # border compute the same gate, so rivers join without exchanging data.
 
 const CELL: int = GlobalLandscapeMap.CELL_TILES
@@ -34,6 +34,7 @@ var _seg_b: PackedVector2Array = PackedVector2Array()
 var _seg_half: PackedFloat32Array = PackedFloat32Array()
 var _seg_arc: PackedFloat32Array = PackedFloat32Array()
 var _seg_phase: PackedFloat32Array = PackedFloat32Array()
+var _authored_first_segment: int = 0
 var _buckets: Dictionary = {}          # Vector2i world bucket -> PackedInt32Array
 var _cell_first_segment: Dictionary = {} # cell -> index of a segment inside it (confluence target)
 var lakes: Dictionary = {}             # cell -> Array[Vector3(center.x, center.y, radius)]
@@ -50,13 +51,14 @@ static var _cache: Dictionary = {}
 static var _mutex: Mutex = Mutex.new()
 
 
-static func for_seed(world_seed: int) -> WorldGraph:
+static func for_seed(world_seed: int, version: int = TerrainGenerator.GENERATOR_VERSION) -> WorldGraph:
+	var key: Array = [world_seed, version >= TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION]
 	_mutex.lock()
-	var graph: WorldGraph = _cache.get(world_seed)
+	var graph: WorldGraph = _cache.get(key)
 	if graph == null:
 		graph = WorldGraph.new()
-		graph._build(world_seed)
-		_cache[world_seed] = graph
+		graph._build(world_seed, version)
+		_cache[key] = graph
 	_mutex.unlock()
 	return graph
 
@@ -68,7 +70,7 @@ static func hash01(a: int, b: int, c: int, salt: int) -> float:
 	return float(h) / 2147483647.0
 
 
-func _build(world_seed: int) -> void:
+func _build(world_seed: int, version: int = TerrainGenerator.GENERATOR_VERSION) -> void:
 	seed_value = world_seed
 	var land: GlobalLandscapeMap = WorldLayout.landscape()
 	var cells: Array[Vector2i] = land.land_cells()
@@ -107,9 +109,48 @@ func _build(world_seed: int) -> void:
 			# One mine per branch, on its own channel in the source mountain cell.
 			_add_mine(cell, poly, branch)
 			_follow(land, elevation, next, gate, SOURCE_WIDTH + 0.5, {cell: true})
+	_authored_first_segment = _seg_a.size()
+	if version >= TerrainGenerator.AUTHORED_RIVER_GENERATOR_VERSION:
+		_add_authored_rivers(land)
 	_place_settlements()
 	var start: Vector2i = WorldLayout.start_tile()
 	_add_clearing(GlobalLandscapeMap.cell_for_tile(start), Vector2(start), START_CLEARING)
+
+
+func _add_authored_rivers(land: GlobalLandscapeMap) -> void:
+	for river: Dictionary in WorldData.rivers():
+		var points: Array[Vector2i] = river["points"]
+		var source: Vector2 = Vector2(points[0]) + Vector2(0.5, 0.5)
+		var source_cell: Vector2i = GlobalLandscapeMap.cell_for_tile(points[0])
+		var poly: PackedVector2Array = PackedVector2Array([source])
+		river_cells[source_cell] = true
+		for index: int in range(1, points.size()):
+			var finish: Vector2 = Vector2(points[index]) + Vector2(0.5, 0.5)
+			# Subdivide long straight strokes to keep spatial buckets close to the channel.
+			var count: int = maxi(1, ceili(source.distance_to(finish) / SEGMENT_LEN))
+			for step: int in range(1, count + 1):
+				var point: Vector2 = source.lerp(finish, float(step) / float(count))
+				poly.append(point)
+				river_cells[GlobalLandscapeMap.cell_for_tile(Vector2i(point))] = true
+			source = finish
+		_add_piece(source_cell, poly, float(river["width"]))
+		var lake_radius: float = float(river["lake_radius"])
+		if lake_radius > 0.0:
+			_add_authored_lake(land, source, lake_radius)
+
+
+func _add_authored_lake(land: GlobalLandscapeMap, center: Vector2, radius: float) -> void:
+	# The SDF is indexed by cell, including the noisy shore beyond the water.
+	var edge: Vector2 = Vector2.ONE * (radius + 9.0)
+	var low: Vector2i = GlobalLandscapeMap.cell_for_tile(Vector2i((center - edge).floor()))
+	var high: Vector2i = GlobalLandscapeMap.cell_for_tile(Vector2i((center + edge).floor()))
+	for x: int in range(low.x, high.x + 1):
+		for y: int in range(low.y, high.y + 1):
+			var cell := Vector2i(x, y)
+			if land.is_land(cell):
+				var cell_lakes: Array = lakes.get(cell, [])
+				cell_lakes.append(Vector3(center.x, center.y, radius))
+				lakes[cell] = cell_lakes
 
 
 func _lower_neighbors(land: GlobalLandscapeMap, elevation: Dictionary, cell: Vector2i, visited: Dictionary) -> Array[Vector2i]:
@@ -251,7 +292,7 @@ func _place_settlements() -> void:
 		_add_clearing(cell, Vector2(tile), SETTLEMENT_CLEARING)
 
 
-# Vector4(distance to channel centreline, channel half width, 1.0 if on a ford, 0).
+# Vector4(distance to channel centreline, channel half width, ford flag, authored-water flag).
 func river_sample(point: Vector2) -> Vector4:
 	var key := Vector2i((point / BUCKET).floor())
 	if not _buckets.has(key):
@@ -259,21 +300,29 @@ func river_sample(point: Vector2) -> Vector4:
 	var best: float = FAR
 	var best_index: int = -1
 	var best_t: float = 0.0
+	var best_authored_water: bool = false
 	for index: int in (_buckets[key] as PackedInt32Array):
 		var a: Vector2 = _seg_a[index]
 		var ab: Vector2 = _seg_b[index] - a
 		var length_sq: float = ab.length_squared()
 		var t: float = 0.0 if length_sq <= 0.0 else clampf((point - a).dot(ab) / length_sq, 0.0, 1.0)
 		var distance: float = point.distance_to(a + ab * t)
-		if distance < best:
+		var authored_water: bool = index >= _authored_first_segment and distance < _seg_half[index]
+		var preferred: bool = distance < best
+		if authored_water:
+			preferred = not best_authored_water or distance - _seg_half[index] < best - _seg_half[best_index]
+		elif best_authored_water:
+			preferred = false
+		if preferred:
 			best = distance
 			best_index = index
 			best_t = t
+			best_authored_water = authored_water
 	if best_index < 0:
 		return Vector4(FAR, 0.0, 0.0, 0.0)
 	var arc: float = _seg_arc[best_index] + best_t * _seg_a[best_index].distance_to(_seg_b[best_index])
-	var ford: float = 1.0 if fposmod(arc - _seg_phase[best_index], FORD_SPACING) < FORD_WIDTH else 0.0
-	return Vector4(best, _seg_half[best_index], ford, 0.0)
+	var ford: float = 1.0 if best_index < _authored_first_segment and fposmod(arc - _seg_phase[best_index], FORD_SPACING) < FORD_WIDTH else 0.0
+	return Vector4(best, _seg_half[best_index], ford, float(best_authored_water))
 
 
 # Signed distance to the nearest lake shore in the point's cell (negative inside).
@@ -283,6 +332,14 @@ func lake_sdf(point: Vector2) -> float:
 	for lake: Vector3 in lakes.get(cell, []):
 		best = minf(best, point.distance_to(Vector2(lake.x, lake.y)) - lake.z)
 	return best
+
+
+func authored_river_segments() -> PackedVector2Array:
+	var segments := PackedVector2Array()
+	for index: int in range(_authored_first_segment, _seg_a.size()):
+		segments.append(_seg_a[index])
+		segments.append(_seg_b[index])
+	return segments
 
 
 func is_cleared(point: Vector2) -> bool:

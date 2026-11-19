@@ -8,7 +8,9 @@ extends RefCounted
 # Biome ids: plains, forest, swamp, hills, mountains (impassable ridge), snow,
 # desert (dunes, sand bars), steppe (dry semi-desert ground), water.
 
-const GENERATOR_VERSION: int = 4
+const GENERATOR_VERSION: int = 5
+const AUTHORED_RIVER_GENERATOR_VERSION: int = 5
+const SETTLEMENT_BASE_GENERATOR_VERSION: int = 4
 const SEAM_GENERATOR_VERSION: int = 3
 const LEGACY_GENERATOR_VERSION: int = 2
 const CELL: int = GlobalLandscapeMap.CELL_TILES
@@ -98,7 +100,7 @@ func setup(world_seed: int, version: int = GENERATOR_VERSION) -> void:
 	_version = version
 	_blend = LEGACY_BLEND if version == LEGACY_GENERATOR_VERSION else BLEND
 	_land = WorldLayout.landscape()
-	_graph = WorldGraph.for_seed(world_seed)
+	_graph = WorldGraph.for_seed(world_seed, version)
 	_place_settlement_bases()
 	_quota_local.clear()
 	_family_anchor.clear()
@@ -141,7 +143,7 @@ func get_version() -> int:
 
 
 static func supports_version(version: int) -> bool:
-	return version in [LEGACY_GENERATOR_VERSION, SEAM_GENERATOR_VERSION, GENERATOR_VERSION]
+	return version in [LEGACY_GENERATOR_VERSION, SEAM_GENERATOR_VERSION, SETTLEMENT_BASE_GENERATOR_VERSION, GENERATOR_VERSION]
 
 
 func get_graph() -> WorldGraph:
@@ -380,6 +382,8 @@ func _blended_threshold() -> float:
 func _water_override(pos: Vector2i, cleared: bool) -> String:
 	if cleared:
 		return ""
+	if _river.w > 0.5:
+		return "water"
 	var point := Vector2(_x + 0.5, _y + 0.5)
 	_lake = WorldGraph.FAR if _no_lake else _graph.lake_sdf(point)
 	# Shore noise is bounded by 6 tiles: skip it when no lake is near.

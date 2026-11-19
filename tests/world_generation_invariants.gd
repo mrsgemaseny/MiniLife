@@ -191,6 +191,11 @@ func _desert_neighbor(land: GlobalLandscapeMap, cell: Vector2i) -> bool:
 func _rivers(seed_value: int, terrain: TerrainGenerator) -> void:
 	var graph: WorldGraph = terrain.get_graph()
 	var land: GlobalLandscapeMap = WorldLayout.landscape()
+	var left := Vector2i(17999, 5379)
+	var right: Vector2i = left + Vector2i.RIGHT
+	for tile: Vector2i in [left, right, Vector2i(18334, 5433)]:
+		check(graph.river_sample(Vector2(tile) + Vector2(0.5, 0.5)).w == 1.0 and terrain.get_biome_at(tile) == "water",
+			"Authored river vanished at %s, seed %d" % [tile, seed_value])
 	check(not graph.used_gates.is_empty(), "No rivers, seed %d" % seed_value)
 	for entry: Array in graph.used_gates:
 		var a: Vector2i = entry[0]

@@ -17,9 +17,11 @@ func _run() -> void:
 	add_child(scene)
 	var save_system: SaveSystem = scene.get_node("Systems/SaveSystem")
 	var world: WorldSystem = scene.get_node("World")
-	var current_slot: String = "__terrain_v3_" + Crypto.new().generate_random_bytes(16).hex_encode()
-	var legacy_slot: String = "__terrain_v2_" + Crypto.new().generate_random_bytes(16).hex_encode()
-	_check(_test_slot_switch(scene, save_system, world, current_slot, legacy_slot), "Legacy slot did not load")
+	var current_slot: String = "__terrain_current_" + Crypto.new().generate_random_bytes(16).hex_encode()
+	var legacy_slot: String = "__terrain_legacy_" + Crypto.new().generate_random_bytes(16).hex_encode()
+	var version: int = TerrainGenerator.SETTLEMENT_BASE_GENERATOR_VERSION if "--v4" in OS.get_cmdline_user_args() \
+		else TerrainGenerator.LEGACY_GENERATOR_VERSION
+	_check(_test_slot_switch(scene, save_system, world, current_slot, legacy_slot, version), "Legacy slot did not load")
 	save_system.delete_slot(current_slot)
 	save_system.delete_slot(legacy_slot)
 	if failures == 0:
@@ -27,7 +29,7 @@ func _run() -> void:
 	get_tree().quit(0 if failures == 0 else 1)
 
 
-func _test_slot_switch(scene: Node, save_system: SaveSystem, world: WorldSystem, current_slot: String, legacy_slot: String) -> bool:
+func _test_slot_switch(scene: Node, save_system: SaveSystem, world: WorldSystem, current_slot: String, legacy_slot: String, version: int) -> bool:
 	var chunk: Vector2i = Config.tile_to_chunk(SEAM_TILE)
 	var current_path: String = SaveSystem._slot_dir(current_slot)
 	var legacy_path: String = SaveSystem._slot_dir(legacy_slot)
@@ -41,8 +43,22 @@ func _test_slot_switch(scene: Node, save_system: SaveSystem, world: WorldSystem,
 	var player: Dictionary = SaveSystem._read_json(current_path + "player.json")
 	var save_data: Dictionary = SaveSystem._read_json(current_path + "world.json")
 	_check(int(save_data.get("generator_version", 0)) == TerrainGenerator.GENERATOR_VERSION, "New slot stored the wrong version")
-	save_data["generator_version"] = TerrainGenerator.LEGACY_GENERATOR_VERSION
-	save_data["alife"]["agent_delta"]["generator_version"] = TerrainGenerator.LEGACY_GENERATOR_VERSION
+	save_data["generator_version"] = version
+	var legacy_context: AlifeWorldContext = AlifeWorldContext.new(version)
+	legacy_context.seed_world(SEED, Config.START_HOUR)
+	WorldSeedBuilder.populate(legacy_context)
+	var codec: AlifeAgentSaveDelta = AlifeAgentSaveDelta.new()
+	codec.capture(legacy_context, version)
+	save_data["alife"] = codec.encode(legacy_context)
+	if version == TerrainGenerator.SETTLEMENT_BASE_GENERATOR_VERSION:
+		_check(codec._fingerprint == "37bdb4bcf55c13061a8732616b6418d2d97f1856d86a579ec4a870894ce10c1b",
+			"Version 4 A-Life population changed compared with the released generator")
+	var expected_hash: String = LEGACY_CHUNK_HASH
+	if version != TerrainGenerator.LEGACY_GENERATOR_VERSION:
+		var legacy_terrain: TerrainGenerator = TerrainGenerator.new(SEED, version)
+		expected_hash = JSON.stringify(legacy_terrain.generate_chunk(chunk)).sha256_text()
+		_check(legacy_terrain.get_graph().river_sample(Vector2(18000.5, 5379.5)).w == 0.0,
+			"Version 4 terrain loaded the authored river")
 	var position: Vector2 = Config.world_to_iso(SEAM_TILE)
 	player["position"] = [position.x, position.y]
 	DirAccess.make_dir_recursive_absolute(legacy_path)
@@ -54,21 +70,21 @@ func _test_slot_switch(scene: Node, save_system: SaveSystem, world: WorldSystem,
 	DirAccess.make_dir_recursive_absolute(legacy_path + "chunks")
 	if not SaveSystem._write_json(SaveSystem._chunk_file_path(legacy_slot, chunk), delta) or not save_system.load_slot(legacy_slot):
 		return false
-	_check(world.get_terrain().get_version() == TerrainGenerator.LEGACY_GENERATOR_VERSION, "World used the wrong terrain version")
-	_check(JSON.stringify(world.get_terrain().generate_chunk(chunk)).sha256_text() == LEGACY_CHUNK_HASH,
-		"Version 2 terrain differs after loading, or reused version 3's quota cache")
-	_check(world.get_tile(SEAM_TILE).structure_id == "wood_wall", "Version 2 chunk delta did not apply")
-	_check(WorldSimulation.last_load_error.is_empty(), "Version 2 A-Life state failed to load")
+	_check(world.get_terrain().get_version() == version, "World used the wrong terrain version")
+	_check(JSON.stringify(world.get_terrain().generate_chunk(chunk)).sha256_text() == expected_hash,
+		"Legacy terrain differs after loading, or reused the current world's quota cache")
+	_check(world.get_tile(SEAM_TILE).structure_id == "wood_wall", "Legacy chunk delta did not apply")
+	_check(WorldSimulation.last_load_error.is_empty(), "Legacy A-Life state failed to load")
 
 	var map: WorldMapUI = scene.get_node("UILayer/WorldMapUI")
 	map.open_panel()
-	_check(map._map_terrain.get_version() == TerrainGenerator.LEGACY_GENERATOR_VERSION, "Local map used the wrong version")
+	_check(map._map_terrain.get_version() == version, "Local map used the wrong version")
 	map.close_panel()
 	var job := ChunkTerrainJob.new()
 	job.start(SEED, chunk, world.get_terrain().get_version())
-	_check(JSON.stringify(job.collect()).sha256_text() == LEGACY_CHUNK_HASH, "Chunk worker used the wrong version")
+	_check(JSON.stringify(job.collect()).sha256_text() == expected_hash, "Chunk worker used the wrong version")
 	_check(save_system.save_slot(legacy_slot)
-		and int(SaveSystem._read_json(legacy_path + "world.json").get("generator_version", 0)) == TerrainGenerator.LEGACY_GENERATOR_VERSION,
+		and int(SaveSystem._read_json(legacy_path + "world.json").get("generator_version", 0)) == version,
 		"Saving an old slot changed its generation version")
 
 	_check(save_system.load_slot(current_slot), "Could not reload the current version slot")

@@ -22,10 +22,12 @@ var reputation: Dictionary = {}
 var contracts: Dictionary = {}
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var travel: AlifeTravel
+var generator_version: int
 
 
-func _init(generator_version: int = TerrainGenerator.GENERATOR_VERSION) -> void:
-	travel = AlifeTravel.new(generator_version)
+func _init(version: int = TerrainGenerator.GENERATOR_VERSION) -> void:
+	generator_version = version
+	travel = AlifeTravel.new(version)
 
 func seed_world(seed_value: int, initial_hour: float) -> void:
 	world_seed = seed_value

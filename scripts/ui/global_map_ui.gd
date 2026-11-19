@@ -159,8 +159,8 @@ func _draw_map() -> void:
 				color = color.darkened(0.45)
 		_canvas.draw_rect(rect, color)
 		_canvas.draw_rect(rect, Color(0.09, 0.11, 0.14, 0.32), false, 1.0)
-	# Rivers as cell-to-cell links: the macro graph the local generator draws inside cells.
-	var graph: WorldGraph = WorldGraph.for_seed(_seed)
+	var graph: WorldGraph = WorldGraph.for_seed(_seed, GameManager.get_world_generator_version())
+	_draw_authored_rivers(graph)
 	for cell: Vector2i in graph.lakes:
 		if _region_fog(cell) != Config.FogState.UNEXPLORED:
 			_canvas.draw_circle((Vector2(cell) + Vector2.ONE * 0.5) * CELL_SIZE, 5.0, Color("3a7bc8"))
@@ -179,6 +179,21 @@ func _draw_map() -> void:
 	_canvas.draw_circle(player_center, 8.0, Color.WHITE, false, 2.0)
 	if _selected_region.x >= 0:
 		_canvas.draw_rect(Rect2(Vector2(_selected_region) * CELL_SIZE, Vector2.ONE * CELL_SIZE), Color("f0e5ce"), false, 2.0)
+
+func _draw_authored_rivers(graph: WorldGraph) -> void:
+	var segments: PackedVector2Array = graph.authored_river_segments()
+	var scale: float = CELL_SIZE / float(GlobalLandscapeMap.CELL_TILES)
+	for index: int in range(0, segments.size(), 2):
+		var start: Vector2 = segments[index]
+		var finish: Vector2 = segments[index + 1]
+		var a: Vector2i = GlobalLandscapeMap.cell_for_tile(Vector2i(start))
+		var b: Vector2i = GlobalLandscapeMap.cell_for_tile(Vector2i(finish))
+		if _region_fog(a) == Config.FogState.UNEXPLORED or _region_fog(b) == Config.FogState.UNEXPLORED:
+			continue
+		if a.x != b.x and a.y != b.y and (_region_fog(Vector2i(a.x, b.y)) == Config.FogState.UNEXPLORED \
+				or _region_fog(Vector2i(b.x, a.y)) == Config.FogState.UNEXPLORED):
+			continue
+		_canvas.draw_line(start * scale, finish * scale, Color("3a7bc8"), 1.5, true)
 
 func _on_map_input(event: InputEvent) -> void:
 	if not event is InputEventMouseButton or not event.pressed or event.button_index != MOUSE_BUTTON_LEFT:
@@ -200,7 +215,7 @@ func _find_landing_tile(region: Vector2i) -> Vector2i:
 		return Vector2i(-1, -1)
 	# Land at the settlement gate when the cell has one: its clearing is dry by construction.
 	var center: Vector2i = bounds.position + bounds.size / 2
-	var site: Dictionary = WorldGraph.for_seed(_seed).site_for_cell(region)
+	var site: Dictionary = world_system.get_terrain().get_graph().site_for_cell(region)
 	if not site.is_empty():
 		center = (site["tile"] as Vector2i) + Vector2i(0, 12)
 	for radius: int in range(0, 200):

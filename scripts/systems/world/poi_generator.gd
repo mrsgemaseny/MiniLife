@@ -40,18 +40,18 @@ static func _cell_of_chunk(chunk_pos: Vector2i) -> Vector2i:
 
 # Exact early answer: _cell_candidates never accepts chunks this close to the settlement
 # site, so settlement district lookups need not build (and generate terrain for) the plan.
-static func _inside_settlement_reserve(world_seed: int, cell: Vector2i, chunk_pos: Vector2i) -> bool:
-	var site: Dictionary = WorldGraph.for_seed(world_seed).site_for_cell(cell)
+static func _inside_settlement_reserve(world_seed: int, cell: Vector2i, chunk_pos: Vector2i, version: int) -> bool:
+	var site: Dictionary = WorldGraph.for_seed(world_seed, version).site_for_cell(cell)
 	return not site.is_empty() and Config.tile_distance(Config.chunk_origin(chunk_pos) + Vector2i(8, 8), site["tile"]) < SETTLEMENT_RESERVE
 
 # Deterministic uniform draws of interior chunks of a cell, minus the start area and the
 # settlement clearing. Planners stop after a few accepted chunks, so drawing lazily is
 # far cheaper than shuffling all ~3900 chunks of every cell a settlement index touches.
-static func _cell_candidates(world_seed: int, cell: Vector2i, margin: int, salt: int) -> Array[Vector2i]:
+static func _cell_candidates(world_seed: int, cell: Vector2i, margin: int, salt: int, version: int) -> Array[Vector2i]:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = RngService.hash_coords(world_seed, cell.x, cell.y, salt)
 	var rect: Rect2i = WorldLayout.cell_chunk_rect(cell)
-	var site: Dictionary = WorldGraph.for_seed(world_seed).site_for_cell(cell)
+	var site: Dictionary = WorldGraph.for_seed(world_seed, version).site_for_cell(cell)
 	var seen: Dictionary = {}
 	var candidates: Array[Vector2i] = []
 	for attempt: int in range(CANDIDATE_DRAWS):
@@ -71,7 +71,7 @@ static func _cell_candidates(world_seed: int, cell: Vector2i, margin: int, salt:
 static func get_fixed_ruin_for_chunk(world_seed: int, chunk_pos: Vector2i, version: int = TerrainGenerator.GENERATOR_VERSION) -> Dictionary:
 	# One quota per local map (cell), never a counter shared across cells.
 	var cell: Vector2i = _cell_of_chunk(chunk_pos)
-	if not WorldLayout.landscape().is_land(cell) or _inside_settlement_reserve(world_seed, cell, chunk_pos):
+	if not WorldLayout.landscape().is_land(cell) or _inside_settlement_reserve(world_seed, cell, chunk_pos, version):
 		return {}
 	var key: String = _plan_key(world_seed, cell, version)
 	_plan_mutex.lock()
@@ -85,7 +85,7 @@ static func _build_local_ruin_plan(world_seed: int, cell: Vector2i, version: int
 	var rng := RandomNumberGenerator.new()
 	rng.seed = RngService.hash_coords(world_seed, cell.x, cell.y, 0x5A827999)
 	var wanted: int = rng.randi_range(LOCAL_RUIN_MIN, LOCAL_RUIN_MAX)
-	var candidates: Array[Vector2i] = _cell_candidates(world_seed, cell, 1, 0x5A82)
+	var candidates: Array[Vector2i] = _cell_candidates(world_seed, cell, 1, 0x5A82, version)
 	var result: Dictionary = {}
 	for candidate: Vector2i in candidates:
 		if result.size() == wanted:
@@ -146,7 +146,7 @@ static func get_chunk_poi(world_seed: int, chunk_pos: Vector2i, biome_id: String
 
 static func get_bandit_camp_for_chunk(world_seed: int, chunk_pos: Vector2i, version: int = TerrainGenerator.GENERATOR_VERSION) -> Dictionary:
 	var cell: Vector2i = _cell_of_chunk(chunk_pos)
-	if not WorldLayout.landscape().is_land(cell) or _inside_settlement_reserve(world_seed, cell, chunk_pos):
+	if not WorldLayout.landscape().is_land(cell) or _inside_settlement_reserve(world_seed, cell, chunk_pos, version):
 		return {}
 	var key: String = _plan_key(world_seed, cell, version)
 	_plan_mutex.lock()
@@ -159,7 +159,7 @@ static func get_bandit_camp_for_chunk(world_seed: int, chunk_pos: Vector2i, vers
 static func _build_bandit_plan(world_seed: int, cell: Vector2i, version: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = RngService.hash_coords(world_seed, cell.x, cell.y, 0x42616E64)
-	var candidates: Array[Vector2i] = _cell_candidates(world_seed, cell, 2, 0x4261)
+	var candidates: Array[Vector2i] = _cell_candidates(world_seed, cell, 2, 0x4261, version)
 	var result: Dictionary = {}
 	var key: String = _plan_key(world_seed, cell, version)
 	_plan_mutex.lock()

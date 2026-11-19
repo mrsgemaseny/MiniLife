@@ -19,6 +19,9 @@ func _run() -> void:
 	if not _check_trade_routes(WorldData.snapshot()):
 		_fail("trade routes failed validation or did not preserve their direction")
 		return
+	if not _check_river_schema(WorldData.snapshot()):
+		_fail("river data failed to validate")
+		return
 	var map: GlobalLandscapeMap = WorldLayout.landscape()
 	if map == null:
 		_fail("world data returned no landscape")
@@ -148,3 +151,30 @@ func _check_trade_routes(world: Dictionary) -> bool:
 	world.erase("trade_routes")
 	var prior: WorldDataLoader.ReadResult = WorldDataLoader.parse(JSON.stringify(world))
 	return prior.error.is_empty() and prior.trade_corridors.is_empty()
+
+
+func _check_river_schema(world: Dictionary) -> bool:
+	var rows: Array = world["rivers"]
+	var sample: Dictionary = rows[0].duplicate(true)
+	rows[0]["width"] = 0
+	if not _rejects(world, "width"):
+		return false
+	rows[0] = sample.duplicate(true)
+	rows[0]["lake_radius"] = 101
+	if not _rejects(world, "lake_radius"):
+		return false
+	rows[0] = sample.duplicate(true)
+	rows[0]["points"][0]["x"] = 21000
+	if not _rejects(world, "world tile coordinates"):
+		return false
+	rows[0] = sample.duplicate(true)
+	rows[0]["points"][1] = rows[0]["points"][0]
+	if not _rejects(world, "distinct"):
+		return false
+	# Two known land cells on opposite sides of the void east of the start.
+	rows[0] = {"width": 7, "points": [{"x": 9500, "y": 14500}, {"x": 12500, "y": 12500}]}
+	if not _rejects(world, "land"):
+		return false
+	world.erase("rivers")
+	var prior: WorldDataLoader.ReadResult = WorldDataLoader.parse(JSON.stringify(world))
+	return prior.error.is_empty() and prior.rivers.is_empty()
