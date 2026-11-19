@@ -16,6 +16,9 @@ func _run() -> void:
 	if world.is_empty() or not _check_world_data(world):
 		_fail("bundled world.json failed its schema checks")
 		return
+	if not _check_trade_routes(WorldData.snapshot()):
+		_fail("trade routes failed validation or did not preserve their direction")
+		return
 	var map: GlobalLandscapeMap = WorldLayout.landscape()
 	if map == null:
 		_fail("world data returned no landscape")
@@ -103,3 +106,45 @@ func _check_world_data(world: Dictionary) -> bool:
 func _rejects(world: Dictionary, reason: String) -> bool:
 	var rejected: WorldDataLoader.ReadResult = WorldDataLoader.parse(JSON.stringify(world))
 	return rejected.landscape == null and rejected.error.contains(reason)
+
+
+func _check_trade_routes(world: Dictionary) -> bool:
+	var village: String = WorldLayout.settlement_id_for_cell(Vector2i(7, 14))
+	var castle: String = WorldLayout.settlement_id_for_cell(Vector2i(7, 13))
+	if WorldData.trade_corridor(village, castle) != [Vector2i(7, 14), Vector2i(7, 13)] \
+			or WorldData.trade_corridor(castle, village) != [Vector2i(7, 13), Vector2i(7, 14)]:
+		return false
+	var context: AlifeWorldContext = AlifeWorldContext.new()
+	for id: String in [village, castle]:
+		var settlement: AlifeSettlement = AlifeSettlement.new()
+		settlement.settlement_id = id
+		context.settlements.register(settlement)
+	CaravanRouteManager.register_authored_routes(context)
+	CaravanRouteManager.register_authored_routes(context)
+	if context.routes.all().size() != 2 or context.routes.find(village + "->" + castle) == null \
+			or context.routes.find(castle + "->" + village) == null:
+		return false
+	var routes: Array = world["trade_routes"]
+	var defined: Dictionary = routes[0].duplicate(true)
+	routes[0]["from"] = "obj.army_mark_1"
+	if not _rejects(world, "endpoints must be settlements"):
+		return false
+	routes[0] = defined.duplicate(true)
+	routes[0]["cells"].insert(1, {"x": 8, "y": 13})
+	if not _rejects(world, "share a side"):
+		return false
+	routes[0] = defined.duplicate(true)
+	routes[0]["cells"].insert(1, {"x": 0, "y": 0})
+	if not _rejects(world, "unique land cells"):
+		return false
+	routes[0] = defined
+	routes.append(defined.duplicate(true))
+	if not _rejects(world, "duplicate road"):
+		return false
+	world["trade_routes"] = []
+	var empty: WorldDataLoader.ReadResult = WorldDataLoader.parse(JSON.stringify(world))
+	if not empty.error.is_empty() or not empty.document.has("trade_routes") or not empty.trade_corridors.is_empty():
+		return false
+	world.erase("trade_routes")
+	var prior: WorldDataLoader.ReadResult = WorldDataLoader.parse(JSON.stringify(world))
+	return prior.error.is_empty() and prior.trade_corridors.is_empty()

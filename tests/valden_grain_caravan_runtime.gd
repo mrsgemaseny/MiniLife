@@ -19,6 +19,10 @@ func _run() -> void:
 		_check_camp_detour()
 		get_tree().quit(0 if failures == 0 else 1)
 		return
+	if "--multi-cell-road" in OS.get_cmdline_user_args():
+		_check_multi_cell_road()
+		get_tree().quit(0 if failures == 0 else 1)
+		return
 	var scene: Node = load("res://scenes/main.tscn").instantiate()
 	add_child(scene)
 	var save_system: SaveSystem = scene.get_node("Systems/SaveSystem")
@@ -33,19 +37,40 @@ func _run() -> void:
 
 func _check_seed_paths() -> void:
 	var seeds: Array[int] = [Config.DEFAULT_WORLD_SEED, 12345, 1, 42, 9999, 20261119]
+	var corridor: Array[Vector2i] = WorldData.trade_corridor(VILLAGE_ID, CASTLE_ID)
 	for seed_value: int in seeds:
 		var graph: WorldGraph = WorldGraph.for_seed(seed_value)
 		var village: Vector2i = graph.site_for_cell(Vector2i(7, 14))["tile"]
 		var castle: Vector2i = (graph.site_for_cell(Vector2i(7, 13))["tile"] as Vector2i) + CaravanRouteManager.MARKET_APPROACH
 		var travel: AlifeTravel = AlifeTravel.new()
-		var forward: Array[Vector2i] = travel.path(seed_value, village, castle, true)
-		var reverse: Array[Vector2i] = travel.path(seed_value, castle, village, true)
+		var forward: Array[Vector2i] = travel.path(seed_value, village, castle, true, corridor)
+		var reverse: Array[Vector2i] = travel.path(seed_value, castle, village, true, WorldData.trade_corridor(CASTLE_ID, VILLAGE_ID))
 		reverse.reverse()
 		_check(not forward.is_empty() and forward == reverse, "No reversible connected route for seed %d" % seed_value)
+		_check(_travelled_cells(forward) == corridor, "Trade route left WorldStudio's corridor on seed %d" % seed_value)
 		_check(forward.all(func(tile: Vector2i) -> bool: return not travel._grid.bandit_camp_area(tile).has_point(tile)),
 			"Valden's settlement route crossed a camp on seed %d" % seed_value)
 	if failures == 0:
 		print("VALDEN_GRAIN_CARAVAN_ROUTE_SEEDS_OK")
+
+func _check_multi_cell_road() -> void:
+	var seed_value: int = Config.DEFAULT_WORLD_SEED
+	var corridor: Array[Vector2i] = [Vector2i(7, 14), Vector2i(7, 13), Vector2i(7, 12)]
+	var graph: WorldGraph = WorldGraph.for_seed(seed_value)
+	var start: Vector2i = graph.site_for_cell(corridor[0])["tile"]
+	var finish: Vector2i = graph.site_for_cell(corridor[2])["tile"]
+	var travel: AlifeTravel = AlifeTravel.new()
+	var route: Array[Vector2i] = travel.path(seed_value, start, finish, true, corridor)
+	if _check(_travelled_cells(route) == corridor, "A trade road skipped or left its ordered cells"):
+		print("VALDEN_MULTI_CELL_ROAD_OK")
+
+func _travelled_cells(path: Array[Vector2i]) -> Array[Vector2i]:
+	var visited: Array[Vector2i] = []
+	for tile: Vector2i in path:
+		var cell: Vector2i = GlobalLandscapeMap.cell_for_tile(tile)
+		if visited.is_empty() or cell != visited.back():
+			visited.append(cell)
+	return visited
 
 func _check_camp_detour() -> void:
 	var seed_value: int = Config.DEFAULT_WORLD_SEED
@@ -187,7 +212,10 @@ func _is_contiguous(tiles: Array) -> bool:
 
 func _wait_for_path(from_tile: Vector2i, to_tile: Vector2i) -> void:
 	var timeout: int = Time.get_ticks_msec() + 30000
-	while Time.get_ticks_msec() < timeout and WorldSimulation.world.travel.is_path_pending(WorldSimulation.world.world_seed, from_tile, to_tile, true):
+	var origin: String = WorldLayout.settlement_id_for_cell(GlobalLandscapeMap.cell_for_tile(from_tile))
+	var target: String = WorldLayout.settlement_id_for_cell(GlobalLandscapeMap.cell_for_tile(to_tile))
+	var corridor: Array[Vector2i] = WorldData.trade_corridor(origin, target)
+	while Time.get_ticks_msec() < timeout and WorldSimulation.world.travel.is_path_pending(WorldSimulation.world.world_seed, from_tile, to_tile, true, corridor):
 		await get_tree().process_frame
 
 

@@ -16,6 +16,7 @@ var terrain: TerrainGenerator
 var avoid_bandit_camps: bool = false
 var _blocked: Dictionary = {}
 var _camp_areas: Dictionary[Vector2i, Rect2i] = {}
+var _route_cells: Dictionary[Vector2i, bool] = {}
 var region: Rect2i = Rect2i()
 var _graph_ready: bool = false
 var _macro: AStar2D = AStar2D.new()
@@ -150,9 +151,32 @@ func tile_for(cell: Vector2i) -> Vector2i:
 
 
 func blocked(tile: Vector2i) -> bool:
+	if not _route_cells.is_empty() and not _route_cells.has(GlobalLandscapeMap.cell_for_tile(tile)):
+		return true
 	if not _blocked.has(tile):
 		_blocked[tile] = not terrain.is_dry_land(tile)
 	return bool(_blocked[tile]) or (avoid_bandit_camps and bandit_camp_area(tile).has_point(tile))
+
+
+func restrict_to(cells: Array[Vector2i]) -> void:
+	_route_cells.clear()
+	for cell: Vector2i in cells:
+		_route_cells[cell] = true
+
+
+func road_exits(cell: Vector2i, neighbor: Vector2i) -> Array[Vector2i]:
+	var direction: Vector2i = neighbor - cell
+	var result: Array[Vector2i] = []
+	restrict_to([cell, neighbor])
+	var edge: Vector2i = cell * CELL + Vector2i(
+		CELL - 1 if direction.x > 0 else 0, CELL - 1 if direction.y > 0 else 0)
+	var along: Vector2i = Vector2i.DOWN if direction.x != 0 else Vector2i.RIGHT
+	for distance: int in range(0, CELL / 2, 50):
+		for side: int in ([1] if distance == 0 else [1, -1]):
+			var exit: Vector2i = edge + along * (CELL / 2 + side * distance)
+			if not blocked(exit) and not blocked(exit + direction):
+				result.append(exit)
+	return result
 
 
 func bandit_camp_area(tile: Vector2i) -> Rect2i:

@@ -120,6 +120,8 @@ func _valden_grain_route() -> CaravanRoute:
 	var buyer: AlifeSettlement = world.settlements.find(EconomyTick.VALDEN_CASTLE_ID) as AlifeSettlement
 	if buyer == null or not buyer.famine or world.settlements.find(EconomyTick.VALDEN_VILLAGE_ID) == null:
 		return null
+	if world.authored_trade_only and WorldData.trade_corridor(EconomyTick.VALDEN_VILLAGE_ID, EconomyTick.VALDEN_CASTLE_ID).is_empty():
+		return null
 	var introduction: Dictionary = {}
 	SignalBus.frontier_introduction_queried.emit(introduction)
 	if not bool(introduction.get("village_open", false)):
@@ -136,9 +138,10 @@ func _valden_grain_route() -> CaravanRoute:
 
 func _advance_valden_crew(route: CaravanRoute, hours: float) -> void:
 	if route.active:
+		var corridor: Array[Vector2i] = WorldData.trade_corridor(route.at_id, route.destination_id)
 		for agent: GlobalAgent in AgentLifecycle.living(world, [route.merchant_id] + route.guards):
 			if not world.agents.materialized.has(agent.agent_id) and AgentGoalEvaluator.evaluate(agent, world) == "caravan_travel":
-				world.travel.advance(world.world_seed, agent, hours, AlifeTravel.WALK_TILES_PER_HOUR, true)
+				world.travel.advance(world.world_seed, agent, hours, AlifeTravel.WALK_TILES_PER_HOUR, true, corridor)
 		return
 	var home: AlifeSettlement = world.settlements.find(route.from_id) as AlifeSettlement
 	if home == null:
@@ -210,6 +213,8 @@ func _on_game_started(seed_value: int, _slot: String, is_new: bool) -> void:
 	_index_settlements()
 	if is_new:
 		_assign_district_homes()
+	world.authored_trade_only = WorldData.has_trade_layer()
+	CaravanRouteManager.register_authored_routes(world)
 	var valden_base: SettlementBase = WorldData.settlement_bases().get(EconomyTick.VALDEN_VILLAGE_CELL)
 	_valden_economy_enabled = valden_base != null and GameManager.get_world_generator_version() >= valden_base.first_generator_version
 	var route: CaravanRoute = world.routes.find(VALDEN_GRAIN_ROUTE_ID) as CaravanRoute

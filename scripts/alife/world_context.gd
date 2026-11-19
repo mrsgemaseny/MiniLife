@@ -17,6 +17,7 @@ var events: Array = []
 var rumors: Array = []
 var rumor_cursor: int = 0
 var narrative: Dictionary = {}
+var authored_trade_only: bool = false
 var reputation: Dictionary = {}
 var contracts: Dictionary = {}
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()

@@ -5,6 +5,7 @@ const SOURCE_PATH: String = "res://data/world.json"
 const BASE_ASSIGNMENTS_PATH: String = "res://data/base_assignment.json"
 const SCHEMA_VERSION: int = 1
 const SIZE_CELLS: Vector2i = Vector2i(21, 15)
+const TRADE_SETTLEMENT_TYPES: Array[String] = ["castle", "city", "fortress", "village", "village_2", "village_3", "village_mark"]
 
 # WorldStudio landscape codes to the terrain families already used in saved worlds.
 const LANDSCAPE_KINDS: Dictionary[String, String] = {
@@ -18,6 +19,7 @@ class ReadResult:
 	var error: String
 	var document: Dictionary
 	var landscape: GlobalLandscapeMap
+	var trade_corridors: Dictionary[String, Array] = {}
 
 	func _init(message: String = "") -> void:
 		error = message
@@ -58,6 +60,22 @@ func snapshot() -> Dictionary:
 
 func settlement_bases() -> Dictionary[Vector2i, SettlementBase]:
 	return _settlement_bases
+
+
+func trade_corridor(from_id: String, to_id: String) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	result.assign(_world.trade_corridors.get(from_id + "->" + to_id, []))
+	return result
+
+
+func trade_route_keys() -> Array[String]:
+	var keys: Array[String] = []
+	keys.assign(_world.trade_corridors.keys())
+	return keys
+
+
+func has_trade_layer() -> bool:
+	return _world.document.has("trade_routes")
 
 
 func _load_settlement_bases() -> String:
@@ -152,11 +170,76 @@ static func parse(source: String) -> ReadResult:
 	if kinds.is_empty():
 		return ReadResult.new("Expected at least one cell with a landscape")
 
-	# Other sections are carried through as authored. Their consumers own their validation.
 	var result := ReadResult.new()
+	var route_error: String = _read_trade_corridors(doc, kinds, result.trade_corridors)
+	if not route_error.is_empty():
+		return ReadResult.new(route_error)
 	result.document = doc
 	result.landscape = GlobalLandscapeMap.new(SIZE_CELLS, kinds)
 	return result
+
+
+static func _read_trade_corridors(doc: Dictionary, land: Dictionary, corridors: Dictionary[String, Array]) -> String:
+	var rows: Variant = doc.get("trade_routes", [])
+	if not rows is Array:
+		return "Expected a trade_routes array"
+	if rows.is_empty():
+		return ""
+	var objects: Variant = doc.get("objects")
+	if not objects is Array:
+		return "trade_routes requires settlement objects"
+	var settlements: Dictionary[String, Vector2i] = {}
+	for obj: Variant in objects:
+		if not obj is Dictionary or not obj.get("id") is String or obj.get("type") not in TRADE_SETTLEMENT_TYPES:
+			continue
+		var cell: Vector2i = _trade_cell(obj.get("cell"))
+		if cell.x < 0:
+			continue
+		if settlements.has(obj["id"]):
+			return "trade_routes: duplicate settlement id " + str(obj["id"])
+		settlements[obj["id"]] = cell
+	for index: int in range(rows.size()):
+		var row: Variant = rows[index]
+		var label: String = "trade_routes[%d]" % index
+		if not row is Dictionary or not row.get("from") is String or not row.get("to") is String or not row.get("cells") is Array:
+			return label + ": expected from, to and cells"
+		if not settlements.has(row["from"]) or not settlements.has(row["to"]):
+			return label + ": both endpoints must be settlements"
+		var start: Vector2i = settlements[row["from"]]
+		var finish: Vector2i = settlements[row["to"]]
+		var points: Array = row["cells"]
+		if start == finish or points.size() < 2 or _trade_cell(points.front()) != start or _trade_cell(points.back()) != finish:
+			return label + ": cells must start and end at two distinct settlements"
+		var path: Array[Vector2i] = []
+		var visited: Dictionary[Vector2i, bool] = {}
+		for point: Variant in points:
+			var tile: Vector2i = _trade_cell(point)
+			if not land.has(tile) or visited.has(tile):
+				return label + ": road cells must be unique land cells"
+			if not path.is_empty():
+				var previous: Vector2i = path.back()
+				var step: Vector2i = (tile - previous).abs()
+				if step.x + step.y != 1:
+					return label + ": consecutive road cells must share a side"
+			visited[tile] = true
+			path.append(tile)
+		var from_id: String = WorldLayout.settlement_id_for_cell(start)
+		var to_id: String = WorldLayout.settlement_id_for_cell(finish)
+		var key: String = from_id + "->" + to_id
+		if corridors.has(key):
+			return label + ": duplicate road for the same pair of settlements"
+		var reverse: Array[Vector2i] = path.duplicate()
+		reverse.reverse()
+		corridors[key] = path
+		corridors[to_id + "->" + from_id] = reverse
+	corridors.make_read_only()
+	return ""
+
+
+static func _trade_cell(point: Variant) -> Vector2i:
+	if not point is Dictionary or not _is_cell_axis(point.get("x"), SIZE_CELLS.x) or not _is_cell_axis(point.get("y"), SIZE_CELLS.y):
+		return Vector2i(-1, -1)
+	return Vector2i(int(point["x"]), int(point["y"]))
 
 
 static func _matches_integer(value: Variant, expected: int) -> bool:

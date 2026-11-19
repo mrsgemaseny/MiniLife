@@ -3366,5 +3366,21 @@
       "state.valden"
     ]
   },
-  "schema_version": 1
+  "schema_version": 1,
+  "trade_routes": [
+    {
+      "cells": [
+        {
+          "x": 7,
+          "y": 14
+        },
+        {
+          "x": 7,
+          "y": 13
+        }
+      ],
+      "from": "obj.village_48",
+      "to": "obj.castle_8"
+    }
+  ]
 }

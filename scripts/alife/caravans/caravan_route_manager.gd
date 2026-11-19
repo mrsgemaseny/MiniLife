@@ -17,6 +17,19 @@ static func seed_routes(world: AlifeWorldContext) -> void:
 			route.next_departure_hour = world.simulated_hour + float(world.routes.all().size() % 6)
 			world.routes.register(route)
 
+static func register_authored_routes(world: AlifeWorldContext) -> void:
+	for route_id: String in WorldData.trade_route_keys():
+		var endpoints: PackedStringArray = route_id.split("->")
+		if world.routes.find(route_id) != null or world.settlements.find(endpoints[0]) == null or world.settlements.find(endpoints[1]) == null:
+			continue
+		var route: CaravanRoute = CaravanRoute.new()
+		route.route_id = route_id
+		route.from_id = endpoints[0]
+		route.to_id = endpoints[1]
+		route.at_id = route.from_id
+		route.next_departure_hour = world.simulated_hour
+		world.routes.register(route)
+
 static func is_blockaded(world: AlifeWorldContext, settlement_id: String) -> bool:
 	for conflict: AlifeConflict in world.conflicts.all():
 		if not conflict.resolved and conflict.phase == "siege" and conflict.target_settlement == settlement_id:
@@ -39,6 +52,9 @@ static func dispatch(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 	if FactionDiplomacy.at_war(world, source.owner_faction, destination.owner_faction):
 		return false
 	var returning: bool = route.grain_relief and destination_id == route.from_id
+	var corridor: Array[Vector2i] = WorldData.trade_corridor(source.settlement_id, destination_id)
+	if world.authored_trade_only and corridor.is_empty() and not returning:
+		return false
 	var cargo: Dictionary = {}
 	if route.grain_relief:
 		if not returning and not destination.famine:
@@ -92,7 +108,8 @@ static func dispatch(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 	var credit: int = maxi(0, cost + overhead - home.treasury)
 	if credit > 0 and (faction == null or faction.treasury < credit):
 		return false
-	var path: Array[Vector2i] = world.travel.request_path(world.world_seed, source_tile, destination_tile, route.grain_relief)
+	var connected: bool = route.grain_relief or not corridor.is_empty()
+	var path: Array[Vector2i] = world.travel.request_path(world.world_seed, source_tile, destination_tile, connected, corridor)
 	if path.is_empty():
 		return false
 	if credit > 0:
@@ -140,7 +157,7 @@ static func dispatch(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 		agent.caravan_id = route.route_id
 		agent.current_goal = "caravan_travel"
 		agent.destination_tile = destination_tile
-		if route.grain_relief:
+		if connected:
 			var start_index: int = 0
 			if not world.agents.materialized.has(id):
 				start_index = mini((crew.size() - 1 - index) * CONVOY_SPACING, path.size() - 1)

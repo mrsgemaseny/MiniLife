@@ -29,15 +29,16 @@ func _init(generator_version: int = TerrainGenerator.GENERATOR_VERSION) -> void:
 	_generator_version = generator_version
 
 
-func request_path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool = false) -> Array[Vector2i]:
+func request_path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool = false,
+		corridor: Array[Vector2i] = []) -> Array[Vector2i]:
 	if not background_enabled:
-		return path(seed_value, from_tile, to_tile, connected)
+		return path(seed_value, from_tile, to_tile, connected, corridor)
 	poll()
-	var key: String = _request_key(seed_value, from_tile, to_tile, connected)
+	var key: String = _request_key(seed_value, from_tile, to_tile, connected, corridor)
 	if _completed.has(key):
 		return _completed[key].duplicate()
 	if key != _task_key:
-		_requests[key] = {"seed": seed_value, "from": from_tile, "to": to_tile, "connected": connected}
+		_requests[key] = {"seed": seed_value, "from": from_tile, "to": to_tile, "connected": connected, "corridor": corridor.duplicate()}
 	poll()
 	return []
 
@@ -56,15 +57,16 @@ func poll() -> void:
 		if _worker_solver == null:
 			_worker_solver = AlifeTravel.new(_generator_version)
 		_task_id = WorkerThreadPool.add_task(func() -> void:
-			_task_result = _worker_solver.path(int(request["seed"]), request["from"], request["to"], request["connected"])
+			_task_result = _worker_solver.path(int(request["seed"]), request["from"], request["to"], request["connected"], request["corridor"])
 		, false, "A-Life route")
 
-func is_path_pending(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool = false) -> bool:
-	var key: String = _request_key(seed_value, from_tile, to_tile, connected)
+func is_path_pending(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool = false,
+		corridor: Array[Vector2i] = []) -> bool:
+	var key: String = _request_key(seed_value, from_tile, to_tile, connected, corridor)
 	return key == _task_key or _requests.has(key)
 
-func _request_key(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool) -> String:
-	return "%d:%s:%s:%d" % [seed_value, from_tile, to_tile, int(connected)]
+func _request_key(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool, corridor: Array[Vector2i]) -> String:
+	return "%d:%s:%s:%d:%s" % [seed_value, from_tile, to_tile, int(connected), str(corridor)]
 
 func shutdown() -> void:
 	if _task_id >= 0:
@@ -85,25 +87,74 @@ func _prepare(seed_value: int) -> void:
 	_grid.setup(seed_value, _generator_version)
 
 # Terrain and camp placement are deterministic, so the same settlement route can be reused.
-func path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool = false) -> Array[Vector2i]:
+func path(seed_value: int, from_tile: Vector2i, to_tile: Vector2i, connected: bool = false,
+		corridor: Array[Vector2i] = []) -> Array[Vector2i]:
 	_prepare(seed_value)
-	var reverse: bool = connected and to_tile < from_tile
+	var dense: bool = connected or not corridor.is_empty()
+	var reverse: bool = dense and to_tile < from_tile
 	var start: Vector2i = to_tile if reverse else from_tile
 	var finish: Vector2i = from_tile if reverse else to_tile
+	var cells: Array[Vector2i] = corridor.duplicate()
+	if reverse:
+		cells.reverse()
 	var endpoints := Vector4i(start.x, start.y, finish.x, finish.y)
-	var key: Variant = [endpoints] if connected else endpoints
+	var key: Variant = [endpoints, cells] if dense else endpoints
 	if not _path_cache.has(key):
 		if _path_cache.size() >= PATH_CACHE_LIMIT:
 			_path_cache.erase(_path_cache.keys()[0])
-		_path_cache[key] = _solve(start, finish, connected)
+		_path_cache[key] = _solve(start, finish, dense, cells)
 	var result: Array[Vector2i] = (_path_cache[key] as Array[Vector2i]).duplicate()
 	if reverse:
 		result.reverse()
 	return result
 
 
-func _solve(from_tile: Vector2i, to_tile: Vector2i, connected: bool) -> Array[Vector2i]:
+func _solve(from_tile: Vector2i, to_tile: Vector2i, connected: bool, corridor: Array[Vector2i]) -> Array[Vector2i]:
 	_grid.avoid_bandit_camps = connected
+	_grid.restrict_to([])
+	if not corridor.is_empty():
+		return _trade_path(from_tile, to_tile, corridor)
+	return _solve_leg(from_tile, to_tile, connected)
+
+
+func _trade_path(from_tile: Vector2i, to_tile: Vector2i, corridor: Array[Vector2i]) -> Array[Vector2i]:
+	var first: int = corridor.find(GlobalLandscapeMap.cell_for_tile(from_tile))
+	var last: int = corridor.find(GlobalLandscapeMap.cell_for_tile(to_tile))
+	if first < 0 or last < first:
+		return []
+	return _trade_leg(from_tile, to_tile, corridor, first, last, {})
+
+
+func _trade_leg(from_tile: Vector2i, to_tile: Vector2i, corridor: Array[Vector2i], index: int, last: int,
+		dead_ends: Dictionary[Vector2i, bool]) -> Array[Vector2i]:
+	if dead_ends.has(from_tile):
+		return []
+	var cell: Vector2i = corridor[index]
+	if index == last:
+		_grid.restrict_to([cell])
+		var finish: Array[Vector2i] = _solve_leg(from_tile, to_tile, true)
+		if finish.is_empty():
+			dead_ends[from_tile] = true
+		return finish
+	var neighbor: Vector2i = corridor[index + 1]
+	var step: Vector2i = neighbor - cell
+	if absi(step.x) + absi(step.y) != 1:
+		return []
+	# A dry crossing can lead into an isolated part of the next cell.
+	for exit: Vector2i in _grid.road_exits(cell, neighbor):
+		_grid.restrict_to([cell])
+		var leg: Array[Vector2i] = _solve_leg(from_tile, exit, true)
+		if leg.is_empty():
+			continue
+		var onward: Array[Vector2i] = _trade_leg(exit + step, to_tile, corridor, index + 1, last, dead_ends)
+		if not onward.is_empty():
+			leg.append_array(onward)
+			return leg
+	dead_ends[from_tile] = true
+	return []
+
+
+func _solve_leg(from_tile: Vector2i, to_tile: Vector2i, connected: bool) -> Array[Vector2i]:
 	if _grid.blocked(from_tile) or _grid.blocked(to_tile):
 		return []
 	if not _grid.prepare_window(from_tile, to_tile, CONNECTED_WINDOW if connected else AlifeRouteGrid.MAX_WINDOW):
@@ -174,10 +225,10 @@ func assign_path(seed_value: int, agent: GlobalAgent, route: Array[Vector2i]) ->
 	_prepare(seed_value)
 	_agent_routes[agent.agent_id] = {"destination": agent.destination_tile, "position": agent.tile, "route": route}
 
-func steering_target(seed_value: int, agent: GlobalAgent) -> Vector2i:
+func steering_target(seed_value: int, agent: GlobalAgent, corridor: Array[Vector2i] = []) -> Vector2i:
 	var cached: Dictionary = _agent_routes.get(agent.agent_id, {})
 	if cached.get("destination") != agent.destination_tile or ((cached["route"] as Array).size() <= 1 and agent.tile != agent.destination_tile):
-		var replacement: Array[Vector2i] = request_path(seed_value, agent.tile, agent.destination_tile, true)
+		var replacement: Array[Vector2i] = request_path(seed_value, agent.tile, agent.destination_tile, true, corridor)
 		if replacement.is_empty():
 			return agent.tile
 		assign_path(seed_value, agent, replacement)
@@ -230,7 +281,8 @@ func remaining_steps(agent: GlobalAgent) -> int:
 		return -1
 	return maxi(0, (cached["route"] as Array).size() - 1)
 
-func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = WALK_TILES_PER_HOUR, connected: bool = false) -> bool:
+func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = WALK_TILES_PER_HOUR, connected: bool = false,
+		corridor: Array[Vector2i] = []) -> bool:
 	if agent.tile == agent.destination_tile:
 		return true
 	_prepare(seed_value)
@@ -241,7 +293,7 @@ func advance(seed_value: int, agent: GlobalAgent, hours: float, speed: float = W
 			and (cached["route"] as Array).size() > 1:
 		route.assign(cached.get("route", []))
 	else:
-		route = request_path(seed_value, agent.tile, agent.destination_tile, connected)
+		route = request_path(seed_value, agent.tile, agent.destination_tile, connected, corridor)
 	if route.is_empty():
 		return false
 	# Walk the polyline by distance. Adjacent entries cost one step (as on the dense grid),

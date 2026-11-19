@@ -61,6 +61,10 @@ func _ready() -> void:
 	var initial_treasury: int = home.treasury
 	var initial_money: int = money(world)
 	var initial_food: float = home.food
+	world.authored_trade_only = true
+	check(not CaravanRouteManager.dispatch(world, route) and not route.paid_investment and money(world) == initial_money,
+		"An authored trade layer cannot start an unmarked route or debit its budget")
+	world.authored_trade_only = false
 	check(CaravanRouteManager.dispatch(world, route), "Dispatch caravan with real stock and crew")
 	check(route.active and not route.merchant_id.is_empty() and route.guards.size() == 4, "Caravan owns merchant and four guards")
 	check(home.food < initial_food and not route.cargo.is_empty(), "Cargo removed from origin stock")

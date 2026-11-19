@@ -145,8 +145,10 @@ func _publish_travel_target(entity: NPCBase, agent: GlobalAgent) -> void:
 	var destination: Vector2i = agent.destination_tile
 	if agent.current_goal == "caravan_travel":
 		var route: CaravanRoute = world.routes.find(agent.caravan_id) as CaravanRoute
-		if route != null and route.grain_relief:
-			destination = world.travel.steering_target(world.world_seed, agent)
+		if route != null:
+			var corridor: Array[Vector2i] = WorldData.trade_corridor(route.at_id, route.destination_id)
+			if route.grain_relief or not corridor.is_empty():
+				destination = world.travel.steering_target(world.world_seed, agent, corridor)
 	entity.set_meta("alife_destination", destination)
 
 func _routine_destination(agent: GlobalAgent, activity: Dictionary = {}) -> Vector2i:

@@ -17,5 +17,9 @@ func tick(world: AlifeWorldContext, hours: float) -> void:
 			agent.current_goal = goal
 			agent.goal_progress = 0.0
 		agent.goal_progress = fposmod(agent.goal_progress + step / 8.0, 1.0)
-		if agent.current_goal in ["march_to_frontline", "assault_settlement", "return_home", "caravan_travel", "refugee_travel"]:
+		if agent.current_goal == "caravan_travel":
+			var route: CaravanRoute = world.routes.find(agent.caravan_id) as CaravanRoute
+			var corridor: Array[Vector2i] = WorldData.trade_corridor(route.at_id, route.destination_id)
+			world.travel.advance(world.world_seed, agent, step, AlifeTravel.WALK_TILES_PER_HOUR, route.grain_relief, corridor)
+		elif agent.current_goal in ["march_to_frontline", "assault_settlement", "return_home", "refugee_travel"]:
 			world.travel.advance(world.world_seed, agent, step)
