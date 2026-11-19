@@ -128,10 +128,11 @@ signal currency_exchange_requested(npc: Node, to_gold: bool, amount: int)
 signal caravan_trip_completed(settlement_id: String, trip_count: int, is_roi_achieved: bool)
 
 # Dialogue
-signal dialogue_started(npc_id: String, dialogue_id: String)
+signal dialogue_started(npc_id: String, dialogue_id: String, speaker: Node2D)
 signal dialogue_node_shown(speaker: String, text: String, choices: Array)
 signal dialogue_choice_selected(choice_index: int)
 signal dialogue_end_requested()
+signal dialogue_trade_requested()
 signal dialogue_ended()
 
 # Events & Storyteller
@@ -145,6 +146,9 @@ signal chronicle_snapshot_loaded(entries: Array)
 # Quests & Endgame
 signal quest_start_requested(quest_id: String, giver_id: String)
 signal quest_turn_in_requested(quest_id: String)
+signal quest_state_queried(quest_id: String, result: Dictionary)
+signal settlement_delivery_quest_requested(quest_id: String, elder: Node2D, turn_in: bool, result: Dictionary)
+signal settlement_supply_delivery_requested(settlement_id: String, player: Node, item_id: String, count: int, result: Dictionary)
 signal quest_started(quest_id: String)
 signal quest_objective_updated(quest_id: String, progress: Dictionary)
 signal quest_completed(quest_id: String)

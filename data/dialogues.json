@@ -73,6 +73,56 @@
 		]
 	},
 	{
+		"id": "elder_default_settlement_07_14",
+		"min_generator_version": 4,
+		"nodes": [
+			{
+				"id": "root",
+				"speaker": "Староста деревни Вальдена",
+				"text": "Пригодятся дерево, камень и ягоды. За каждую партию заплачу отдельно.",
+				"choices": [
+					{
+						"text": "Возьмусь за поставку дерева.",
+						"condition": { "quest_id": "valden_timber", "quest_state": "available" },
+						"next_node": "root",
+						"action": { "type": "accept_delivery", "quest_id": "valden_timber" }
+					},
+					{
+						"text": "Сдать 6 единиц дерева.",
+						"condition": { "quest_id": "valden_timber", "quest_state": "active" },
+						"next_node": "root",
+						"action": { "type": "turn_in_delivery", "quest_id": "valden_timber" }
+					},
+					{
+						"text": "Возьмусь за поставку камня.",
+						"condition": { "quest_id": "valden_stone", "quest_state": "available" },
+						"next_node": "root",
+						"action": { "type": "accept_delivery", "quest_id": "valden_stone" }
+					},
+					{
+						"text": "Сдать 5 единиц камня.",
+						"condition": { "quest_id": "valden_stone", "quest_state": "active" },
+						"next_node": "root",
+						"action": { "type": "turn_in_delivery", "quest_id": "valden_stone" }
+					},
+					{
+						"text": "Возьмусь за поставку ягод.",
+						"condition": { "quest_id": "valden_berries", "quest_state": "available" },
+						"next_node": "root",
+						"action": { "type": "accept_delivery", "quest_id": "valden_berries" }
+					},
+					{
+						"text": "Сдать 4 порции ягод.",
+						"condition": { "quest_id": "valden_berries", "quest_state": "active" },
+						"next_node": "root",
+						"action": { "type": "turn_in_delivery", "quest_id": "valden_berries" }
+					},
+					{ "text": "До встречи.", "action": "end" }
+				]
+			}
+		]
+	},
+	{
 		"id": "wanderer_default",
 		"nodes": [
 			{

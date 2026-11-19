@@ -5,6 +5,7 @@ var _quests_defs: Dictionary = {}
 var _active_quests: Dictionary = {} # quest_id -> Dictionary state
 var _completed_quests: Dictionary = {}
 var _failed_quests: Dictionary = {}
+var _delivery_in_progress: bool = false
 
 func _ready() -> void:
 	_quests_defs = DataRegistry.get_table("quests")
@@ -31,6 +32,8 @@ func _start_initial_quest() -> void:
 func _connect_signals() -> void:
 	SignalBus.quest_start_requested.connect(start_quest)
 	SignalBus.quest_turn_in_requested.connect(complete_quest)
+	SignalBus.quest_state_queried.connect(_on_quest_state_queried)
+	SignalBus.settlement_delivery_quest_requested.connect(_on_settlement_delivery_quest_requested)
 	SignalBus.hour_passed.connect(_on_hour_passed)
 	SignalBus.npc_killed.connect(_on_npc_killed)
 	SignalBus.item_crafted.connect(_on_item_crafted)
@@ -41,6 +44,12 @@ func _connect_signals() -> void:
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
 
 func start_quest(quest_id: String, _giver_id: String = "") -> bool:
+	if _quests_defs.get(quest_id, {}).get("type", "") == "delivery":
+		return false
+	return _start_quest(quest_id)
+
+
+func _start_quest(quest_id: String) -> bool:
 	if _active_quests.has(quest_id) or _completed_quests.has(quest_id):
 		return false
 	if not _quests_defs.has(quest_id):
@@ -81,6 +90,12 @@ func advance_quest(quest_id: String, delta_count: int = 1) -> void:
 		complete_quest(quest_id)
 
 func complete_quest(quest_id: String) -> void:
+	if _quests_defs.get(quest_id, {}).get("type", "") == "delivery":
+		return
+	_complete_quest(quest_id)
+
+
+func _complete_quest(quest_id: String) -> void:
 	if not _active_quests.has(quest_id):
 		return
 	var state: Dictionary = _active_quests[quest_id]
@@ -106,10 +121,15 @@ func complete_quest(quest_id: String) -> void:
 		SignalBus.faction_join_requested.emit(join_fac)
 
 	var gold_reward: int = int(rewards.get("gold", 0))
-	if gold_reward > 0:
+	var silver_reward: int = int(rewards.get("silver", 0))
+	if gold_reward > 0 or silver_reward > 0:
 		var player: Node = get_tree().get_first_node_in_group("player")
 		if player != null and player.get("inventory") is InventoryComponent:
-			(player.get("inventory") as InventoryComponent).add_gold(gold_reward)
+			var inventory: InventoryComponent = player.get("inventory")
+			if gold_reward > 0:
+				inventory.add_gold(gold_reward)
+			if silver_reward > 0:
+				inventory.add_silver(silver_reward)
 
 	var unique_trait: String = str(rewards.get("unique_trait", ""))
 	if not unique_trait.is_empty():
@@ -121,7 +141,51 @@ func complete_quest(quest_id: String) -> void:
 	if not next_quest.is_empty():
 		start_quest(next_quest, "chain")
 	_emit_snapshot()
-	SignalBus.notification_posted.emit("Quest Completed: %s" % str(state.get("title", quest_id)))
+	var title: String = str(state.get("title", quest_id))
+	if state.get("type") == "delivery":
+		SignalBus.notification_posted.emit("Поставка принята: %s" % title)
+	else:
+		SignalBus.notification_posted.emit("Quest Completed: %s" % title)
+
+
+func _on_quest_state_queried(quest_id: String, result: Dictionary) -> void:
+	if _active_quests.has(quest_id):
+		result["state"] = "active"
+	elif _completed_quests.has(quest_id):
+		result["state"] = "completed"
+	elif _failed_quests.has(quest_id):
+		result["state"] = "failed"
+	elif _quests_defs.has(quest_id):
+		result["state"] = "available"
+
+
+func _on_settlement_delivery_quest_requested(quest_id: String, elder: Node2D, turn_in: bool, result: Dictionary) -> void:
+	var definition: Dictionary = _quests_defs.get(quest_id, {})
+	var settlement_id: String = str(definition.get("settlement_id", ""))
+	if definition.get("type", "") != "delivery" or settlement_id.is_empty() \
+			or GameManager.get_world_generator_version() < int(definition.get("min_generator_version", 0)) \
+			or not is_instance_valid(elder) or not elder is NPCBase or elder.is_queued_for_deletion() or not elder.is_alive() \
+			or elder.npc_id != definition.get("giver_id") or elder.get_meta("settlement_id", "") != settlement_id:
+		return
+	var player: Player = get_tree().get_first_node_in_group("player") as Player
+	if player == null or player.is_dead or player.global_position.distance_to(elder.global_position) > Config.INTERACT_RANGE:
+		result["message"] = "Подойдите к старосте."
+		return
+	if not turn_in:
+		result["ok"] = not _failed_quests.has(quest_id) and _start_quest(quest_id)
+		return
+	if _delivery_in_progress or not _active_quests.has(quest_id):
+		return
+	var objective: Dictionary = definition.get("objective", {})
+	_delivery_in_progress = true
+	SignalBus.settlement_supply_delivery_requested.emit(settlement_id, player, str(objective.get("item_id", "")),
+		int(objective.get("count", 0)), result)
+	if bool(result.get("ok", false)):
+		var progress: Dictionary = _active_quests[quest_id]["progress"]
+		progress["current"] = progress["required"]
+		_complete_quest(quest_id)
+	_delivery_in_progress = false
+
 
 func fail_quest(quest_id: String, reason: String = "timeout") -> void:
 	if not _active_quests.has(quest_id):

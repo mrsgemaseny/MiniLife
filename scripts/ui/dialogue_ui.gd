@@ -24,9 +24,12 @@ func _on_dialogue_node_shown(speaker: String, text: String, choices: Array) -> v
 	for child in choices_box.get_children():
 		choices_box.remove_child(child)
 		child.queue_free()
+	var has_leave: bool = false
 
 	for i in range(choices.size()):
 		var choice: Dictionary = choices[i] if choices[i] is Dictionary else {}
+		if str(choice.get("action", "")) == "end":
+			has_leave = true
 		var btn: Button = Button.new()
 		btn.text = str(choice.get("text", "Continue"))
 		var idx: int = i
@@ -36,20 +39,15 @@ func _on_dialogue_node_shown(speaker: String, text: String, choices: Array) -> v
 		choices_box.add_child(btn)
 
 	var trade_btn: Button = Button.new()
-	trade_btn.text = "[Barter / Trade Goods]"
-	trade_btn.pressed.connect(func() -> void:
-		var npc_node: Node = get_tree().get_first_node_in_group("npc")
-		SignalBus.dialogue_end_requested.emit()
-		SignalBus.trade_session_requested.emit(npc_node)
-	)
+	trade_btn.text = "Торговля"
+	trade_btn.pressed.connect(func() -> void: SignalBus.dialogue_trade_requested.emit())
 	choices_box.add_child(trade_btn)
 
-	var leave_btn: Button = Button.new()
-	leave_btn.text = "[Leave]"
-	leave_btn.pressed.connect(func() -> void:
-		SignalBus.dialogue_end_requested.emit()
-	)
-	choices_box.add_child(leave_btn)
+	if not has_leave:
+		var leave_btn: Button = Button.new()
+		leave_btn.text = "Уйти"
+		leave_btn.pressed.connect(func() -> void: SignalBus.dialogue_end_requested.emit())
+		choices_box.add_child(leave_btn)
 
 func _on_dialogue_ended() -> void:
 	if not visible:

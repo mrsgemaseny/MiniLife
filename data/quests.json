@@ -58,5 +58,38 @@
 		"fail_consequence": {},
 		"is_chain": false,
 		"next_quest_id": ""
+	},
+	{
+		"id": "valden_timber",
+		"type": "delivery",
+		"title": "Дерево для деревни",
+		"description": "Принесите старосте деревни Вальдена (7, 14) 6 единиц дерева. Дерево поступит в запасы поселения.",
+		"giver_id": "village_elder",
+		"settlement_id": "settlement_07_14",
+		"min_generator_version": 4,
+		"objective": { "item_id": "wood", "count": 6 },
+		"reward": { "silver": 18 }
+	},
+	{
+		"id": "valden_stone",
+		"type": "delivery",
+		"title": "Камень для деревни",
+		"description": "Принесите старосте деревни Вальдена (7, 14) 5 единиц камня. Камень поступит в запасы поселения.",
+		"giver_id": "village_elder",
+		"settlement_id": "settlement_07_14",
+		"min_generator_version": 4,
+		"objective": { "item_id": "stone", "count": 5 },
+		"reward": { "silver": 15 }
+	},
+	{
+		"id": "valden_berries",
+		"type": "delivery",
+		"title": "Ягоды для деревни",
+		"description": "Принесите старосте деревни Вальдена (7, 14) 4 порции ягод. Они поступят в запасы поселения.",
+		"giver_id": "village_elder",
+		"settlement_id": "settlement_07_14",
+		"min_generator_version": 4,
+		"objective": { "item_id": "berries", "count": 4 },
+		"reward": { "silver": 12 }
 	}
 ]

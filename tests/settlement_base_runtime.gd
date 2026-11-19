@@ -77,7 +77,7 @@ func _check_village(scene: Node, save_system: SaveSystem, slot: String) -> void:
 		_check(world.is_passable(elder_tile) and Config.tile_distance(elder_tile, elder_approach) <= 2,
 			"The elder is not reachable from the road")
 		var dialogue: Array[String] = []
-		var hear := func(_npc_id: String, dialogue_id: String) -> void: dialogue.append(dialogue_id)
+		var hear := func(_npc_id: String, dialogue_id: String, _speaker: Node2D) -> void: dialogue.append(dialogue_id)
 		SignalBus.dialogue_started.connect(hear)
 		elder.interact(player)
 		SignalBus.dialogue_started.disconnect(hear)

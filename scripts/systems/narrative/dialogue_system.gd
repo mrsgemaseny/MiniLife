@@ -6,17 +6,28 @@ extends Node
 var _active_dialogue_id: String = ""
 var _active_node_id: String = ""
 var _active_npc_id: String = ""
+var _active_speaker: Node2D
 var _current_choices: Array[Dictionary] = []
 
 func _ready() -> void:
 	SignalBus.dialogue_started.connect(_on_dialogue_started)
 	SignalBus.dialogue_choice_selected.connect(_on_choice_selected)
 	SignalBus.dialogue_end_requested.connect(_end_dialogue)
+	SignalBus.dialogue_trade_requested.connect(_open_trade)
 
-func _on_dialogue_started(npc_id: String, dialogue_id: String) -> void:
+func _on_dialogue_started(npc_id: String, dialogue_id: String, speaker: Node2D) -> void:
 	_active_npc_id = npc_id
+	_active_speaker = speaker
 	_active_dialogue_id = dialogue_id
 	var dlg: Dictionary = DataRegistry.get_dialogue(dialogue_id)
+	if is_instance_valid(speaker):
+		var settlement_id: String = str(speaker.get_meta("settlement_id", ""))
+		if not settlement_id.is_empty():
+			var local_id: String = "%s_%s" % [dialogue_id, settlement_id]
+			var local: Dictionary = DataRegistry.get_dialogue(local_id)
+			if not local.is_empty() and GameManager.get_world_generator_version() >= int(local.get("min_generator_version", 0)):
+				dlg = local
+				_active_dialogue_id = local_id
 	if dlg.is_empty():
 		var fallbacks: Array = DataRegistry.get_rows("dialogues")
 		if not fallbacks.is_empty() and fallbacks[0] is Dictionary:
@@ -84,15 +95,22 @@ func _on_choice_selected(choice_index: int) -> void:
 			if not qid.is_empty():
 				SignalBus.quest_turn_in_requested.emit(qid)
 		elif atype == "open_trade":
-			var trader_node: Node = _find_npc_by_id(_active_npc_id)
-			SignalBus.trade_session_requested.emit(trader_node)
+			_open_trade()
+			return
+		elif atype in ["accept_delivery", "turn_in_delivery"]:
+			var result: Dictionary = {}
+			SignalBus.settlement_delivery_quest_requested.emit(str(adict.get("quest_id", "")), _active_speaker,
+				atype == "turn_in_delivery", result)
+			if not bool(result.get("ok", false)):
+				SignalBus.notification_posted.emit(str(result.get("message", "Поручение пока недоступно.")))
+				return
 
 	var start_quest_id: String = str(choice.get("start_quest", ""))
 	if not start_quest_id.is_empty():
 		SignalBus.quest_start_requested.emit(start_quest_id, _active_npc_id)
 	if bool(choice.get("open_trade", false)):
-		var trader_node: Node = _find_npc_by_id(_active_npc_id)
-		SignalBus.trade_session_requested.emit(trader_node)
+		_open_trade()
+		return
 
 	var next_id: String = str(choice.get("next_node", choice.get("next", "")))
 	if next_id == "end" or next_id.is_empty() or (act is String and str(act) == "end"):
@@ -112,6 +130,11 @@ func _evaluate_conditions(conds: Dictionary) -> bool:
 	var player: Node = get_tree().get_first_node_in_group("player")
 	if player == null:
 		return false
+	if conds.has("quest_state"):
+		var result: Dictionary = {}
+		SignalBus.quest_state_queried.emit(str(conds.get("quest_id", "")), result)
+		if result.get("state") != conds["quest_state"]:
+			return false
 	if conds.has("item_id"):
 		var req_item: String = str(conds.get("item_id", ""))
 		var req_cnt: int = int(conds.get("count", 1))
@@ -125,14 +148,16 @@ func _evaluate_conditions(conds: Dictionary) -> bool:
 			return false
 	return true
 
-func _find_npc_by_id(npc_id: String) -> Node:
-	for n in get_tree().get_nodes_in_group("npc"):
-		if "npc_id" in n and str(n.get("npc_id")) == npc_id:
-			return n
-	return null
+func _open_trade() -> void:
+	var speaker: Node2D = _active_speaker
+	_end_dialogue()
+	if is_instance_valid(speaker) and not speaker.is_queued_for_deletion():
+		SignalBus.trade_session_requested.emit(speaker)
 
 func _end_dialogue() -> void:
 	_active_dialogue_id = ""
 	_active_node_id = ""
+	_active_npc_id = ""
+	_active_speaker = null
 	_current_choices.clear()
 	SignalBus.dialogue_ended.emit()

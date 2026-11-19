@@ -191,7 +191,7 @@ func interact(_interactor: Node) -> void:
 	if is_instance_valid(_interactor) and _interactor.is_in_group("player") and has_meta("global_agent_id"):
 		SignalBus.alife_resident_spoken_to.emit(str(get_meta("global_agent_id")))
 	SignalBus.npc_interacted.emit(npc_id)
-	SignalBus.dialogue_started.emit(npc_id, dialogue_id)
+	SignalBus.dialogue_started.emit(npc_id, dialogue_id, self)
 
 func is_alive() -> bool:
 	return stats.health > 0.0

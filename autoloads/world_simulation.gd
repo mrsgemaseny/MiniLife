@@ -48,6 +48,7 @@ func _ready() -> void:
 	SignalBus.alife_combat_target_queried.connect(_on_combat_target_queried)
 	SignalBus.alife_market_queried.connect(_on_market_queried)
 	SignalBus.alife_trade_requested.connect(_on_trade_requested)
+	SignalBus.settlement_supply_delivery_requested.connect(_on_settlement_supply_delivery_requested)
 	SignalBus.local_amnesty_requested.connect(_on_local_amnesty_requested)
 	SignalBus.refugee_aid_requested.connect(_on_refugee_aid_requested)
 	SignalBus.alife_cargo_open_requested.connect(_on_cargo_open_requested)
@@ -935,6 +936,26 @@ func _on_trade_requested(trader: Node, inventory: Resource, item_id: String, cou
 	_trading = false
 	if bool(result.get("ok", false)):
 		world.record_event("player_traded", settlement.tile, [settlement.owner_faction], {"settlement_id": settlement.settlement_id, "item": item_id, "count": int(result["count"]), "buying": is_buying, "silver_value": int(result["silver_value"])})
+
+
+func _on_settlement_supply_delivery_requested(settlement_id: String, player: Node, item_id: String, count: int, result: Dictionary) -> void:
+	if not _initialized or not player is Player or count <= 0 or DataRegistry.get_item(item_id).is_empty():
+		return
+	var settlement: AlifeSettlement = world.settlements.find(settlement_id) as AlifeSettlement
+	if settlement == null or settlement.status != AlifeSettlement.Status.NORMAL:
+		result["message"] = "Деревня сейчас не принимает поставки."
+		return
+	var inventory: InventoryComponent = player.inventory
+	if inventory == null or not inventory.has_item(item_id, count):
+		result["message"] = "Для сдачи не хватает товара. Принесите всю партию."
+		return
+	inventory.remove_item(item_id, count)
+	settlement.stockpile[item_id] = float(settlement.stockpile.get(item_id, 0.0)) + float(count)
+	world.record_event("quest_supplies_delivered", settlement.tile, [settlement.owner_faction],
+		{"settlement_id": settlement_id, "item": item_id, "count": count})
+	result["ok"] = true
+	_publish_markets()
+
 
 func _cargo_near_player(id: String) -> bool:
 	var entity: CaravanPackAnimal = pack_materializer.get_entity(id)
