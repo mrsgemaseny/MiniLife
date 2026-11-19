@@ -55,6 +55,13 @@
       "Базы разбойников/10_Nomad_Wagon_Ring.json"
     ]
   },
+  "placements": {
+    "obj.village_48": {
+      "path": "res://data/settlement_bases/valden_riverside_v1.json",
+      "anchor": [527, 512],
+      "first_generator_version": 4
+    }
+  },
   "unassigned": {
     "blueprint_20261109_114504.json": "Тип плана не указан в файле и требует подтверждения.",
     "MiniLife_Abandoned_Village_Ruins_9.json": "Заброшенная деревня, подходит для руин."

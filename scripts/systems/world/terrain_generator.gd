@@ -8,7 +8,8 @@ extends RefCounted
 # Biome ids: plains, forest, swamp, hills, mountains (impassable ridge), snow,
 # desert (dunes, sand bars), steppe (dry semi-desert ground), water.
 
-const GENERATOR_VERSION: int = 3
+const GENERATOR_VERSION: int = 4
+const SEAM_GENERATOR_VERSION: int = 3
 const LEGACY_GENERATOR_VERSION: int = 2
 const CELL: int = GlobalLandscapeMap.CELL_TILES
 const SEAM_WIDTH_TILES: int = 64
@@ -51,6 +52,9 @@ var _version: int = GENERATOR_VERSION
 var _blend: float = BLEND
 var _land: GlobalLandscapeMap
 var _graph: WorldGraph
+var _base_origins: Dictionary[Vector2i, Vector2i] = {}
+var _base_bounds: Dictionary[Vector2i, Rect2i] = {}
+var _settlement_bases: Dictionary[Vector2i, SettlementBase] = {}
 var _n_e: FastNoiseLite
 var _n_t: FastNoiseLite
 var _n_m: FastNoiseLite
@@ -95,6 +99,7 @@ func setup(world_seed: int, version: int = GENERATOR_VERSION) -> void:
 	_blend = LEGACY_BLEND if version == LEGACY_GENERATOR_VERSION else BLEND
 	_land = WorldLayout.landscape()
 	_graph = WorldGraph.for_seed(world_seed)
+	_place_settlement_bases()
 	_quota_local.clear()
 	_family_anchor.clear()
 	_cell_anchor.clear()
@@ -136,11 +141,54 @@ func get_version() -> int:
 
 
 static func supports_version(version: int) -> bool:
-	return version == GENERATOR_VERSION or version == LEGACY_GENERATOR_VERSION
+	return version in [LEGACY_GENERATOR_VERSION, SEAM_GENERATOR_VERSION, GENERATOR_VERSION]
 
 
 func get_graph() -> WorldGraph:
 	return _graph
+
+
+func _place_settlement_bases() -> void:
+	_base_origins.clear()
+	_base_bounds.clear()
+	_settlement_bases = WorldData.settlement_bases()
+	for cell: Vector2i in _settlement_bases:
+		var base: SettlementBase = _settlement_bases[cell]
+		if _version < base.first_generator_version:
+			continue
+		var site: Dictionary = _graph.site_for_cell(cell)
+		if site.is_empty():
+			continue
+		var origin: Vector2i = (site["tile"] as Vector2i) - base.anchor
+		var bounds := Rect2i(origin + base.bounds.position, base.bounds.size)
+		if not GlobalLandscapeMap.cell_bounds(cell).encloses(bounds):
+			push_error("Settlement base extending outside its cell: %s" % str(cell))
+			continue
+		_base_origins[cell] = origin
+		_base_bounds[cell] = bounds
+
+
+func get_settlement_block(tile: Vector2i) -> String:
+	if _base_origins.is_empty():
+		return ""
+	var cell: Vector2i = GlobalLandscapeMap.cell_for_tile(tile)
+	if not _base_bounds.has(cell) or not _base_bounds[cell].has_point(tile):
+		return ""
+	return _settlement_bases[cell].block_at(tile - _base_origins[cell])
+
+
+func has_settlement_base_in_chunk(chunk: Vector2i) -> bool:
+	if _base_bounds.is_empty():
+		return false
+	var area := Rect2i(Config.chunk_origin(chunk), Vector2i.ONE * Config.CHUNK_SIZE)
+	var first: Vector2i = GlobalLandscapeMap.cell_for_tile(area.position)
+	var last: Vector2i = GlobalLandscapeMap.cell_for_tile(area.end - Vector2i.ONE)
+	for x: int in range(first.x, last.x + 1):
+		for y: int in range(first.y, last.y + 1):
+			var cell := Vector2i(x, y)
+			if _base_bounds.has(cell) and _base_bounds[cell].intersects(area):
+				return true
+	return false
 
 
 func is_in_world(pos: Vector2i) -> bool:
@@ -152,6 +200,9 @@ func is_in_world(pos: Vector2i) -> bool:
 func is_dry_land(pos: Vector2i) -> bool:
 	if not WorldLayout.contains_tile(pos):
 		return false
+	var block: String = get_settlement_block(pos)
+	if not block.is_empty():
+		return SettlementBase.is_walkable(block)
 	if _graph.is_cleared(Vector2(pos) + Vector2(0.5, 0.5)):
 		return true
 	return get_biome_at(pos) not in ["water", "mountains"]
@@ -387,6 +438,9 @@ func _mixin(family: String) -> String:
 func get_biome_at(pos: Vector2i) -> String:
 	if pos.x < 0 or pos.y < 0 or not _land.is_land(GlobalLandscapeMap.cell_for_tile(pos)):
 		return ""
+	var block: String = get_settlement_block(pos)
+	if not block.is_empty():
+		return SettlementBase.biome_for(block)
 	_ensure_quota(pos)
 	return _biome_after_quota(pos)
 
@@ -423,7 +477,8 @@ func get_biome_row(y: int, xs: PackedInt32Array) -> PackedStringArray:
 	for i: int in range(count):
 		var tile := Vector2i(xs[i], y)
 		if ensured:
-			out[i] = _biome_after_quota(tile)
+			var block: String = get_settlement_block(tile)
+			out[i] = _biome_after_quota(tile) if block.is_empty() else SettlementBase.biome_for(block)
 		else:
 			out[i] = get_biome_at(tile)
 	return out
@@ -433,6 +488,9 @@ func get_biome_row(y: int, xs: PackedInt32Array) -> PackedStringArray:
 func get_family_at(pos: Vector2i) -> String:
 	if pos.x < 0 or pos.y < 0 or not _land.is_land(GlobalLandscapeMap.cell_for_tile(pos)):
 		return ""
+	var block: String = get_settlement_block(pos)
+	if not block.is_empty():
+		return SettlementBase.biome_for(block)
 	_ensure_quota(pos)
 	_compute(pos)
 	var cleared: bool = _graph.is_cleared(Vector2(_x + 0.5, _y + 0.5))
@@ -485,10 +543,11 @@ func generate_chunk(chunk: Vector2i, with_resources: bool = true) -> Dictionary:
 			var tile: Vector2i = origin + Vector2i(x, y)
 			if not all_land and not WorldLayout.contains_tile(tile):
 				continue
-			var biome: String = _biome_after_quota(tile)
+			var block: String = get_settlement_block(tile)
+			var biome: String = _biome_after_quota(tile) if block.is_empty() else SettlementBase.biome_for(block)
 			biomes[tile] = biome
 			if with_resources:
-				resources[tile] = _resource_from_scratch(tile, biome)
+				resources[tile] = _resource_from_scratch(tile, biome) if block.is_empty() else ""
 	_no_clearing = false
 	_no_lake = false
 	_no_mine = false
@@ -527,6 +586,8 @@ func _prove_chunk(origin: Vector2i) -> void:
 
 # Uses the already computed biome; the chunk job calls this once per tile.
 func get_resource_node_for(pos: Vector2i, biome_id: String) -> String:
+	if not get_settlement_block(pos).is_empty():
+		return ""
 	if biome_id.is_empty() or biome_id == "water":
 		return ""
 	# Fields of pos must be current: callers may pass a cached biome.

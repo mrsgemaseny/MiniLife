@@ -2,6 +2,7 @@ class_name WorldDataLoader
 extends Node
 
 const SOURCE_PATH: String = "res://data/world.json"
+const BASE_ASSIGNMENTS_PATH: String = "res://data/base_assignment.json"
 const SCHEMA_VERSION: int = 1
 const SIZE_CELLS: Vector2i = Vector2i(21, 15)
 
@@ -23,13 +24,18 @@ class ReadResult:
 
 
 var _world: ReadResult
+var _settlement_bases: Dictionary[Vector2i, SettlementBase] = {}
 
 
 func _init() -> void:
 	# Terrain generators can be constructed before autoloads enter the scene tree.
 	_world = read_from(SOURCE_PATH)
+	if is_loaded():
+		_world.error = _load_settlement_bases()
 	if not is_loaded():
 		_world.landscape = GlobalLandscapeMap.new(SIZE_CELLS, {})
+		_settlement_bases.clear()
+	_settlement_bases.make_read_only()
 
 
 func _ready() -> void:
@@ -48,6 +54,51 @@ func is_loaded() -> bool:
 
 func snapshot() -> Dictionary:
 	return _world.document.duplicate(true)
+
+
+func settlement_bases() -> Dictionary[Vector2i, SettlementBase]:
+	return _settlement_bases
+
+
+func _load_settlement_bases() -> String:
+	var file: FileAccess = FileAccess.open(BASE_ASSIGNMENTS_PATH, FileAccess.READ)
+	if file == null:
+		return "Cannot open " + BASE_ASSIGNMENTS_PATH
+	var catalog: Variant = JSON.parse_string(file.get_as_text())
+	if not catalog is Dictionary or catalog.get("schema_version") != 1 or not catalog.get("placements") is Dictionary:
+		return "Invalid settlement base catalog: " + BASE_ASSIGNMENTS_PATH
+	var objects_by_id: Dictionary = {}
+	for row: Variant in _world.document.get("objects", []):
+		if row is Dictionary and row.get("id") is String:
+			objects_by_id[row["id"]] = row
+	var assignments: Dictionary = catalog["placements"]
+	for id: String in assignments:
+		var row: Dictionary = objects_by_id.get(id, {})
+		var coordinate: Variant = row.get("cell")
+		var entry: Variant = assignments[id]
+		if not coordinate is Dictionary or not entry is Dictionary:
+			return "Invalid settlement base assignment: " + id
+		var x: Variant = coordinate.get("x")
+		var y: Variant = coordinate.get("y")
+		if not _is_cell_axis(x, SIZE_CELLS.x) or not _is_cell_axis(y, SIZE_CELLS.y):
+			return "Invalid cell in settlement base assignment: " + id
+		var cell := Vector2i(int(x), int(y))
+		if not _world.landscape.is_land(cell) or _settlement_bases.has(cell):
+			return "Expected one settlement base on land in cell %s" % str(cell)
+		var anchor: Variant = entry.get("anchor")
+		var path: Variant = entry.get("path")
+		var version: Variant = entry.get("first_generator_version")
+		var size: int = GlobalLandscapeMap.CELL_TILES
+		if not anchor is Array or anchor.size() != 2 or not _is_cell_axis(anchor[0], size) \
+				or not _is_cell_axis(anchor[1], size) or not path is String \
+				or not path.begins_with("res://data/settlement_bases/") \
+				or not _is_cell_axis(version, 1000) or version < 4:
+			return "Invalid settlement base settings: " + id
+		var base: SettlementBase = SettlementBase.load_from(path, Vector2i(int(anchor[0]), int(anchor[1])), int(version))
+		if base == null:
+			return "Invalid settlement base map: " + path
+		_settlement_bases[cell] = base
+	return ""
 
 
 static func read_from(path: String) -> ReadResult:

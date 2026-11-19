@@ -218,7 +218,10 @@ func _settlements(seed_value: int, terrain: TerrainGenerator) -> void:
 	for site: Dictionary in graph.settlement_sites:
 		var center: Vector2i = site["tile"]
 		check(GlobalLandscapeMap.cell_for_tile(center) == site["cell"], "Site outside its cell")
+		check(terrain.is_dry_land(center), "Settlement %s has no dry arrival tile" % [site["cell"]])
 		for offset: Vector2i in [Vector2i.ZERO, Vector2i(80, 0), Vector2i(-80, 0), Vector2i(0, 80), Vector2i(0, -80), Vector2i(60, 60), Vector2i(-60, -60)]:
+			if not terrain.get_settlement_block(center + offset).is_empty():
+				continue # PixelBuilder can deliberately place water in its footprint.
 			var biome: String = terrain.get_biome_at(center + offset)
 			check(biome not in ["water", "mountains", "snow", ""], "Settlement %s has %s at %s" % [site["cell"], biome, offset])
 

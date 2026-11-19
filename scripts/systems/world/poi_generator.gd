@@ -208,7 +208,13 @@ static func find_land_anchor(world_seed: int, chunk_pos: Vector2i, size: Vector2
 	var origin: Vector2i = Config.chunk_origin(chunk_pos)
 	# The footprint plus its entrance margin lies inside the owning chunk by construction,
 	# so one batched chunk pass answers every tile; tiles outside the world are absent.
-	var biomes: Dictionary = _terrain_for(world_seed, version).generate_chunk(chunk_pos, false)["biomes"]
+	var terrain: TerrainGenerator = _terrain_for(world_seed, version)
+	if terrain.has_settlement_base_in_chunk(chunk_pos):
+		_plan_mutex.lock()
+		_anchor_cache[cache_key] = Vector2i(-1, -1)
+		_plan_mutex.unlock()
+		return Vector2i(-1, -1)
+	var biomes: Dictionary = terrain.generate_chunk(chunk_pos, false)["biomes"]
 	for x in range(2, Config.CHUNK_SIZE - size.x - 1):
 		for y in range(2, Config.CHUNK_SIZE - size.y - 1):
 			var anchor: Vector2i = origin + Vector2i(x, y)

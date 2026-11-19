@@ -7,6 +7,7 @@ var current_hp: float = 100.0
 var max_hp: float = 100.0
 var is_door_open: bool = false
 var is_player_built: bool = true
+var is_settlement_base: bool = false
 var animate_construction: bool = false
 var _def: Dictionary = {}
 var _collision: CollisionShape2D = null
@@ -79,7 +80,7 @@ func _ready() -> void:
 				"age": 0.0
 			})
 
-	_setup_collision(passable)
+	_setup_collision(passable and not (is_settlement_base and structure_id == "door"))
 	var h_px: float = float(_def.get("height_px", 18.0))
 	if structure_id in ["floor", "stone_floor"] or (passable and h_px <= 6.0):
 		z_as_relative = false
@@ -568,6 +569,8 @@ func interact(actor: Node) -> void:
 
 
 func take_structure_damage(amount: float) -> void:
+	if is_settlement_base:
+		return
 	current_hp -= amount
 	if current_hp <= 0.0:
 		SignalBus.structure_removal_requested.emit(tile_pos, null)

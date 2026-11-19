@@ -24,8 +24,8 @@ func _ready() -> void:
 	SignalBus.structure_restored.connect(_on_structure_restored)
 	SignalBus.settlement_door_passage_requested.connect(_on_settlement_door_passage_requested)
 	SignalBus.door_state_queried.connect(func(tile: Vector2i, result: Dictionary) -> void:
-		var door: StructureEntity = _placed_structures.get(Config.vec2i_to_key(tile)) as StructureEntity
-		if is_instance_valid(door) and door.structure_id in ["door", "wood_door"]:
+		var door: StructureEntity = _find_door(tile)
+		if is_instance_valid(door):
 			result["open"] = door.is_door_open)
 	SignalBus.structure_destroyed.connect(_on_structure_destroyed)
 	SignalBus.structure_removal_requested.connect(_on_structure_removal_requested)
@@ -245,7 +245,7 @@ func _on_structure_restored(structure_id: String, tile_pos: Vector2i) -> void:
 
 
 func _on_settlement_door_passage_requested(tile: Vector2i, resident: Node2D) -> void:
-	var door: StructureEntity = _placed_structures.get(Config.vec2i_to_key(tile)) as StructureEntity
+	var door: StructureEntity = _find_door(tile)
 	if not is_instance_valid(door) or door.is_player_built or door.structure_id != "door":
 		return
 	if not is_instance_valid(resident) or not resident.has_meta("global_agent_id"):
@@ -257,6 +257,16 @@ func _on_settlement_door_passage_requested(tile: Vector2i, resident: Node2D) -> 
 	var owner: String = str(info.get("settlement_door", ""))
 	if not owner.is_empty() and owner == str(resident.get_meta("settlement_id", "")):
 		door.open_for_resident()
+
+
+func _find_door(tile: Vector2i) -> StructureEntity:
+	var door: StructureEntity = _placed_structures.get(Config.vec2i_to_key(tile)) as StructureEntity
+	if is_instance_valid(door) and door.structure_id in ["door", "wood_door"]:
+		return door
+	for node: Node in get_tree().get_nodes_in_group(StructureEntity._wall_group(tile)):
+		if node is StructureEntity and node.is_settlement_base and node.structure_id == "door" and not node.is_queued_for_deletion():
+			return node
+	return null
 
 
 func _on_structure_removal_requested(tile_pos: Vector2i, breaker: Node) -> void:

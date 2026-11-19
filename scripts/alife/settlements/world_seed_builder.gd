@@ -26,7 +26,7 @@ static func populate(world: AlifeWorldContext) -> void:
 		var cell: Vector2i = site["cell"]
 		var template: Dictionary = templates.get(str(site["template"]), templates.values()[0])
 		var settlement: AlifeSettlement = AlifeSettlement.new()
-		settlement.settlement_id = "settlement_%02d_%02d" % [cell.x, cell.y]
+		settlement.settlement_id = WorldLayout.settlement_id_for_cell(cell)
 		settlement.tile = site["tile"]
 		settlement.footprint = int(template.get("footprint", 8))
 		settlement.settlement_type = str(template["id"])

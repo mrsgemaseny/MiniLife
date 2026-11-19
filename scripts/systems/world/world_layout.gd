@@ -39,6 +39,10 @@ static func settlements() -> Dictionary:
 	return result
 
 
+static func settlement_id_for_cell(cell: Vector2i) -> String:
+	return "settlement_%02d_%02d" % [cell.x, cell.y]
+
+
 static func _load_political(path: String) -> Dictionary:
 	var result: Dictionary = {}
 	var file: FileAccess = FileAccess.open(path, FileAccess.READ)

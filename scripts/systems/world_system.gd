@@ -65,6 +65,9 @@ func _ready() -> void:
 		if state.structure_id == "door" and _alife_seed_structures.get(Config.vec2i_to_key(tile)) == "door":
 			var poi: Dictionary = _chunk_pois.get(Config.tile_to_chunk(tile), {})
 			result["settlement_door"] = str(poi.get("settlement_id", ""))
+		elif state.structure_id == "door" and _terrain.get_settlement_block(tile) == "door":
+			var cell: Vector2i = GlobalLandscapeMap.cell_for_tile(tile)
+			result["settlement_door"] = WorldLayout.settlement_id_for_cell(cell)
 		result["fog_state"] = int(_fog.get_state(tile))
 	)
 	RenderingServer.set_default_clear_color(Color(0.05, 0.06, 0.08, 1.0))
@@ -189,7 +192,7 @@ func _spawn_night_wolf_pack() -> void:
 		return
 
 	var cpos: Vector2i = Config.tile_to_chunk(spawn_tile)
-	if not _loaded_chunks.has(cpos):
+	if not _loaded_chunks.has(cpos) or _terrain.has_settlement_base_in_chunk(cpos):
 		return
 
 	var wolf: EnemyBase = ENEMY_SCENE.instantiate() as EnemyBase
@@ -255,8 +258,13 @@ func _draw() -> void:
 			var chunk: Vector2i = Config.tile_to_chunk(tpos)
 			var delta: Dictionary = _chunk_deltas.get(Config.vec2i_to_key(chunk), {})
 			var paving: String = str(delta.get("structures", {}).get(key, _alife_seed_structures.get(key, "")))
-			if paving in ["floor", "stone_floor"]:
+			var base_block: String = _terrain.get_settlement_block(tpos)
+			if paving not in ["floor", "stone_floor"]:
+				paving = SettlementBase.structure_for(base_block)
+			if paving in ["floor", "stone_floor"] or base_block == "dirt":
 				var surface: Color = Color("938e81") if paving == "stone_floor" else Color("96724d")
+				if paving not in ["floor", "stone_floor"]:
+					surface = Color("98764d")
 				surface = surface.darkened(float(hash_val % 5) * 0.025)
 				var cell: PackedVector2Array = IsoMath.cell_polygon(center)
 				IsoMath.draw_quad(self, cell, surface)
@@ -325,6 +333,10 @@ func get_tile(pos: Vector2i) -> TileState:
 	state.pos = pos
 	state.biome_id = get_biome_cached(pos)
 	state.passable = not state.biome_id.is_empty() and state.biome_id != "mountains" and state.biome_id != "water"
+	var authored_block: String = _terrain.get_settlement_block(pos)
+	if not authored_block.is_empty():
+		state.structure_id = SettlementBase.structure_for(authored_block)
+		state.passable = SettlementBase.is_walkable(authored_block)
 	var key: String = Config.vec2i_to_key(pos)
 	if _resource_nodes_by_tile.has(key):
 		var rnode: ResourceNode = _resource_nodes_by_tile[key] as ResourceNode
@@ -656,10 +668,11 @@ func _load_chunk(cpos: Vector2i) -> void:
 	var origin: Vector2i = Config.chunk_origin(cpos)
 	var center_biome: String = get_biome_cached(origin + Vector2i(8, 8))
 	_reserve_boss_site("alpha_wolf_den", WorldLayout.start_tile() + Vector2i(-48, 32))
-	var poi_data: Dictionary = PoiGenerator.get_chunk_poi(_seed, cpos, center_biome, _terrain.get_version())
+	var has_base: bool = _terrain.has_settlement_base_in_chunk(cpos)
+	var poi_data: Dictionary = {} if has_base else PoiGenerator.get_chunk_poi(_seed, cpos, center_biome, _terrain.get_version())
 	var settlement_info: Dictionary = {}
 	SignalBus.alife_settlement_queried.emit(cpos, settlement_info)
-	# Keep the minimap marker without generating a settlement in local terrain.
+	# A settlement marker describes the site independently of its authored geometry.
 	if not settlement_info.is_empty():
 		poi_data = settlement_info
 	for id: String in _boss_sites:
@@ -670,12 +683,16 @@ func _load_chunk(cpos: Vector2i) -> void:
 	if not poi_data.is_empty():
 		_chunk_pois[cpos] = poi_data
 
-	var delta: Dictionary = _get_or_create_delta(cpos)
+	var delta: Dictionary = _chunk_deltas.get(key, {})
 	var harvested: Dictionary = delta.get("harvested", {})
 	for lx in range(Config.CHUNK_SIZE):
 		for ly in range(Config.CHUNK_SIZE):
 			var tpos: Vector2i = origin + Vector2i(lx, ly)
 			if not _terrain.is_in_world(tpos):
+				continue
+			var authored_block: String = _terrain.get_settlement_block(tpos) if has_base else ""
+			if not authored_block.is_empty():
+				_spawn_settlement_base_structure(chunk_node, tpos, authored_block)
 				continue
 			get_biome_cached(tpos)
 			var tkey: String = Config.vec2i_to_key(tpos)
@@ -700,7 +717,7 @@ func _load_chunk(cpos: Vector2i) -> void:
 	elif not poi_data.is_empty() and not poi_data.has("settlement_id") and str(poi_data["poi_id"]) != "alpha_wolf_den":
 		_spawn_minor_location(poi_data)
 
-	_spawn_chunk_inhabitants(cpos, center_biome, delta)
+	_spawn_chunk_inhabitants(cpos, center_biome, delta, has_base)
 	if not poi_data.is_empty() and not poi_data.has("settlement_id"):
 		var decorations: Node2D = preload("res://scripts/systems/world/poi_decoration.gd").new()
 		decorations.name = "PoiDecorations"
@@ -708,6 +725,19 @@ func _load_chunk(cpos: Vector2i) -> void:
 		decorations.populate(_seed, poi_data, is_passable, func(tile: Vector2i) -> int: return _fog.get_state(tile))
 	SignalBus.chunk_loaded.emit(cpos)
 	queue_redraw()
+
+
+func _spawn_settlement_base_structure(chunk_node: Node2D, tile: Vector2i, block: String) -> void:
+	var structure_id: String = SettlementBase.structure_for(block)
+	if structure_id not in ["wood_wall", "wall", "door"]:
+		return
+	var structure := StructureEntity.new()
+	structure.structure_id = structure_id
+	structure.is_player_built = false
+	structure.is_settlement_base = true
+	structure.tile_pos = tile
+	structure.position = Config.world_to_iso(tile)
+	chunk_node.get_node("StructuresContainer").add_child(structure)
 
 
 func _spawn_resource_node(chunk_node: Node2D, node_def_id: String, tpos: Vector2i, stage: String = "full") -> void:
@@ -845,7 +875,7 @@ func _spawn_ruin_complex(_chunk_node: Node2D, cpos: Vector2i, poi_data: Dictiona
 							sm.populate_chest_loot(v_tile, "Subterranean Vault Safe", vgold, vitems)
 
 
-func _spawn_chunk_inhabitants(cpos: Vector2i, _biome_id: String, _delta: Dictionary) -> void:
+func _spawn_chunk_inhabitants(cpos: Vector2i, _biome_id: String, _delta: Dictionary, has_base: bool = false) -> void:
 	var spawned_list: Array[Node] = []
 	var killed: Array = _delta.get("killed", [])
 	var origin: Vector2i = Config.chunk_origin(cpos)
@@ -885,7 +915,7 @@ func _spawn_chunk_inhabitants(cpos: Vector2i, _biome_id: String, _delta: Diction
 			elif s_idx == 0 and saved_animals.has("animal_%d_%d" % [cpos.x, cpos.y]):
 				animal.restore_spawn_state(saved_animals["animal_%d_%d" % [cpos.x, cpos.y]])
 			spawned_list.append(animal)
-	else:
+	elif not has_base:
 		# A wilderness encounter is occasional, not a herd in every streamed chunk.
 		var num_animals: int = 1 if rng_fauna.randf() < 0.03 else 0
 		for w_idx in range(num_animals):
@@ -929,7 +959,7 @@ func _spawn_chunk_inhabitants(cpos: Vector2i, _biome_id: String, _delta: Diction
 			spawned_list.append(animal)
 
 	# 2. Wild wolves (Non-aggressive ambient fauna)
-	if not is_center and _biome_id in ["forest", "plains", "mountains", "swamp"]:
+	if not is_center and not has_base and _biome_id in ["forest", "plains", "mountains", "swamp"]:
 			var wolf_rng: RandomNumberGenerator = RngService.make_chunk_rng(_seed, cpos, 999)
 			var is_night: bool = GameManager.is_night()
 			var wolf_spawn_chance: float = 0.005
