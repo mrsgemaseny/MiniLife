@@ -3,6 +3,7 @@ extends Node
 # World & Exploration
 signal chunk_loaded(chunk_pos: Vector2i)
 signal chunk_unloaded(chunk_pos: Vector2i)
+signal trade_road_ready(tiles: Array[Vector2i])
 signal chunk_delta_changed(chunk_pos: Vector2i, delta: Dictionary)
 signal chunk_delta_requested(chunk_pos: Vector2i)
 signal chunk_delta_loaded(chunk_pos: Vector2i, delta: Dictionary)

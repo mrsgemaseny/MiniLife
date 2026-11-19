@@ -12,6 +12,7 @@ var agent_tick: AgentTick = AgentTick.new()
 var rumor_tick: RumorTick = RumorTick.new()
 var conflict_tick: ConflictTick = ConflictTick.new()
 var caravan_tick: CaravanTick = CaravanTick.new()
+var trade_roads: TradeRoadLayer = TradeRoadLayer.new()
 var materializer: AgentMaterializer = AgentMaterializer.new()
 var pack_materializer: CaravanPackMaterializer = CaravanPackMaterializer.new()
 var cargo_ui: CaravanCargoUI
@@ -43,6 +44,7 @@ func _ready() -> void:
 	SignalBus.fog_batch_updated.connect(_on_political_visibility_changed)
 	SignalBus.chunk_loaded.connect(func(chunk: Vector2i) -> void:
 		materializer.loaded_chunks[chunk] = true
+		trade_roads.queue_chunk(chunk)
 	)
 	SignalBus.chunk_unloaded.connect(materializer.unload_chunk)
 	SignalBus.player_tile_changed.connect(func(tile: Vector2i) -> void: materializer.player_tile = tile)
@@ -71,6 +73,9 @@ var _refugee_camp_views: Dictionary = {}
 func _process(_delta: float) -> void:
 	if not _initialized or GameManager.is_paused() or GameManager.is_dead():
 		return
+	world.travel.background_enabled = true
+	world.travel.poll()
+	trade_roads.update(world)
 	var target: float = float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour()
 	if not alife_enabled:
 		if _valden_economy_enabled:
@@ -81,8 +86,6 @@ func _process(_delta: float) -> void:
 		else:
 			world.simulated_hour = target
 		return
-	world.travel.background_enabled = true
-	world.travel.poll()
 	_update_caravan_views(_delta, target)
 	_body_scan_elapsed += _delta
 	if _body_scan_elapsed >= 1.0:
@@ -98,8 +101,6 @@ func _process(_delta: float) -> void:
 		count += 1
 
 func _run_valden_economy(target: float) -> void:
-	world.travel.background_enabled = true
-	world.travel.poll()
 	var steps: int = clampi(int(floor((target - world.simulated_hour) / VALDEN_ECONOMY_STEP_HOURS)), 0, 8)
 	if steps == 0:
 		return
@@ -215,6 +216,7 @@ func _on_game_started(seed_value: int, _slot: String, is_new: bool) -> void:
 		_assign_district_homes()
 	world.authored_trade_only = WorldData.has_trade_layer()
 	CaravanRouteManager.register_authored_routes(world)
+	trade_roads.reset(world)
 	var valden_base: SettlementBase = WorldData.settlement_bases().get(EconomyTick.VALDEN_VILLAGE_CELL)
 	_valden_economy_enabled = valden_base != null and GameManager.get_world_generator_version() >= valden_base.first_generator_version
 	var route: CaravanRoute = world.routes.find(VALDEN_GRAIN_ROUTE_ID) as CaravanRoute

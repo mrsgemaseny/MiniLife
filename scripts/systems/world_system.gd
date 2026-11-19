@@ -47,6 +47,7 @@ var _pending_chunks: Array[Vector2i] = []
 var _terrain_jobs: Dictionary = {}
 var _retired_jobs: Array[ChunkTerrainJob] = []
 var _alife_seed_structures: Dictionary = {}
+var _trade_road_tiles: Dictionary[Vector2i, bool] = {}
 var _draw_bounds: Rect2i
 
 
@@ -62,6 +63,7 @@ func _ready() -> void:
 		result["occupied"] = not state.resource_id.is_empty() or not state.structure_id.is_empty()
 		result["structure_id"] = state.structure_id
 		result["resource_id"] = state.resource_id
+		result["trade_road"] = _trade_road_tiles.has(tile)
 		if state.structure_id == "door" and _alife_seed_structures.get(Config.vec2i_to_key(tile)) == "door":
 			var poi: Dictionary = _chunk_pois.get(Config.tile_to_chunk(tile), {})
 			result["settlement_door"] = str(poi.get("settlement_id", ""))
@@ -87,6 +89,7 @@ func _ready() -> void:
 	SignalBus.player_tile_changed.connect(_on_player_tile_changed)
 	SignalBus.player_vision_changed.connect(_on_player_vision_changed)
 	SignalBus.chunk_delta_loaded.connect(_on_chunk_delta_loaded)
+	SignalBus.trade_road_ready.connect(_on_trade_road_ready)
 	SignalBus.resource_node_depleted.connect(_on_resource_node_depleted)
 	SignalBus.structure_built.connect(_record_built_structure)
 	SignalBus.structure_removal_requested.connect(_on_structure_removal_requested)
@@ -275,7 +278,10 @@ func _draw() -> void:
 			col = col.lightened(variation) if variation > 0.0 else col.darkened(-variation)
 
 			var tile_tex_name: String = "tile_grass"
-			if biome_id == "desert" or biome_id == "steppe":
+			var trade_road: bool = _trade_road_tiles.has(tpos)
+			if trade_road:
+				tile_tex_name = "tile_dirt"
+			elif biome_id == "desert" or biome_id == "steppe":
 				tile_tex_name = "tile_sand"
 			elif biome_id == "swamp":
 				tile_tex_name = "tile_swamp"
@@ -291,12 +297,12 @@ func _draw() -> void:
 			var tile_tex: Texture2D = _get_tile_tex(tile_tex_name)
 			if tile_tex != null:
 				var modulate_col: Color = Color.WHITE
-				if biome_id == "forest":
+				if not trade_road and biome_id == "forest":
 					modulate_col = Color(0.72, 0.88, 0.68, 1.0)
-				elif biome_id == "steppe":
+				elif not trade_road and biome_id == "steppe":
 					# Dry semi-desert ground: sand texture pulled toward ochre grass.
 					modulate_col = Color(0.86, 0.84, 0.62, 1.0)
-				elif biome_id == "hills":
+				elif not trade_road and biome_id == "hills":
 					modulate_col = Color(0.80, 0.80, 0.70, 1.0)
 				# Map the original diamond top surface onto the square cell.
 				var uv: PackedVector2Array = PackedVector2Array([Vector2(0.5, 0.10), Vector2(0.92, 16.0 / 37.0), Vector2(0.5, 0.75), Vector2(0.08, 16.0 / 37.0)])
@@ -532,6 +538,7 @@ func _setup_runtime_tilesets() -> void:
 func _on_game_started(world_seed: int, _slot: String, is_new: bool) -> void:
 	_unload_all_chunks()
 	_biome_cache.clear()
+	_trade_road_tiles.clear()
 	if is_new:
 		_seed = Config.DEFAULT_WORLD_SEED if world_seed <= 0 else world_seed
 		_ground_loot.restore([])
@@ -741,6 +748,8 @@ func _spawn_settlement_base_structure(chunk_node: Node2D, tile: Vector2i, block:
 
 
 func _spawn_resource_node(chunk_node: Node2D, node_def_id: String, tpos: Vector2i, stage: String = "full") -> void:
+	if _trade_road_tiles.has(tpos):
+		return
 	var rnode = ResourceNodeClass.new()
 	rnode.node_def_id = node_def_id
 	rnode.tile_pos = tpos
@@ -757,6 +766,13 @@ func _remove_resource_node_at(tpos: Vector2i) -> void:
 		if is_instance_valid(rnode):
 			rnode.queue_free()
 		_resource_nodes_by_tile.erase(key)
+
+
+func _on_trade_road_ready(tiles: Array[Vector2i]) -> void:
+	for tile: Vector2i in tiles:
+		_trade_road_tiles[tile] = true
+		_remove_resource_node_at(tile)
+	queue_redraw()
 
 
 func _spawn_ruin_complex(_chunk_node: Node2D, cpos: Vector2i, poi_data: Dictionary) -> void:
@@ -1140,6 +1156,7 @@ func load_save_data(w: Dictionary) -> void:
 	# A slot switch must discard departing entities without writing to the new slot.
 	_unload_all_chunks()
 	_resource_nodes_by_tile.clear()
+	_trade_road_tiles.clear()
 	if _ground_loot != null:
 		_ground_loot.restore(w.get("ground_loot", []))
 	_chunk_deltas.clear()

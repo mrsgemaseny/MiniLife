@@ -29,10 +29,14 @@ func _run() -> void:
 	var slot: String = "__valden_caravan_" + Crypto.new().generate_random_bytes(16).hex_encode()
 	GameManager.start_new_game(12345, slot)
 	scene.get_node("UILayer/MainMenu").close_menu()
-	await _check_convoy(save_system, slot)
+	var world_system: WorldSystem = scene.get_node("World")
+	if "--road-surface" in OS.get_cmdline_user_args():
+		await _check_road_surface(world_system, save_system, slot)
+	else:
+		await _check_convoy(world_system, save_system, slot)
 	save_system.delete_slot(slot)
 	if failures == 0:
-		print("VALDEN_GRAIN_CARAVAN_OK")
+		print("VALDEN_TRADE_ROAD_SURFACE_OK" if "--road-surface" in OS.get_cmdline_user_args() else "VALDEN_GRAIN_CARAVAN_OK")
 	get_tree().quit(0 if failures == 0 else 1)
 
 func _check_seed_paths() -> void:
@@ -105,7 +109,53 @@ func _check_camp_detour() -> void:
 			return
 	_check(false, "No real camp could be reached by a direct test path")
 
-func _check_convoy(save_system: SaveSystem, slot: String) -> void:
+func _check_road_surface(world_system: WorldSystem, save_system: SaveSystem, slot: String) -> void:
+	var village: AlifeSettlement = _settlement(VILLAGE_ID)
+	var castle: AlifeSettlement = _settlement(CASTLE_ID)
+	var start: Vector2i = GameManager.get_player_tile()
+	SignalBus.player_teleport_requested.emit(Config.world_to_iso(village.tile + Vector2i.LEFT))
+	var castle_market: Vector2i = CaravanRouteManager.market_tile(castle)
+	if not _check(await _wait_for_road(world_system, castle_market) and _route() == null,
+			"The world did not stream the road before any caravan departed"):
+		return
+	var terrain: TerrainGenerator = world_system.get_terrain()
+	var visited: Dictionary[Vector2i, bool] = {}
+	var sample := Vector2i(-1, -1)
+	for tile: Vector2i in world_system._trade_road_tiles:
+		if Config.tile_distance(tile, village.tile) < 85 or Config.tile_distance(tile, castle.tile) < 85:
+			continue
+		var chunk: Vector2i = Config.tile_to_chunk(tile)
+		if visited.has(chunk) or terrain.get_resource_node_for(tile, terrain.get_biome_at(tile)).is_empty():
+			continue
+		visited[chunk] = true
+		SignalBus.player_teleport_requested.emit(Config.world_to_iso(tile))
+		await get_tree().process_frame
+		if (world_system._spawned_entities_by_chunk.get(chunk, []) as Array).is_empty():
+			sample = tile
+			break
+	if not _check(sample.x >= 0, "No untouched road chunk with a procedural resource was found"):
+		return
+	var tile_info: Dictionary = {}
+	SignalBus.world_tile_queried.emit(sample, tile_info)
+	_check(tile_info.get("trade_road", false) and tile_info.get("passable", false) and tile_info.get("resource_id", "") == "",
+		"Natural obstacles appeared on the road surface")
+	var chunk_file: String = SaveSystem._chunk_file_path(slot, Config.tile_to_chunk(sample))
+	if not _check(save_system.save_slot(slot) and not FileAccess.file_exists(chunk_file), "An untouched road created a chunk delta"):
+		return
+	SignalBus.player_teleport_requested.emit(Config.world_to_iso(start))
+	await get_tree().process_frame
+	if not _check(save_system.load_slot(slot), "Cannot reopen the road save"):
+		return
+	_check(await _wait_for_road(world_system, sample) and not FileAccess.file_exists(chunk_file),
+		"The road surface did not regenerate after a save and unload")
+
+func _wait_for_road(world_system: WorldSystem, tile: Vector2i) -> bool:
+	var timeout: int = Time.get_ticks_msec() + 30000
+	while Time.get_ticks_msec() < timeout and not world_system._trade_road_tiles.has(tile):
+		await get_tree().process_frame
+	return world_system._trade_road_tiles.has(tile)
+
+func _check_convoy(world_system: WorldSystem, save_system: SaveSystem, slot: String) -> void:
 	var start_tile: Vector2i = GameManager.get_player_tile()
 	var departures: Array[Dictionary] = []
 	var arrivals: Array[Dictionary] = []
@@ -152,6 +202,10 @@ func _check_convoy(save_system: SaveSystem, slot: String) -> void:
 	var saved_path: Dictionary = WorldSimulation.world.travel.saved_routes().get(crew_id, {})
 	_check(_is_contiguous(saved_path.get("route", [])) and merchant.destination_tile == castle_approach,
 		"The merchant path must be contiguous from Valden to the castle")
+	_check(await _wait_for_road(world_system, castle_approach)
+		and (saved_path.get("route", []) as Array).all(func(point: Array) -> bool:
+			return world_system._trade_road_tiles.has(Vector2i(point[0], point[1]))),
+		"Caravan navigation and the terrain road use different paths")
 	await get_tree().create_timer(4.0).timeout
 	var entity: NPCBase = WorldSimulation.world.agents.materialized.get(crew_id) as NPCBase
 	var pack: CaravanPackAnimal = WorldSimulation.pack_materializer.get_entity(ROUTE_ID)

@@ -6,6 +6,9 @@ const TRIP_MARGIN: int = 300
 const MARKET_APPROACH: Vector2i = Vector2i(2, 2)
 const CONVOY_SPACING: int = 2
 
+static func market_tile(settlement: AlifeSettlement) -> Vector2i:
+	return settlement.tile + MARKET_APPROACH if settlement.settlement_type in ["city", "fortress", "town"] else settlement.tile
+
 static func seed_routes(world: AlifeWorldContext) -> void:
 	for source: AlifeSettlement in world.settlements.all():
 		for target_id: String in source.connections:
@@ -66,6 +69,9 @@ static func dispatch(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 		return false
 	var source_tile: Vector2i = source.tile + MARKET_APPROACH if returning else source.tile
 	var destination_tile: Vector2i = destination.tile if returning else destination.tile + MARKET_APPROACH
+	if not corridor.is_empty():
+		source_tile = market_tile(source)
+		destination_tile = market_tile(destination)
 	var merchant: GlobalAgent = world.agents.find(route.merchant_id) as GlobalAgent
 	if merchant == null or not merchant.alive or (route.grain_relief and not _merchant_available(merchant, route, source_tile)):
 		merchant = null
