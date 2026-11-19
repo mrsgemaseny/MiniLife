@@ -15,6 +15,10 @@ func run() -> void:
 	add_child(main)
 	main.get_node("Systems/SaveSystem").free()
 	SaveSystem.instance = null
+	var fog_updates: Array[Vector2i] = []
+	SignalBus.world_cell_fog_changed.connect(func(cell: Vector2i, _explored: Array[Vector2i]) -> void:
+		fog_updates.append(cell)
+	)
 	GameManager.start_new_game(12345, "global_map_readonly_verification")
 	main.get_node("UILayer/MainMenu").close_menu()
 	await get_tree().process_frame
@@ -39,8 +43,14 @@ func run() -> void:
 	await get_tree().process_frame
 	check(global_map.visible, "G reopens the global map")
 	var origin_region: Vector2i = GlobalLandscapeMap.cell_for_tile(GameManager.get_player_tile())
-	# Start cell (9,14): two cells west is (7,14), plains. Void cells cannot be selected.
-	var destination: Vector2i = origin_region + Vector2i(-2, 0)
+	var destination := Vector2i(7, 14)
+	check(origin_region == Vector2i(9, 14), "Player starts in the authored start cell")
+	check(WorldLayout.settlements().has(destination), "The first playable region contains the authored village")
+	check(global_map._region_fog(origin_region) == Config.FogState.VISIBLE, "Current region is visible")
+	check(global_map._region_fog(destination) == Config.FogState.UNEXPLORED, "Unvisited region has fog")
+	var updates_after_spawn: int = fog_updates.size()
+	SignalBus.player_tile_changed.emit(GameManager.get_player_tile() + Vector2i(1, 0))
+	check(fog_updates.size() == updates_after_spawn, "Moving inside a region does not recalculate the world fog")
 	var void_click := InputEventMouseButton.new()
 	void_click.button_index = MOUSE_BUTTON_LEFT
 	void_click.pressed = true
@@ -53,6 +63,7 @@ func run() -> void:
 	click.position = (Vector2(destination) + Vector2.ONE * 0.5) * GlobalMapUI.CELL_SIZE
 	global_map._on_map_input(click)
 	check(global_map._selected_region == destination, "Click selects a global map region")
+	check(global_map._details.text.ends_with("Не исследован"), "Unexplored region details are hidden")
 	var landing: Vector2i = global_map._find_landing_tile(destination)
 	check(landing.x >= 0, "A nearby global region has a landing tile")
 	if landing.x >= 0:
@@ -60,11 +71,24 @@ func run() -> void:
 		await get_tree().process_frame
 		check(not global_map.visible, "Entering a local region closes the global map")
 		check(GlobalLandscapeMap.cell_for_tile(GameManager.get_player_tile()) == destination, "Transition places player in selected local region")
+		check(global_map._region_fog(origin_region) == Config.FogState.VISITED, "Previous region becomes visited")
+		check(global_map._region_fog(destination) == Config.FogState.VISIBLE, "Destination becomes visible")
+		check(fog_updates.size() == updates_after_spawn + 1, "World fog updates once when changing region")
 		var bundle: Dictionary = {"world": {}, "player": {}, "meta": {}}
 		SignalBus.save_data_requested.emit(bundle)
 		var saved_position: Array = bundle.player.get("position", [])
 		check(saved_position.size() == 2 and GlobalLandscapeMap.cell_for_tile(Config.iso_to_world(Vector2(saved_position[0], saved_position[1]))) == destination,
 			"Destination is recorded by the existing save format")
+		var saved_world: Dictionary = JSON.parse_string(JSON.stringify(bundle.world))
+		var reloaded_fog := FogOfWarSystem.new()
+		reloaded_fog.from_dict(saved_world["fog"], saved_world["world_cell_fog"])
+		check(origin_region in reloaded_fog.explored_world_cells() and destination in reloaded_fog.explored_world_cells()
+			and reloaded_fog.visible_world_cell() == FogOfWarSystem.UNKNOWN_WORLD_CELL, "Explored regions survive serialization")
+		reloaded_fog.from_dict(saved_world["fog"])
+		check(origin_region in reloaded_fog.explored_world_cells() and destination in reloaded_fog.explored_world_cells(),
+			"Old saves derive explored regions from local fog")
 	SignalBus.ui_panel_requested.emit("map")
 	check(local_map.visible, "Existing local map still opens")
+	if failures == 0:
+		print("GLOBAL_MAP_TRANSITION_OK")
 	get_tree().quit(0 if failures == 0 else 1)

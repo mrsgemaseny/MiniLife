@@ -572,6 +572,8 @@ func _on_player_tile_changed(tile_pos: Vector2i) -> void:
 		_interior_zone.check_interaction(tile_pos)
 		return
 
+	if _fog.enter_world_cell(tile_pos):
+		_publish_world_cell_fog()
 	_check_poi_discovery(tile_pos)
 	_check_interior_entry(tile_pos)
 	_stream_chunks_around(tile_pos)
@@ -580,6 +582,10 @@ func _on_player_tile_changed(tile_pos: Vector2i) -> void:
 	if biome_id != _last_biome:
 		_last_biome = biome_id
 		SignalBus.player_biome_changed.emit(biome_id)
+
+
+func _publish_world_cell_fog() -> void:
+	SignalBus.world_cell_fog_changed.emit(_fog.visible_world_cell(), _fog.explored_world_cells())
 
 
 func _on_player_vision_changed(radius: int) -> void:
@@ -1092,6 +1098,7 @@ func get_save_data() -> Dictionary:
 		"world_seed": _seed,
 		"generator_version": _terrain.get_version(),
 		"fog": _fog.to_dict() if _fog != null else {},
+		"world_cell_fog": _fog.world_cells_to_save() if _fog != null else [],
 		"discovered_pois": _discovered_pois.duplicate(),
 		"boss_sites": boss_sites,
 		"chunk_deltas": _chunk_deltas.duplicate(true),
@@ -1110,7 +1117,8 @@ func load_save_data(w: Dictionary) -> void:
 	_terrain.setup(_seed, int(w.get("generator_version", TerrainGenerator.GENERATOR_VERSION)))
 	_biome_cache.clear()
 	if _fog != null:
-		_fog.from_dict(w.get("fog", {}))
+		_fog.from_dict(w.get("fog", {}), w.get("world_cell_fog"))
+		_publish_world_cell_fog()
 	_discovered_pois = w.get("discovered_pois", {}).duplicate()
 	_boss_sites.clear()
 	var saved_sites: Dictionary = w.get("boss_sites", {})

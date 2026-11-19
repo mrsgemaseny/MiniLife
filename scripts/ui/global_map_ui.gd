@@ -4,10 +4,13 @@ extends Control
 const PANEL_ID: String = "global_map"
 # The authored 21x15 map: one square = one 1000x1000 local map. Void squares are not drawn.
 const CELL_SIZE: float = 40.0
+const UNEXPLORED_COLOR := Color("1c2532")
 
 var _regions: GlobalLandscapeMap
 var _seed: int = -1
 var _selected_region: Vector2i = Vector2i(-1, -1)
+var _visible_region: Vector2i = FogOfWarSystem.UNKNOWN_WORLD_CELL
+var _explored_regions: Dictionary[Vector2i, bool] = {}
 var _canvas: Control
 var _details: Label
 var _enter_button: Button
@@ -20,10 +23,30 @@ func _ready() -> void:
 	_build_ui()
 	SignalBus.ui_panel_requested.connect(_on_panel_requested)
 	SignalBus.ui_close_all_requested.connect(close_panel)
+	SignalBus.world_cell_fog_changed.connect(_on_world_cell_fog_changed)
 	SignalBus.game_started.connect(func(_world_seed: int, _slot: String, _new: bool) -> void:
 		_seed = -1
 		_selected_region = Vector2i(-1, -1)
 	)
+
+
+func _on_world_cell_fog_changed(visible_cell: Vector2i, explored_cells: Array[Vector2i]) -> void:
+	_visible_region = visible_cell
+	_explored_regions.clear()
+	for cell: Vector2i in explored_cells:
+		_explored_regions[cell] = true
+	if visible:
+		_update_details()
+		_canvas.queue_redraw()
+
+
+func _region_fog(region: Vector2i) -> Config.FogState:
+	if GameManager.debug_reveal_map or region == _visible_region:
+		return Config.FogState.VISIBLE
+	if _explored_regions.has(region):
+		return Config.FogState.VISITED
+	return Config.FogState.UNEXPLORED
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible or not event is InputEventKey or not event.pressed or event.echo:
@@ -128,16 +151,26 @@ func _draw_map() -> void:
 		return
 	for region: Vector2i in _regions.land_cells():
 		var rect := Rect2(Vector2(region) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
-		_canvas.draw_rect(rect, _region_color(_regions.kind_at(region)))
+		var state: Config.FogState = _region_fog(region)
+		var color: Color = UNEXPLORED_COLOR
+		if state != Config.FogState.UNEXPLORED:
+			color = _region_color(_regions.kind_at(region))
+			if state == Config.FogState.VISITED:
+				color = color.darkened(0.45)
+		_canvas.draw_rect(rect, color)
 		_canvas.draw_rect(rect, Color(0.09, 0.11, 0.14, 0.32), false, 1.0)
 	# Rivers as cell-to-cell links: the macro graph the local generator draws inside cells.
 	var graph: WorldGraph = WorldGraph.for_seed(_seed)
 	for cell: Vector2i in graph.lakes:
-		_canvas.draw_circle((Vector2(cell) + Vector2.ONE * 0.5) * CELL_SIZE, 5.0, Color("3a7bc8"))
+		if _region_fog(cell) != Config.FogState.UNEXPLORED:
+			_canvas.draw_circle((Vector2(cell) + Vector2.ONE * 0.5) * CELL_SIZE, 5.0, Color("3a7bc8"))
 	for mine: Vector2i in graph.all_mines():
-		_canvas.draw_rect(Rect2(Vector2(mine) / float(GlobalLandscapeMap.CELL_TILES) * CELL_SIZE - Vector2.ONE * 2.5, Vector2.ONE * 5.0), Color("1b1b1b"))
+		if _region_fog(GlobalLandscapeMap.cell_for_tile(mine)) != Config.FogState.UNEXPLORED:
+			_canvas.draw_rect(Rect2(Vector2(mine) / float(GlobalLandscapeMap.CELL_TILES) * CELL_SIZE - Vector2.ONE * 2.5, Vector2.ONE * 5.0), Color("1b1b1b"))
 
 	for settlement: AlifeSettlement in WorldSimulation.world.settlements.all():
+		if _region_fog(GlobalLandscapeMap.cell_for_tile(settlement.tile)) == Config.FogState.UNEXPLORED:
+			continue
 		var center: Vector2 = Vector2(settlement.tile) / float(GlobalLandscapeMap.CELL_TILES) * CELL_SIZE
 		_canvas.draw_circle(center, 6.0, Color("211a19"))
 		_canvas.draw_circle(center, 4.5, Color("f2d47b"))
@@ -183,11 +216,15 @@ func _find_landing_tile(region: Vector2i) -> Vector2i:
 func _update_details() -> void:
 	if _selected_region.x < 0 or _regions == null:
 		return
-	var description: String = "Регион (%d, %d) · %s" % [_selected_region.x, _selected_region.y, _region_name(_regions.kind_at(_selected_region))]
-	for settlement: AlifeSettlement in WorldSimulation.world.settlements.all():
-		if GlobalLandscapeMap.cell_for_tile(settlement.tile) == _selected_region:
-			description += " · " + settlement.name
-			break
+	var description: String = "Регион (%d, %d)" % [_selected_region.x, _selected_region.y]
+	if _region_fog(_selected_region) == Config.FogState.UNEXPLORED:
+		description += " · Не исследован"
+	else:
+		description += " · " + _region_name(_regions.kind_at(_selected_region))
+		for settlement: AlifeSettlement in WorldSimulation.world.settlements.all():
+			if GlobalLandscapeMap.cell_for_tile(settlement.tile) == _selected_region:
+				description += " · " + settlement.name
+				break
 	_details.text = description
 	_enter_button.disabled = _find_landing_tile(_selected_region).x < 0
 
