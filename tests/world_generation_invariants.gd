@@ -29,6 +29,7 @@ func _run() -> void:
 		_rivers(seed_value, terrain)
 		_settlements(seed_value, terrain)
 	_quota(TerrainGenerator.new(SEEDS[0]))
+	_legacy_generator()
 	print("WORLDGEN_REPORT ", JSON.stringify(report))
 	if failures == 0:
 		print("WORLDGEN_INVARIANTS_OK")
@@ -57,6 +58,8 @@ func _determinism(seed_value: int, terrain: TerrainGenerator) -> void:
 # Contract of the seam: fields are one function across a border (no jump), and the
 # tile type does not flip along the border line more often than inside a cell.
 func _seams(seed_value: int, terrain: TerrainGenerator) -> void:
+	check(is_equal_approx(TerrainGenerator.BLEND * 2.0 * float(TerrainGenerator.CELL), 64.0),
+		"Cell transition band must be 64 tiles")
 	var land: GlobalLandscapeMap = WorldLayout.landscape()
 	var max_jump: float = 0.0
 	var border_flips: int = 0
@@ -83,7 +86,7 @@ func _seams(seed_value: int, terrain: TerrainGenerator) -> void:
 					border_flips += 1
 				# Control line inside the same blend band: a seam is a jump on the border line
 				# itself, not the extra variety of a zone where two landscapes mix.
-				var inner: Vector2i = edge - across * 100
+				var inner: Vector2i = edge - across * 16
 				if terrain.get_biome_at(inner) != terrain.get_biome_at(inner + across):
 					inner_flips += 1
 				samples += 1
@@ -101,6 +104,17 @@ func _field(terrain: TerrainGenerator, tile: Vector2i, field: int) -> float:
 		1:
 			return terrain.get_temperature_at(tile)
 	return terrain.get_moisture_at(tile)
+
+
+func _legacy_generator() -> void:
+	var legacy := TerrainGenerator.new(SEEDS[0])
+	legacy.setup(SEEDS[0], TerrainGenerator.LEGACY_GENERATOR_VERSION)
+	check(legacy.get_generator_version() == 2, "Legacy save generator version was not retained")
+	var old_edge: Vector3 = TerrainGenerator._axis(1.1, TerrainGenerator.LEGACY_BLEND)
+	var new_edge: Vector3 = TerrainGenerator._axis(1.1)
+	check(old_edge.z > 0.0 and new_edge.z == 0.0,
+		"Legacy generator must retain the old transition width")
+	check(legacy.get_biome_at(WorldLayout.start_tile()) != "", "Legacy generator failed to produce start terrain")
 
 
 # Law of buffers: desert never touches snow. Snow only in mountain cells whose eight

@@ -1094,7 +1094,7 @@ func get_save_data() -> Dictionary:
 		boss_sites[id] = Config.vec2i_to_key(_boss_sites[id])
 	return {
 		"world_seed": _seed,
-		"generator_version": TerrainGenerator.GENERATOR_VERSION,
+		"generator_version": _terrain.get_generator_version(),
 		"fog": _fog.to_dict() if _fog != null else {},
 		"discovered_pois": _discovered_pois.duplicate(),
 		"boss_sites": boss_sites,
@@ -1111,7 +1111,7 @@ func load_save_data(w: Dictionary) -> void:
 		_ground_loot.restore(w.get("ground_loot", []))
 	_chunk_deltas.clear()
 	_seed = int(w.get("world_seed", Config.DEFAULT_WORLD_SEED))
-	_terrain.setup(_seed)
+	_terrain.setup(_seed, int(w.get("generator_version", TerrainGenerator.GENERATOR_VERSION)))
 	_biome_cache.clear()
 	if _fog != null:
 		_fog.from_dict(w.get("fog", {}))

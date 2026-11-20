@@ -19,7 +19,7 @@ func capture(world: AlifeWorldContext, generator_version: int) -> void:
 	_fingerprint = JSON.stringify(_rows, "", true, true).sha256_text()
 
 func regenerate(seed_value: int, generator_version: int) -> bool:
-	if generator_version != TerrainGenerator.GENERATOR_VERSION:
+	if generator_version not in [TerrainGenerator.GENERATOR_VERSION, TerrainGenerator.LEGACY_GENERATOR_VERSION]:
 		return false
 	var baseline: AlifeWorldContext = AlifeWorldContext.new()
 	baseline.seed_world(seed_value, 0.0)

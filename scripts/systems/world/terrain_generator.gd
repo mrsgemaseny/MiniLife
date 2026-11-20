@@ -8,10 +8,12 @@ extends RefCounted
 # Biome ids: plains, forest, swamp, hills, mountains (impassable ridge), snow,
 # desert (dunes, sand bars), steppe (dry semi-desert ground), water.
 
-const GENERATOR_VERSION: int = 2
+const GENERATOR_VERSION: int = 3
+const LEGACY_GENERATOR_VERSION: int = 2
 const CELL: int = GlobalLandscapeMap.CELL_TILES
-# Half-width of the anchor transition band, as a fraction of a cell (200 tiles).
-const BLEND: float = 0.2
+# A 64-tile transition straddles each cell boundary: 32 tiles on either side.
+const BLEND: float = 32.0 / float(CELL)
+const LEGACY_BLEND: float = 0.2
 # Border noise: organic tongues of a neighbour landscape. Must stay below 0.5 so a
 # neighbour that just entered the blend band (weight 0) cannot win abruptly.
 const BORDER_AMP: float = 0.45
@@ -50,6 +52,7 @@ static var _quota_cache: Dictionary = {}
 static var _quota_mutex: Mutex = Mutex.new()
 
 var _seed: int = 0
+var _generator_version: int = GENERATOR_VERSION
 var _land: GlobalLandscapeMap
 var _graph: WorldGraph
 var _n_e: FastNoiseLite
@@ -90,8 +93,9 @@ func _init(world_seed: int = Config.DEFAULT_WORLD_SEED) -> void:
 	setup(world_seed)
 
 
-func setup(world_seed: int) -> void:
+func setup(world_seed: int, generator_version: int = GENERATOR_VERSION) -> void:
 	_seed = world_seed
+	_generator_version = generator_version
 	_land = WorldLayout.landscape()
 	_graph = WorldGraph.for_seed(world_seed)
 	_quota_local.clear()
@@ -127,6 +131,10 @@ func get_seed() -> int:
 	return _seed
 
 
+func get_generator_version() -> int:
+	return _generator_version
+
+
 func get_graph() -> WorldGraph:
 	return _graph
 
@@ -148,21 +156,22 @@ func is_dry_land(pos: Vector2i) -> bool:
 # ---------------------------------------------------------------- anchors and fields
 
 # One axis of the plateau + smoothstep blend. Returns (low cell index, weight low, weight high).
-static func _axis(p: float) -> Vector3:
+static func _axis(p: float, blend: float = BLEND) -> Vector3:
 	var i: int = floori(p)
 	var f: float = p - float(i)
-	if f < BLEND:
-		var s: float = smoothstep(0.0, 1.0, (f + BLEND) / (2.0 * BLEND))
+	if f < blend:
+		var s: float = smoothstep(0.0, 1.0, (f + blend) / (2.0 * blend))
 		return Vector3(float(i - 1), 1.0 - s, s)
-	if f > 1.0 - BLEND:
-		var s2: float = smoothstep(0.0, 1.0, (f - (1.0 - BLEND)) / (2.0 * BLEND))
+	if f > 1.0 - blend:
+		var s2: float = smoothstep(0.0, 1.0, (f - (1.0 - blend)) / (2.0 * blend))
 		return Vector3(float(i), 1.0 - s2, s2)
 	return Vector3(float(i), 1.0, 0.0)
 
 
 func _gather(pos: Vector2i, _own: Vector2i) -> void:
-	var ax: Vector3 = _axis((float(pos.x) + 0.5) / CELL)
-	var ay: Vector3 = _axis((float(pos.y) + 0.5) / CELL)
+	var blend: float = LEGACY_BLEND if _generator_version == LEGACY_GENERATOR_VERSION else BLEND
+	var ax: Vector3 = _axis((float(pos.x) + 0.5) / CELL, blend)
+	var ay: Vector3 = _axis((float(pos.y) + 0.5) / CELL, blend)
 	_bn = 0
 	for ix: int in range(2):
 		var wx: float = ax.y if ix == 0 else ax.z
@@ -290,7 +299,7 @@ func _ensure_quota(pos: Vector2i) -> void:
 		return
 	_quota_mutex.lock()
 	for cell: Vector2i in cells:
-		var key := Vector3i(_seed, cell.x, cell.y)
+		var key := Vector4i(_seed, _generator_version, cell.x, cell.y)
 		if not _quota_cache.has(key):
 			_quota_cache[key] = _quota_threshold_uncached(cell)
 		_quota_local[cell] = _quota_cache[key]
