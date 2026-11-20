@@ -7,6 +7,20 @@ func _ready() -> void:
 
 func _run() -> void:
 	DataRegistry.reload_all()
+	var unit_rows: Array = DataRegistry.get_rows("unit_stats")
+	assert(unit_rows.size() == 48)
+	for unit_row: Dictionary in unit_rows:
+		for key: String in ["attack", "defense", "penetration", "athletics"]:
+			assert(unit_row.has(key), "Missing %s for %s" % [key, unit_row.get("id", "")])
+			assert(int(unit_row[key]) >= 0 and int(unit_row[key]) <= 20)
+	var profile_npc := NPCBase.new()
+	profile_npc.stats = StatsComponent.new()
+	profile_npc.skills = SkillsComponent.new()
+	profile_npc.equipment = EquipmentComponent.new()
+	profile_npc.apply_unit_stats(str(unit_rows[0]["id"]))
+	assert(profile_npc.skills.get_combat_level("combat_penetration") == int(unit_rows[0]["penetration"]))
+	assert(profile_npc.skills.get_combat_level("combat_athletics") == int(unit_rows[0]["athletics"]))
+	profile_npc.free()
 	for item_id: String in DataRegistry.get_table("items"):
 		var definition: Dictionary = DataRegistry.get_item(item_id)
 		if str(definition.get("type", "")) == "weapon":

@@ -221,6 +221,8 @@ func apply_unit_stats(model: String) -> void:
 	stats.health = stats.max_health
 	skills.set_level("combat_attack", int(row["attack"]))
 	skills.set_level("combat_defense", int(row["defense"]))
+	skills.set_level("combat_penetration", int(row.get("penetration", roundi(float(row["attack"]) * 0.65))))
+	skills.set_level("combat_athletics", int(row.get("athletics", roundi((float(row["attack"]) + float(row["defense"])) / 2.0))))
 	equipment.set_innate_armor(float(row["armor"]))
 
 func has_shield() -> bool:
