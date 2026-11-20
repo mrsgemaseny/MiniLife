@@ -1,6 +1,7 @@
 # Current Project Context — MiniLife (USSR: Untitled Sandbox Survival RPG)
 
 ## Current Operational Focus
+- **Глобальный план (2026-11-20)**: Добавлен мастер-план `future/MiniLife — глобальный план.md` с декомпозицией направлений A-H, ролями (GPT / Claude / Босс) и вертикальным срезом в Рейнгарде.
 - **Городской центр и укрепления (2026-11-09)**: Планировка версии 3 добавляет открытую площадь, дом лорда, общественный зал, действующие кузницы и зубчатые стены с воротами. Дом привязан к местному старейшине через `home_tile`. Городская сцена проверяет проход через площадь, кузницу и назначение резиденции.
 - **Римская планировка A-Life (2026-11-09)**: Новые города занимают до 33 связанных чанков, крепости до 25. Форум, термы, домусы, инсулы и торговые дворы используют разные планы и силуэты. Поле `street_plan` сохраняет раскладку старых миров. Стыки стен обновляются по соседним клеткам. A-Life world/scene и проверка стыков стен прошли.
 - **Player sketch (Chat GPT No. 3, 2026-11-08)**: PawnArt now uses FlatPawnArt for the player. Separate circular head overlaps a domed, straight-sided body. Four views with starter clothing, armet and great helm checked in `output/player_sketch_preview.png`. Wearable/great-helm suites pass. The raster entry below is historical.
