@@ -150,6 +150,15 @@ func run() -> void:
 	check(player.stats.hunger >= 30.0 and player.inventory.get_item_count("berries") == 2, "Backpack food failed through actual mouse input")
 	var displayed_hud: HUD = main.get_node("UILayer/HUD") as HUD
 	check(is_equal_approx(displayed_hud._minecraft_vitals.current_hunger, player.stats.hunger), "Eating did not update the visible HUD")
+	var unrelated_combatant := Node.new()
+	add_child(unrelated_combatant)
+	SignalBus.combat_log_entry.emit("miss", "Посторонний удар.", unrelated_combatant, unrelated_combatant)
+	check(displayed_hud._combat_log_entries.is_empty(), "Unrelated combat leaked into player log")
+	for index: int in range(4):
+		SignalBus.combat_log_entry.emit("miss", "Удар %d." % index, player, unrelated_combatant)
+	check(displayed_hud._combat_log_panel.visible and displayed_hud._combat_log_entries.size() == 3, "Player combat log is not visible or bounded")
+	check(displayed_hud._combat_log_label.text.contains("Вы: Удар 3."), "Newest player combat message is missing")
+	unrelated_combatant.queue_free()
 	check(not inventory_ui.visible and not GameManager.is_paused(), "Eating left an invisible UI pause")
 	# The same use action must work on the first eight inventory slots.
 	player.inventory.swap_slots(8, 0)

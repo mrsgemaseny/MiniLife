@@ -26,6 +26,10 @@ var _active_slot_index: int = 0
 var _toast_timer: float = 0.0
 var _toast_panel: PanelContainer = null
 var _toast_label: Label = null
+var _combat_log_panel: PanelContainer = null
+var _combat_log_label: Label = null
+var _combat_log_entries: Array[String] = []
+var _combat_log_timer: float = 0.0
 var _minimap: MinimapWidget = null
 var _current_biome: String = "plains"
 var _current_tile: Vector2i = Vector2i(140, 140)
@@ -72,6 +76,12 @@ func _process(delta: float) -> void:
 				_toast_panel.visible = false
 			if notification_label != null:
 				notification_label.text = ""
+	if _combat_log_timer > 0.0:
+		_combat_log_timer = maxf(0.0, _combat_log_timer - delta)
+		if _combat_log_panel != null:
+			_combat_log_panel.modulate.a = minf(1.0, _combat_log_timer / 1.5)
+			if _combat_log_timer <= 0.0:
+				_combat_log_panel.visible = false
 	if _banner_timer > 0.0:
 		_banner_timer -= delta
 		if _location_banner != null:
@@ -157,6 +167,20 @@ func _setup_styled_hud() -> void:
 	_toast_label.add_theme_font_size_override("font_size", 11)
 	_toast_label.modulate = Color(0.88, 0.86, 0.82)
 	_toast_panel.add_child(_toast_label)
+
+	_combat_log_panel = PanelContainer.new()
+	_combat_log_panel.add_theme_stylebox_override("panel", _make_card_style())
+	_combat_log_panel.position = Vector2(16, 94)
+	_combat_log_panel.custom_minimum_size = Vector2(340, 66)
+	_combat_log_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_combat_log_panel.visible = false
+	add_child(_combat_log_panel)
+	_combat_log_label = Label.new()
+	_combat_log_label.custom_minimum_size = Vector2(326, 0)
+	_combat_log_label.add_theme_font_size_override("font_size", 11)
+	_combat_log_label.modulate = Color(0.88, 0.86, 0.82)
+	_combat_log_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_combat_log_panel.add_child(_combat_log_label)
 
 	var margin: MarginContainer = $MarginContainer
 	if margin != null:
@@ -323,6 +347,7 @@ func _connect_signals() -> void:
 	SignalBus.inventory_changed.connect(_on_inventory_changed)
 	SignalBus.equipment_changed.connect(func(_s: String, _id: String) -> void: _refresh_hotbar_from_player())
 	SignalBus.notification_posted.connect(_on_notification_posted)
+	SignalBus.combat_log_entry.connect(_on_combat_log_entry)
 	SignalBus.interior_entered.connect(_on_interior_entered)
 	SignalBus.interior_exited.connect(_on_interior_exited)
 	SignalBus.weather_changed.connect(_on_weather_changed)
@@ -492,6 +517,21 @@ func _on_notification_posted(message: String) -> void:
 		notification_label.text = message
 		notification_label.modulate = Color(0.95, 0.90, 0.55)
 	_toast_timer = 3.5
+
+
+func _on_combat_log_entry(_event_id: String, message: String, source: Node, target: Node) -> void:
+	var player_attacked: bool = is_instance_valid(source) and source.is_in_group("player")
+	var player_hit: bool = is_instance_valid(target) and target.is_in_group("player")
+	if not player_attacked and not player_hit:
+		return
+	_combat_log_entries.append(("Вы: " if player_attacked else "По вам: ") + message)
+	if _combat_log_entries.size() > 3:
+		_combat_log_entries.pop_front()
+	if _combat_log_panel != null and _combat_log_label != null:
+		_combat_log_label.text = "\n".join(_combat_log_entries)
+		_combat_log_panel.visible = true
+		_combat_log_panel.modulate.a = 1.0
+	_combat_log_timer = 7.0
 
 func _on_effect_applied(entity: Node, effect_id: String, _duration: float) -> void:
 	if entity == null or not entity.is_in_group("player"):
