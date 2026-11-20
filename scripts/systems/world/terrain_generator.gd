@@ -9,7 +9,8 @@ extends RefCounted
 # desert (dunes, sand bars), steppe (dry semi-desert ground), water.
 
 const WORLDSTUDIO_SETTLEMENT_VERSION: int = 5
-const GENERATOR_VERSION: int = WORLDSTUDIO_SETTLEMENT_VERSION
+const WORLDSTUDIO_MARKERS_VERSION: int = 6
+const GENERATOR_VERSION: int = WORLDSTUDIO_MARKERS_VERSION
 const LEGACY_GENERATOR_VERSION: int = 2
 const PRE_BASE_GENERATOR_VERSION: int = 3
 const PRE_WORLDSTUDIO_SETTLEMENT_VERSION: int = 4

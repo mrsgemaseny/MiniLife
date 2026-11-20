@@ -9,6 +9,7 @@ const TOKEN_TO_POINT_TYPE: Dictionary = {
 	"settlement_village": "village",
 	"settlement_village_2": "hamlet",
 	"settlement_village_3": "city",
+	"settlement_village_mark": "independent",
 }
 const SOLID_TOKENS: Array[String] = ["brick", "pillar", "stone_wall", "wood_wall", "water"]
 

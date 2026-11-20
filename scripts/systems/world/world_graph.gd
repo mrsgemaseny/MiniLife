@@ -232,8 +232,9 @@ func _add_clearing(cell: Vector2i, point: Vector2, radius: float) -> void:
 
 
 func _place_settlements(generator_version: int) -> void:
-	var authored: Dictionary = WorldLayout.worldstudio_settlements() \
-		if generator_version >= TerrainGenerator.WORLDSTUDIO_SETTLEMENT_VERSION else WorldLayout.settlements()
+	var authored: Dictionary = WorldLayout.settlements()
+	if generator_version >= TerrainGenerator.WORLDSTUDIO_SETTLEMENT_VERSION:
+		authored = WorldLayout.worldstudio_settlements(generator_version >= TerrainGenerator.WORLDSTUDIO_MARKERS_VERSION)
 	var cells: Array = authored.keys()
 	cells.sort()
 	for cell: Vector2i in cells:

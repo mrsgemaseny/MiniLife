@@ -242,6 +242,7 @@ func load_slot(slot: String) -> bool:
 
 	var loaded_seed: int = int(world_data.get("world_seed", Config.DEFAULT_WORLD_SEED))
 	if int(world_data.get("generator_version", 0)) not in [TerrainGenerator.GENERATOR_VERSION,
+			TerrainGenerator.WORLDSTUDIO_SETTLEMENT_VERSION,
 			TerrainGenerator.PRE_WORLDSTUDIO_SETTLEMENT_VERSION,
 			TerrainGenerator.PRE_BASE_GENERATOR_VERSION, TerrainGenerator.LEGACY_GENERATOR_VERSION]:
 		# Deltas are offsets from one generator's output; on another generator they corrupt the map.

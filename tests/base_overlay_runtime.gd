@@ -75,6 +75,12 @@ func _run() -> void:
 			or previous.placement_for_cell(cell).is_empty():
 		_fail("version 4 world did not preserve its original base sites")
 		return
+	var version_five := WorldBaseOverlay.new()
+	version_five.setup(42819, TerrainGenerator.WORLDSTUDIO_SETTLEMENT_VERSION)
+	if not version_five.placement_for_cell(Vector2i(5, 3)).is_empty() \
+			or version_five.placement_for_cell(Vector2i(16, 10)).is_empty():
+		_fail("version 5 world did not preserve its original base sites")
+		return
 	print("PASS base_overlay_runtime: %d current settlements assigned; wall blocks movement; base excluded from deltas; version 3 unchanged" % placed_count)
 	get_tree().quit(0)
 

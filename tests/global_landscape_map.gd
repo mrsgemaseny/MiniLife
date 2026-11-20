@@ -52,8 +52,12 @@ func _run() -> void:
 		return
 	var legacy: Dictionary = WorldLayout.settlements()
 	var authored: Dictionary = WorldLayout.worldstudio_settlements()
+	var marked: Dictionary = WorldLayout.worldstudio_settlements(true)
 	if legacy.size() != 102 or authored.size() != 103:
 		_fail("settlement counts: legacy %d, WorldStudio %d" % [legacy.size(), authored.size()])
+		return
+	if marked.size() != 141:
+		_fail("WorldStudio settlement count with village marks: %d" % marked.size())
 		return
 	if authored[Vector2i(16, 10)]["token"] != "settlement_city" \
 			or authored[Vector2i(17, 8)]["token"] != "settlement_city" \
@@ -70,13 +74,20 @@ func _run() -> void:
 			_fail("existing settlement changed at %s" % cell)
 			return
 	var old_graph: WorldGraph = WorldGraph.for_seed(42819, TerrainGenerator.PRE_WORLDSTUDIO_SETTLEMENT_VERSION)
+	var version_five_graph: WorldGraph = WorldGraph.for_seed(42819, TerrainGenerator.WORLDSTUDIO_SETTLEMENT_VERSION)
 	var new_graph: WorldGraph = WorldGraph.for_seed(42819, TerrainGenerator.GENERATOR_VERSION)
-	if old_graph.settlement_sites.size() != 102 or new_graph.settlement_sites.size() != 103:
+	if old_graph.settlement_sites.size() != 102 or version_five_graph.settlement_sites.size() != 103 \
+			or new_graph.settlement_sites.size() != 141:
 		_fail("versioned settlement graph count")
 		return
 	if not old_graph.site_for_cell(Vector2i(16, 10)).is_empty() \
 			or new_graph.site_for_cell(Vector2i(16, 10)).get("token", "") != "settlement_city":
 		_fail("new city appears in legacy graph or is missing from current graph")
+		return
+	var marked_cell := Vector2i(5, 3)
+	if not version_five_graph.site_for_cell(marked_cell).is_empty() \
+			or new_graph.site_for_cell(marked_cell).get("token", "") != "settlement_village_mark":
+		_fail("village mark appeared in version 5 or is missing from current graph")
 		return
 	print("GLOBAL_LANDSCAPE_MAP_OK: 21x15, 184 land cells, kinds, void cells, start tile, tile and chunk containment")
 	get_tree().quit(0)

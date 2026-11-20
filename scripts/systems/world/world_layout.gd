@@ -18,6 +18,7 @@ const SETTLEMENT_TEMPLATES: Dictionary = {
 	"settlement_city": "city",
 	"settlement_castle": "fortress",
 	"settlement_fortress": "fortress",
+	"settlement_village_mark": "village",
 }
 
 const WORLDSTUDIO_SETTLEMENT_TOKENS: Dictionary = {
@@ -27,6 +28,7 @@ const WORLDSTUDIO_SETTLEMENT_TOKENS: Dictionary = {
 	"city": "settlement_city",
 	"castle": "settlement_castle",
 	"fortress": "settlement_fortress",
+	"village_mark": "settlement_village_mark",
 }
 
 static var _map: GlobalLandscapeMap = null
@@ -34,6 +36,8 @@ static var _political: Dictionary = {}
 static var _political_loaded: bool = false
 static var _worldstudio_settlements: Dictionary = {}
 static var _worldstudio_settlements_loaded: bool = false
+static var _worldstudio_marked_settlements: Dictionary = {}
+static var _worldstudio_marked_settlements_loaded: bool = false
 static var _mutex: Mutex = Mutex.new()
 
 
@@ -59,17 +63,24 @@ static func settlements() -> Dictionary:
 
 # The authored settlement layer for new world versions. Legacy saves continue to use
 # settlements() until their generator version is explicitly migrated.
-static func worldstudio_settlements() -> Dictionary:
+static func worldstudio_settlements(include_village_marks: bool = false) -> Dictionary:
 	_mutex.lock()
-	if not _worldstudio_settlements_loaded:
-		_worldstudio_settlements = _load_worldstudio_settlements(LANDSCAPE_PATH)
-		_worldstudio_settlements_loaded = true
-	var result: Dictionary = _worldstudio_settlements
+	var result: Dictionary
+	if include_village_marks:
+		if not _worldstudio_marked_settlements_loaded:
+			_worldstudio_marked_settlements = _load_worldstudio_settlements(LANDSCAPE_PATH, true)
+			_worldstudio_marked_settlements_loaded = true
+		result = _worldstudio_marked_settlements
+	else:
+		if not _worldstudio_settlements_loaded:
+			_worldstudio_settlements = _load_worldstudio_settlements(LANDSCAPE_PATH, false)
+			_worldstudio_settlements_loaded = true
+		result = _worldstudio_settlements
 	_mutex.unlock()
 	return result
 
 
-static func _load_worldstudio_settlements(path: String) -> Dictionary:
+static func _load_worldstudio_settlements(path: String, include_village_marks: bool) -> Dictionary:
 	var result: Dictionary = {}
 	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
 	if file == null:
@@ -92,6 +103,8 @@ static func _load_worldstudio_settlements(path: String) -> Dictionary:
 		var obj: Dictionary = entry as Dictionary
 		var kind: String = str(obj.get("type", ""))
 		if not WORLDSTUDIO_SETTLEMENT_TOKENS.has(kind):
+			continue
+		if kind == "village_mark" and not include_village_marks:
 			continue
 		var position: Variant = obj.get("cell")
 		if not (position is Dictionary):

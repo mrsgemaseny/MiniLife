@@ -26,7 +26,7 @@ func _run() -> void:
 	metrics["alife_seed_ms"] = (Time.get_ticks_usec() - start) / 1000.0
 	metrics["settlements"] = context.settlements.all().size()
 	metrics["abstract_agents"] = context.agents.all().size()
-	assert(context.settlements.all().size() == 103)
+	assert(context.settlements.all().size() == 141)
 	var world: WorldSystem = load("res://scenes/world/world.tscn").instantiate()
 	add_child(world)
 	start = Time.get_ticks_usec()
