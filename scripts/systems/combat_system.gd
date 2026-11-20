@@ -1,6 +1,7 @@
 class_name CombatSystem
 extends Node
 
+const CombatLogText = preload("res://scripts/systems/combat/combat_log_text.gd")
 const DAMAGE_TYPES: Array[String] = ["physical", "fire", "poison", "cold", "true"]
 
 var _projectile_layer: ProjectileSystem = null
@@ -155,6 +156,9 @@ func _resolve_attack(target: Node, amount: float, damage_type: String, source: N
 			_combat_trace.pop_front()
 	CombatApplier.apply(target, source, result)
 	if bool(result.get("accepted", false)):
+		var log_message: String = CombatLogText.line_for(result, _attack_sequence)
+		if not log_message.is_empty():
+			SignalBus.combat_log_entry.emit(CombatLogText.event_id(result), log_message, source, target)
 		var outcome: String = str(result.get("outcome", ""))
 		if outcome == "miss":
 			_float_feedback(target, "ПРОМАХ", Color.GRAY)

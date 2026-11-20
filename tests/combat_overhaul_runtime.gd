@@ -1,5 +1,6 @@
 extends Node
 
+const CombatLogText = preload("res://scripts/systems/combat/combat_log_text.gd")
 
 func _ready() -> void:
 	call_deferred("_run")
@@ -7,6 +8,15 @@ func _ready() -> void:
 
 func _run() -> void:
 	DataRegistry.reload_all()
+	for event_key: String in ["miss", "dodge", "parry", "shield_block", "armor_glancing", "armor_full", "body_contact"]:
+		var log_row: Dictionary = DataRegistry.get_entry("combat_log_ru", event_key)
+		var lines: Array = log_row.get("lines", [])
+		assert(lines.size() == 5, "Five combat log variants required: %s" % event_key)
+		var sample_result: Dictionary = {"outcome": event_key}
+		if event_key.begins_with("armor_"):
+			sample_result = {"outcome": "armor_contact", "armor_outcome": "glancing" if event_key == "armor_glancing" else "full"}
+		for index: int in range(5):
+			assert(CombatLogText.line_for(sample_result, index) == str(lines[index]))
 	var unit_rows: Array = DataRegistry.get_rows("unit_stats")
 	assert(unit_rows.size() == 48)
 	for unit_row: Dictionary in unit_rows:
@@ -129,6 +139,9 @@ func _run() -> void:
 	assert(float(athletic.stamina_attacker) > float(first.stamina_attacker))
 	var combat := CombatSystem.new()
 	add_child(combat)
+	var logged_events: Array[String] = []
+	SignalBus.combat_log_entry.connect(func(event_id: String, _message: String, _source: Node, _target: Node) -> void:
+		logged_events.append(event_id))
 	var player: Player = load("res://scenes/entities/player.tscn").instantiate()
 	add_child(player)
 	player.equipment.equip("iron_armor", -1, "chest")
@@ -138,6 +151,7 @@ func _run() -> void:
 	var armor_before: float = player.equipment.get_effective_armor_hp("chest")
 	SignalBus.projectile_resolve_requested.emit(player, 20.0, "physical", source,
 		{"archetype": "war_pick", "penetration": 0.999, "impact": 0.5})
+	assert(not logged_events.is_empty() and logged_events[0].begins_with("armor_"), "Projectile combat result is not logged")
 	assert(is_equal_approx(player.health_comp.current, hp_before), "Armor must protect HP")
 	assert(is_equal_approx(player.stats.health, hp_before), "Player HP mirrors HealthComponent")
 	assert(player.equipment.get_effective_armor_hp("chest") < armor_before, "Projectile wears armor once")

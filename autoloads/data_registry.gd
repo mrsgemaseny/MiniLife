@@ -11,6 +11,7 @@ const TABLE_FILES: Dictionary = {
 	"npcs": "npcs.json",
 	"npc_models": "npc_models.json",
 	"unit_stats": "unit_stats.json",
+	"combat_log_ru": "combat_log_ru.json",
 	"squads": "squads.json",
 	"factions": "factions.json",
 	"events": "events.json",
