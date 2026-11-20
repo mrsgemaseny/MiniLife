@@ -6,6 +6,10 @@ extends RefCounted
 
 const CELL_TILES: int = 1000
 const EXPECTED_FORMAT: String = "pixel_architect_v1"
+const WORLDSTUDIO_SCHEMA: int = 1
+const WORLDSTUDIO_KIND: Dictionary = {
+	"plains": "plains", "forest": "forest", "mountains": "mountains", "sands": "desert",
+}
 
 # stone_wall in the author's map is a mountain cell (a single one, at 14,9).
 const TOKEN_TO_KIND: Dictionary = {
@@ -31,9 +35,37 @@ static func load_from(path: String) -> GlobalLandscapeMap:
 		push_error("GlobalLandscapeMap: %s is not a JSON object" % path)
 		return null
 	var map := GlobalLandscapeMap.new()
-	if not map._ingest(parsed as Dictionary):
+	var doc: Dictionary = parsed as Dictionary
+	var valid: bool = map._ingest_worldstudio(doc) if doc.has("schema_version") else map._ingest(doc)
+	if not valid:
 		return null
 	return map
+
+
+func _ingest_worldstudio(doc: Dictionary) -> bool:
+	if int(doc.get("schema_version", -1)) != WORLDSTUDIO_SCHEMA:
+		push_error("GlobalLandscapeMap: unsupported WorldStudio schema_version")
+		return false
+	var grid: Dictionary = doc.get("grid", {})
+	width = int(grid.get("width", -1))
+	height = int(grid.get("height", -1))
+	if width != 21 or height != 15 or int(grid.get("cell_tiles", -1)) != CELL_TILES:
+		push_error("GlobalLandscapeMap: incompatible WorldStudio grid")
+		return false
+	var entries: Array = doc.get("cells", [])
+	for entry: Variant in entries:
+		if not (entry is Dictionary):
+			push_error("GlobalLandscapeMap: malformed WorldStudio cell")
+			return false
+		var cell: Dictionary = entry as Dictionary
+		var position := Vector2i(int(cell.get("x", -1)), int(cell.get("y", -1)))
+		var kind: String = str(cell.get("landscape", ""))
+		if position.x < 0 or position.y < 0 or position.x >= width or position.y >= height \
+				or _kinds.has(position) or not WORLDSTUDIO_KIND.has(kind):
+			push_error("GlobalLandscapeMap: invalid WorldStudio cell %s" % position)
+			return false
+		_kinds[position] = WORLDSTUDIO_KIND[kind]
+	return true
 
 
 func _ingest(doc: Dictionary) -> bool:

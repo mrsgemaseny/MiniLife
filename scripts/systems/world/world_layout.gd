@@ -2,10 +2,10 @@ class_name WorldLayout
 extends RefCounted
 
 # Single source of truth for world shape: 21x15 authored cells, each a 1000x1000 tile map.
-# Cells absent from nature.json are void: no tiles, no chunks, no simulation.
+# Cells absent from world.json are void: no tiles, no chunks, no simulation.
 # Chunk jobs run on worker threads, so the lazy loads are guarded by a mutex.
 
-const LANDSCAPE_PATH: String = "res://data/nature.json"
+const LANDSCAPE_PATH: String = "res://data/world.json"
 const POLITICAL_PATH: String = "res://data/political_map.json"
 # Authored start cell (south edge, plains), marked by the author on the global map.
 const START_CELL: Vector2i = Vector2i(9, 14)
