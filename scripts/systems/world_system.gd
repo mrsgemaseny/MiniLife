@@ -18,6 +18,7 @@ const NPC_SCENE: PackedScene = preload("res://scenes/entities/npc_base.tscn")
 const ENEMY_SCENE: PackedScene = preload("res://scenes/entities/enemy_base.tscn")
 const ResourceNodeClass = preload("res://scripts/entities/resource_node.gd")
 const AnimalEntityClass = preload("res://scripts/entities/animal_entity.gd")
+const GlobalCellFogScript = preload("res://scripts/systems/world/global_cell_fog.gd")
 
 @onready var ground_tile_map: TileMap = $GroundTileMap
 @onready var chunk_container: Node2D = $ChunkContainer
@@ -27,6 +28,7 @@ var _seed: int = Config.DEFAULT_WORLD_SEED
 var _terrain: TerrainGenerator = TerrainGenerator.new(Config.DEFAULT_WORLD_SEED)
 var _base_overlay: WorldBaseOverlay = WorldBaseOverlay.new()
 var _fog: FogOfWarSystem = FogOfWarSystem.new()
+var _global_fog: GlobalCellFogScript = GlobalCellFogScript.new()
 var _loaded_chunks: Dictionary = {}
 var _chunk_deltas: Dictionary = {}
 var _resource_nodes_by_tile: Dictionary = {}
@@ -474,6 +476,10 @@ func get_fog_system() -> FogOfWarSystem:
 	return _fog
 
 
+func get_global_cell_state(cell: Vector2i) -> int:
+	return _global_fog.get_state(cell)
+
+
 func get_terrain() -> TerrainGenerator:
 	return _terrain
 
@@ -583,6 +589,7 @@ func _on_game_started(world_seed: int, _slot: String, is_new: bool) -> void:
 		_terrain.setup(_seed)
 		_chunk_deltas.clear()
 		_fog.clear()
+		_global_fog.clear()
 		_discovered_pois.clear()
 		_boss_sites.clear()
 		_starter_camp_spawned = false
@@ -624,6 +631,7 @@ func _on_player_tile_changed(tile_pos: Vector2i) -> void:
 	if tile_pos == _last_player_tile:
 		return
 	_last_player_tile = tile_pos
+	_global_fog.update_for_tile(tile_pos)
 
 	if _interior_zone != null and _interior_zone.is_player_inside():
 		_interior_zone.check_interaction(tile_pos)
@@ -1151,6 +1159,7 @@ func get_save_data() -> Dictionary:
 		"world_seed": _seed,
 		"generator_version": _terrain.get_generator_version(),
 		"fog": _fog.to_dict() if _fog != null else {},
+		"global_fog": _global_fog.to_dict(),
 		"discovered_pois": _discovered_pois.duplicate(),
 		"boss_sites": boss_sites,
 		"chunk_deltas": _chunk_deltas.duplicate(true),
@@ -1175,6 +1184,10 @@ func load_save_data(w: Dictionary) -> void:
 	_biome_cache.clear()
 	if _fog != null:
 		_fog.from_dict(w.get("fog", {}))
+	if w.get("global_fog") is Dictionary:
+		_global_fog.from_dict(w["global_fog"])
+	else:
+		_global_fog.from_tile_fog(w.get("fog", {}))
 	_discovered_pois = w.get("discovered_pois", {}).duplicate()
 	_boss_sites.clear()
 	var saved_sites: Dictionary = w.get("boss_sites", {})

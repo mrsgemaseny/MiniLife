@@ -192,6 +192,15 @@ func _update_details() -> void:
 	if _selected_region.x < 0 or _regions == null:
 		return
 	var description: String = "Регион (%d, %d) · %s" % [_selected_region.x, _selected_region.y, _region_name(_regions.kind_at(_selected_region))]
+	var world_system: WorldSystem = get_tree().get_first_node_in_group("world_system") as WorldSystem
+	if world_system != null:
+		var state: int = world_system.get_global_cell_state(_selected_region)
+		if state == int(Config.FogState.VISIBLE):
+			description += " · Вы здесь"
+		elif state == int(Config.FogState.VISITED):
+			description += " · Посещена"
+		else:
+			description += " · Не посещена"
 	for settlement: AlifeSettlement in WorldSimulation.world.settlements.all():
 		if GlobalLandscapeMap.cell_for_tile(settlement.tile) == _selected_region:
 			description += " · " + settlement.name
