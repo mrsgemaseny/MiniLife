@@ -20,9 +20,20 @@ const SETTLEMENT_TEMPLATES: Dictionary = {
 	"settlement_fortress": "fortress",
 }
 
+const WORLDSTUDIO_SETTLEMENT_TOKENS: Dictionary = {
+	"village": "settlement_village",
+	"village_2": "settlement_village_2",
+	"village_3": "settlement_village_3",
+	"city": "settlement_city",
+	"castle": "settlement_castle",
+	"fortress": "settlement_fortress",
+}
+
 static var _map: GlobalLandscapeMap = null
 static var _political: Dictionary = {}
 static var _political_loaded: bool = false
+static var _worldstudio_settlements: Dictionary = {}
+static var _worldstudio_settlements_loaded: bool = false
 static var _mutex: Mutex = Mutex.new()
 
 
@@ -43,6 +54,61 @@ static func settlements() -> Dictionary:
 		_political = _load_political(POLITICAL_PATH)
 	var result: Dictionary = _political
 	_mutex.unlock()
+	return result
+
+
+# The authored settlement layer for new world versions. Legacy saves continue to use
+# settlements() until their generator version is explicitly migrated.
+static func worldstudio_settlements() -> Dictionary:
+	_mutex.lock()
+	if not _worldstudio_settlements_loaded:
+		_worldstudio_settlements = _load_worldstudio_settlements(LANDSCAPE_PATH)
+		_worldstudio_settlements_loaded = true
+	var result: Dictionary = _worldstudio_settlements
+	_mutex.unlock()
+	return result
+
+
+static func _load_worldstudio_settlements(path: String) -> Dictionary:
+	var result: Dictionary = {}
+	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		push_error("WorldLayout: cannot open %s" % path)
+		return result
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if not (parsed is Dictionary):
+		push_error("WorldLayout: %s is not a JSON object" % path)
+		return result
+	var objects: Variant = (parsed as Dictionary).get("objects", [])
+	if not (objects is Array):
+		push_error("WorldLayout: objects must be an array in %s" % path)
+		return result
+	if _map == null:
+		_map = GlobalLandscapeMap.load_from(LANDSCAPE_PATH)
+	var land: GlobalLandscapeMap = _map
+	for entry: Variant in objects:
+		if not (entry is Dictionary):
+			continue
+		var obj: Dictionary = entry as Dictionary
+		var kind: String = str(obj.get("type", ""))
+		if not WORLDSTUDIO_SETTLEMENT_TOKENS.has(kind):
+			continue
+		var position: Variant = obj.get("cell")
+		if not (position is Dictionary):
+			push_error("WorldLayout: settlement %s has no cell" % str(obj.get("id", "")))
+			continue
+		var coordinates: Dictionary = position as Dictionary
+		if not (coordinates.get("x") is float or coordinates.get("x") is int) \
+				or not (coordinates.get("y") is float or coordinates.get("y") is int):
+			push_error("WorldLayout: settlement %s has invalid coordinates" % str(obj.get("id", "")))
+			continue
+		var cell := Vector2i(int(coordinates["x"]), int(coordinates["y"]))
+		if not land.is_land(cell) or result.has(cell):
+			push_error("WorldLayout: duplicate or off-land settlement at %s" % cell)
+			continue
+		var token: String = WORLDSTUDIO_SETTLEMENT_TOKENS[kind]
+		result[cell] = {"template": SETTLEMENT_TEMPLATES[token], "token": token,
+			"realm": str(obj.get("owner", ""))}
 	return result
 
 

@@ -50,5 +50,24 @@ func _run() -> void:
 	if not WorldLayout.contains_chunk(Config.tile_to_chunk(start)):
 		_fail("start chunk rejected")
 		return
+	var legacy: Dictionary = WorldLayout.settlements()
+	var authored: Dictionary = WorldLayout.worldstudio_settlements()
+	if legacy.size() != 102 or authored.size() != 103:
+		_fail("settlement counts: legacy %d, WorldStudio %d" % [legacy.size(), authored.size()])
+		return
+	if authored[Vector2i(16, 10)]["token"] != "settlement_city" \
+			or authored[Vector2i(17, 8)]["token"] != "settlement_city" \
+			or legacy[Vector2i(17, 8)]["token"] != "settlement_village":
+		_fail("WorldStudio city additions differ from legacy map")
+		return
+	for cell: Vector2i in authored:
+		if not map.is_land(cell):
+			_fail("settlement outside land: %s" % cell)
+			return
+		if legacy.has(cell) and cell != Vector2i(17, 8) \
+				and (authored[cell]["token"] != legacy[cell]["token"] \
+				or authored[cell]["template"] != legacy[cell]["template"]):
+			_fail("existing settlement changed at %s" % cell)
+			return
 	print("GLOBAL_LANDSCAPE_MAP_OK: 21x15, 184 land cells, kinds, void cells, start tile, tile and chunk containment")
 	get_tree().quit(0)
