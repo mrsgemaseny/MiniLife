@@ -25,6 +25,7 @@ const AnimalEntityClass = preload("res://scripts/entities/animal_entity.gd")
 
 var _seed: int = Config.DEFAULT_WORLD_SEED
 var _terrain: TerrainGenerator = TerrainGenerator.new(Config.DEFAULT_WORLD_SEED)
+var _base_overlay: WorldBaseOverlay = WorldBaseOverlay.new()
 var _fog: FogOfWarSystem = FogOfWarSystem.new()
 var _loaded_chunks: Dictionary = {}
 var _chunk_deltas: Dictionary = {}
@@ -262,6 +263,14 @@ func _draw() -> void:
 				IsoMath.draw_quad(self, cell, surface)
 				draw_polyline(cell, surface.darkened(0.24), 0.75, true)
 				continue
+			var base_token: String = _base_overlay.token_at(tpos)
+			if not base_token.is_empty() and base_token != "grass":
+				var base_color: Color = _base_token_color(base_token)
+				var base_polygon: PackedVector2Array = IsoMath.cell_polygon(center)
+				IsoMath.draw_quad(self, base_polygon, base_color)
+				if WorldBaseOverlay.is_solid(base_token) and base_token != "water":
+					draw_polyline(base_polygon, base_color.darkened(0.25), 0.8, true)
+				continue
 			var col: Color = ProceduralTileset.BIOME_PALETTE.get(biome_id, Color(0.34, 0.56, 0.25))
 			var variation: float = float(hash_val % 9 - 4) * 0.014
 			col = col.lightened(variation) if variation > 0.0 else col.darkened(-variation)
@@ -325,11 +334,34 @@ func _visible_tile_bounds() -> Rect2i:
 	return Rect2i(begin, end - begin)
 
 
+func _base_token_color(token: String) -> Color:
+	match token:
+		"brick": return Color("8e7564")
+		"stone_wall": return Color("777978")
+		"wood_wall": return Color("74553b")
+		"pillar": return Color("56534b")
+		"stone_floor": return Color("aaa69a")
+		"wood_floor": return Color("a17c54")
+		"door": return Color("c7935d")
+		"water": return Color("477a9b")
+		"wheat": return Color("c9b263")
+		"dirt": return Color("796e56")
+	return Color("6a8250")
+
+
 func get_tile(pos: Vector2i) -> TileState:
 	var state: TileState = TileState.new()
 	state.pos = pos
 	state.biome_id = get_biome_cached(pos)
 	state.passable = not state.biome_id.is_empty() and state.biome_id != "mountains" and state.biome_id != "water"
+	var base_token: String = _base_overlay.token_at(pos)
+	if not base_token.is_empty():
+		state.tile_id = base_token
+		state.passable = not WorldBaseOverlay.is_solid(base_token)
+		if base_token in ["brick", "pillar", "stone_wall", "wood_wall"]:
+			state.structure_id = "wall"
+		elif base_token == "door":
+			state.structure_id = "door"
 	var key: String = Config.vec2i_to_key(pos)
 	if _resource_nodes_by_tile.has(key):
 		var rnode: ResourceNode = _resource_nodes_by_tile[key] as ResourceNode
@@ -526,6 +558,7 @@ func _on_game_started(world_seed: int, _slot: String, is_new: bool) -> void:
 	_biome_cache.clear()
 	if is_new:
 		_seed = Config.DEFAULT_WORLD_SEED if world_seed <= 0 else world_seed
+		_base_overlay.setup(_seed, TerrainGenerator.GENERATOR_VERSION)
 		_ground_loot.restore([])
 		_terrain.setup(_seed)
 		_chunk_deltas.clear()
@@ -674,6 +707,8 @@ func _load_chunk(cpos: Vector2i) -> void:
 		for ly in range(Config.CHUNK_SIZE):
 			var tpos: Vector2i = origin + Vector2i(lx, ly)
 			if not _terrain.is_in_world(tpos):
+				continue
+			if not _base_overlay.token_at(tpos).is_empty():
 				continue
 			get_biome_cached(tpos)
 			var tkey: String = Config.vec2i_to_key(tpos)
@@ -1116,6 +1151,7 @@ func load_save_data(w: Dictionary) -> void:
 	_chunk_deltas.clear()
 	_seed = int(w.get("world_seed", Config.DEFAULT_WORLD_SEED))
 	_terrain.setup(_seed, int(w.get("generator_version", TerrainGenerator.GENERATOR_VERSION)))
+	_base_overlay.setup(_seed, _terrain.get_generator_version())
 	_biome_cache.clear()
 	if _fog != null:
 		_fog.from_dict(w.get("fog", {}))

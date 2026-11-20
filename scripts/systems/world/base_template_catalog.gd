@@ -36,7 +36,7 @@ func load_from(path: String) -> bool:
 		var item: Dictionary = entry as Dictionary
 		var relative: String = str(item.get("file", ""))
 		if relative.is_empty() or relative.begins_with("/") or relative.contains("..") or seen.has(relative) \
-				or not FileAccess.file_exists(SOURCE_ROOT + relative):
+				or not PackedBaseTemplate.has_source(relative):
 			push_error("BaseTemplateCatalog: invalid template path %s" % relative)
 			return false
 		seen[relative] = true

@@ -8,8 +8,9 @@ extends RefCounted
 # Biome ids: plains, forest, swamp, hills, mountains (impassable ridge), snow,
 # desert (dunes, sand bars), steppe (dry semi-desert ground), water.
 
-const GENERATOR_VERSION: int = 3
+const GENERATOR_VERSION: int = 4
 const LEGACY_GENERATOR_VERSION: int = 2
+const PRE_BASE_GENERATOR_VERSION: int = 3
 const CELL: int = GlobalLandscapeMap.CELL_TILES
 # A 64-tile transition straddles each cell boundary: 32 tiles on either side.
 const BLEND: float = 32.0 / float(CELL)

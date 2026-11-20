@@ -241,7 +241,8 @@ func load_slot(slot: String) -> bool:
 	var furnaces_data: Dictionary = _read_json(base_dir + "furnaces.json")
 
 	var loaded_seed: int = int(world_data.get("world_seed", Config.DEFAULT_WORLD_SEED))
-	if int(world_data.get("generator_version", 0)) not in [TerrainGenerator.GENERATOR_VERSION, TerrainGenerator.LEGACY_GENERATOR_VERSION]:
+	if int(world_data.get("generator_version", 0)) not in [TerrainGenerator.GENERATOR_VERSION,
+			TerrainGenerator.PRE_BASE_GENERATOR_VERSION, TerrainGenerator.LEGACY_GENERATOR_VERSION]:
 		# Deltas are offsets from one generator's output; on another generator they corrupt the map.
 		push_warning("SaveSystem: slot %s was made by generator %s, current is %d" % [slot, str(world_data.get("generator_version", "none")), TerrainGenerator.GENERATOR_VERSION])
 		return false
