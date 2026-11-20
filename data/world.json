@@ -1,0 +1,3370 @@
+{
+  "buildings": {},
+  "cells": [
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 9,
+      "y": 0
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 10,
+      "y": 0
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 11,
+      "y": 0
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 12,
+      "y": 0
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 13,
+      "y": 0
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 14,
+      "y": 0
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 15,
+      "y": 0
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 9,
+      "y": 1
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 10,
+      "y": 1
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 11,
+      "y": 1
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 12,
+      "y": 1
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 13,
+      "y": 1
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 14,
+      "y": 1
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 15,
+      "y": 1
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "x": 7,
+      "y": 2
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "x": 8,
+      "y": 2
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 9,
+      "y": 2
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 10,
+      "y": 2
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 11,
+      "y": 2
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 12,
+      "y": 2
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 13,
+      "y": 2
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 14,
+      "y": 2
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 15,
+      "y": 2
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 16,
+      "y": 2
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 17,
+      "y": 2
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 4,
+      "y": 3
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "x": 6,
+      "y": 3
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "x": 7,
+      "y": 3
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "x": 8,
+      "y": 3
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 9,
+      "y": 3
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 10,
+      "y": 3
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 11,
+      "y": 3
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 12,
+      "y": 3
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 13,
+      "y": 3
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 14,
+      "y": 3
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 15,
+      "y": 3
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 16,
+      "y": 3
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 17,
+      "y": 3
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 18,
+      "y": 3
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 19,
+      "y": 3
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 4,
+      "y": 4
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 5,
+      "y": 4
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "x": 6,
+      "y": 4
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "x": 7,
+      "y": 4
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "x": 8,
+      "y": 4
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "x": 9,
+      "y": 4
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "x": 10,
+      "y": 4
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 11,
+      "y": 4
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 12,
+      "y": 4
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 13,
+      "y": 4
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.reinhard",
+      "x": 14,
+      "y": 4
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 15,
+      "y": 4
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 16,
+      "y": 4
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 17,
+      "y": 4
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 18,
+      "y": 4
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 19,
+      "y": 4
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 4,
+      "y": 5
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 5,
+      "y": 5
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 6,
+      "y": 5
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "x": 7,
+      "y": 5
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "x": 8,
+      "y": 5
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 9,
+      "y": 5
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 10,
+      "y": 5
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 11,
+      "y": 5
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 12,
+      "y": 5
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.askelia",
+      "x": 13,
+      "y": 5
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 14,
+      "y": 5
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 15,
+      "y": 5
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 16,
+      "y": 5
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 17,
+      "y": 5
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 18,
+      "y": 5
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 19,
+      "y": 5
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 2,
+      "y": 6
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 3,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 4,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 5,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 6,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 7,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 8,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 9,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 10,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 11,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.askelia",
+      "x": 12,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.askelia",
+      "x": 13,
+      "y": 6
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.askelia",
+      "x": 14,
+      "y": 6
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.askelia",
+      "x": 15,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 16,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 17,
+      "y": 6
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 18,
+      "y": 6
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 19,
+      "y": 6
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 2,
+      "y": 7
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 3,
+      "y": 7
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 4,
+      "y": 7
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 5,
+      "y": 7
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 6,
+      "y": 7
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 7,
+      "y": 7
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 8,
+      "y": 7
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 9,
+      "y": 7
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 10,
+      "y": 7
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 11,
+      "y": 7
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.askelia",
+      "x": 12,
+      "y": 7
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.askelia",
+      "x": 13,
+      "y": 7
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.girdenburg",
+      "x": 14,
+      "y": 7
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.girdenburg",
+      "x": 15,
+      "y": 7
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 16,
+      "y": 7
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 17,
+      "y": 7
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 18,
+      "y": 7
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 19,
+      "y": 7
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 2,
+      "y": 8
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 3,
+      "y": 8
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 4,
+      "y": 8
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 5,
+      "y": 8
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 6,
+      "y": 8
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 7,
+      "y": 8
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 8,
+      "y": 8
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 9,
+      "y": 8
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 10,
+      "y": 8
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.askelia",
+      "x": 11,
+      "y": 8
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.askelia",
+      "x": 12,
+      "y": 8
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.askelia",
+      "x": 13,
+      "y": 8
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.girdenburg",
+      "x": 14,
+      "y": 8
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.girdenburg",
+      "x": 15,
+      "y": 8
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 16,
+      "y": 8
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.ulteria",
+      "x": 17,
+      "y": 8
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 2,
+      "y": 9
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 3,
+      "y": 9
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 4,
+      "y": 9
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 5,
+      "y": 9
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 6,
+      "y": 9
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 7,
+      "y": 9
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 8,
+      "y": 9
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "x": 9,
+      "y": 9
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 10,
+      "y": 9
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 11,
+      "y": 9
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.askelia",
+      "x": 12,
+      "y": 9
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "state.askelia",
+      "x": 13,
+      "y": 9
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 14,
+      "y": 9
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 15,
+      "y": 9
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 16,
+      "y": 9
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 2,
+      "y": 10
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 3,
+      "y": 10
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 4,
+      "y": 10
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 5,
+      "y": 10
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 6,
+      "y": 10
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 7,
+      "y": 10
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 8,
+      "y": 10
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 9,
+      "y": 10
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 10,
+      "y": 10
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 11,
+      "y": 10
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 12,
+      "y": 10
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 13,
+      "y": 10
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 14,
+      "y": 10
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 15,
+      "y": 10
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 16,
+      "y": 10
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 2,
+      "y": 11
+    },
+    {
+      "landscape": "sands",
+      "notes": "",
+      "owner": "wild.group_2",
+      "x": 3,
+      "y": 11
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 4,
+      "y": 11
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 5,
+      "y": 11
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 6,
+      "y": 11
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 7,
+      "y": 11
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 8,
+      "y": 11
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 9,
+      "y": 11
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 10,
+      "y": 11
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 11,
+      "y": 11
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "wild.group_1",
+      "x": 12,
+      "y": 11
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 4,
+      "y": 12
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 5,
+      "y": 12
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.valden",
+      "x": 6,
+      "y": 12
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.valden",
+      "x": 7,
+      "y": 12
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.kannararia",
+      "x": 8,
+      "y": 12
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 9,
+      "y": 12
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 10,
+      "y": 12
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 11,
+      "y": 12
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 12,
+      "y": 12
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "state.valden",
+      "x": 6,
+      "y": 13
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.valden",
+      "x": 7,
+      "y": 13
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 8,
+      "y": 13
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 9,
+      "y": 13
+    },
+    {
+      "landscape": "mountains",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 10,
+      "y": 13
+    },
+    {
+      "landscape": "forest",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 11,
+      "y": 13
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "state.valden",
+      "x": 7,
+      "y": 14
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 8,
+      "y": 14
+    },
+    {
+      "landscape": "plains",
+      "notes": "",
+      "owner": "wild.group_3",
+      "x": 9,
+      "y": 14
+    }
+  ],
+  "entities": {
+    "armies": [
+      {
+        "id": "army.west_1",
+        "notes": "ушла на запад через Розенвальд",
+        "origin": {
+          "x": 13,
+          "y": 2
+        },
+        "position": {
+          "x": 4,
+          "y": 6
+        },
+        "route": [
+          {
+            "x": 12,
+            "y": 2
+          },
+          {
+            "x": 11,
+            "y": 2
+          },
+          {
+            "x": 10,
+            "y": 2
+          },
+          {
+            "x": 10,
+            "y": 3
+          },
+          {
+            "x": 9,
+            "y": 3
+          },
+          {
+            "x": 9,
+            "y": 4
+          },
+          {
+            "x": 8,
+            "y": 4
+          },
+          {
+            "x": 7,
+            "y": 4
+          },
+          {
+            "x": 6,
+            "y": 4
+          },
+          {
+            "x": 5,
+            "y": 4
+          },
+          {
+            "x": 5,
+            "y": 5
+          },
+          {
+            "x": 4,
+            "y": 5
+          }
+        ],
+        "status": "roaming"
+      },
+      {
+        "id": "army.west_2",
+        "notes": "ушла на запад через Ортенверг",
+        "origin": {
+          "x": 13,
+          "y": 2
+        },
+        "position": {
+          "x": 4,
+          "y": 9
+        },
+        "route": [
+          {
+            "x": 12,
+            "y": 3
+          },
+          {
+            "x": 11,
+            "y": 3
+          },
+          {
+            "x": 11,
+            "y": 4
+          },
+          {
+            "x": 10,
+            "y": 4
+          },
+          {
+            "x": 10,
+            "y": 5
+          },
+          {
+            "x": 9,
+            "y": 5
+          },
+          {
+            "x": 9,
+            "y": 6
+          },
+          {
+            "x": 8,
+            "y": 6
+          },
+          {
+            "x": 7,
+            "y": 6
+          },
+          {
+            "x": 7,
+            "y": 7
+          },
+          {
+            "x": 7,
+            "y": 8
+          },
+          {
+            "x": 7,
+            "y": 9
+          },
+          {
+            "x": 6,
+            "y": 9
+          },
+          {
+            "x": 6,
+            "y": 10
+          },
+          {
+            "x": 5,
+            "y": 10
+          },
+          {
+            "x": 5,
+            "y": 11
+          },
+          {
+            "x": 4,
+            "y": 11
+          },
+          {
+            "x": 4,
+            "y": 10
+          }
+        ],
+        "status": "roaming"
+      },
+      {
+        "id": "army.south",
+        "notes": "ушла на юг через Ортенверг",
+        "origin": {
+          "x": 13,
+          "y": 2
+        },
+        "position": {
+          "x": 12,
+          "y": 11
+        },
+        "route": [
+          {
+            "x": 13,
+            "y": 3
+          },
+          {
+            "x": 13,
+            "y": 4
+          },
+          {
+            "x": 12,
+            "y": 4
+          },
+          {
+            "x": 12,
+            "y": 5
+          },
+          {
+            "x": 12,
+            "y": 6
+          },
+          {
+            "x": 11,
+            "y": 6
+          },
+          {
+            "x": 11,
+            "y": 7
+          },
+          {
+            "x": 10,
+            "y": 7
+          },
+          {
+            "x": 10,
+            "y": 8
+          },
+          {
+            "x": 9,
+            "y": 8
+          },
+          {
+            "x": 9,
+            "y": 9
+          },
+          {
+            "x": 8,
+            "y": 9
+          },
+          {
+            "x": 8,
+            "y": 10
+          },
+          {
+            "x": 8,
+            "y": 11
+          },
+          {
+            "x": 8,
+            "y": 12
+          },
+          {
+            "x": 9,
+            "y": 12
+          },
+          {
+            "x": 10,
+            "y": 12
+          },
+          {
+            "x": 10,
+            "y": 11
+          },
+          {
+            "x": 11,
+            "y": 11
+          }
+        ],
+        "status": "roaming"
+      },
+      {
+        "id": "army.east",
+        "notes": "ушла на восток вокруг земель Ультерии",
+        "origin": {
+          "x": 13,
+          "y": 2
+        },
+        "position": {
+          "x": 16,
+          "y": 5
+        },
+        "route": [
+          {
+            "x": 14,
+            "y": 2
+          },
+          {
+            "x": 15,
+            "y": 2
+          },
+          {
+            "x": 16,
+            "y": 2
+          },
+          {
+            "x": 17,
+            "y": 2
+          },
+          {
+            "x": 17,
+            "y": 3
+          },
+          {
+            "x": 18,
+            "y": 3
+          },
+          {
+            "x": 19,
+            "y": 3
+          },
+          {
+            "x": 19,
+            "y": 4
+          },
+          {
+            "x": 19,
+            "y": 5
+          },
+          {
+            "x": 19,
+            "y": 6
+          },
+          {
+            "x": 18,
+            "y": 6
+          },
+          {
+            "x": 18,
+            "y": 7
+          },
+          {
+            "x": 17,
+            "y": 7
+          },
+          {
+            "x": 17,
+            "y": 6
+          },
+          {
+            "x": 16,
+            "y": 6
+          }
+        ],
+        "status": "roaming"
+      },
+      {
+        "id": "army.girdenburg",
+        "notes": "самая короткая; разбита графом Гюнтером у крепости Гирденбурга",
+        "origin": {
+          "x": 13,
+          "y": 2
+        },
+        "position": null,
+        "route": [
+          {
+            "x": 14,
+            "y": 3
+          },
+          {
+            "x": 15,
+            "y": 3
+          },
+          {
+            "x": 15,
+            "y": 4
+          },
+          {
+            "x": 15,
+            "y": 5
+          },
+          {
+            "x": 15,
+            "y": 6
+          },
+          {
+            "x": 14,
+            "y": 6
+          },
+          {
+            "x": 14,
+            "y": 7
+          }
+        ],
+        "status": "destroyed"
+      }
+    ],
+    "retired_ids": [
+      "obj.village_40"
+    ],
+    "states": [
+      {
+        "color": "CC1E1E",
+        "id": "state.reinhard",
+        "kind": "kingdom",
+        "name": "Рейнгард",
+        "notes": "",
+        "ruler_placeholder": "имя"
+      },
+      {
+        "color": "035BBC",
+        "id": "state.ortenverg",
+        "kind": "kingdom",
+        "name": "Ортенверг",
+        "notes": "",
+        "ruler_placeholder": "имя"
+      },
+      {
+        "color": "CC751E",
+        "id": "state.ulteria",
+        "kind": "kingdom",
+        "name": "Ультерия",
+        "notes": "",
+        "ruler_placeholder": "имя"
+      },
+      {
+        "color": "51CC51",
+        "id": "state.askelia",
+        "kind": "duchy",
+        "name": "Аскелия",
+        "notes": "",
+        "ruler_placeholder": "имя"
+      },
+      {
+        "color": "CC51CC",
+        "id": "state.rosenwald",
+        "kind": "duchy",
+        "name": "Розенвальд",
+        "notes": "",
+        "ruler_placeholder": "имя"
+      },
+      {
+        "color": "106B10",
+        "id": "state.kannararia",
+        "kind": "duchy",
+        "name": "Каннарария",
+        "notes": "",
+        "ruler_placeholder": "имя"
+      },
+      {
+        "color": "3D106B",
+        "id": "state.girdenburg",
+        "kind": "county",
+        "name": "Гирденбург",
+        "notes": "",
+        "ruler_placeholder": "имя"
+      },
+      {
+        "color": "CCCC1E",
+        "id": "state.valden",
+        "kind": "county",
+        "name": "Вальден",
+        "notes": "",
+        "ruler_placeholder": "имя"
+      }
+    ],
+    "wildlands": [
+      {
+        "color": "6B3D10",
+        "id": "wild.group_1",
+        "notes": "независимые земли без официального лорда"
+      },
+      {
+        "color": "6B5845",
+        "id": "wild.group_2",
+        "notes": "независимые земли без официального лорда"
+      },
+      {
+        "color": "6B4A2A",
+        "id": "wild.group_3",
+        "notes": "независимые земли без официального лорда"
+      }
+    ]
+  },
+  "grid": {
+    "cell_tiles": 1000,
+    "chunk_tiles": 16,
+    "height": 15,
+    "width": 21
+  },
+  "legend": {
+    "landscape_types": [
+      {
+        "color": "51CC51",
+        "id": "plains",
+        "name": "Равнины"
+      },
+      {
+        "color": "106B10",
+        "id": "forest",
+        "name": "Лес"
+      },
+      {
+        "color": "383838",
+        "id": "mountains",
+        "name": "Горы"
+      },
+      {
+        "color": "CC751E",
+        "id": "sands",
+        "name": "Пески"
+      }
+    ],
+    "legacy": {
+      "export_landscape": {
+        "forest": "color_106B10",
+        "mountains": "color_383838",
+        "plains": "color_51CC51",
+        "sands": "color_CC751E"
+      },
+      "landscape_values": {
+        "color_106B10": "forest",
+        "color_383838": "mountains",
+        "color_51CC51": "plains",
+        "color_CC751E": "sands",
+        "stone_wall": "mountains"
+      },
+      "owner_values": {
+        "color_035BBC": "state.ortenverg",
+        "color_106B10": "state.kannararia",
+        "color_3D106B": "state.girdenburg",
+        "color_51CC51": "state.askelia",
+        "color_6B3D10": "wild.group_1",
+        "color_6B4A2A": "wild.group_3",
+        "color_6B5845": "wild.group_2",
+        "color_CC1E1E": "state.reinhard",
+        "color_CC51CC": "state.rosenwald",
+        "color_CC751E": "state.ulteria",
+        "color_CCCC1E": "state.valden"
+      },
+      "political_objects": {
+        "imperial_army": "army_mark",
+        "independent_settlement": "village_mark",
+        "settlement_castle": "castle",
+        "settlement_city": "city",
+        "settlement_fortress": "fortress",
+        "settlement_village": "village",
+        "settlement_village_2": "village_2",
+        "settlement_village_3": "village_3"
+      },
+      "wildland_objects": {
+        "imperial_army": "army_mark",
+        "independent_settlement": "village_mark",
+        "settlement_city": "army_mark",
+        "settlement_village": "village_mark"
+      }
+    }
+  },
+  "lore": {
+    "links": [],
+    "timeline": []
+  },
+  "meta": {
+    "created_at": "2026-11-19T05:49:39Z",
+    "name": "MiniLife",
+    "tool_version": "WorldStudio 1.0",
+    "updated_at": "2026-11-19T06:24:46Z"
+  },
+  "objects": [
+    {
+      "cell": {
+        "x": 16,
+        "y": 5
+      },
+      "id": "obj.army_mark_1",
+      "notes": "",
+      "owner": "army.east",
+      "type": "army_mark"
+    },
+    {
+      "cell": {
+        "x": 4,
+        "y": 6
+      },
+      "id": "obj.army_mark_2",
+      "notes": "",
+      "owner": "army.west_1",
+      "type": "army_mark"
+    },
+    {
+      "cell": {
+        "x": 4,
+        "y": 9
+      },
+      "id": "obj.army_mark_3",
+      "notes": "",
+      "owner": "army.west_2",
+      "type": "army_mark"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 11
+      },
+      "id": "obj.army_mark_4",
+      "notes": "",
+      "owner": "army.south",
+      "type": "army_mark"
+    },
+    {
+      "cell": {
+        "x": 10,
+        "y": 1
+      },
+      "id": "obj.castle_1",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "castle"
+    },
+    {
+      "cell": {
+        "x": 14,
+        "y": 2
+      },
+      "id": "obj.castle_2",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "castle"
+    },
+    {
+      "cell": {
+        "x": 6,
+        "y": 3
+      },
+      "id": "obj.castle_3",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "type": "castle"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 4
+      },
+      "id": "obj.castle_4",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "castle"
+    },
+    {
+      "cell": {
+        "x": 10,
+        "y": 6
+      },
+      "id": "obj.castle_5",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "castle"
+    },
+    {
+      "cell": {
+        "x": 13,
+        "y": 6
+      },
+      "id": "obj.castle_6",
+      "notes": "",
+      "owner": "state.askelia",
+      "type": "castle"
+    },
+    {
+      "cell": {
+        "x": 17,
+        "y": 7
+      },
+      "id": "obj.castle_7",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "castle"
+    },
+    {
+      "cell": {
+        "x": 7,
+        "y": 13
+      },
+      "id": "obj.castle_8",
+      "notes": "",
+      "owner": "state.valden",
+      "type": "castle"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 0
+      },
+      "id": "obj.city_1",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 15,
+        "y": 6
+      },
+      "id": "obj.city_10",
+      "notes": "",
+      "owner": "state.askelia",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 18,
+        "y": 6
+      },
+      "id": "obj.city_11",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 10,
+        "y": 8
+      },
+      "id": "obj.city_12",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 8
+      },
+      "id": "obj.city_13",
+      "notes": "",
+      "owner": "state.askelia",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 7,
+        "y": 9
+      },
+      "id": "obj.city_14",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 13,
+        "y": 9
+      },
+      "id": "obj.city_15",
+      "notes": "",
+      "owner": "state.askelia",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 8,
+        "y": 10
+      },
+      "id": "obj.city_16",
+      "notes": "",
+      "owner": "state.kannararia",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 5,
+        "y": 11
+      },
+      "id": "obj.city_17",
+      "notes": "",
+      "owner": "state.kannararia",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 17,
+        "y": 8
+      },
+      "id": "obj.city_18",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 16,
+        "y": 10
+      },
+      "id": "obj.city_19",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 14,
+        "y": 1
+      },
+      "id": "obj.city_2",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 2
+      },
+      "id": "obj.city_3",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 17,
+        "y": 2
+      },
+      "id": "obj.city_4",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 13,
+        "y": 3
+      },
+      "id": "obj.city_5",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 7,
+        "y": 4
+      },
+      "id": "obj.city_6",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 13,
+        "y": 4
+      },
+      "id": "obj.city_7",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 11,
+        "y": 5
+      },
+      "id": "obj.city_8",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 8,
+        "y": 6
+      },
+      "id": "obj.city_9",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "city"
+    },
+    {
+      "cell": {
+        "x": 10,
+        "y": 3
+      },
+      "id": "obj.fortress_1",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "fortress"
+    },
+    {
+      "cell": {
+        "x": 15,
+        "y": 3
+      },
+      "id": "obj.fortress_2",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "fortress"
+    },
+    {
+      "cell": {
+        "x": 10,
+        "y": 4
+      },
+      "id": "obj.fortress_3",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "type": "fortress"
+    },
+    {
+      "cell": {
+        "x": 18,
+        "y": 4
+      },
+      "id": "obj.fortress_4",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "fortress"
+    },
+    {
+      "cell": {
+        "x": 14,
+        "y": 7
+      },
+      "id": "obj.fortress_5",
+      "notes": "",
+      "owner": "state.girdenburg",
+      "type": "fortress"
+    },
+    {
+      "cell": {
+        "x": 6,
+        "y": 8
+      },
+      "id": "obj.fortress_6",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "fortress"
+    },
+    {
+      "cell": {
+        "x": 8,
+        "y": 9
+      },
+      "id": "obj.fortress_7",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "fortress"
+    },
+    {
+      "cell": {
+        "x": 11,
+        "y": 0
+      },
+      "id": "obj.village_1",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 9,
+        "y": 3
+      },
+      "id": "obj.village_10",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 14,
+        "y": 3
+      },
+      "id": "obj.village_11",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 16,
+        "y": 3
+      },
+      "id": "obj.village_12",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 18,
+        "y": 3
+      },
+      "id": "obj.village_13",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 8,
+        "y": 4
+      },
+      "id": "obj.village_14",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 14,
+        "y": 4
+      },
+      "id": "obj.village_15",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 19,
+        "y": 4
+      },
+      "id": "obj.village_16",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 7,
+        "y": 5
+      },
+      "id": "obj.village_17",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 8,
+        "y": 5
+      },
+      "id": "obj.village_18",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 9,
+        "y": 5
+      },
+      "id": "obj.village_19",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 14,
+        "y": 0
+      },
+      "id": "obj.village_2",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 10,
+        "y": 5
+      },
+      "id": "obj.village_20",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 5
+      },
+      "id": "obj.village_21",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 13,
+        "y": 5
+      },
+      "id": "obj.village_22",
+      "notes": "",
+      "owner": "state.askelia",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 19,
+        "y": 5
+      },
+      "id": "obj.village_23",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 11,
+        "y": 6
+      },
+      "id": "obj.village_24",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 14,
+        "y": 6
+      },
+      "id": "obj.village_25",
+      "notes": "",
+      "owner": "state.askelia",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 8,
+        "y": 7
+      },
+      "id": "obj.village_26",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 9,
+        "y": 7
+      },
+      "id": "obj.village_27",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 7
+      },
+      "id": "obj.village_28",
+      "notes": "",
+      "owner": "state.askelia",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 13,
+        "y": 7
+      },
+      "id": "obj.village_29",
+      "notes": "",
+      "owner": "state.askelia",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 13,
+        "y": 1
+      },
+      "id": "obj.village_2_1",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 7,
+        "y": 7
+      },
+      "id": "obj.village_2_10",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 11,
+        "y": 7
+      },
+      "id": "obj.village_2_11",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 16,
+        "y": 7
+      },
+      "id": "obj.village_2_12",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 13,
+        "y": 8
+      },
+      "id": "obj.village_2_13",
+      "notes": "",
+      "owner": "state.askelia",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 6,
+        "y": 11
+      },
+      "id": "obj.village_2_14",
+      "notes": "",
+      "owner": "state.kannararia",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 7,
+        "y": 12
+      },
+      "id": "obj.village_2_15",
+      "notes": "",
+      "owner": "state.valden",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 8,
+        "y": 12
+      },
+      "id": "obj.village_2_16",
+      "notes": "",
+      "owner": "state.kannararia",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 10,
+        "y": 2
+      },
+      "id": "obj.village_2_2",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 8,
+        "y": 3
+      },
+      "id": "obj.village_2_3",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 11,
+        "y": 3
+      },
+      "id": "obj.village_2_4",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 9,
+        "y": 4
+      },
+      "id": "obj.village_2_5",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 11,
+        "y": 4
+      },
+      "id": "obj.village_2_6",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 9,
+        "y": 6
+      },
+      "id": "obj.village_2_7",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 6
+      },
+      "id": "obj.village_2_8",
+      "notes": "",
+      "owner": "state.askelia",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 19,
+        "y": 6
+      },
+      "id": "obj.village_2_9",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "village_2"
+    },
+    {
+      "cell": {
+        "x": 9,
+        "y": 1
+      },
+      "id": "obj.village_3",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 15,
+        "y": 7
+      },
+      "id": "obj.village_30",
+      "notes": "",
+      "owner": "state.girdenburg",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 18,
+        "y": 7
+      },
+      "id": "obj.village_31",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 19,
+        "y": 7
+      },
+      "id": "obj.village_32",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 7,
+        "y": 8
+      },
+      "id": "obj.village_33",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 8,
+        "y": 8
+      },
+      "id": "obj.village_34",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 9,
+        "y": 8
+      },
+      "id": "obj.village_35",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 11,
+        "y": 8
+      },
+      "id": "obj.village_36",
+      "notes": "",
+      "owner": "state.askelia",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 14,
+        "y": 8
+      },
+      "id": "obj.village_37",
+      "notes": "",
+      "owner": "state.girdenburg",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 15,
+        "y": 8
+      },
+      "id": "obj.village_38",
+      "notes": "",
+      "owner": "state.girdenburg",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 16,
+        "y": 8
+      },
+      "id": "obj.village_39",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 11,
+        "y": 1
+      },
+      "id": "obj.village_3_1",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village_3"
+    },
+    {
+      "cell": {
+        "x": 13,
+        "y": 2
+      },
+      "id": "obj.village_3_2",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village_3"
+    },
+    {
+      "cell": {
+        "x": 15,
+        "y": 2
+      },
+      "id": "obj.village_3_3",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village_3"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 3
+      },
+      "id": "obj.village_3_4",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village_3"
+    },
+    {
+      "cell": {
+        "x": 17,
+        "y": 3
+      },
+      "id": "obj.village_3_5",
+      "notes": "",
+      "owner": "state.ulteria",
+      "type": "village_3"
+    },
+    {
+      "cell": {
+        "x": 6,
+        "y": 9
+      },
+      "id": "obj.village_3_6",
+      "notes": "",
+      "owner": "state.ortenverg",
+      "type": "village_3"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 1
+      },
+      "id": "obj.village_4",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 9
+      },
+      "id": "obj.village_41",
+      "notes": "",
+      "owner": "state.askelia",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 5,
+        "y": 10
+      },
+      "id": "obj.village_42",
+      "notes": "",
+      "owner": "state.kannararia",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 7,
+        "y": 10
+      },
+      "id": "obj.village_43",
+      "notes": "",
+      "owner": "state.kannararia",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 4,
+        "y": 11
+      },
+      "id": "obj.village_44",
+      "notes": "",
+      "owner": "state.kannararia",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 7,
+        "y": 11
+      },
+      "id": "obj.village_45",
+      "notes": "",
+      "owner": "state.kannararia",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 5,
+        "y": 12
+      },
+      "id": "obj.village_46",
+      "notes": "",
+      "owner": "state.kannararia",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 6,
+        "y": 12
+      },
+      "id": "obj.village_47",
+      "notes": "",
+      "owner": "state.valden",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 7,
+        "y": 14
+      },
+      "id": "obj.village_48",
+      "notes": "",
+      "owner": "state.valden",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 15,
+        "y": 1
+      },
+      "id": "obj.village_5",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 8,
+        "y": 2
+      },
+      "id": "obj.village_6",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 9,
+        "y": 2
+      },
+      "id": "obj.village_7",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 11,
+        "y": 2
+      },
+      "id": "obj.village_8",
+      "notes": "",
+      "owner": "state.reinhard",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 7,
+        "y": 3
+      },
+      "id": "obj.village_9",
+      "notes": "",
+      "owner": "state.rosenwald",
+      "type": "village"
+    },
+    {
+      "cell": {
+        "x": 5,
+        "y": 3
+      },
+      "id": "obj.village_mark_1",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 5,
+        "y": 6
+      },
+      "id": "obj.village_mark_10",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 16,
+        "y": 6
+      },
+      "id": "obj.village_mark_11",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 17,
+        "y": 6
+      },
+      "id": "obj.village_mark_12",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 2,
+        "y": 7
+      },
+      "id": "obj.village_mark_13",
+      "notes": "",
+      "owner": "wild.group_3",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 3,
+        "y": 7
+      },
+      "id": "obj.village_mark_14",
+      "notes": "",
+      "owner": "wild.group_3",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 5,
+        "y": 7
+      },
+      "id": "obj.village_mark_15",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 3,
+        "y": 8
+      },
+      "id": "obj.village_mark_16",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 4,
+        "y": 8
+      },
+      "id": "obj.village_mark_17",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 5,
+        "y": 8
+      },
+      "id": "obj.village_mark_18",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 2,
+        "y": 9
+      },
+      "id": "obj.village_mark_19",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 4,
+        "y": 4
+      },
+      "id": "obj.village_mark_2",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 3,
+        "y": 9
+      },
+      "id": "obj.village_mark_20",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 5,
+        "y": 9
+      },
+      "id": "obj.village_mark_21",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 11,
+        "y": 9
+      },
+      "id": "obj.village_mark_22",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 15,
+        "y": 9
+      },
+      "id": "obj.village_mark_23",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 16,
+        "y": 9
+      },
+      "id": "obj.village_mark_24",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 3,
+        "y": 10
+      },
+      "id": "obj.village_mark_25",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 10,
+        "y": 10
+      },
+      "id": "obj.village_mark_26",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 10
+      },
+      "id": "obj.village_mark_27",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 14,
+        "y": 10
+      },
+      "id": "obj.village_mark_28",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 15,
+        "y": 10
+      },
+      "id": "obj.village_mark_29",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 15,
+        "y": 4
+      },
+      "id": "obj.village_mark_3",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 2,
+        "y": 11
+      },
+      "id": "obj.village_mark_30",
+      "notes": "",
+      "owner": "wild.group_2",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 10,
+        "y": 11
+      },
+      "id": "obj.village_mark_31",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 11,
+        "y": 11
+      },
+      "id": "obj.village_mark_32",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 9,
+        "y": 12
+      },
+      "id": "obj.village_mark_33",
+      "notes": "",
+      "owner": "wild.group_3",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 11,
+        "y": 12
+      },
+      "id": "obj.village_mark_34",
+      "notes": "",
+      "owner": "wild.group_3",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 12,
+        "y": 12
+      },
+      "id": "obj.village_mark_35",
+      "notes": "",
+      "owner": "wild.group_3",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 9,
+        "y": 13
+      },
+      "id": "obj.village_mark_36",
+      "notes": "",
+      "owner": "wild.group_3",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 10,
+        "y": 13
+      },
+      "id": "obj.village_mark_37",
+      "notes": "",
+      "owner": "wild.group_3",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 8,
+        "y": 14
+      },
+      "id": "obj.village_mark_38",
+      "notes": "",
+      "owner": "wild.group_3",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 16,
+        "y": 4
+      },
+      "id": "obj.village_mark_4",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 17,
+        "y": 4
+      },
+      "id": "obj.village_mark_5",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 14,
+        "y": 5
+      },
+      "id": "obj.village_mark_6",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 15,
+        "y": 5
+      },
+      "id": "obj.village_mark_7",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 17,
+        "y": 5
+      },
+      "id": "obj.village_mark_8",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    },
+    {
+      "cell": {
+        "x": 18,
+        "y": 5
+      },
+      "id": "obj.village_mark_9",
+      "notes": "",
+      "owner": "wild.group_1",
+      "type": "village_mark"
+    }
+  ],
+  "relations": {
+    "matrix": [
+      [
+        null,
+        -100,
+        -100,
+        -100,
+        -60,
+        -100,
+        -80,
+        -100
+      ],
+      [
+        -80,
+        null,
+        -60,
+        -15,
+        40,
+        -100,
+        10,
+        0
+      ],
+      [
+        -100,
+        -100,
+        null,
+        -100,
+        -80,
+        -100,
+        -80,
+        -100
+      ],
+      [
+        -100,
+        -25,
+        -100,
+        null,
+        -5,
+        -100,
+        0,
+        -35
+      ],
+      [
+        -50,
+        55,
+        -35,
+        -10,
+        null,
+        -100,
+        80,
+        -10
+      ],
+      [
+        -100,
+        -100,
+        -100,
+        -100,
+        -100,
+        null,
+        -40,
+        -60
+      ],
+      [
+        -40,
+        30,
+        -60,
+        0,
+        80,
+        -90,
+        null,
+        0
+      ],
+      [
+        -100,
+        0,
+        -100,
+        -30,
+        -20,
+        -80,
+        0,
+        null
+      ]
+    ],
+    "order": [
+      "state.reinhard",
+      "state.ortenverg",
+      "state.ulteria",
+      "state.askelia",
+      "state.rosenwald",
+      "state.kannararia",
+      "state.girdenburg",
+      "state.valden"
+    ]
+  },
+  "schema_version": 1
+}

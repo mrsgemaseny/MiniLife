@@ -25,6 +25,7 @@ Config="*res://autoloads/config.gd"
 SignalBus="*res://autoloads/signal_bus.gd"
 GameManager="*res://autoloads/game_manager.gd"
 WorldSimulation="*res://autoloads/world_simulation.gd"
+WorldData="*res://autoloads/world_data.gd"
 
 [debug]
 
