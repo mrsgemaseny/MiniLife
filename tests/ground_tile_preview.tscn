@@ -2,5 +2,5 @@
 
 [ext_resource type="Script" path="res://tests/ground_tile_preview.gd" id="1"]
 
-[node name="GroundTilePreview" type="Node"]
+[node name="GroundTilePreview" type="Node2D"]
 script = ExtResource("1")
