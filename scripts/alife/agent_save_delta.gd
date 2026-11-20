@@ -20,11 +20,12 @@ func capture(world: AlifeWorldContext, generator_version: int) -> void:
 
 func regenerate(seed_value: int, generator_version: int) -> bool:
 	if generator_version not in [TerrainGenerator.GENERATOR_VERSION,
+			TerrainGenerator.PRE_WORLDSTUDIO_SETTLEMENT_VERSION,
 			TerrainGenerator.PRE_BASE_GENERATOR_VERSION, TerrainGenerator.LEGACY_GENERATOR_VERSION]:
 		return false
 	var baseline: AlifeWorldContext = AlifeWorldContext.new()
 	baseline.seed_world(seed_value, 0.0)
-	WorldSeedBuilder.populate(baseline)
+	WorldSeedBuilder.populate(baseline, generator_version)
 	capture(baseline, generator_version)
 	return true
 

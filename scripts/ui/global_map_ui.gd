@@ -131,7 +131,9 @@ func _draw_map() -> void:
 		_canvas.draw_rect(rect, _region_color(_regions.kind_at(region)))
 		_canvas.draw_rect(rect, Color(0.09, 0.11, 0.14, 0.32), false, 1.0)
 	# Rivers as cell-to-cell links: the macro graph the local generator draws inside cells.
-	var graph: WorldGraph = WorldGraph.for_seed(_seed)
+	var world_system: WorldSystem = get_tree().get_first_node_in_group("world_system") as WorldSystem
+	var generator_version: int = world_system.get_generator_version() if world_system != null else TerrainGenerator.GENERATOR_VERSION
+	var graph: WorldGraph = WorldGraph.for_seed(_seed, generator_version)
 	for cell: Vector2i in graph.lakes:
 		_canvas.draw_circle((Vector2(cell) + Vector2.ONE * 0.5) * CELL_SIZE, 5.0, Color("3a7bc8"))
 	for mine: Vector2i in graph.all_mines():
@@ -167,7 +169,7 @@ func _find_landing_tile(region: Vector2i) -> Vector2i:
 		return Vector2i(-1, -1)
 	# Land at the settlement gate when the cell has one: its clearing is dry by construction.
 	var center: Vector2i = bounds.position + bounds.size / 2
-	var site: Dictionary = WorldGraph.for_seed(_seed).site_for_cell(region)
+	var site: Dictionary = WorldGraph.for_seed(_seed, world_system.get_generator_version()).site_for_cell(region)
 	if not site.is_empty():
 		center = (site["tile"] as Vector2i) + Vector2i(0, 12)
 	for radius: int in range(0, 200):

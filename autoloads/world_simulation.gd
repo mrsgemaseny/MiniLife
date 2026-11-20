@@ -235,7 +235,7 @@ func _index_settlements() -> void:
 				connector += direction
 			if not dry_entrance:
 				continue
-			if not PoiGenerator.get_fixed_ruin_for_chunk(world.world_seed, chunk).is_empty():
+			if not PoiGenerator.get_fixed_ruin_for_chunk(world.world_seed, chunk, terrain.get_generator_version()).is_empty():
 				continue
 			_settlement_chunks[chunk] = settlement.settlement_id
 		for offset: Vector2i in [Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(1, 1)]:
@@ -246,7 +246,7 @@ func _index_settlements() -> void:
 				continue
 			if _settlement_chunks.get(center + Vector2i(0, offset.y)) != settlement.settlement_id:
 				continue
-			if not _district_has_land(terrain, chunk) or not PoiGenerator.get_fixed_ruin_for_chunk(world.world_seed, chunk).is_empty():
+			if not _district_has_land(terrain, chunk) or not PoiGenerator.get_fixed_ruin_for_chunk(world.world_seed, chunk, terrain.get_generator_version()).is_empty():
 				continue
 			_settlement_chunks[chunk] = settlement.settlement_id
 
@@ -273,7 +273,7 @@ func _index_settlements() -> void:
 					continue
 				if _settlement_chunks.has(chunk) or not _district_has_land(terrain, chunk):
 					continue
-				if not PoiGenerator.get_fixed_ruin_for_chunk(world.world_seed, chunk).is_empty():
+				if not PoiGenerator.get_fixed_ruin_for_chunk(world.world_seed, chunk, terrain.get_generator_version()).is_empty():
 					continue
 				_settlement_chunks[chunk] = settlement.settlement_id
 				frontier.append(chunk)

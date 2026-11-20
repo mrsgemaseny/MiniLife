@@ -424,10 +424,10 @@ func _reserve_boss_site(id: String, preferred_tile: Vector2i) -> void:
 						break
 				if occupied:
 					continue
-				var anchor: Vector2i = PoiGenerator.find_land_anchor(_seed, chunk, Vector2i(5, 5))
+				var anchor: Vector2i = PoiGenerator.find_land_anchor(_seed, chunk, Vector2i(5, 5), _terrain.get_generator_version())
 				if anchor.x < 0:
 					continue
-				if not PoiGenerator.get_chunk_poi(_seed, chunk, get_biome_cached(Config.chunk_origin(chunk) + Vector2i(8, 8))).is_empty():
+				if not PoiGenerator.get_chunk_poi(_seed, chunk, get_biome_cached(Config.chunk_origin(chunk) + Vector2i(8, 8)), _terrain.get_generator_version()).is_empty():
 					continue
 				var chunk_key: String = Config.vec2i_to_key(chunk)
 				if not _chunk_deltas.has(chunk_key):
@@ -687,7 +687,7 @@ func _load_chunk(cpos: Vector2i) -> void:
 	var origin: Vector2i = Config.chunk_origin(cpos)
 	var center_biome: String = get_biome_cached(origin + Vector2i(8, 8))
 	_reserve_boss_site("alpha_wolf_den", WorldLayout.start_tile() + Vector2i(-48, 32))
-	var poi_data: Dictionary = PoiGenerator.get_chunk_poi(_seed, cpos, center_biome)
+	var poi_data: Dictionary = PoiGenerator.get_chunk_poi(_seed, cpos, center_biome, _terrain.get_generator_version())
 	var settlement_info: Dictionary = {}
 	SignalBus.alife_settlement_queried.emit(cpos, settlement_info)
 	# Keep the minimap marker without generating a settlement in local terrain.

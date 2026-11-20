@@ -1,10 +1,10 @@
 class_name WorldSeedBuilder
 extends RefCounted
 
-static func populate(world: AlifeWorldContext) -> void:
+static func populate(world: AlifeWorldContext, generator_version: int = TerrainGenerator.GENERATOR_VERSION) -> void:
 	# Settlements come from the authored political map: one per marked cell, at the site
 	# WorldGraph reserved (dry clearing, away from rivers and lakes).
-	var graph: WorldGraph = WorldGraph.for_seed(world.world_seed)
+	var graph: WorldGraph = WorldGraph.for_seed(world.world_seed, generator_version)
 	var land: GlobalLandscapeMap = WorldLayout.landscape()
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = world.world_seed ^ 0x414C4946

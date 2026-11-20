@@ -12,7 +12,7 @@ func _run() -> void:
 	SaveSystem.instance = null
 	GameManager.start_new_game(42819, "base_overlay_verification")
 	var world: WorldSystem = main.get_node("World") as WorldSystem
-	if world == null or world.get_generator_version() != 4:
+	if world == null or world.get_generator_version() != TerrainGenerator.GENERATOR_VERSION:
 		_fail("new world did not use base generation")
 		return
 	var target: Dictionary = {}
@@ -60,13 +60,20 @@ func _run() -> void:
 			return
 		placed_count += 1
 	var saved: Dictionary = world.get_save_data()
-	if int(saved.get("generator_version", 0)) != 4 or saved.get("chunk_deltas", {}).has(Config.vec2i_to_key(Config.tile_to_chunk(tile))):
+	if int(saved.get("generator_version", 0)) != TerrainGenerator.GENERATOR_VERSION \
+			or saved.get("chunk_deltas", {}).has(Config.vec2i_to_key(Config.tile_to_chunk(tile))):
 		_fail("authored wall was written as a chunk delta")
 		return
 	var legacy := WorldBaseOverlay.new()
 	legacy.setup(42819, TerrainGenerator.PRE_BASE_GENERATOR_VERSION)
 	if legacy.token_at(tile) != "":
 		_fail("version 3 world unexpectedly acquired an authored base")
+		return
+	var previous := WorldBaseOverlay.new()
+	previous.setup(42819, TerrainGenerator.PRE_WORLDSTUDIO_SETTLEMENT_VERSION)
+	if not previous.placement_for_cell(Vector2i(16, 10)).is_empty() \
+			or previous.placement_for_cell(cell).is_empty():
+		_fail("version 4 world did not preserve its original base sites")
 		return
 	print("PASS base_overlay_runtime: %d current settlements assigned; wall blocks movement; base excluded from deltas; version 3 unchanged" % placed_count)
 	get_tree().quit(0)

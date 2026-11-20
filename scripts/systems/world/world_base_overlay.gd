@@ -24,7 +24,7 @@ var _order: Array[Vector2i] = []
 func setup(seed_value: int, generator_version: int) -> void:
 	_seed = seed_value
 	_enabled = generator_version >= 4
-	_graph = WorldGraph.for_seed(seed_value) if _enabled else null
+	_graph = WorldGraph.for_seed(seed_value, generator_version) if _enabled else null
 	_placements.clear()
 	_empty_cells.clear()
 	_order.clear()

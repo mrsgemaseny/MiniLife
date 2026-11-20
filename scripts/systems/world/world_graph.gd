@@ -50,13 +50,14 @@ static var _cache: Dictionary = {}
 static var _mutex: Mutex = Mutex.new()
 
 
-static func for_seed(world_seed: int) -> WorldGraph:
+static func for_seed(world_seed: int, generator_version: int = TerrainGenerator.GENERATOR_VERSION) -> WorldGraph:
 	_mutex.lock()
-	var graph: WorldGraph = _cache.get(world_seed)
+	var key := Vector2i(world_seed, generator_version)
+	var graph: WorldGraph = _cache.get(key)
 	if graph == null:
 		graph = WorldGraph.new()
-		graph._build(world_seed)
-		_cache[world_seed] = graph
+		graph._build(world_seed, generator_version)
+		_cache[key] = graph
 	_mutex.unlock()
 	return graph
 
@@ -68,7 +69,7 @@ static func hash01(a: int, b: int, c: int, salt: int) -> float:
 	return float(h) / 2147483647.0
 
 
-func _build(world_seed: int) -> void:
+func _build(world_seed: int, generator_version: int = TerrainGenerator.GENERATOR_VERSION) -> void:
 	seed_value = world_seed
 	var land: GlobalLandscapeMap = WorldLayout.landscape()
 	var cells: Array[Vector2i] = land.land_cells()
@@ -107,7 +108,7 @@ func _build(world_seed: int) -> void:
 			# One mine per branch, on its own channel in the source mountain cell.
 			_add_mine(cell, poly, branch)
 			_follow(land, elevation, next, gate, SOURCE_WIDTH + 0.5, {cell: true})
-	_place_settlements()
+	_place_settlements(generator_version)
 	var start: Vector2i = WorldLayout.start_tile()
 	_add_clearing(GlobalLandscapeMap.cell_for_tile(start), Vector2(start), START_CLEARING)
 
@@ -230,8 +231,9 @@ func _add_clearing(cell: Vector2i, point: Vector2, radius: float) -> void:
 	_clearings[cell] = list
 
 
-func _place_settlements() -> void:
-	var authored: Dictionary = WorldLayout.settlements()
+func _place_settlements(generator_version: int) -> void:
+	var authored: Dictionary = WorldLayout.worldstudio_settlements() \
+		if generator_version >= TerrainGenerator.WORLDSTUDIO_SETTLEMENT_VERSION else WorldLayout.settlements()
 	var cells: Array = authored.keys()
 	cells.sort()
 	for cell: Vector2i in cells:

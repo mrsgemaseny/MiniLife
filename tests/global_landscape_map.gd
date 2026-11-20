@@ -69,5 +69,14 @@ func _run() -> void:
 				or authored[cell]["template"] != legacy[cell]["template"]):
 			_fail("existing settlement changed at %s" % cell)
 			return
+	var old_graph: WorldGraph = WorldGraph.for_seed(42819, TerrainGenerator.PRE_WORLDSTUDIO_SETTLEMENT_VERSION)
+	var new_graph: WorldGraph = WorldGraph.for_seed(42819, TerrainGenerator.GENERATOR_VERSION)
+	if old_graph.settlement_sites.size() != 102 or new_graph.settlement_sites.size() != 103:
+		_fail("versioned settlement graph count")
+		return
+	if not old_graph.site_for_cell(Vector2i(16, 10)).is_empty() \
+			or new_graph.site_for_cell(Vector2i(16, 10)).get("token", "") != "settlement_city":
+		_fail("new city appears in legacy graph or is missing from current graph")
+		return
 	print("GLOBAL_LANDSCAPE_MAP_OK: 21x15, 184 land cells, kinds, void cells, start tile, tile and chunk containment")
 	get_tree().quit(0)

@@ -8,9 +8,11 @@ extends RefCounted
 # Biome ids: plains, forest, swamp, hills, mountains (impassable ridge), snow,
 # desert (dunes, sand bars), steppe (dry semi-desert ground), water.
 
-const GENERATOR_VERSION: int = 4
+const WORLDSTUDIO_SETTLEMENT_VERSION: int = 5
+const GENERATOR_VERSION: int = WORLDSTUDIO_SETTLEMENT_VERSION
 const LEGACY_GENERATOR_VERSION: int = 2
 const PRE_BASE_GENERATOR_VERSION: int = 3
+const PRE_WORLDSTUDIO_SETTLEMENT_VERSION: int = 4
 const CELL: int = GlobalLandscapeMap.CELL_TILES
 # A 64-tile transition straddles each cell boundary: 32 tiles on either side.
 const BLEND: float = 32.0 / float(CELL)
@@ -98,7 +100,7 @@ func setup(world_seed: int, generator_version: int = GENERATOR_VERSION) -> void:
 	_seed = world_seed
 	_generator_version = generator_version
 	_land = WorldLayout.landscape()
-	_graph = WorldGraph.for_seed(world_seed)
+	_graph = WorldGraph.for_seed(world_seed, generator_version)
 	_quota_local.clear()
 	_family_anchor.clear()
 	for kind: String in ANCHORS:

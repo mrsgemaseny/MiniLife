@@ -20,4 +20,4 @@ func _generate(seed_value: int, chunk: Vector2i, generator_version: int) -> void
 	var terrain := TerrainGenerator.new(seed_value)
 	terrain.setup(seed_value, generator_version)
 	data = terrain.generate_chunk(chunk)
-	PoiGenerator.warm_cell_plans(seed_value, chunk)
+	PoiGenerator.warm_cell_plans(seed_value, chunk, generator_version)

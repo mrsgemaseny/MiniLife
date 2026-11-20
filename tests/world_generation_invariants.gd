@@ -179,7 +179,7 @@ func _rivers(seed_value: int, terrain: TerrainGenerator) -> void:
 # Every authored settlement gets a dry site: no water or ridge across its districts.
 func _settlements(seed_value: int, terrain: TerrainGenerator) -> void:
 	var graph: WorldGraph = terrain.get_graph()
-	check(graph.settlement_sites.size() == WorldLayout.settlements().size(), "Settlement count differs from political map")
+	check(graph.settlement_sites.size() == WorldLayout.worldstudio_settlements().size(), "Settlement count differs from WorldStudio map")
 	for site: Dictionary in graph.settlement_sites:
 		var center: Vector2i = site["tile"]
 		check(GlobalLandscapeMap.cell_for_tile(center) == site["cell"], "Site outside its cell")
