@@ -271,6 +271,22 @@ func _draw() -> void:
 				if WorldBaseOverlay.is_solid(base_token) and base_token != "water":
 					draw_polyline(base_polygon, base_color.darkened(0.25), 0.8, true)
 				continue
+			if _terrain.get_generator_version() >= TerrainGenerator.AUTHORED_ROADS_VERSION \
+					and _terrain.get_graph().is_road_at(Vector2(tpos) + Vector2(0.5, 0.5)):
+				var road_polygon: PackedVector2Array = IsoMath.cell_polygon(center)
+				if biome_id == "water":
+					IsoMath.draw_quad(self, road_polygon, Color("8f7350"))
+				else:
+					var road_tex: Texture2D = _get_tile_tex("tile_sand")
+					if road_tex != null:
+						var uv := PackedVector2Array([
+							Vector2(0.5, 0.14), Vector2(0.88, 16.0 / 37.0),
+							Vector2(0.5, 0.71), Vector2(0.12, 16.0 / 37.0),
+						])
+						IsoMath.draw_textured_quad(self, road_polygon, Color(0.67, 0.57, 0.45), uv, road_tex)
+					else:
+						IsoMath.draw_quad(self, road_polygon, Color("8d7758"))
+				continue
 			var col: Color = ProceduralTileset.BIOME_PALETTE.get(biome_id, Color(0.34, 0.56, 0.25))
 			var variation: float = float(hash_val % 9 - 4) * 0.014
 			col = col.lightened(variation) if variation > 0.0 else col.darkened(-variation)
@@ -354,6 +370,10 @@ func get_tile(pos: Vector2i) -> TileState:
 	state.pos = pos
 	state.biome_id = get_biome_cached(pos)
 	state.passable = not state.biome_id.is_empty() and state.biome_id != "mountains" and state.biome_id != "water"
+	if _terrain.get_generator_version() >= TerrainGenerator.AUTHORED_ROADS_VERSION \
+			and _terrain.get_graph().is_road_at(Vector2(pos) + Vector2(0.5, 0.5)):
+		state.tile_id = "wood_floor" if state.biome_id == "water" else "dirt"
+		state.passable = true
 	var base_token: String = _base_overlay.token_at(pos)
 	if not base_token.is_empty():
 		state.tile_id = base_token

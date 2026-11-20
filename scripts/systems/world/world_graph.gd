@@ -1,10 +1,9 @@
 class_name WorldGraph
 extends RefCounted
 
-# Macro layer, built once per seed from the authored maps: river network (sources, gates
-# on cell borders, branches, confluences, terminal lakes), mines, settlement sites.
-# A pure function of (seed, nature.json, political_map.json): both sides of a cell
-# border compute the same gate, so rivers join without exchanging data.
+# Macro layer, built once per seed and generator version from authored world data:
+# river network, mines, settlement sites, and versioned army route roads.
+# Both sides of a cell border compute the same river gate and road segment.
 
 const CELL: int = GlobalLandscapeMap.CELL_TILES
 const KIND_ELEVATION: Dictionary = {"mountains": 0.82, "forest": 0.40, "plains": 0.32, "desert": 0.30}
@@ -25,6 +24,8 @@ const SETTLEMENT_CLEARING: float = 120.0
 const SETTLEMENT_RIVER_GAP: float = 150.0
 const START_CLEARING: float = 32.0
 const MINE_CLEARING: float = 6.0
+const ROAD_HALF_WIDTH: float = 1.25
+const ROAD_BUCKET: int = 64
 const FAR: float = 1.0e9
 
 var seed_value: int = 0
@@ -35,6 +36,9 @@ var _seg_half: PackedFloat32Array = PackedFloat32Array()
 var _seg_arc: PackedFloat32Array = PackedFloat32Array()
 var _seg_phase: PackedFloat32Array = PackedFloat32Array()
 var _buckets: Dictionary = {}          # Vector2i world bucket -> PackedInt32Array
+var _road_a: PackedVector2Array = PackedVector2Array()
+var _road_b: PackedVector2Array = PackedVector2Array()
+var _road_buckets: Dictionary = {}
 var _cell_first_segment: Dictionary = {} # cell -> index of a segment inside it (confluence target)
 var lakes: Dictionary = {}             # cell -> Array[Vector3(center.x, center.y, radius)]
 var mines: Dictionary = {}             # cell -> Array[Vector2i]
@@ -109,6 +113,8 @@ func _build(world_seed: int, generator_version: int = TerrainGenerator.GENERATOR
 			_add_mine(cell, poly, branch)
 			_follow(land, elevation, next, gate, SOURCE_WIDTH + 0.5, {cell: true})
 	_place_settlements(generator_version)
+	if generator_version >= TerrainGenerator.AUTHORED_ROADS_VERSION:
+		_build_authored_roads()
 	var start: Vector2i = WorldLayout.start_tile()
 	_add_clearing(GlobalLandscapeMap.cell_for_tile(start), Vector2(start), START_CLEARING)
 
@@ -252,6 +258,63 @@ func _place_settlements(generator_version: int) -> void:
 		settlement_sites.append({"cell": cell, "tile": tile, "template": str(info["template"]),
 			"token": str(info["token"]), "realm": str(info["realm"])})
 		_add_clearing(cell, Vector2(tile), SETTLEMENT_CLEARING)
+
+
+func _build_authored_roads() -> void:
+	var seen: Dictionary = {}
+	for route: PackedVector2Array in WorldLayout.army_routes():
+		for i: int in range(route.size() - 1):
+			var from_cell := Vector2i(route[i])
+			var to_cell := Vector2i(route[i + 1])
+			var low: Vector2i = from_cell if from_cell < to_cell else to_cell
+			var high: Vector2i = to_cell if from_cell < to_cell else from_cell
+			var key := Vector4i(low.x, low.y, high.x, high.y)
+			if seen.has(key):
+				continue
+			seen[key] = true
+			_add_road_curve((Vector2(from_cell) + Vector2.ONE * 0.5) * CELL,
+				(Vector2(to_cell) + Vector2.ONE * 0.5) * CELL)
+
+
+func _add_road_curve(a: Vector2, b: Vector2) -> void:
+	var direction: Vector2 = (b - a).normalized()
+	var normal := Vector2(-direction.y, direction.x)
+	var amplitude: float = (hash01(int(a.x), int(a.y), int(b.x), int(b.y)) - 0.5) * 24.0
+	var count: int = maxi(2, ceili(a.distance_to(b) / 48.0))
+	var previous: Vector2 = a
+	for i: int in range(1, count + 1):
+		var t: float = float(i) / float(count)
+		# The centre of a border crossing stays fixed while the interior gently bends.
+		var point: Vector2 = a.lerp(b, t) + normal * amplitude * sin(TAU * t)
+		_add_road_segment(previous, point)
+		previous = point
+
+
+func _add_road_segment(a: Vector2, b: Vector2) -> void:
+	var index: int = _road_a.size()
+	_road_a.append(a)
+	_road_b.append(b)
+	var low := Vector2i(((Vector2(minf(a.x, b.x), minf(a.y, b.y)) - Vector2.ONE * ROAD_HALF_WIDTH) / ROAD_BUCKET).floor())
+	var high := Vector2i(((Vector2(maxf(a.x, b.x), maxf(a.y, b.y)) + Vector2.ONE * ROAD_HALF_WIDTH) / ROAD_BUCKET).floor())
+	for bx: int in range(low.x, high.x + 1):
+		for by: int in range(low.y, high.y + 1):
+			var key := Vector2i(bx, by)
+			var indices: PackedInt32Array = _road_buckets.get(key, PackedInt32Array())
+			indices.append(index)
+			_road_buckets[key] = indices
+
+
+func is_road_at(point: Vector2) -> bool:
+	var bucket := Vector2i((point / ROAD_BUCKET).floor())
+	if not _road_buckets.has(bucket):
+		return false
+	for index: int in (_road_buckets[bucket] as PackedInt32Array):
+		var a: Vector2 = _road_a[index]
+		var ab: Vector2 = _road_b[index] - a
+		var t: float = clampf((point - a).dot(ab) / maxf(ab.length_squared(), 0.001), 0.0, 1.0)
+		if point.distance_squared_to(a + ab * t) <= ROAD_HALF_WIDTH * ROAD_HALF_WIDTH:
+			return true
+	return false
 
 
 # Vector4(distance to channel centreline, channel half width, 1.0 if on a ford, 0).

@@ -134,6 +134,12 @@ func _draw_map() -> void:
 	var world_system: WorldSystem = get_tree().get_first_node_in_group("world_system") as WorldSystem
 	var generator_version: int = world_system.get_generator_version() if world_system != null else TerrainGenerator.GENERATOR_VERSION
 	var graph: WorldGraph = WorldGraph.for_seed(_seed, generator_version)
+	if generator_version >= TerrainGenerator.AUTHORED_ROADS_VERSION:
+		for route: PackedVector2Array in WorldLayout.army_routes():
+			var points := PackedVector2Array()
+			for cell: Vector2 in route:
+				points.append((cell + Vector2.ONE * 0.5) * CELL_SIZE)
+			_canvas.draw_polyline(points, Color("b69a6c"), 2.0, true)
 	for cell: Vector2i in graph.lakes:
 		_canvas.draw_circle((Vector2(cell) + Vector2.ONE * 0.5) * CELL_SIZE, 5.0, Color("3a7bc8"))
 	for mine: Vector2i in graph.all_mines():

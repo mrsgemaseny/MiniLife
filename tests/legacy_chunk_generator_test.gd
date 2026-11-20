@@ -43,5 +43,13 @@ func _run() -> void:
 		push_error("Version 5 worker chunk differs from main-thread generator")
 		get_tree().quit(1)
 		return
-	print("PASS legacy_chunk_generator_test: worker output matches versions 2, 4 and 5")
+	var version_six := TerrainGenerator.new(42819)
+	version_six.setup(42819, TerrainGenerator.WORLDSTUDIO_MARKERS_VERSION)
+	var version_six_job := ChunkTerrainJob.new()
+	version_six_job.start(42819, chunk, TerrainGenerator.WORLDSTUDIO_MARKERS_VERSION)
+	if version_six.generate_chunk(chunk) != version_six_job.collect():
+		push_error("Version 6 worker chunk differs from main-thread generator")
+		get_tree().quit(1)
+		return
+	print("PASS legacy_chunk_generator_test: worker output matches versions 2, 4, 5 and 6")
 	get_tree().quit(0)

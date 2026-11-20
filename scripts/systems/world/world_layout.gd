@@ -38,6 +38,8 @@ static var _worldstudio_settlements: Dictionary = {}
 static var _worldstudio_settlements_loaded: bool = false
 static var _worldstudio_marked_settlements: Dictionary = {}
 static var _worldstudio_marked_settlements_loaded: bool = false
+static var _army_routes: Array[PackedVector2Array] = []
+static var _army_routes_loaded: bool = false
 static var _mutex: Mutex = Mutex.new()
 
 
@@ -77,6 +79,79 @@ static func worldstudio_settlements(include_village_marks: bool = false) -> Dict
 			_worldstudio_settlements_loaded = true
 		result = _worldstudio_settlements
 	_mutex.unlock()
+	return result
+
+
+# Ordered authored cell routes; points are cell coordinates, not tile coordinates.
+static func army_routes() -> Array[PackedVector2Array]:
+	_mutex.lock()
+	if not _army_routes_loaded:
+		_army_routes = _load_army_routes(LANDSCAPE_PATH)
+		_army_routes_loaded = true
+	var result: Array[PackedVector2Array] = _army_routes
+	_mutex.unlock()
+	return result
+
+
+static func _load_army_routes(path: String) -> Array[PackedVector2Array]:
+	var result: Array[PackedVector2Array] = []
+	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		push_error("WorldLayout: cannot open %s" % path)
+		return result
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if not (parsed is Dictionary):
+		push_error("WorldLayout: invalid route document %s" % path)
+		return result
+	var entities: Variant = (parsed as Dictionary).get("entities", {})
+	if not (entities is Dictionary):
+		push_error("WorldLayout: entities must be an object")
+		return result
+	var armies: Variant = (entities as Dictionary).get("armies", [])
+	if not (armies is Array):
+		push_error("WorldLayout: armies must be an array")
+		return result
+	if _map == null:
+		_map = GlobalLandscapeMap.load_from(LANDSCAPE_PATH)
+	var land: GlobalLandscapeMap = _map
+	for entry: Variant in armies:
+		if not (entry is Dictionary):
+			continue
+		var army: Dictionary = entry as Dictionary
+		var points: Array = [army.get("origin")]
+		var route: Variant = army.get("route", [])
+		if not (route is Array):
+			push_error("WorldLayout: invalid army route %s" % str(army.get("id", "")))
+			continue
+		points.append_array(route as Array)
+		if army.get("position") is Dictionary:
+			points.append(army["position"])
+		var line := PackedVector2Array()
+		var valid: bool = true
+		for point: Variant in points:
+			if not (point is Dictionary):
+				valid = false
+				break
+			var coords: Dictionary = point as Dictionary
+			if not (coords.get("x") is float or coords.get("x") is int) \
+					or not (coords.get("y") is float or coords.get("y") is int):
+				valid = false
+				break
+			var cell := Vector2i(int(coords["x"]), int(coords["y"]))
+			if not land.is_land(cell):
+				valid = false
+				break
+			if not line.is_empty() and Vector2(cell) == line[-1]:
+				continue
+			if not line.is_empty() and maxi(absi(cell.x - int(line[-1].x)),
+					absi(cell.y - int(line[-1].y))) > 1:
+				valid = false
+				break
+			line.append(Vector2(cell))
+		if valid and line.size() >= 2:
+			result.append(line)
+		else:
+			push_error("WorldLayout: invalid army route %s" % str(army.get("id", "")))
 	return result
 
 

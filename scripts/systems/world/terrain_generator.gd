@@ -10,7 +10,8 @@ extends RefCounted
 
 const WORLDSTUDIO_SETTLEMENT_VERSION: int = 5
 const WORLDSTUDIO_MARKERS_VERSION: int = 6
-const GENERATOR_VERSION: int = WORLDSTUDIO_MARKERS_VERSION
+const AUTHORED_ROADS_VERSION: int = 7
+const GENERATOR_VERSION: int = AUTHORED_ROADS_VERSION
 const LEGACY_GENERATOR_VERSION: int = 2
 const PRE_BASE_GENERATOR_VERSION: int = 3
 const PRE_WORLDSTUDIO_SETTLEMENT_VERSION: int = 4
@@ -532,6 +533,8 @@ func get_resource_node_for(pos: Vector2i, biome_id: String) -> String:
 # Uses the fields of pos (_compute already ran for it) and its _river sample.
 func _resource_from_scratch(pos: Vector2i, biome_id: String) -> String:
 	if biome_id.is_empty() or biome_id == "water":
+		return ""
+	if _generator_version >= AUTHORED_ROADS_VERSION and _graph.is_road_at(Vector2(pos) + Vector2(0.5, 0.5)):
 		return ""
 	if not _far_from_start and Config.tile_distance(pos, WorldLayout.start_tile()) <= 4:
 		return ""

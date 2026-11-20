@@ -32,6 +32,7 @@ func _ready() -> void:
 	passed = passed and AlifeAgentSaveDelta.new().regenerate(12345, TerrainGenerator.LEGACY_GENERATOR_VERSION)
 	passed = passed and AlifeAgentSaveDelta.new().regenerate(12345, TerrainGenerator.PRE_WORLDSTUDIO_SETTLEMENT_VERSION)
 	passed = passed and AlifeAgentSaveDelta.new().regenerate(12345, TerrainGenerator.WORLDSTUDIO_SETTLEMENT_VERSION)
+	passed = passed and AlifeAgentSaveDelta.new().regenerate(12345, TerrainGenerator.WORLDSTUDIO_MARKERS_VERSION)
 	passed = passed and delta_json.length() * 2 < full_json.length()
 	if loaded != null:
 		var reencoded: Dictionary = JSON.parse_string(JSON.stringify(loader.encode(loaded), "", true, true))
