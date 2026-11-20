@@ -26,6 +26,7 @@ var _last_published_event: int = 0
 var _last_published_rumor: int = 0
 var _initialized: bool = false
 var _restored: bool = false
+var _saved_generator_version: int = TerrainGenerator.GENERATOR_VERSION
 var last_load_error: String = ""
 var _unreadable_save: Variant = null
 var _trading: bool = false
@@ -131,11 +132,13 @@ func _on_game_started(seed_value: int, _slot: String, is_new: bool) -> void:
 	if is_new:
 		last_load_error = ""
 		_unreadable_save = null
+		_saved_generator_version = TerrainGenerator.GENERATOR_VERSION
 	if is_new or not _restored:
 		world = AlifeWorldContext.new()
-		world.seed_world(seed_value, float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour())
-		WorldSeedBuilder.populate(world)
-		_agent_save_delta.capture(world, TerrainGenerator.GENERATOR_VERSION)
+		var current_version: int = TerrainGenerator.GENERATOR_VERSION if is_new else _saved_generator_version
+		world.seed_world(seed_value, float(GameManager.get_day() - 1) * 24.0 + GameManager.get_hour(), current_version)
+		WorldSeedBuilder.populate(world, current_version)
+		_agent_save_delta.capture(world, current_version)
 		agent_tick = AgentTick.new()
 	materializer.reset(world)
 	_encounter_views.clear()
@@ -169,6 +172,7 @@ func _on_save_requested(bundle: Dictionary) -> void:
 
 func _on_save_loaded(bundle: Dictionary) -> void:
 	var saved_world: Dictionary = bundle.get("world", {})
+	_saved_generator_version = int(saved_world.get("generator_version", TerrainGenerator.GENERATOR_VERSION))
 	_restored = false
 	_initialized = false
 	last_load_error = ""

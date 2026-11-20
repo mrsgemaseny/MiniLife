@@ -3,6 +3,8 @@ extends RefCounted
 
 func tick(world: AlifeWorldContext, hours: float) -> void:
 	for faction: AlifeFaction in world.factions.all():
+		if faction.ideology == "independent":
+			continue
 		FactionSuccession.tick(world, faction)
 		if faction.state == AlifeFaction.State.COLLAPSED:
 			continue
@@ -29,4 +31,6 @@ func tick(world: AlifeWorldContext, hours: float) -> void:
 		if treaty.expiry_day * 24.0 <= world.simulated_hour:
 			world.treaties.remove(treaty.treaty_id)
 	for faction: AlifeFaction in world.factions.all():
+		if faction.ideology == "independent":
+			continue
 		FactionAI.evaluate(world, faction)

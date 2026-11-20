@@ -30,7 +30,11 @@ static func populate(world: AlifeWorldContext, generator_version: int = TerrainG
 		settlement.tile = site["tile"]
 		settlement.footprint = int(template.get("footprint", 8))
 		settlement.settlement_type = str(template["id"])
-		settlement.owner_faction = str(faction_ids[realms.find(site["realm"]) % faction_ids.size()])
+		if generator_version >= TerrainGenerator.AUTHORED_POLITICS_VERSION:
+			settlement.owner_faction = str(site["realm"])
+			assert(world.factions.find(settlement.owner_faction) != null, "Unknown authored settlement owner: %s" % settlement.owner_faction)
+		else:
+			settlement.owner_faction = str(faction_ids[realms.find(site["realm"]) % faction_ids.size()])
 		settlement.population = int(template["population"])
 		settlement.prosperity = float(template["prosperity"])
 		settlement.treasury = int(template["treasury"])
@@ -47,7 +51,7 @@ static func populate(world: AlifeWorldContext, generator_version: int = TerrainG
 		settlement.name = "%s %s %d-%d" % [settlement.biome.capitalize(), settlement.settlement_type.capitalize(), cell.x, cell.y]
 		world.settlements.register(settlement)
 		var faction: AlifeFaction = world.factions.find(settlement.owner_faction) as AlifeFaction
-		if faction.capital_id.is_empty():
+		if not faction.faction_id.begins_with("wild.") and faction.capital_id.is_empty():
 			faction.capital_id = settlement.settlement_id
 		AgentFactory.create_population(world, settlement, rng)
 	_connect_network(world.settlements)
@@ -56,6 +60,8 @@ static func populate(world: AlifeWorldContext, generator_version: int = TerrainG
 
 static func _assign_leaders(world: AlifeWorldContext) -> void:
 	for faction: AlifeFaction in world.factions.all():
+		if faction.faction_id.begins_with("wild."):
+			continue
 		var holdings: Array = world.settlements.matching("owner_faction", faction.faction_id)
 		holdings.sort_custom(func(a: AlifeSettlement, b: AlifeSettlement) -> bool: return a.fort_level * 1000 + a.population > b.fort_level * 1000 + b.population)
 		if holdings.is_empty():

@@ -22,7 +22,7 @@ var contracts: Dictionary = {}
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var travel: AlifeTravel = AlifeTravel.new()
 
-func seed_world(seed_value: int, initial_hour: float) -> void:
+func seed_world(seed_value: int, initial_hour: float, generator_version: int = TerrainGenerator.GENERATOR_VERSION) -> void:
 	world_seed = seed_value
 	simulated_hour = initial_hour
 	rng.seed = seed_value
@@ -42,6 +42,17 @@ func seed_world(seed_value: int, initial_hour: float) -> void:
 			faction.relations[enemy] = -60
 		factions.register(faction)
 		index += 1
+	if generator_version >= TerrainGenerator.AUTHORED_POLITICS_VERSION:
+		var entities: Dictionary = WorldData.entities()
+		for group: String in ["states", "wildlands"]:
+			for entry: Dictionary in entities.get(group, []):
+				var authored: AlifeFaction = AlifeFaction.new()
+				authored.faction_id = str(entry["id"])
+				authored.name = str(entry.get("name", "Независимые земли " + authored.faction_id.trim_prefix("wild.group_")))
+				authored.ideology = str(entry.get("kind", "independent"))
+				authored.color = Color.html("#" + str(entry["color"]))
+				authored.last_decision_hour = initial_hour
+				factions.register(authored)
 
 func record_event(event_type: String, tile: Vector2i, participants: Array, details: Dictionary = {}) -> AlifeWorldEvent:
 	var event: AlifeWorldEvent = AlifeWorldEvent.new()

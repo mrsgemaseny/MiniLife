@@ -242,6 +242,7 @@ func load_slot(slot: String) -> bool:
 
 	var loaded_seed: int = int(world_data.get("world_seed", Config.DEFAULT_WORLD_SEED))
 	if int(world_data.get("generator_version", 0)) not in [TerrainGenerator.GENERATOR_VERSION,
+			TerrainGenerator.AUTHORED_ROADS_VERSION,
 			TerrainGenerator.WORLDSTUDIO_MARKERS_VERSION,
 			TerrainGenerator.WORLDSTUDIO_SETTLEMENT_VERSION,
 			TerrainGenerator.PRE_WORLDSTUDIO_SETTLEMENT_VERSION,
