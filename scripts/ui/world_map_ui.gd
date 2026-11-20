@@ -192,6 +192,9 @@ func _rebuild_world_map_texture() -> void:
 		_map_row = 0
 		_map_column = 0
 		_map_terrain = TerrainGenerator.new(seed_value)
+		var world_system: WorldSystem = get_tree().get_first_node_in_group("world_system") as WorldSystem
+		if world_system != null:
+			_map_terrain.setup(seed_value, world_system.get_generator_version())
 		_map_image.fill(Color.TRANSPARENT)
 
 func _process(_delta: float) -> void:

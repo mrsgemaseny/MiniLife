@@ -210,6 +210,9 @@ func _index_settlements() -> void:
 	for settlement: AlifeSettlement in world.settlements.all():
 		_settlement_chunks[Config.tile_to_chunk(settlement.tile)] = settlement.settlement_id
 	var terrain: TerrainGenerator = TerrainGenerator.new(world.world_seed)
+	var world_system: WorldSystem = get_tree().get_first_node_in_group("world_system") as WorldSystem
+	if world_system != null:
+		terrain.setup(world.world_seed, world_system.get_generator_version())
 	for settlement: AlifeSettlement in world.settlements.all():
 		if settlement.settlement_type not in ["city", "fortress"]:
 			continue

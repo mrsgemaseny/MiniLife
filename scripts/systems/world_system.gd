@@ -157,7 +157,7 @@ func _start_pending_jobs() -> void:
 			break
 		var job: ChunkTerrainJob = _terrain_jobs.get(chunk)
 		if job != null and job.task_id < 0:
-			job.start(_seed, chunk)
+			job.start(_seed, chunk, _terrain.get_generator_version())
 			running_jobs += 1
 
 
@@ -1101,6 +1101,10 @@ func get_save_data() -> Dictionary:
 		"chunk_deltas": _chunk_deltas.duplicate(true),
 		"ground_loot": _ground_loot.snapshot() if _ground_loot != null else []
 	}
+
+
+func get_generator_version() -> int:
+	return _terrain.get_generator_version()
 
 
 func load_save_data(w: Dictionary) -> void:
