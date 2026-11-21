@@ -149,6 +149,14 @@ func _draw_map() -> void:
 		var center: Vector2 = Vector2(settlement.tile) / float(GlobalLandscapeMap.CELL_TILES) * CELL_SIZE
 		_canvas.draw_circle(center, 6.0, Color("211a19"))
 		_canvas.draw_circle(center, 4.5, Color("f2d47b"))
+	for track: Dictionary in WorldSimulation.world.narrative.get("authored_armies", {}).values():
+		var position: Array = track.get("position", [])
+		if str(track.get("status", "")) != "roaming" or position.size() != 2:
+			continue
+		var center: Vector2 = (Vector2(int(position[0]), int(position[1])) + Vector2.ONE * 0.5) * CELL_SIZE
+		_canvas.draw_line(center + Vector2(-4, 8), center + Vector2(-4, -8), Color("211a19"), 2.0)
+		_canvas.draw_colored_polygon(PackedVector2Array([center + Vector2(-3, -8), center + Vector2(8, -5), center + Vector2(-3, -1)]), Color("cc1e1e"))
+		_canvas.draw_circle(center + Vector2(-4, 8), 2.0, Color("f2d47b"))
 
 	var player_center: Vector2 = Vector2(GameManager.get_player_tile()) / float(GlobalLandscapeMap.CELL_TILES) * CELL_SIZE
 	_canvas.draw_circle(player_center, 8.0, Color.WHITE, false, 2.0)
@@ -205,6 +213,11 @@ func _update_details() -> void:
 		if GlobalLandscapeMap.cell_for_tile(settlement.tile) == _selected_region:
 			description += " · " + settlement.name
 			break
+	for track: Dictionary in WorldSimulation.world.narrative.get("authored_armies", {}).values():
+		var position: Array = track.get("position", [])
+		if str(track.get("status", "")) == "roaming" and position.size() == 2 \
+				and Vector2i(int(position[0]), int(position[1])) == _selected_region:
+			description += " · Имперская армия"
 	_details.text = description
 	_enter_button.disabled = _find_landing_tile(_selected_region).x < 0
 

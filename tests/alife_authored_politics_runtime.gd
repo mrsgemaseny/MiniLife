@@ -23,12 +23,30 @@ func _run() -> void:
 		var cell: Vector2i = GlobalLandscapeMap.cell_for_tile(settlement.tile)
 		var owner: String = str(WorldData.cell_at(cell).get("owner", ""))
 		assert(settlement.owner_faction == owner, "Settlement owner disagrees with world.json at %s" % cell)
+	var authored_armies: Dictionary = world.narrative.get("authored_armies", {})
+	assert(authored_armies.size() == 5)
+	var active_armies: int = 0
+	for entry: Dictionary in WorldData.entities().get("armies", []):
+		var army: Dictionary = authored_armies[str(entry["id"])]
+		assert(army.status == entry.status and army.route.size() == entry.route.size())
+		assert(world.factions.find(str(army.faction_id)) != null)
+		for index: int in range(entry.route.size()):
+			assert(army.route[index] == [int(entry.route[index].x), int(entry.route[index].y)])
+		if entry.get("position") is Dictionary:
+			active_armies += 1
+			assert(army.position == [int(entry.position.x), int(entry.position.y)])
+		else:
+			assert(army.position.is_empty())
+	assert(active_armies == 4)
+	var restored: AlifeWorldContext = AlifeWorldContext.from_dict(world.to_dict())
+	assert(restored != null and restored.narrative.get("authored_armies", {}) == authored_armies)
 	var legacy := AlifeWorldContext.new()
 	legacy.seed_world(12345, 6.0, TerrainGenerator.AUTHORED_ROADS_VERSION)
 	WorldSeedBuilder.populate(legacy, TerrainGenerator.AUTHORED_ROADS_VERSION)
 	assert(legacy.factions.all().size() == DataRegistry.get_rows("factions").size())
 	assert(legacy.settlements.all().size() == 141)
 	assert(legacy.factions.find("state.reinhard") == null)
+	assert(not legacy.narrative.has("authored_armies"))
 	WorldSimulation.set_process(false)
 	WorldSimulation._on_save_loaded({"world": {"generator_version": TerrainGenerator.AUTHORED_ROADS_VERSION}})
 	WorldSimulation._on_game_started(12345, "legacy_politics_verification", false)

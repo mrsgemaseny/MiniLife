@@ -36,6 +36,11 @@ func run() -> void:
 	check(WorldLayout.size_cells() == Vector2i(21, 15), "Global map is the authored 21x15 grid")
 	check(global_map._regions != null and global_map._canvas.custom_minimum_size == Vector2(21, 15) * GlobalMapUI.CELL_SIZE,
 		"Global map renders the authored landscape cells")
+	global_map._selected_region = Vector2i(16, 5)
+	global_map._update_details()
+	check(global_map._details.text.contains("Имперская армия"), "Authored active army is labeled on the global map")
+	global_map._selected_region = GlobalLandscapeMap.cell_for_tile(GameManager.get_player_tile())
+	global_map._update_details()
 	Input.parse_input_event(event)
 	await get_tree().process_frame
 	check(not global_map.visible, "G closes the global map")

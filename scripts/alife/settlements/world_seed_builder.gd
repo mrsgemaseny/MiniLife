@@ -57,6 +57,29 @@ static func populate(world: AlifeWorldContext, generator_version: int = TerrainG
 	_connect_network(world.settlements)
 	_assign_leaders(world)
 	CaravanRouteManager.seed_routes(world)
+	if generator_version >= TerrainGenerator.AUTHORED_POLITICS_VERSION:
+		_seed_authored_armies(world)
+
+static func _seed_authored_armies(world: AlifeWorldContext) -> void:
+	var armies: Dictionary = {}
+	for entry: Dictionary in WorldData.entities().get("armies", []):
+		var origin: Dictionary = entry.get("origin", {})
+		var origin_cell := Vector2i(int(origin.get("x", -1)), int(origin.get("y", -1)))
+		var owner: String = str(WorldData.cell_at(origin_cell).get("owner", ""))
+		assert(world.factions.find(owner) != null, "Unknown army origin owner: %s" % owner)
+		var route: Array = []
+		for point: Dictionary in entry.get("route", []):
+			route.append([int(point["x"]), int(point["y"])])
+		var position: Array = []
+		if entry.get("position") is Dictionary:
+			var point: Dictionary = entry["position"]
+			position = [int(point["x"]), int(point["y"])]
+		armies[str(entry["id"])] = {
+			"status": str(entry.get("status", "")), "faction_id": owner,
+			"origin": [origin_cell.x, origin_cell.y], "position": position,
+			"route": route, "notes": str(entry.get("notes", ""))
+		}
+	world.narrative["authored_armies"] = armies
 
 static func _assign_leaders(world: AlifeWorldContext) -> void:
 	for faction: AlifeFaction in world.factions.all():
