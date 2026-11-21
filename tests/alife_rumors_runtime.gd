@@ -27,6 +27,36 @@ func _ready() -> void:
 	check(BulletinBoard.get_rumors_at(world, "0").size() == 1, "Origin knows event")
 	check(BulletinBoard.get_rumors_at(world, "1").is_empty(), "Rumor does not travel instantly")
 	var original: String = str(world.rumors[0]["content"])
+	var catalog: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/rumors_ru.json"))
+	var event_types: Dictionary = {
+		"famine": "famine_started", "bandit_raid": "caravan_raided",
+		"caravan_lost": "caravan_lost", "caravan_arrived": "caravan_arrived",
+		"army_near": "army_near", "army_destroyed": "army_destroyed",
+		"lord_killed": "leader_died", "plague_rumor": "plague_rumor",
+		"good_harvest": "good_harvest", "price_up": "price_up",
+		"price_down": "price_down", "refugees": "refugee_arrived"
+	}
+	check(catalog.size() == event_types.size(), "Russian rumor pool covers every planned event type")
+	for pool_name: String in event_types:
+		var variants: Array = catalog.get(pool_name, [])
+		check(variants.size() == 10, "Rumor pool has ten variants: " + pool_name)
+		var rendered: Dictionary = {}
+		for index: int in 10:
+			var event: AlifeWorldEvent = AlifeWorldEvent.new()
+			event.event_id = index + 1
+			event.event_type = str(event_types[pool_name])
+			event.location = Vector2i.ZERO
+			event.data = {"settlement_id": "0", "item": "зерно", "faction": "дозора", "direction": "с севера", "reason": "bandits"}
+			var rumor: RumorEntry = RumorFactory.from_event(world, event)
+			check(rumor != null and not rumor.content.is_empty() and not rumor.content.contains("{"), "Rumor renders all placeholders: " + pool_name)
+			rendered[rumor.content] = true
+		check(rendered.size() == 10, "Rumor event IDs select distinct variants: " + pool_name)
+	var failed_caravan: AlifeWorldEvent = AlifeWorldEvent.new()
+	failed_caravan.event_id = 1
+	failed_caravan.event_type = "caravan_raided"
+	failed_caravan.data = {"settlement_id": "0", "reason": "merchant_lost"}
+	check(RumorFactory.from_event(world, failed_caravan).content == str(catalog["caravan_lost"][0]).replace("{settlement}", "Town 0"), "Non-bandit caravan loss does not accuse bandits")
+	check(RumorDistorter.apply_distortion("Весть.", "Town 0", 1).content.begins_with("Путники"), "Traveling rumor text is localized")
 	world.simulated_hour = 2.0
 	tick.tick(world)
 	check(BulletinBoard.get_rumors_at(world, "1").size() == 1, "First neighbor receives rumor")
