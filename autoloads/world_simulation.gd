@@ -1,5 +1,7 @@
 extends Node
 
+const ImperialArmySystem = preload("res://scripts/alife/factions/imperial_army_system.gd")
+
 const GLOBAL_TICK_INTERVAL: float = 5.0
 const MAX_CATCHUP_DAYS: int = 7
 var world: AlifeWorldContext = AlifeWorldContext.new()
@@ -9,6 +11,7 @@ var agent_tick: AgentTick = AgentTick.new()
 var rumor_tick: RumorTick = RumorTick.new()
 var conflict_tick: ConflictTick = ConflictTick.new()
 var caravan_tick: CaravanTick = CaravanTick.new()
+var imperial_army_system: ImperialArmySystem = ImperialArmySystem.new()
 var materializer: AgentMaterializer = AgentMaterializer.new()
 var pack_materializer: CaravanPackMaterializer = CaravanPackMaterializer.new()
 var cargo_ui: CaravanCargoUI
@@ -109,6 +112,7 @@ func _run_global_tick(hours: float, silent: bool = false) -> void:
 		agent_tick.tick(world, hours)
 	conflict_tick.tick(world, hours)
 	caravan_tick.tick(world)
+	imperial_army_system.tick(world, hours)
 	rumor_tick.tick(world)
 	LocalWarrants.tick(world)
 	materializer.reconcile_dead()

@@ -1,5 +1,7 @@
 extends Node
 
+const ImperialArmySystem = preload("res://scripts/alife/factions/imperial_army_system.gd")
+
 
 func _ready() -> void:
 	call_deferred("_run")
@@ -82,6 +84,38 @@ func _run() -> void:
 	assert(active_armies == 4)
 	var restored: AlifeWorldContext = AlifeWorldContext.from_dict(world.to_dict())
 	assert(restored != null and restored.narrative.get("authored_armies", {}) == authored_armies)
+	var army_signals: Array = []
+	SignalBus.imperial_army_moved.connect(func(army_id: String, cell: Vector2i) -> void:
+		army_signals.append([army_id, cell])
+	)
+	var split: AlifeWorldContext = AlifeWorldContext.from_dict(JSON.parse_string(JSON.stringify(world.to_dict())))
+	var combined: AlifeWorldContext = AlifeWorldContext.from_dict(JSON.parse_string(JSON.stringify(world.to_dict())))
+	for _step: int in 4:
+		ImperialArmySystem.tick(split, 6.0)
+	ImperialArmySystem.tick(combined, 24.0)
+	var moving: Dictionary = split.narrative["authored_armies"]
+	for army_id: String in moving:
+		var small_steps: Dictionary = moving[army_id]
+		var large_step: Dictionary = combined.narrative["authored_armies"][army_id]
+		assert(small_steps.position == large_step.position and small_steps.get("route_index", -1) == large_step.get("route_index", -1), "Army route depends on tick partition")
+		if small_steps.status == "roaming":
+			assert(is_equal_approx(float(small_steps.travel_progress), float(large_step.travel_progress)) and is_equal_approx(float(small_steps.morale), float(large_step.morale)), "Army progress or morale depends on tick partition")
+	assert(army_signals.size() > 0, "Moving armies publish a map update signal")
+	assert(moving["army.girdenburg"].position.is_empty() and moving["army.girdenburg"].status == "destroyed")
+	assert(float(moving["army.south"].morale) > 78.0 and float(moving["army.west_1"].morale) < 38.0)
+	for army_id: String in ["army.west_1", "army.west_2", "army.south", "army.east"]:
+		var track: Dictionary = moving[army_id]
+		assert(track.route.has(track.position), "Army left its authored route")
+		assert(track.route_index >= 0 and track.travel_progress >= 0.0 and track.travel_progress < 1.0)
+	var loaded_armies: AlifeWorldContext = AlifeWorldContext.from_dict(JSON.parse_string(JSON.stringify(split.to_dict())))
+	ImperialArmySystem.tick(loaded_armies, 18.0)
+	ImperialArmySystem.tick(split, 18.0)
+	for army_id: String in moving:
+		var saved_track: Dictionary = loaded_armies.narrative["authored_armies"][army_id]
+		var live_track: Dictionary = split.narrative["authored_armies"][army_id]
+		assert(saved_track.position == live_track.position and saved_track.get("route_index", -1) == live_track.get("route_index", -1), "Army position survives JSON save")
+		if saved_track.status == "roaming":
+			assert(is_equal_approx(float(saved_track.travel_progress), float(live_track.travel_progress)) and is_equal_approx(float(saved_track.morale), float(live_track.morale)), "Army progress and morale survive JSON save")
 	for state_id: String in state_ids:
 		assert(restored.factions.find(state_id).relations == world.factions.find(state_id).relations)
 	var legacy := AlifeWorldContext.new()

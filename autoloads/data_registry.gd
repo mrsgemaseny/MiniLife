@@ -13,6 +13,7 @@ const TABLE_FILES: Dictionary = {
 	"unit_stats": "unit_stats.json",
 	"combat_log_ru": "combat_log_ru.json",
 	"squads": "squads.json",
+	"imperial_commanders": "imperial_commanders.json",
 	"factions": "factions.json",
 	"events": "events.json",
 	"dialogues": "dialogues.json",

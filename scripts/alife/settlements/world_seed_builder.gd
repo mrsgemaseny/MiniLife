@@ -79,6 +79,13 @@ static func _seed_authored_armies(world: AlifeWorldContext) -> void:
 			"origin": [origin_cell.x, origin_cell.y], "position": position,
 			"route": route, "notes": str(entry.get("notes", ""))
 		}
+		var commander: Dictionary = DataRegistry.get_entry("imperial_commanders", str(entry["id"]))
+		if not commander.is_empty() and str(entry.get("status", "")) == "roaming":
+			armies[str(entry["id"])]["commander_archetype"] = str(commander["archetype"])
+			armies[str(entry["id"])]["morale"] = float(commander["initial_morale"])
+			armies[str(entry["id"])]["route_index"] = -1
+			armies[str(entry["id"])]["route_direction"] = 1
+			armies[str(entry["id"])]["travel_progress"] = 0.0
 	world.narrative["authored_armies"] = armies
 
 static func _assign_leaders(world: AlifeWorldContext) -> void:

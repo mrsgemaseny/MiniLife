@@ -186,6 +186,7 @@ signal debug_command_executed(command_line: String, output_text: String)
 
 # A-Life identifiers follow the existing string IDs used by NPCs and JSON tables.
 signal world_tick_completed()
+signal imperial_army_moved(army_id: String, cell: Vector2i)
 signal settlement_status_changed(settlement_id: String, new_status: int)
 signal faction_at_war(faction_a_id: String, faction_b_id: String)
 signal faction_peace_declared(faction_a_id: String, faction_b_id: String)

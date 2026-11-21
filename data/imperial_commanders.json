@@ -1,0 +1,6 @@
+[
+	{"id": "army.west_1", "archetype": "BROKEN", "hours_per_cell": 14.0, "initial_morale": 38.0, "morale_per_hour": -0.025},
+	{"id": "army.west_2", "archetype": "SEEKING", "hours_per_cell": 10.0, "initial_morale": 55.0, "morale_per_hour": -0.005},
+	{"id": "army.south", "archetype": "DISCIPLINED", "hours_per_cell": 6.0, "initial_morale": 78.0, "morale_per_hour": 0.015},
+	{"id": "army.east", "archetype": "DISCIPLINED", "hours_per_cell": 6.0, "initial_morale": 78.0, "morale_per_hour": 0.015}
+]

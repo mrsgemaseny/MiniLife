@@ -20,6 +20,7 @@ func _ready() -> void:
 	_build_ui()
 	SignalBus.ui_panel_requested.connect(_on_panel_requested)
 	SignalBus.ui_close_all_requested.connect(close_panel)
+	SignalBus.imperial_army_moved.connect(_on_imperial_army_moved)
 	SignalBus.game_started.connect(func(_world_seed: int, _slot: String, _new: bool) -> void:
 		_seed = -1
 		_selected_region = Vector2i(-1, -1)
@@ -40,6 +41,11 @@ func _on_panel_requested(panel_id: String) -> void:
 			open_panel()
 	elif visible:
 		close_panel()
+
+func _on_imperial_army_moved(_army_id: String, _cell: Vector2i) -> void:
+	if visible:
+		_update_details()
+		_canvas.queue_redraw()
 
 func open_panel() -> void:
 	if _seed != GameManager.get_world_seed():
