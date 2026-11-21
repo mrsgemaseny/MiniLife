@@ -54,7 +54,7 @@ func seed_world(seed_value: int, initial_hour: float, generator_version: int = T
 				authored.color = Color.html("#" + str(entry["color"]))
 				authored.last_decision_hour = initial_hour
 				factions.register(authored)
-		AuthoredPoliticalRelationsScript.apply(factions, entities.get("states", []))
+		AuthoredPoliticalRelationsScript.apply(factions, entities.get("states", []), WorldData.relations())
 
 func record_event(event_type: String, tile: Vector2i, participants: Array, details: Dictionary = {}) -> AlifeWorldEvent:
 	var event: AlifeWorldEvent = AlifeWorldEvent.new()

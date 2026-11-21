@@ -1,15 +1,9 @@
 class_name AuthoredPoliticalRelations
 extends RefCounted
 
-const SOURCE_PATH: String = "res://data/authored_political_relations.json"
-
-static func apply(registry: FactionRegistry, states: Array) -> void:
-	var file: FileAccess = FileAccess.open(SOURCE_PATH, FileAccess.READ)
-	assert(file != null, "Missing authored political relations")
-	var data: Variant = JSON.parse_string(file.get_as_text())
-	assert(data is Dictionary, "Invalid authored political relations")
-	var ids: Array = data.get("state_ids", [])
-	var matrix: Array = data.get("relations", [])
+static func apply(registry: FactionRegistry, states: Array, data: Dictionary) -> void:
+	var ids: Array = data.get("order", [])
+	var matrix: Array = data.get("matrix", [])
 	assert(ids.size() == states.size() and matrix.size() == ids.size())
 	for index: int in range(ids.size()):
 		assert(str(ids[index]) == str(states[index]["id"]), "Political matrix state order differs from world.json")

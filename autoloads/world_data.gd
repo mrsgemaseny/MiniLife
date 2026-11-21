@@ -99,5 +99,9 @@ func entities() -> Dictionary:
 	return _document.get("entities", {})
 
 
+func relations() -> Dictionary:
+	return _document.get("relations", {})
+
+
 func _is_whole_number(value: Variant) -> bool:
 	return value is int or (value is float and is_finite(value) and value == floorf(value))

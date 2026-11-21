@@ -13,11 +13,9 @@ func _run() -> void:
 	var states: Array = WorldData.entities().get("states", [])
 	var wildlands: Array = WorldData.entities().get("wildlands", [])
 	assert(states.size() == 8 and wildlands.size() == 3)
-	var relation_file: FileAccess = FileAccess.open("res://data/authored_political_relations.json", FileAccess.READ)
-	assert(relation_file != null)
-	var relation_source: Dictionary = JSON.parse_string(relation_file.get_as_text())
-	var state_ids: Array = relation_source["state_ids"]
-	var relation_rows: Array = relation_source["relations"]
+	var relation_source: Dictionary = WorldData.relations()
+	var state_ids: Array = relation_source["order"]
+	var relation_rows: Array = relation_source["matrix"]
 	for row_index: int in range(states.size()):
 		var source_faction: AlifeFaction = world.factions.find(str(state_ids[row_index])) as AlifeFaction
 		assert(source_faction != null and source_faction.relations.size() == states.size() - 1)
