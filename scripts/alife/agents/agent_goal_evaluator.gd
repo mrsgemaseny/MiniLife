@@ -1,7 +1,7 @@
 class_name AgentGoalEvaluator
 extends RefCounted
 
-static func evaluate(agent: GlobalAgent, world: AlifeWorldContext) -> String:
+static func evaluate(agent: GlobalAgent, world: AlifeWorldContext, active_sieges: Variant = null) -> String:
 	if world.narrative.get("refugee_travelers", {}).has(agent.agent_id):
 		if agent.settlement_id.is_empty() and agent.tile == agent.destination_tile:
 			return "refugee_camp"
@@ -22,9 +22,13 @@ static func evaluate(agent: GlobalAgent, world: AlifeWorldContext) -> String:
 			return "assault_settlement" if deployment.phase == "siege" else "march_to_frontline"
 	if agent.current_goal == "return_home" and agent.tile != agent.home_tile:
 		return "return_home"
-	for conflict: AlifeConflict in world.conflicts.all():
-		if not conflict.resolved and conflict.phase == "siege" and conflict.target_settlement == agent.settlement_id:
+	if active_sieges is Dictionary:
+		if active_sieges.has(agent.settlement_id):
 			return "defend_settlement" if agent.role in ["guard", "soldier"] else "flee_settlement"
+	else:
+		for conflict: AlifeConflict in world.conflicts.all():
+			if not conflict.resolved and conflict.phase == "siege" and conflict.target_settlement == agent.settlement_id:
+				return "defend_settlement" if agent.role in ["guard", "soldier"] else "flee_settlement"
 	var faction: AlifeFaction = world.factions.find(agent.faction_id) as AlifeFaction
 	if faction != null and faction.state == AlifeFaction.State.AT_WAR:
 		if agent.role in ["guard", "soldier"]:

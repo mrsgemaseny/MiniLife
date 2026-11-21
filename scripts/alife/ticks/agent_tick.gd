@@ -2,6 +2,9 @@ class_name AgentTick
 extends RefCounted
 
 var _elapsed: float = 0.0
+var _stagger_phase: int = 0
+var _stagger_seen: int = 0
+const STAGGER_BUCKETS: int = 6
 
 func tick(world: AlifeWorldContext, hours: float) -> void:
 	# Convert the configured far LOD interval using the current game clock scale.
@@ -11,8 +14,24 @@ func tick(world: AlifeWorldContext, hours: float) -> void:
 	var step: float = _elapsed
 	_elapsed = 0.0
 	preload("res://scripts/alife/settlements/refugee_migration.gd").tick(world, step)
-	for agent: GlobalAgent in world.agents.get_all_global():
-		var goal: String = AgentGoalEvaluator.evaluate(agent, world)
+	_update_agents(world, step, world.agents.get_all_global())
+
+func tick_staggered(world: AlifeWorldContext, hours: float) -> void:
+	var first_visit: bool = (_stagger_seen & (1 << _stagger_phase)) == 0
+	var step: float = hours if first_visit else hours * STAGGER_BUCKETS
+	_stagger_seen |= 1 << _stagger_phase
+	_update_agents(world, step, world.agents.get_global_lod_bucket(_stagger_phase, STAGGER_BUCKETS))
+	_stagger_phase = (_stagger_phase + 1) % STAGGER_BUCKETS
+	if _stagger_phase == 0:
+		preload("res://scripts/alife/settlements/refugee_migration.gd").tick(world, hours * STAGGER_BUCKETS)
+
+func _update_agents(world: AlifeWorldContext, step: float, agents: Array) -> void:
+	var active_sieges: Dictionary = {}
+	for conflict: AlifeConflict in world.conflicts.all():
+		if not conflict.resolved and conflict.phase == "siege":
+			active_sieges[conflict.target_settlement] = true
+	for agent: GlobalAgent in agents:
+		var goal: String = AgentGoalEvaluator.evaluate(agent, world, active_sieges)
 		if goal != agent.current_goal:
 			agent.current_goal = goal
 			agent.goal_progress = 0.0

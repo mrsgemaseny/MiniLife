@@ -103,7 +103,10 @@ func _run_global_tick(hours: float, silent: bool = false) -> void:
 	world.simulated_hour += hours
 	economy_tick.tick(world, hours)
 	faction_tick.tick(world, hours)
-	agent_tick.tick(world, hours)
+	if is_equal_approx(hours, Config.LOD_MID_INTERVAL / Config.SECONDS_PER_GAME_HOUR):
+		agent_tick.tick_staggered(world, hours)
+	else:
+		agent_tick.tick(world, hours)
 	conflict_tick.tick(world, hours)
 	caravan_tick.tick(world)
 	rumor_tick.tick(world)
@@ -167,6 +170,8 @@ func _on_save_requested(bundle: Dictionary) -> void:
 	pack_materializer.sync_all()
 	var snapshot: Dictionary = _agent_save_delta.encode(world)
 	snapshot["agent_tick_elapsed"] = agent_tick._elapsed
+	snapshot["agent_tick_stagger_phase"] = agent_tick._stagger_phase
+	snapshot["agent_tick_stagger_seen"] = agent_tick._stagger_seen
 	saved_world["alife"] = snapshot
 	bundle["world"] = saved_world
 
@@ -203,6 +208,8 @@ func _on_save_loaded(bundle: Dictionary) -> void:
 	_agent_save_delta = codec
 	agent_tick = AgentTick.new()
 	agent_tick._elapsed = float(data.get("agent_tick_elapsed", 0.0))
+	agent_tick._stagger_phase = clampi(int(data.get("agent_tick_stagger_phase", 0)), 0, AgentTick.STAGGER_BUCKETS - 1)
+	agent_tick._stagger_seen = int(data.get("agent_tick_stagger_seen", 0)) & ((1 << AgentTick.STAGGER_BUCKETS) - 1)
 	_restored = true
 
 func _on_entity_layer_ready(layer: Node2D) -> void:

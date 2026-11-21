@@ -27,7 +27,7 @@ static func transition(world: AlifeWorldContext, settlement: AlifeSettlement, st
 		for agent: GlobalAgent in world.agents.by_settlement(settlement.settlement_id):
 			if agent.alive:
 				if world.narrative.get("refugee_travelers", {}).has(agent.agent_id):
-					agent.settlement_id = ""
+					world.agents.move_to_settlement(agent, "")
 					continue
 				AgentLifecycle.mark_dead(world, agent, "settlement_destroyed")
 		settlement.population = 0

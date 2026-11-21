@@ -76,6 +76,11 @@ func run() -> void:
 	agent.max_health = 120.0
 	agent.health = 73.0
 	world.agents.register(agent)
+	check(world.agents.by_settlement("lifecycle") == [agent], "Settlement lookup finds registered agent")
+	world.agents.move_to_settlement(agent, "temporary")
+	check(world.agents.by_settlement("lifecycle").is_empty() and world.agents.by_settlement("temporary") == [agent], "Settlement index follows migration")
+	world.agents.move_to_settlement(agent, "lifecycle")
+	check(world.agents.by_settlement("lifecycle") == [agent], "Settlement index follows return")
 	WorldSimulation.materializer.reset(world)
 	WorldSimulation.world = world
 	var layer: Node2D = Node2D.new()

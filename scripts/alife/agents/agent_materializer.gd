@@ -239,7 +239,10 @@ func _sync(id: String, entity: NPCBase) -> void:
 	if not agent.alive:
 		state["health"] = 0.0
 	# The global identity and permanent death flag are never replaced by a stale scene.
+	var old_settlement_id: String = agent.settlement_id
 	agent.restore(state)
+	if agent.settlement_id != old_settlement_id:
+		world.agents.invalidate_settlement_index()
 	if agent.health <= 0.0:
 		agent.alive = false
 

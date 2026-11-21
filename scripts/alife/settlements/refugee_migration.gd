@@ -38,7 +38,7 @@ static func tick(world: AlifeWorldContext, hours: float) -> void:
 		var source: AlifeSettlement = world.settlements.find(agent.settlement_id) as AlifeSettlement
 		if source != null:
 			source.population = maxi(0, source.population - 1)
-		agent.settlement_id = destination.settlement_id
+		world.agents.move_to_settlement(agent, destination.settlement_id)
 		agent.faction_id = destination.owner_faction
 		agent.home_tile = agent.tile
 		destination.population += 1
