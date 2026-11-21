@@ -30,11 +30,14 @@ var memory_state: Dictionary = {}
 var deployment_id: String = ""
 var destination_tile: Vector2i = Vector2i.ZERO
 var caravan_id: String = ""
+var squad_id: String = ""
+var squad_slot: int = -1
+var model_id: String = ""
 var ambush_route_id: String = ""
 var ambush_original_role: String = ""
 
 func _fields() -> Array[String]:
-	return ["agent_id", "faction_id", "settlement_id", "role", "current_goal", "goal_progress", "memory_flags", "relation_to_player", "tile", "alive", "unique", "health", "morale", "equipment_tier", "goal_stack", "memories", "grudges", "inventory", "definition_id", "display_name", "named", "home_tile", "world_position", "max_health", "local_state", "memory_state", "deployment_id", "destination_tile", "caravan_id", "ambush_route_id", "ambush_original_role"]
+	return ["agent_id", "faction_id", "settlement_id", "role", "current_goal", "goal_progress", "memory_flags", "relation_to_player", "tile", "alive", "unique", "health", "morale", "equipment_tier", "goal_stack", "memories", "grudges", "inventory", "definition_id", "display_name", "named", "home_tile", "world_position", "max_health", "local_state", "memory_state", "deployment_id", "destination_tile", "caravan_id", "squad_id", "squad_slot", "model_id", "ambush_route_id", "ambush_original_role"]
 
 static func from_dict(data: Dictionary) -> GlobalAgent:
 	var result: GlobalAgent = GlobalAgent.new()

@@ -1,4 +1,7 @@
 [
+	{"id": "caravan", "title": "Караван", "npc": "merchant_common", "anchor": "road",
+		"leader": ["guild_merchant"], "members": ["guard_helmet", "guard_hooded_spear", "town_guard"],
+		"size": [5, 5], "per_settlement": {}},
 	{"id": "elder", "title": "Староста", "npc": "village_elder", "anchor": "center", "named_leader": true,
 		"leader": ["citizen_bearded"], "members": [], "size": [1, 1], "per_settlement": {"village": 1, "town": 1}},
 	{"id": "lord_household", "title": "Двор вельможи", "npc": "village_elder", "anchor": "manor", "named_leader": true,

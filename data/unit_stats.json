@@ -1,4 +1,5 @@
 [
+	{"id": "guild_merchant", "hp": 100, "armor": 0, "attack": 1, "defense": 1, "penetration": 1, "athletics": 1, "source": "assumed:caravan_merchant", "shield": false},
 	{"id": "sergeant", "hp": 150, "armor": 360, "attack": 14, "defense": 15, "penetration": 9, "athletics": 15, "source": "table", "shield": false},
 	{"id": "noble_knight_greatsword", "hp": 180, "armor": 520, "attack": 16, "defense": 16, "penetration": 10, "athletics": 16, "source": "table", "shield": false},
 	{"id": "noble_knight", "hp": 180, "armor": 460, "attack": 14, "defense": 16, "penetration": 9, "athletics": 15, "source": "table", "shield": true},

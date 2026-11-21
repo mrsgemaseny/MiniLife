@@ -103,6 +103,10 @@ func materialize(agent: GlobalAgent) -> NPCBase:
 	entity.npc_id = agent.definition_id
 	entity.spawn_uid = agent.agent_id
 	entity.set_meta("global_agent_id", agent.agent_id)
+	if not agent.model_id.is_empty():
+		entity.set_meta("npc_model", agent.model_id)
+		entity.set_meta("alife_squad_id", agent.squad_id)
+		entity.set_meta("alife_squad_slot", agent.squad_slot)
 	entity.set_meta("settlement_id", agent.settlement_id)
 	agent.current_goal = AgentGoalEvaluator.evaluate(agent, world)
 	entity.set_meta("alife_state", agent.to_dict())

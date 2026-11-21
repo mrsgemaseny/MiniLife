@@ -372,10 +372,13 @@ func to_dict() -> Dictionary:
 	var out: Dictionary = {}
 	for s in SLOTS:
 		out[s] = _equipped[s].duplicate()
+	out["innate_armor"] = _innate_armor.duplicate()
 	return out
 
 
 func from_dict(data: Dictionary) -> void:
+	if data.get("innate_armor") is Dictionary:
+		_innate_armor = (data["innate_armor"] as Dictionary).duplicate()
 	for s in SLOTS:
 		var raw: Variant = data.get(s, {"item_id": "", "durability": -1})
 		if raw is Dictionary:

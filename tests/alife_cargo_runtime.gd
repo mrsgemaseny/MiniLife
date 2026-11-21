@@ -32,6 +32,30 @@ func run() -> void:
 	merchant_scene.set_physics_process(false)
 	for id: String in route.guards:
 		WorldSimulation.materializer.materialize(world.agents.find(id) as GlobalAgent).set_physics_process(false)
+	var roster: Array = [route.merchant_id] + route.guards
+	var models: Dictionary = {}
+	for slot: int in roster.size():
+		var member: GlobalAgent = world.agents.find(str(roster[slot])) as GlobalAgent
+		var scene: NPCBase = world.agents.materialized[member.agent_id] as NPCBase
+		check(member.squad_id == route.route_id and member.squad_slot == slot and scene.spawn_uid == member.agent_id, "Caravan roster maps to the same persistent agents")
+		check(scene.model_id() == member.model_id and not DataRegistry.get_entry("unit_stats", member.model_id).is_empty(), "Caravan model comes from a valid squad unit")
+		models[member.agent_id] = member.model_id
+	var wounded_id: String = str(route.guards[0])
+	var wounded_scene: NPCBase = world.agents.materialized[wounded_id] as NPCBase
+	wounded_scene.stats.health -= 17.0
+	wounded_scene.equipment.apply_armor_damage({"innate": 11.0})
+	var wounded_health: float = wounded_scene.stats.health
+	var wounded_armor: float = wounded_scene.equipment.get_innate_armor()
+	WorldSimulation.materializer.dematerialize(wounded_id)
+	await get_tree().process_frame
+	var wounded: GlobalAgent = world.agents.find(wounded_id) as GlobalAgent
+	check(is_equal_approx(wounded.health, wounded_health), "Unloading a squad member keeps its wound")
+	var saved: AlifeWorldContext = AlifeWorldContext.from_dict(JSON.parse_string(JSON.stringify(world.to_dict())))
+	var saved_member: GlobalAgent = saved.agents.find(wounded_id) as GlobalAgent
+	check(saved_member.model_id == models[wounded_id] and saved_member.squad_slot == 1 and is_equal_approx(saved_member.health, wounded_health), "Squad identity and wound survive JSON save")
+	wounded_scene = WorldSimulation.materializer.materialize(wounded)
+	wounded_scene.set_physics_process(false)
+	check(is_equal_approx(wounded_scene.stats.health, wounded_health) and is_equal_approx(wounded_scene.equipment.get_innate_armor(), wounded_armor) and wounded_scene.model_id() == models[wounded_id], "Reloading the squad member keeps its model, wound and armor wear")
 	WorldSimulation.pack_materializer.update({chunk: true}, merchant.tile)
 	var pack: CaravanPackAnimal = WorldSimulation.pack_materializer.get_entity(route.route_id)
 	check(pack != null and pack.has_pack and pack.leader == merchant_scene, "Physical saddled donkey follows the actual merchant scene")

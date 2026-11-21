@@ -41,6 +41,8 @@ func _ready() -> void:
 	if memory == null:
 		memory = MemoryComponent.new()
 	_apply_npc_def()
+	if has_meta("npc_model"):
+		apply_unit_stats(str(get_meta("npc_model")))
 	if has_meta("alife_state"):
 		restore_alife_state(get_meta("alife_state"))
 	if patrol_points.is_empty():
@@ -350,7 +352,7 @@ func restore_alife_state(data: Dictionary) -> void:
 	var local: Dictionary = data.get("local_state", {})
 	if local.get("combat_skills") is Dictionary:
 		skills.from_dict(local.get("combat_skills", {}))
-	else:
+	elif not has_meta("npc_model"):
 		_seed_combat_skills(str(data.get("role", "civilian")))
 	display_name = str(data.get("display_name", display_name))
 	faction_id = str(data.get("faction_id", faction_id))
@@ -366,7 +368,7 @@ func restore_alife_state(data: Dictionary) -> void:
 		memory.personal_opinion_of_player = int(data.get("relation_to_player", 0))
 	if local.get("combat_equipment") is Dictionary:
 		equipment.from_dict(local.get("combat_equipment", {}))
-	elif str(data.get("role", "")) in ["guard", "soldier", "caravan_guard"]:
+	elif not has_meta("npc_model") and str(data.get("role", "")) in ["guard", "soldier", "caravan_guard"]:
 		var armor_id: String = "iron_armor" if int(data.get("equipment_tier", 1)) >= 3 else "leather_armor"
 		equipment.equip(armor_id, -1, "chest")
 	current_state = clampi(int(local.get("state", State.IDLE)), State.IDLE, State.GIVE_QUEST) as State

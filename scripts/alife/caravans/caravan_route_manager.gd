@@ -114,14 +114,46 @@ static func dispatch(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 	route.departure_hour = world.simulated_hour
 	route.trip_id += 1
 	route.outbound_distance = maxf(1.0, float(path.size() - 1))
-	for id: String in [merchant.agent_id] + guard_ids:
+	var roster: Array = [merchant.agent_id] + guard_ids
+	_assign_squad(world, route, roster)
+	for id: String in roster:
 		var agent: GlobalAgent = world.agents.find(id) as GlobalAgent
 		agent.caravan_id = route.route_id
 		agent.current_goal = "caravan_travel"
 		agent.destination_tile = destination_tile
-		agent.local_state.clear()
 	world.record_event("caravan_departed", source.tile, [home.owner_faction], {"route_id": route.route_id, "settlement_id": source.settlement_id, "destination_id": destination_id, "cargo": cargo.duplicate()})
 	return true
+
+static func _assign_squad(world: AlifeWorldContext, route: CaravanRoute, roster: Array) -> void:
+	var template: Dictionary = {}
+	for row: Dictionary in DataRegistry.get_rows("squads"):
+		if str(row.get("id", "")) == "caravan":
+			template = row
+			break
+	if template.is_empty():
+		return
+	var leaders: Array = template.get("leader", [])
+	var members: Array = template.get("members", [])
+	if leaders.is_empty() or members.is_empty():
+		return
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = hash("%d/%s/caravan-squad" % [world.world_seed, route.route_id])
+	for slot: int in roster.size():
+		var agent: GlobalAgent = world.agents.find(str(roster[slot])) as GlobalAgent
+		if agent == null:
+			continue
+		agent.squad_id = route.route_id
+		agent.squad_slot = slot
+		if agent.model_id.is_empty():
+			var pool: Array = leaders if slot == 0 else members
+			var model: String = str(pool[rng.randi_range(0, pool.size() - 1)])
+			var stats: Dictionary = DataRegistry.get_entry("unit_stats", model)
+			if stats.is_empty():
+				continue
+			agent.model_id = model
+			var health_fraction: float = clampf(agent.health / maxf(1.0, agent.max_health), 0.0, 1.0)
+			agent.max_health = float(stats["hp"])
+			agent.health = agent.max_health * health_fraction
 
 static func arrive(world: AlifeWorldContext, route: CaravanRoute) -> bool:
 	if not route.active:
