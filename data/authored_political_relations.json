@@ -1,0 +1,17 @@
+{
+  "source": "future/Политика.xlsx, cells B2:I9 (directed rows to columns)",
+  "state_ids": [
+    "state.reinhard", "state.ortenverg", "state.ulteria", "state.askelia",
+    "state.rosenwald", "state.kannararia", "state.girdenburg", "state.valden"
+  ],
+  "relations": [
+    [null, -100, -100, -100, -60, -100, -80, -100],
+    [-80, null, -60, -15, 40, -100, 10, 0],
+    [-100, -100, null, -100, -80, -100, -80, -100],
+    [-100, -25, -100, null, -5, -100, 0, -35],
+    [-50, 55, -35, -10, null, -100, 80, -10],
+    [-100, -100, -100, -100, -100, null, -40, -60],
+    [-40, 30, -60, 0, 80, -90, null, 0],
+    [-100, 0, -100, -30, -20, -80, 0, null]
+  ]
+}

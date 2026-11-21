@@ -2,6 +2,7 @@ class_name AlifeWorldContext
 extends RefCounted
 
 const RECENT_EVENT_LIMIT: int = 512
+const AuthoredPoliticalRelationsScript = preload("res://scripts/alife/factions/authored_political_relations.gd")
 
 var world_seed: int = 0
 var simulated_hour: float = 0.0
@@ -53,6 +54,7 @@ func seed_world(seed_value: int, initial_hour: float, generator_version: int = T
 				authored.color = Color.html("#" + str(entry["color"]))
 				authored.last_decision_hour = initial_hour
 				factions.register(authored)
+		AuthoredPoliticalRelationsScript.apply(factions, entities.get("states", []))
 
 func record_event(event_type: String, tile: Vector2i, participants: Array, details: Dictionary = {}) -> AlifeWorldEvent:
 	var event: AlifeWorldEvent = AlifeWorldEvent.new()

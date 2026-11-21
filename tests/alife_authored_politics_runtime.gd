@@ -13,6 +13,20 @@ func _run() -> void:
 	var states: Array = WorldData.entities().get("states", [])
 	var wildlands: Array = WorldData.entities().get("wildlands", [])
 	assert(states.size() == 8 and wildlands.size() == 3)
+	var relation_file: FileAccess = FileAccess.open("res://data/authored_political_relations.json", FileAccess.READ)
+	assert(relation_file != null)
+	var relation_source: Dictionary = JSON.parse_string(relation_file.get_as_text())
+	var state_ids: Array = relation_source["state_ids"]
+	var relation_rows: Array = relation_source["relations"]
+	for row_index: int in range(states.size()):
+		var source_faction: AlifeFaction = world.factions.find(str(state_ids[row_index])) as AlifeFaction
+		assert(source_faction != null and source_faction.relations.size() == states.size() - 1)
+		for column_index: int in range(states.size()):
+			if row_index == column_index:
+				continue
+			assert(source_faction.relations[str(state_ids[column_index])] == relation_rows[row_index][column_index])
+	assert(world.factions.find("state.ortenverg").relations["state.reinhard"] == -80)
+	assert(world.factions.find("state.reinhard").relations["state.ortenverg"] == -100)
 	for entry: Dictionary in states + wildlands:
 		var faction: AlifeFaction = world.factions.find(str(entry["id"])) as AlifeFaction
 		assert(faction != null, "Missing authored faction: %s" % entry["id"])
@@ -40,6 +54,8 @@ func _run() -> void:
 	assert(active_armies == 4)
 	var restored: AlifeWorldContext = AlifeWorldContext.from_dict(world.to_dict())
 	assert(restored != null and restored.narrative.get("authored_armies", {}) == authored_armies)
+	for state_id: String in state_ids:
+		assert(restored.factions.find(state_id).relations == world.factions.find(state_id).relations)
 	var legacy := AlifeWorldContext.new()
 	legacy.seed_world(12345, 6.0, TerrainGenerator.AUTHORED_ROADS_VERSION)
 	WorldSeedBuilder.populate(legacy, TerrainGenerator.AUTHORED_ROADS_VERSION)
