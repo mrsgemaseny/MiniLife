@@ -66,6 +66,7 @@ func record_event(event_type: String, tile: Vector2i, participants: Array, detai
 	event.timestamp = simulated_hour
 	event.data = details.duplicate(true)
 	events.append(event.to_dict())
+	FactionRelations.apply_event(self, event_type, participants, details)
 	return event
 
 func compact_events(published_event_id: int) -> void:

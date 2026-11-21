@@ -27,6 +27,36 @@ func _run() -> void:
 			assert(source_faction.relations[str(state_ids[column_index])] == relation_rows[row_index][column_index])
 	assert(world.factions.find("state.ortenverg").relations["state.reinhard"] == -80)
 	assert(world.factions.find("state.reinhard").relations["state.ortenverg"] == -100)
+	var ortenverg: AlifeFaction = world.factions.find("state.ortenverg") as AlifeFaction
+	var rosenwald: AlifeFaction = world.factions.find("state.rosenwald") as AlifeFaction
+	var relation_signals: Array = []
+	SignalBus.political_relations_changed.connect(func(source_id: String, target_id: String, source_value: int, target_value: int, event_type: String) -> void:
+		relation_signals.append([source_id, target_id, source_value, target_value, event_type])
+	)
+	var origin: AlifeSettlement = world.settlements.matching("owner_faction", ortenverg.faction_id)[0] as AlifeSettlement
+	var destination: AlifeSettlement = world.settlements.matching("owner_faction", rosenwald.faction_id)[0] as AlifeSettlement
+	world.record_event("caravan_arrived", destination.tile, [ortenverg.faction_id], {"home_id": origin.settlement_id, "settlement_id": destination.settlement_id})
+	assert(ortenverg.relations[rosenwald.faction_id] == 43 and rosenwald.relations[ortenverg.faction_id] == 58)
+	world.record_event("caravan_raided", origin.tile, [ortenverg.faction_id], {"reason": "bandits"})
+	assert(ortenverg.relations["bandits"] == -12 and world.factions.find("bandits").relations[ortenverg.faction_id] == -12)
+	world.record_event("caravan_raided", origin.tile, [ortenverg.faction_id], {"reason": "merchant_lost"})
+	assert(ortenverg.relations["bandits"] == -12)
+	var victim: GlobalAgent = GlobalAgent.new()
+	victim.agent_id = "politics_test_lord"
+	victim.faction_id = rosenwald.faction_id
+	world.agents.register(victim)
+	rosenwald.leader_id = victim.agent_id
+	var killer: GlobalAgent = GlobalAgent.new()
+	killer.agent_id = "politics_test_killer"
+	killer.faction_id = ortenverg.faction_id
+	world.agents.register(killer)
+	world.record_event("agent_died", destination.tile, [victim.agent_id], {"killer": killer.agent_id})
+	assert(ortenverg.relations[rosenwald.faction_id] == 13 and rosenwald.relations[ortenverg.faction_id] == 28)
+	world.record_event("agent_died", destination.tile, [victim.agent_id], {"killer": "player"})
+	assert(ortenverg.relations[rosenwald.faction_id] == 13)
+	assert(relation_signals.size() == 3)
+	assert(relation_signals[0] == [ortenverg.faction_id, rosenwald.faction_id, 43, 58, "caravan_arrived"])
+	assert(relation_signals[2] == [ortenverg.faction_id, rosenwald.faction_id, 13, 28, "agent_died"])
 	for entry: Dictionary in states + wildlands:
 		var faction: AlifeFaction = world.factions.find(str(entry["id"])) as AlifeFaction
 		assert(faction != null, "Missing authored faction: %s" % entry["id"])
