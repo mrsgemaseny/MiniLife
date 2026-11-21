@@ -85,6 +85,31 @@ func _ready() -> void:
 	workshop.stock_tier = 3
 	SettlementEconomy.tick(workshop, 5.0)
 	check(is_equal_approx(float(workshop.stockpile.get("iron_ingot", 0.0)), 2.0) and is_equal_approx(float(workshop.stockpile["iron_ore"]), 6.0), "Unlocked workshop consumes imported ore to produce ingots")
+	var plains_mine: AlifeSettlement = settlement()
+	plains_mine.economy_type = "mining"
+	plains_mine.food = 100.0
+	var mountain_mine: AlifeSettlement = AlifeSettlement.from_dict(plains_mine.to_dict())
+	mountain_mine.biome = "mountains"
+	SettlementEconomy.tick(plains_mine, 1.0)
+	SettlementEconomy.tick(mountain_mine, 1.0)
+	check(float(mountain_mine.stockpile["iron_ore"]) > float(plains_mine.stockpile["iron_ore"]) and float(mountain_mine.stockpile["stone"]) > float(plains_mine.stockpile["stone"]), "Mountain mines yield more ore and stone than plains mines")
+	var desert_farm: AlifeSettlement = settlement()
+	desert_farm.economy_type = "agricultural"
+	desert_farm.biome = "desert"
+	desert_farm.food = 100.0
+	var plains_farm: AlifeSettlement = AlifeSettlement.from_dict(desert_farm.to_dict())
+	plains_farm.biome = "plains"
+	SettlementEconomy.tick(desert_farm, 1.0)
+	SettlementEconomy.tick(plains_farm, 1.0)
+	check(plains_farm.food > desert_farm.food and float(plains_farm.stockpile["wool"]) > float(desert_farm.stockpile["wool"]), "Plains farms yield more food and wool than desert farms")
+	var fortress: AlifeSettlement = settlement()
+	fortress.settlement_type = "fortress"
+	fortress.food = 100.0
+	var village: AlifeSettlement = AlifeSettlement.from_dict(fortress.to_dict())
+	village.settlement_type = "village"
+	SettlementEconomy.tick(fortress, 1.0)
+	SettlementEconomy.tick(village, 1.0)
+	check(fortress.food < village.food, "Fortress supply consumes more food per resident than village supply")
 	var world: AlifeWorldContext = AlifeWorldContext.new()
 	market = settlement()
 	market.economy_type = "mining"
