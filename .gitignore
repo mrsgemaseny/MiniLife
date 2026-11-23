@@ -46,6 +46,8 @@ PixelBuilder/
 *.local
 
 # Temporary scratch files, notes and assistant dumps
+future/
+*.xlsx
 Results_From_*.md
 CLAUDE.md
 alife-arch.md
