@@ -18,6 +18,7 @@ const TABLE_FILES: Dictionary = {
 	"events": "events.json",
 	"dialogues": "dialogues.json",
 	"quests": "quests.json",
+	"quests_village": "quests_village.json",
 	"traits": "traits.json",
 	"classes": "classes.json",
 	"biomes": "biomes.json",

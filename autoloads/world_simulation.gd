@@ -40,6 +40,8 @@ func _ready() -> void:
 	SignalBus.save_data_loaded.connect(_on_save_loaded)
 	SignalBus.alife_entity_layer_ready.connect(_on_entity_layer_ready)
 	SignalBus.alife_settlement_queried.connect(_on_settlement_queried)
+	SignalBus.village_quest_settlement_queried.connect(_on_village_quest_settlement_queried)
+	SignalBus.village_quest_ripple_requested.connect(_on_village_quest_ripple_requested)
 	SignalBus.settlement_squads_queried.connect(_on_squads_queried)
 	SignalBus.alife_political_map_queried.connect(_on_political_map_queried)
 	SignalBus.fog_batch_updated.connect(_on_political_visibility_changed)
@@ -548,6 +550,50 @@ func _on_settlement_queried(chunk: Vector2i, result: Dictionary) -> void:
 			"tile_pos": settlement.tile,
 			"settlement_tile": settlement.tile,
 		})
+
+func _on_village_quest_settlement_queried(settlement_id: String, result: Dictionary) -> void:
+	if not _initialized:
+		return
+	var settlement: AlifeSettlement = world.settlements.find(settlement_id) as AlifeSettlement
+	if settlement == null or settlement.status != AlifeSettlement.Status.NORMAL:
+		return
+	result["name"] = settlement.name
+	result["settlement_type"] = settlement.settlement_type
+	result["connections"] = settlement.connections.duplicate()
+	result["owner_faction"] = settlement.owner_faction
+
+func _on_village_quest_ripple_requested(settlement_id: String, changes: Dictionary, result: Dictionary) -> void:
+	if not _initialized:
+		return
+	var settlement: AlifeSettlement = world.settlements.find(settlement_id) as AlifeSettlement
+	if settlement == null or settlement.status != AlifeSettlement.Status.NORMAL:
+		return
+	for key: Variant in changes.keys():
+		var field: String = str(key)
+		if field not in ["food", "prosperity", "population", "garrison", "market_funds"] and not field.begins_with("stockpile."):
+			return
+		if field.begins_with("stockpile.") and not DataRegistry.has_entry("items", field.trim_prefix("stockpile.")):
+			return
+		if not changes[key] is int and not changes[key] is float:
+			return
+	for key: Variant in changes.keys():
+		var field: String = str(key)
+		var delta: float = float(changes[key])
+		if field.begins_with("stockpile."):
+			var item_id: String = field.trim_prefix("stockpile.")
+			settlement.stockpile[item_id] = maxf(0.0, float(settlement.stockpile.get(item_id, 0.0)) + delta)
+		elif field == "food":
+			settlement.food = maxf(0.0, settlement.food + delta)
+		elif field == "prosperity":
+			settlement.prosperity = clampf(settlement.prosperity + delta, 0.0, 100.0)
+		elif field == "population":
+			settlement.population = maxi(0, settlement.population + int(delta))
+		elif field == "garrison":
+			settlement.garrison = maxi(0, settlement.garrison + int(delta))
+		elif field == "market_funds":
+			settlement.market_funds = maxi(0, settlement.market_funds + int(delta))
+	result["applied"] = true
+	_publish_markets()
 
 func _on_entity_died(entity: Node, killer_id: String) -> void:
 	if entity is CaravanPackAnimal:
