@@ -89,6 +89,11 @@ func complete_quest(quest_id: String) -> void:
 	SignalBus.quest_completed.emit(quest_id)
 
 	var def: Dictionary = _quests_defs.get(quest_id, {})
+	if str(def.get("next_quest_id", "")).is_empty():
+		for candidate: Dictionary in _quests_defs.values():
+			if str(candidate.get("next_quest_id", "")) == quest_id:
+				SignalBus.quest_chain_completed.emit(quest_id)
+				break
 	var rewards: Dictionary = def.get("reward", def.get("rewards", {}))
 	SignalBus.quest_reward_granted.emit(rewards)
 

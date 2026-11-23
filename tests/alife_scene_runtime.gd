@@ -336,7 +336,7 @@ func _check_killing_witness(settlement: AlifeSettlement, live: Array) -> void:
 	RumorTick.new().tick(context)
 	var delivered: Array[String] = []
 	var capture: Callable = func(_source: String, content: String) -> void:
-		if content.contains("the traveler killed a resident"):
+		if content.contains("путник убил жителя"):
 			delivered.append(content)
 	SignalBus.local_rumor_heard.connect(capture)
 	SignalBus.alife_resident_spoken_to.emit(witness_id)

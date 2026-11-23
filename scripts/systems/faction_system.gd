@@ -28,6 +28,7 @@ func _process(delta: float) -> void:
 
 func _load_definitions() -> void:
 	_factions_defs = DataRegistry.get_table("factions")
+	_reputation.clear()
 	for fid in _factions_defs.keys():
 		var d: Dictionary = _factions_defs[fid]
 		_reputation[str(fid)] = int(d.get("starting_rep", d.get("default_reputation", 0)))
@@ -38,6 +39,16 @@ func _connect_signals() -> void:
 	SignalBus.npc_killed.connect(_on_npc_killed)
 	SignalBus.save_data_requested.connect(_on_save_data_requested)
 	SignalBus.save_data_loaded.connect(_on_save_data_loaded)
+	SignalBus.game_started.connect(_on_game_started)
+
+func _on_game_started(_seed: int, _slot: String, is_new: bool) -> void:
+	if not is_new:
+		return
+	_load_definitions()
+	_joined_faction = ""
+	_rumor_network.pending_rumors.clear()
+	_caravan_director.last_caravan_day = 0
+	SignalBus.faction_rep_snapshot.emit(_reputation.duplicate())
 
 func get_reputation(faction_id: String) -> int:
 	return int(_reputation.get(faction_id, 0))
@@ -112,6 +123,8 @@ func _on_save_data_loaded(bundle: Dictionary) -> void:
 	var w: Dictionary = bundle.get("world", {})
 	var fdata: Dictionary = w.get("factions", {})
 	var rep: Dictionary = fdata.get("reputation", {})
+	_load_definitions()
+	_rumor_network.pending_rumors.clear()
 	for k in rep.keys():
 		_reputation[str(k)] = int(rep[k])
 	_joined_faction = str(fdata.get("joined_faction", ""))
