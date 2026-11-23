@@ -16,6 +16,7 @@ var _status: String = "Nobody"
 func _ready() -> void:
 	add_to_group("reputation_system")
 	SignalBus.local_rep_change_requested.connect(change_local)
+	SignalBus.local_rep_queried.connect(_on_local_rep_queried)
 	SignalBus.world_rep_change_requested.connect(change_world)
 	SignalBus.honor_change_requested.connect(change_honor)
 	SignalBus.quest_chain_completed.connect(_on_quest_chain_completed)
@@ -28,6 +29,9 @@ func _ready() -> void:
 
 func get_local(settlement_id: String) -> int:
 	return int(_local.get(settlement_id, 0))
+
+func _on_local_rep_queried(settlement_id: String, result: Dictionary) -> void:
+	result["value"] = get_local(settlement_id)
 
 func get_world_reputation() -> int:
 	return _world

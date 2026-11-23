@@ -6,9 +6,17 @@ extends Node
 var _active_dialogue_id: String = ""
 var _active_node_id: String = ""
 var _active_npc_id: String = ""
+var _active_settlement_id: String = ""
+var _active_resident_settlement_id: String = ""
 var _current_choices: Array[Dictionary] = []
+var _role_lines: Dictionary = {}
 
 func _ready() -> void:
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/dialogues_ru.json"))
+	if parsed is Dictionary:
+		_role_lines = parsed
+	SignalBus.village_elder_interacted.connect(_on_village_elder_interacted)
+	SignalBus.village_resident_spoken_to.connect(_on_village_resident_spoken_to)
 	SignalBus.dialogue_started.connect(_on_dialogue_started)
 	SignalBus.dialogue_choice_selected.connect(_on_choice_selected)
 	SignalBus.dialogue_end_requested.connect(_end_dialogue)
@@ -16,6 +24,14 @@ func _ready() -> void:
 func _on_dialogue_started(npc_id: String, dialogue_id: String) -> void:
 	_active_npc_id = npc_id
 	_active_dialogue_id = dialogue_id
+	if npc_id == "village_elder" and not _active_settlement_id.is_empty():
+		_show_village_elder()
+		return
+	if npc_id == "wanderer_npc" and not _active_resident_settlement_id.is_empty():
+		_show_village_resident()
+		return
+	_active_settlement_id = ""
+	_active_resident_settlement_id = ""
 	var dlg: Dictionary = DataRegistry.get_dialogue(dialogue_id)
 	if dlg.is_empty():
 		var fallbacks: Array = DataRegistry.get_rows("dialogues")
@@ -26,6 +42,61 @@ func _on_dialogue_started(npc_id: String, dialogue_id: String) -> void:
 		return
 	_active_node_id = str(dlg.get("root_node", dlg.get("start_node", "root")))
 	_show_node(dlg, _active_node_id)
+
+func _on_village_elder_interacted(settlement_id: String) -> void:
+	_active_settlement_id = settlement_id
+	_active_resident_settlement_id = ""
+
+func _on_village_resident_spoken_to(settlement_id: String, _resident_uid: String) -> void:
+	_active_resident_settlement_id = settlement_id
+	_active_settlement_id = ""
+
+func _show_village_resident() -> void:
+	var reputation: Dictionary = {}
+	SignalBus.local_rep_queried.emit(_active_resident_settlement_id, reputation)
+	var level: int = clampi(floori(float(reputation.get("value", 0)) / 20.0), -2, 2)
+	var lines: Array = _role_lines.get("крестьянин", {}).get("rep_%d" % level, [])
+	var text_line: String = "День добрый. Поле нынче сухое."
+	if not lines.is_empty():
+		text_line = str(lines[posmod(hash(_active_resident_settlement_id) + GameManager.get_day(), lines.size())])
+	_current_choices.clear()
+	_current_choices.append({"text": "Спасибо за разговор.", "action": "end"})
+	SignalBus.dialogue_node_shown.emit("Житель", text_line, _current_choices)
+
+func _show_village_elder() -> void:
+	var settlement: Dictionary = {}
+	SignalBus.village_quest_settlement_queried.emit(_active_settlement_id, settlement)
+	if settlement.is_empty():
+		_end_dialogue()
+		return
+	var available: Dictionary = {}
+	SignalBus.village_quest_offers_queried.emit(_active_settlement_id, available)
+	var reputation: Dictionary = {}
+	SignalBus.local_rep_queried.emit(_active_settlement_id, reputation)
+	var level: int = clampi(floori(float(reputation.get("value", 0)) / 20.0), -2, 2)
+	var lines: Array = _role_lines.get("староста", {}).get("rep_%d" % level, [])
+	var greeting: String = "Здравствуй, путник. Нужна работа?"
+	if not lines.is_empty():
+		greeting = str(lines[posmod(hash(_active_settlement_id) + GameManager.get_day(), lines.size())])
+	_current_choices.clear()
+	for row: Dictionary in available.get("turn_ins", []):
+		_current_choices.append({"text": "Сдать: " + str(row["title"]), "action": {"type": "turn_in_quest", "quest_id": str(row["id"])}})
+	for row: Dictionary in available.get("offers", []):
+		var template_id: String = str(row["id"])
+		var template: Dictionary = DataRegistry.get_entry("quests_village", template_id)
+		var description: String = str(template.get("action", ""))
+		description = description.replace("{settlement}", str(settlement.get("name", "")))
+		var target_name: String = "соседнего поселения"
+		var connections: Array = settlement.get("connections", [])
+		if not connections.is_empty():
+			var neighbor: Dictionary = {}
+			SignalBus.village_quest_settlement_queried.emit(str(connections[0]), neighbor)
+			target_name = str(neighbor.get("name", connections[0]))
+		description = description.replace("{target_settlement}", target_name)
+		description = description.replace("{faction}", str(settlement.get("owner_faction", "")))
+		_current_choices.append({"text": description, "action": {"type": "start_village_quest", "template_id": template_id}})
+	_current_choices.append({"text": "Пока не могу помочь.", "action": "end"})
+	SignalBus.dialogue_node_shown.emit("Староста", greeting, _current_choices)
 
 func _find_dialogue_node(dlg: Dictionary, node_id: String) -> Dictionary:
 	var raw_nodes: Variant = dlg.get("nodes", [])
@@ -75,6 +146,13 @@ func _on_choice_selected(choice_index: int) -> void:
 	if act is Dictionary:
 		var adict: Dictionary = act
 		var atype: String = str(adict.get("type", ""))
+		if atype == "start_village_quest":
+			var result: Dictionary = {}
+			SignalBus.village_quest_start_requested.emit(str(adict.get("template_id", "")), _active_settlement_id, result)
+			if not bool(result.get("started", false)):
+				SignalBus.notification_posted.emit("Староста пока не может дать это поручение.")
+			_end_dialogue()
+			return
 		if atype == "start_quest":
 			var qid: String = str(adict.get("quest_id", ""))
 			if not qid.is_empty():
@@ -134,5 +212,7 @@ func _find_npc_by_id(npc_id: String) -> Node:
 func _end_dialogue() -> void:
 	_active_dialogue_id = ""
 	_active_node_id = ""
+	_active_settlement_id = ""
+	_active_resident_settlement_id = ""
 	_current_choices.clear()
 	SignalBus.dialogue_ended.emit()

@@ -3,7 +3,7 @@ extends Control
 
 @onready var speaker_label: Label = $PanelContainer/VBoxContainer/SpeakerLabel
 @onready var body_label: Label = $PanelContainer/VBoxContainer/DialogueText
-@onready var choices_box: VBoxContainer = $PanelContainer/VBoxContainer/ChoicesBox
+@onready var choices_box: VBoxContainer = $PanelContainer/VBoxContainer/ChoicesScroll/ChoicesBox
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -34,6 +34,8 @@ func _on_dialogue_node_shown(speaker: String, text: String, choices: Array) -> v
 			SignalBus.dialogue_choice_selected.emit(idx)
 		)
 		choices_box.add_child(btn)
+	if speaker in ["Староста", "Житель"]:
+		return
 
 	var trade_btn: Button = Button.new()
 	trade_btn.text = "[Barter / Trade Goods]"

@@ -561,6 +561,7 @@ func _on_village_quest_settlement_queried(settlement_id: String, result: Diction
 	result["settlement_type"] = settlement.settlement_type
 	result["connections"] = settlement.connections.duplicate()
 	result["owner_faction"] = settlement.owner_faction
+	result["tile"] = settlement.tile
 
 func _on_village_quest_ripple_requested(settlement_id: String, changes: Dictionary, result: Dictionary) -> void:
 	if not _initialized:

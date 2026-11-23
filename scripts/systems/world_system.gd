@@ -1460,6 +1460,8 @@ func _spawn_settlement_squads(cpos: Vector2i, spawned: Array[Node], killed: Arra
 					tile = candidate
 					break
 			if tile.x == -1 and tile.y == -1:
+				tile = _find_squad_fallback_tile(squad.anchor_tile, cpos, taken)
+			if tile.x == -1 and tile.y == -1:
 				break
 			taken[tile] = true
 			var uid: String = squad.member_uid(slot)
@@ -1484,6 +1486,21 @@ func _spawn_settlement_squads(cpos: Vector2i, spawned: Array[Node], killed: Arra
 				if at.size() >= 2:
 					npc.global_position = Vector2(float(at[0]), float(at[1]))
 			spawned.append(npc)
+
+func _find_squad_fallback_tile(anchor: Vector2i, chunk: Vector2i, taken: Dictionary) -> Vector2i:
+	var best: Vector2i = Vector2i(-1, -1)
+	var best_distance: int = 2147483647
+	var origin: Vector2i = Config.chunk_origin(chunk)
+	for dx: int in range(Config.CHUNK_SIZE):
+		for dy: int in range(Config.CHUNK_SIZE):
+			var candidate: Vector2i = origin + Vector2i(dx, dy)
+			var distance: int = (candidate - anchor).length_squared()
+			if distance >= best_distance or taken.has(candidate):
+				continue
+			if _terrain.is_in_world(candidate) and is_passable(candidate):
+				best = candidate
+				best_distance = distance
+	return best
 
 func _spawn_location_inhabitants(cpos: Vector2i, spawned: Array[Node], killed: Array) -> void:
 	var info: Dictionary = _chunk_pois.get(cpos, {})

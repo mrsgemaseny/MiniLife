@@ -192,6 +192,10 @@ func interact(_interactor: Node) -> void:
 	transition_to(State.GIVE_QUEST)
 	if is_instance_valid(_interactor) and _interactor.is_in_group("player") and has_meta("global_agent_id"):
 		SignalBus.alife_resident_spoken_to.emit(str(get_meta("global_agent_id")))
+	if is_instance_valid(_interactor) and _interactor.is_in_group("player") and npc_id == "village_elder" and has_meta("settlement_id"):
+		SignalBus.village_elder_interacted.emit(str(get_meta("settlement_id")))
+	if is_instance_valid(_interactor) and _interactor.is_in_group("player") and npc_id == "wanderer_npc" and str(get_meta("squad_id", "")).contains("/peasants/"):
+		SignalBus.village_resident_spoken_to.emit(str(get_meta("settlement_id", "")), spawn_uid)
 	SignalBus.npc_interacted.emit(npc_id)
 	SignalBus.dialogue_started.emit(npc_id, dialogue_id)
 

@@ -1,6 +1,8 @@
 class_name QuestSystem
 extends Node
 
+const STARTER_VILLAGE_OFFERS: Array[String] = ["q_village_wood_01", "q_village_herbs_02", "q_village_fence_03", "q_village_water_05"]
+
 var _quests_defs: Dictionary = {}
 var _active_quests: Dictionary = {} # quest_id -> Dictionary state
 var _completed_quests: Dictionary = {}
@@ -31,6 +33,9 @@ func _start_initial_quest() -> void:
 func _connect_signals() -> void:
 	SignalBus.quest_start_requested.connect(start_quest)
 	SignalBus.quest_turn_in_requested.connect(complete_quest)
+	SignalBus.village_quest_offers_queried.connect(_on_village_quest_offers_queried)
+	SignalBus.village_quest_start_requested.connect(_on_village_quest_start_requested)
+	SignalBus.village_resident_spoken_to.connect(_on_village_resident_spoken_to)
 	SignalBus.village_quest_action_performed.connect(_on_village_quest_action_performed)
 	SignalBus.hour_passed.connect(_on_hour_passed)
 	SignalBus.npc_killed.connect(_on_npc_killed)
@@ -75,9 +80,10 @@ func start_village_quest(template_id: String, settlement_id: String) -> bool:
 	SignalBus.village_quest_settlement_queried.emit(settlement_id, settlement)
 	if settlement.is_empty() or str(settlement.get("settlement_type", "")) != "village":
 		return false
-	var reputation: ReputationSystem = get_tree().get_first_node_in_group("reputation_system") as ReputationSystem
+	var reputation: Dictionary = {}
+	SignalBus.local_rep_queried.emit(settlement_id, reputation)
 	var required_rep: int = int(template.get("min_reputation", -2))
-	if required_rep > -2 and (reputation == null or reputation.get_local(settlement_id) < required_rep * 20):
+	if required_rep > -2 and (not reputation.has("value") or int(reputation["value"]) < required_rep * 20):
 		return false
 	var quest_id: String = template_id + "@" + settlement_id
 	if _active_quests.has(quest_id) or _completed_quests.has(quest_id) or _failed_quests.has(quest_id):
@@ -88,7 +94,7 @@ func start_village_quest(template_id: String, settlement_id: String) -> bool:
 		return false
 	var action_text: String = str(template.get("action", ""))
 	var count: int = maxi(1, int(objective.get("count", 1)))
-	var target_settlement: String = ""
+	var target_settlement: String = "соседнего поселения"
 	var connections: Array = settlement.get("connections", [])
 	if not connections.is_empty():
 		var neighbor: Dictionary = {}
@@ -105,7 +111,58 @@ func start_village_quest(template_id: String, settlement_id: String) -> bool:
 	}
 	SignalBus.quest_started.emit(quest_id)
 	_emit_snapshot()
+	SignalBus.notification_posted.emit("Новое поручение: " + title)
 	return true
+
+func _on_village_quest_start_requested(template_id: String, settlement_id: String, result: Dictionary) -> void:
+	result["started"] = start_village_quest(template_id, settlement_id)
+
+func _on_village_quest_offers_queried(settlement_id: String, result: Dictionary) -> void:
+	var offers: Array[Dictionary] = []
+	var turn_ins: Array[Dictionary] = []
+	var reputation: Dictionary = {}
+	SignalBus.local_rep_queried.emit(settlement_id, reputation)
+	var local_value: int = int(reputation.get("value", 0))
+	for template: Dictionary in DataRegistry.get_rows("quests_village"):
+		var template_id: String = str(template.get("id", ""))
+		if template_id not in STARTER_VILLAGE_OFFERS and str(template.get("action_type", "")) not in ["доставка", "охота"]:
+			continue
+		var instance_id: String = template_id + "@" + settlement_id
+		if _active_quests.has(instance_id):
+			var state: Dictionary = _active_quests[instance_id]
+			var progress: Dictionary = state.get("progress", {})
+			var target_id: String = str(state.get("target_id", ""))
+			var action_type: String = str(state.get("action_type", ""))
+			var player: Node = get_tree().get_first_node_in_group("player")
+			var inventory: InventoryComponent = player.get("inventory") as InventoryComponent if player != null else null
+			var needs_items: bool = action_type == "доставка" or (action_type == "поиск" and DataRegistry.has_entry("items", target_id))
+			if (needs_items and inventory != null and inventory.has_item(target_id, int(progress.get("required", 1)))) or (not needs_items and int(progress.get("current", 0)) >= int(progress.get("required", 1))):
+				turn_ins.append({"id": instance_id, "title": str(state.get("title", template_id))})
+			continue
+		if _completed_quests.has(instance_id) or _failed_quests.has(instance_id):
+			continue
+		var minimum: int = int(template.get("min_reputation", -2))
+		if minimum > -2 and local_value < minimum * 20:
+			continue
+		if offers.size() < 5:
+			offers.append({"id": template_id, "title": str(template.get("hook", template_id))})
+	result["offers"] = offers
+	result["turn_ins"] = turn_ins
+
+func _on_village_resident_spoken_to(settlement_id: String, resident_uid: String) -> void:
+	if settlement_id.is_empty() or resident_uid.is_empty():
+		return
+	var quest_id: String = "q_village_water_05@" + settlement_id
+	if not _active_quests.has(quest_id):
+		return
+	var state: Dictionary = _active_quests[quest_id]
+	var seen: Array = state.get("seen_residents", [])
+	if seen.has(resident_uid):
+		return
+	seen.append(resident_uid)
+	state["seen_residents"] = seen
+	_active_quests[quest_id] = state
+	advance_quest(quest_id, 1)
 
 func _on_village_quest_action_performed(settlement_id: String, action_type: String, target_id: String, amount: int) -> void:
 	if amount <= 0:
@@ -297,6 +354,17 @@ func _on_structure_built(structure_id: String, _tile_pos: Vector2i) -> void:
 		var t_id: String = str(st.get("target_id", ""))
 		if str(st.get("type", "")) == "build" and (t_id.is_empty() or t_id == structure_id):
 			advance_quest(str(qid), 1)
+	if structure_id not in ["wood_wall", "wall"]:
+		return
+	for qid in _active_quests.keys():
+		var state: Dictionary = _active_quests[qid]
+		if str(state.get("template_id", "")) != "q_village_fence_03":
+			continue
+		var settlement: Dictionary = {}
+		SignalBus.village_quest_settlement_queried.emit(str(state.get("settlement_id", "")), settlement)
+		if settlement.has("tile") and Config.tile_distance(_tile_pos, settlement["tile"]) <= 40:
+			advance_quest(str(qid), 1)
+			break
 
 func _on_resource_harvested(resource_id: String, amount: int, _tile_pos: Vector2i) -> void:
 	for qid in _active_quests.keys():
